@@ -21,5 +21,4 @@ enum CommonSize : uint64
 	_1K = 0x1UL << 10,
 	_1M = 0x1UL << 20,
 	_1G = 0x1UL << 30,
-	pg_size = _1K << 2, 		// 4KiB page 
 };

@@ -3,6 +3,7 @@
 #include "console.hh"
 #include "hal/loongarch.hh"
 #include "hal/cpu.hh"
+#include "mm/pmm.hh"
 #include "klib/printer.hh"
 #include "klib/common.hh"
 
@@ -15,7 +16,11 @@ int main()
 	{
 		k_console.init( "console" );
 		kernellib::k_printer.init( &k_console, "printer" );
-		printf( "Hello World!" );
+		printf( "Hello World!\n" );
+		k_pmm.init( "physical memory manager",
+			loongarch::qemuls2k::memory::mem_start,
+			loongarch::qemuls2k::memory::mem_end );
+		printf( "pmm init\n" );
 		while ( 1 ); // stop here
 	}
 	else

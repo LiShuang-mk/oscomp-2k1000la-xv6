@@ -8,6 +8,7 @@
 
 #include "mm/pmm.hh"
 #include "klib/common.hh"
+#include "mm/page.hh"
 
 PhysicalMemoryManager k_pmm;
 
@@ -17,11 +18,15 @@ void PhysicalMemoryManager::init( const char *name, uint64 ram_base, uint64 ram_
 	_ram_base = ram_base;
 	_ram_end = ram_end;
 	_free_list = 0;
+	_free_range( ( void* ) _ram_base, ( void * ) _ram_end );
 }
 
 void PhysicalMemoryManager::_free_range( void *pa_start, void *pa_end )
 {
-
+	char *p;
+	p = ( char * ) page_round_up( ( uint64 ) pa_start );
+	for ( ; p + pg_size <= ( char * ) pa_end; p += pg_size )
+		_free_page( p );
 }
 
 void PhysicalMemoryManager::_free_page( void *pa )
@@ -43,6 +48,16 @@ void PhysicalMemoryManager::_free_page( void *pa )
 }
 
 void *PhysicalMemoryManager::_alloc_page()
-{
+{// to do
 	return 0;
+}
+
+void PhysicalMemoryManger::free_page( void *pa )
+{
+	_free_page( pa );
+}
+
+void *PhysicalMemoryManager::alloc_page()
+{
+	return _alloc_page();
 }
