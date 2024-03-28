@@ -1,3 +1,4 @@
 **/*.o
 **/*.d
+**/kernel.asm
 ./kernel/kernel
