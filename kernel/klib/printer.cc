@@ -1,0 +1,142 @@
+//
+// Created by Li shuang ( pseudonym ) on 2024-03-27 
+// --------------------------------------------------------------
+// | Note: This code file just for study, not for commercial use 
+// | Contact Author: lishuang.mk@whu.edu.cn 
+// --------------------------------------------------------------
+//
+
+#include "klib/printer.hh"
+#include "console.hh"
+
+namespace kernellib
+{
+	Printer k_printer;
+
+	char Printer::_digits[] = "0123456789abcdef";
+
+	void Printer::init( Console *console, const char *name )
+	{
+		_type = out_type::console;
+		_console = console;
+		_lock.init( name );
+		_locking = 1;
+		_panicked = 0;
+	}
+
+	void Printer::printint( int xx, int base, int sign )
+	{
+		char buf[ 16 ];
+		int i;
+		uint x;
+
+		if ( sign && ( sign = xx < 0 ) )
+			x = -xx;
+		else
+			x = xx;
+
+		i = 0;
+		do
+		{
+			buf[ i++ ] = _digits[ x % base ];
+		}
+		while ( ( x /= base ) != 0 );
+
+		if ( sign )
+			buf[ i++ ] = '-';
+
+		if ( _type == out_type::console && _console )
+			while ( --i >= 0 )
+				_console->putc( buf[ i ] );
+	}
+
+	void Printer::printptr( uint64 x )
+	{
+		if ( _type != out_type::console || _console == nullptr )
+			return;
+		uint64 i;
+		_console->putc( '0' );
+		_console->putc( 'x' );
+		for ( i = 0; i < ( sizeof( uint64 ) * 2 ); i++, x <<= 4 )
+			_console->putc( _digits[ x >> ( sizeof( uint64 ) * 8 - 4 ) ] );
+	}
+
+	void Printer::printf( const char *fmt, ... )
+	{
+		va_list ap;
+		va_start( ap, fmt );
+		vprintf( fmt, ap );
+		va_end( ap );
+	}
+
+	void Printer::vprintf( const char *fmt, va_list ap )
+	{
+		int i, c;
+		int locking;
+		char *s;
+
+		locking = _locking;
+		if ( locking )
+			_lock.acquire();
+
+		if ( fmt == 0 )
+			panic( "null fmt" );
+
+		for ( i = 0; ( c = fmt[ i ] & 0xff ) != 0; i++ )
+		{
+			if ( c != '%' )
+			{
+				if ( _type == out_type::console && _console )
+					_console->putc( c );
+				continue;
+			}
+			c = fmt[ ++i ] & 0xff;
+			if ( c == 0 )
+				break;
+			switch ( c )
+			{
+				case 'd':
+					printint( va_arg( ap, int ), 10, 1 );
+					break;
+				case 'x':
+					printint( va_arg( ap, int ), 16, 0 );
+					break;
+				case 'p':
+					printptr( va_arg( ap, uint64 ) );
+					break;
+				case 's':
+					if ( ( s = va_arg( ap, char* ) ) == 0 )
+						s = ( char * ) "(null)";
+					if ( _type == out_type::console && _console )
+						for ( ; *s; s++ )
+							_console->putc( *s );
+					break;
+				case '%':
+					if ( _type == out_type::console && _console )
+						_console->putc( '%' );
+					break;
+				default:
+				  // Print unknown % sequence to draw attention.
+					if ( _type == out_type::console && _console )
+					{
+						_console->putc( '%' );
+						_console->putc( c );
+					}
+					break;
+			}
+		}
+
+		if ( locking )
+			_lock.release();
+	}
+
+	void Printer::panic( const char *s )
+	{
+		k_printer._locking = 0;
+		k_printer.printf( "panic: " );
+		k_printer.printf( s );
+		k_printer.printf( "\n" );
+		k_printer._panicked = 1;
+		while ( 1 );
+	}
+}

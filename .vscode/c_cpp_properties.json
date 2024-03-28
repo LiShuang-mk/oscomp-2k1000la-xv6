@@ -1,0 +1,11 @@
+{
+    "version": 4,
+    "configurations": [
+        {
+            "name": "Ubuntu",
+            "includePath": [
+                "${workspaceFolder}/kernel/include/**"
+            ]
+		}
+    ]
+}

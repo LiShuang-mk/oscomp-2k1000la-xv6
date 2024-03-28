@@ -1,0 +1,35 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "qemu-loongson-runenv",
+            "type": "cppdbg",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "program": "./kernel/kernel",
+            "args": [],
+            "stopAtEntry": false,
+            "environment": [],
+            "externalConsole": true,
+            "MIMode": "gdb",
+            "miDebuggerPath": "loongarch64-linux-gnu-gdb",
+            "miDebuggerServerAddress": "localhost:1234",
+			"preLaunchTask": "start qemu", 
+        },
+		{
+            "name": "qemu-ls2k-start",
+            "type": "cppdbg",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "program": "./kernel/kernel",
+            "args": [],
+            "stopAtEntry": true,
+            "environment": [],
+            "externalConsole": true,
+            "MIMode": "gdb",
+            "miDebuggerPath": "loongarch64-linux-gnu-gdb",
+            "miDebuggerServerAddress": "localhost:1234",
+			"preLaunchTask": "qemu ls2k", 
+        },
+    ]
+}
