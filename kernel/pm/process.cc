@@ -1,21 +1,14 @@
 //
-// Created by Li shuang ( pseudonym ) on 2024-03-28 
+// Created by Li shuang ( pseudonym ) on 2024-03-29 
 // --------------------------------------------------------------
 // | Note: This code file just for study, not for commercial use 
 // | Contact Author: lishuang.mk@whu.edu.cn 
 // --------------------------------------------------------------
 //
 
-#pragma once 
+#include "pm/process.hh"
 
-#include "mm/physical_memory_manager.hh"
-#include "mm/page_table.hh"
-
-class VirtualMemoryManager
+void Pcb::init( const char *lock_name )
 {
-private:
-
-public:
-	VirtualMemoryManager() {};
-	void init();
-};
+	_lock.init( lock_name );
+}
