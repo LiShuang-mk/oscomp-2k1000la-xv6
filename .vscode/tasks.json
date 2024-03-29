@@ -6,7 +6,6 @@
 		{
 			"label": "start qemu",
 			"type": "shell",
-			
 			"command": "echo 'TaskInfo: QEMU Starting' && echo 'TaskInfo: Start Debug' && gnome-terminal -e 'bash ./debug.sh'",
 			"presentation": {
 				"echo": true,
@@ -19,21 +18,21 @@
 					"pattern": {
 						"regexp": ".*(error): (.*)",
 						"severity": 0,
-						"message": 1,
+						"message": 1
 					},
 					"background": {
 						"activeOnStart": true,
 						"beginsPattern": "^TaskInfo: QEMU Starting",
 						"endsPattern": "^TaskInfo: Start Debug"
-					},
+					}
 				},
 				"$gcc"
 			]
-		}, 
+		},
 		{
-			"label": "qemu ls2k", 
-			"type": "shell", 
-			"command": "echo 'TaskInfo: QEMU Starting' && make all && echo 'TaskInfo: Start Debug' && gnome-terminal -e 'bash ./ls2k_debug.sh'",
+			"label": "qemu ls2k",
+			"type": "shell",
+			"command": "echo 'TaskInfo: QEMU Starting' && echo 'TaskInfo: Start Debug' && gnome-terminal -e 'bash ./ls2k_debug.sh'",
 			"presentation": {
 				"echo": true,
 				"clear": true,
@@ -44,16 +43,26 @@
 				{
 					"pattern": {
 						"regexp": ".*(错误)",
-						"severity": 0,
+						"severity": 0
 					},
 					"background": {
 						"activeOnStart": true,
 						"beginsPattern": "^TaskInfo: QEMU Starting",
 						"endsPattern": "^TaskInfo: Start Debug"
-					},
+					}
 				},
 				"$gcc"
 			]
+		},
+		{
+			"label": "make qemu ls2k",
+			"type": "shell",
+			"command": "make all",
+			"problemMatcher": [],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
 		}
 	]
 }

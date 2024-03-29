@@ -9,7 +9,7 @@ cd $RUNENV_PREFIX
 	-M ls2k \
 	-serial stdio \
 	-k ./share/qemu/keymaps/en-us \
-	-kernel ${KERNEL_PREFIX}/kernel/kernel \
+	-kernel ${KERNEL_PREFIX}/build/kernel.elf \
 	-serial vc \
 	-m 1G \
 	-device usb-kbd,bus=usb-bus.0 \

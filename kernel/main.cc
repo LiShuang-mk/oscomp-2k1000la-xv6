@@ -3,7 +3,7 @@
 #include "console.hh"
 #include "hal/loongarch.hh"
 #include "hal/cpu.hh"
-#include "mm/pmm.hh"
+#include "mm/physical_memory_manager.hh"
 #include "klib/printer.hh"
 #include "klib/common.hh"
 

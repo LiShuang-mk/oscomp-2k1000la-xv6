@@ -6,7 +6,7 @@
 // --------------------------------------------------------------
 //
 
-#include "mm/pmm.hh"
+#include "mm/physical_memory_manager.hh"
 #include "klib/common.hh"
 #include "mm/page.hh"
 
@@ -48,11 +48,22 @@ void PhysicalMemoryManager::_free_page( void *pa )
 }
 
 void *PhysicalMemoryManager::_alloc_page()
-{// to do
+{
+	struct PageHead *r;
+
+	_lock.acquire();
+	r = _free_list;
+	if ( r )
+		_free_list = r->_next;
+	_lock.release();
+
+	if ( r )
+		memset( ( char* ) r, 5, pg_size );
+
 	return 0;
 }
 
-void PhysicalMemoryManger::free_page( void *pa )
+void PhysicalMemoryManager::free_page( void *pa )
 {
 	_free_page( pa );
 }

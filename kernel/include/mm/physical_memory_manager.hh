@@ -16,7 +16,7 @@ class PhysicalMemoryManager
 {
 private:
 	smp::Lock _lock;
-	PageHead *_free_list;
+	PageHead *_free_list = nullptr;
 	uint64 _ram_base;
 	uint64 _ram_end;
 

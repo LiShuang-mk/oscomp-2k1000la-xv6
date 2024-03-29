@@ -6,18 +6,18 @@
 // --------------------------------------------------------------
 //
 
-#include "mm/vmm.hh"
+#include "mm/virtual_memory_manager.hh"
 #include "klib/common.hh"
 #include "mm/page.hh"
 
 void VirtualMemoryManager::init()
 {
 	PageTable k_pagetable;
-	uint64 addr = k_pmm.alloc();
+	uint64 addr = ( uint64 ) k_pmm.alloc_page();
 	if ( addr == 0 )
 		panic( "vmm init" );
 	k_pagetable.set_base( addr );
-	memset( addr, 0, pg_size );
+	memset( ( void* ) addr, 0, pg_size );
 
 	// to do
 }

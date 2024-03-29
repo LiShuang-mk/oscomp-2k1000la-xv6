@@ -10,12 +10,13 @@ export TOOLPREFIX = loongarch64-linux-gnu-
 
 export CC  = ${TOOLPREFIX}gcc
 export CXX = ${TOOLPREFIX}g++
-export AS  = ${TOOLPREFIX}gas
+export AS  = ${TOOLPREFIX}as
 export LD  = ${TOOLPREFIX}ld 
 export OBJCOPY = ${TOOLPREFIX}objcopy
 export OBJDUMP = ${TOOLPREFIX}objdump
 
-export ASFLAGS = -march=loongarch64 -mabi=lp64s -I ./include
+export ASFLAGS = -march=loongarch64 -mabi=lp64s
+export ASFLAGS += -MD 
 export ASFLAGS += -I ./include
 export CFLAGS = -Wall -Werror -O0 -fno-omit-frame-pointer -ggdb
 export CFLAGS += -MD
@@ -41,9 +42,6 @@ all:
 
 test:
 	$(MAKE) test -C kernel
-
-disasm:
-	$(OBJDUMP) -D ./kernel/kernel > kernel.asm
 
 clean:
 	$(MAKE) clean -C kernel

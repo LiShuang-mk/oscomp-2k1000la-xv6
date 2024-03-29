@@ -8,7 +8,7 @@
 
 #pragma once 
 
-#include "mm/pmm.hh"
+#include "mm/physical_memory_manager.hh"
 
 class PageTable
 {
@@ -27,5 +27,5 @@ private:
 
 public:
 	VirtualMemoryManager() {};
-	init();
+	void init();
 };

@@ -21,7 +21,7 @@
             "type": "cppdbg",
             "request": "launch",
             "cwd": "${workspaceFolder}",
-            "program": "./kernel/kernel",
+            "program": "./build/kernel.elf",
             "args": [],
             "stopAtEntry": true,
             "environment": [],
