@@ -7,56 +7,72 @@ srcs += $(foreach dir, $(submod), \
 		$(wildcard $(dir)/*.cc $(dir)/*.c $(dir)/*.S) \
 		)
 
-objs = \
-	$(patsubst %.cc, %.o, $(filter %.cc, $(srcs))) \
-	$(patsubst %.c, %.o, $(filter %.c, $(srcs))) \
-	$(patsubst %.S, %.o, $(filter %.S, $(srcs)))
+c_src = $(filter %.c,$(srcs))
+cc_src = $(filter %.cc,$(srcs))
+s_src = $(filter %.S,$(srcs))
 
+c_obj = $(patsubst %.c,$(BUILDPATH)/kernel/%.o,$(c_src))
+cc_obj = $(patsubst %.cc,$(BUILDPATH)/kernel/%.o,$(cc_src))
+s_obj = $(patsubst %.S,$(BUILDPATH)/kernel/%.o,$(s_src))
+
+objs = $(c_obj) $(cc_obj) $(s_obj)
+	
 # objs += $(foreach dir, $(submod), \
 # 			$(patsubst %.cc, $(BUILDPATH)/%.o, $(wildcard $(dir)/*.cc)) \
 # 			$(patsubst %.c, $(BUILDPATH)/%.o, $(wildcard $(dir)/*.c)) \
 # 			$(patsubst %.S, $(BUILDPATH)/%.o, $(wildcard $(dir)/*.S)) \
 # 			)
 
-# depends in common path 
 depends = \
-	$(patsubst %.cc, %.d, $(filter %.cc, $(srcs))) \
-	$(patsubst %.c, %.d, $(filter %.c, $(srcs))) \
-	$(patsubst %.S, %.d, $(filter %.S, $(srcs)))
+	$(patsubst %.cc, $(BUILDPATH)/kernel/%.d, $(cc_src)) \
+	$(patsubst %.c, $(BUILDPATH)/kernel/%.d, $(c_src)) \
+	$(patsubst %.S, $(BUILDPATH)/kernel/%.d, $(s_src))
 
-# depends += $(foreach dir, $(submod), \
-# 			$(patsubst %.cc, $(BUILDPATH)/%.d, $(wildcard $(dir)/*.cc)) \
-# 			$(patsubst %.c, $(BUILDPATH)/%.d, $(wildcard $(dir)/*.c)) \
-# 			$(patsubst %.S, $(BUILDPATH)/%.d, $(wildcard $(dir)/*.S)) \
-# 			)
+es_buildpath = $(subst /,\/,$(BUILDPATH))
 
+.PHONY: all clean test initdirm,/
 
-.PHONY: all clean test initdir
+all: $(BUILDPATH)/kernel.elf
 
-all: kernel 
+initdir:
+	cd $(BUILDPATH); for dir in $(submod); do mkdir -p "$(BUILDPATH)/kernel/$$dir"; done
 
-kernel: $(objs) kernel.ld 
-	$(LD) $(LDFLAGS) -T kernel.ld -o kernel.elf $(objs)
-	for obj in $(objs); do mv $$obj "$(BUILDPATH)/kernel/$$obj"; done 
-	mv kernel.elf $(BUILDPATH)/kernel.elf
-	-rm -f $(depends)
+$(BUILDPATH)/kernel.elf: $(objs) kernel.ld 
+	$(LD) $(LDFLAGS) -T kernel.ld -o $@ $(objs)
+#	for obj in $(objs); do mv $$obj "$(BUILDPATH)/kernel/$$obj"; done 
+#	mv kernel.elf $(BUILDPATH)/kernel.elf
+
+$(cc_obj): $(BUILDPATH)/kernel/%.o: %.cc 
+	$(CXX) -c $(CXXFLAGS) -MF $(BUILDPATH)/kernel/$*.d -o $@ $<
+#	sed 's/$*.o/$(es_buildpath)\/$*.o/' $(BUILDPATH)/$*.d > $(BUILDPATH)/$*.d
+
+$(c_obj): $(BUILDPATH)/kernel/%.o: %.c 
+	$(CC) -c $(CFLAGS) -MF $(BUILDPATH)/kernel/$*.d -o $@ $<
+#	sed 's/$*.o/$(es_buildpath)\/$*.o/' $(BUILDPATH)/$*.d > $(BUILDPATH)/$*.d
+
+$(s_obj): $(BUILDPATH)/kernel/%.o: %.S 
+	$(CC) -c $(ASFLAGS) -MF $(BUILDPATH)/kernel/$*.d -o $@ $<
+#	sed 's/$*.o/$(es_buildpath)\/$*.o/' $(BUILDPATH)/$*.d > $(BUILDPATH)/$*.d
 
 -include $(depends)
 
-initdir:
-	cd $(BUILDPATH); for dir in $(submod); do mkdir -p "$(BUILDPATH)/kernel/$$dir"; done 
-
 test:
-	@echo "--------> srcs  : $(srcs)"
-	@echo "--------> objs  : $(objs)"
-	@echo "--------> build : $(BUILDPATH)"
+	@echo "--------> depd  : $(depends)"
+	@echo "--------> srcs  : $(c_src)"
+	@echo "--------> srcs  : $(cc_src)"
+	@echo "--------> srcs  : $(s_src)"
+#	@echo "--------> objs  : $(objs)"
+#	@echo "--------> build : $(BUILDPATH)"
 
 clean: 
-	for mod in $(submod) ; \
-		do cd "$(BUILDPATH)/kernel/$$mod" ; \
-		rm -f *.o ; \
+	for mod in $(submod) ; do \
+		cd "$(BUILDPATH)/kernel/$$mod" ; \
+		rm -f *.o *.d; \
+		cd "$(WORKPATH)/kernel/$$mod" ; \
+		rm -f *.o *.d; \
 	done
-	cd $(BUILDPATH); rm -f kernel.elf
+	cd $(BUILDPATH); rm -f kernel.elf kernel/*.o kernel/*.d
+	cd $(WORKPATH); rm -f kernel.elf kernel/*.o kernel/*.d
 
 #-rm -f *.tex *.dvi *.idx *.aux *.log *.ind *.ilg \
 #	*.o *.d *.asm *.sym *.out

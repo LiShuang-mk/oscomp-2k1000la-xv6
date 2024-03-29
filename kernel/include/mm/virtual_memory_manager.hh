@@ -16,6 +16,11 @@ class VirtualMemoryManager
 private:
 
 public:
+	static uint64 kstack_vm_from_gid( uint gid );
+
+public:
 	VirtualMemoryManager() {};
 	void init();
+
 };
+

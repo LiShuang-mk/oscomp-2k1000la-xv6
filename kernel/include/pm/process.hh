@@ -14,20 +14,26 @@
 
 struct TrapFrame;
 
+constexpr uint num_process = 32;
+
 enum ProcState
 {
-	UNUSED,
-	USED,
-	SLEEPING,
-	RUNNABLE,
-	RUNNING,
-	ZOMBIE
+	unused,
+	used,
+	sleeping,
+	runnable,
+	running,
+	zombie
 };
+
+class ProcessManager;
 
 class Pcb
 {
+	friend ProcessManager;
 private:
 	smp::Lock _lock;
+	int _gid = num_process;					// global ID in pool 
 
 	// p->lock must be held when using these:
 	enum ProcState _state;        // Process state
@@ -62,5 +68,7 @@ private:
 
 public:
 	Pcb() {};
-	void init( const char *lock_name );
+	void init( const char *lock_name, uint gid );
 };
+
+extern Pcb k_proc_pool[ num_process ];

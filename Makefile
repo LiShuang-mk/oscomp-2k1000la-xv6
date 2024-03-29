@@ -16,10 +16,10 @@ export OBJCOPY = ${TOOLPREFIX}objcopy
 export OBJDUMP = ${TOOLPREFIX}objdump
 
 export ASFLAGS = -march=loongarch64 -mabi=lp64s
-export ASFLAGS += -MD 
 export ASFLAGS += -I ./include
+export ASFLAGS += -MD 
 export CFLAGS = -Wall -Werror -O0 -fno-omit-frame-pointer -ggdb
-export CFLAGS += -MD
+export CFLAGS += -MD 
 export CFLAGS += -DNUMCPU=$(CONF_CPU_NUM)
 export CFLAGS += -march=loongarch64 -mabi=lp64s
 export CFLAGS += -ffreestanding -fno-common -nostdlib
@@ -39,6 +39,9 @@ all:
 	$(MAKE) -C kernel
 	@echo "_________________________"
 	@echo "-------- 生成成功 --------"
+
+initdir:
+	cd kernel; make initdir
 
 test:
 	$(MAKE) test -C kernel

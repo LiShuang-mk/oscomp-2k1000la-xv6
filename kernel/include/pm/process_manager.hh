@@ -8,7 +8,17 @@
 
 #pragma once 
 
+#include "smp/lock.hh"
+
 class ProcessManager
 {
-	
+private:
+	smp::Lock _pid_lock;
+	smp::Lock _wait_lock;
+
+public:
+	ProcessManager() = default;
+	void init( const char *pid_lock_name, const char *wait_lock_name );
 };
+
+extern ProcessManager k_pm;

@@ -6,15 +6,18 @@
 // --------------------------------------------------------------
 //
 
-#include "pm/process.hh"
-#include "mm/virtual_memory_manager.hh"
+#pragma once 
 
-Pcb k_proc_pool[ num_process ];
+#include "types.hh"
+#include "page.hh"
 
-void Pcb::init( const char *lock_name, uint gid )
+// virtual memory layout 
+
+enum vml : uint64
 {
-	_lock.init( lock_name );
-	_state = ProcState::unused;
-	_gid = gid;
-	_kstack = VirtualMemoryManager::kstack_vm_from_gid( _gid );
-}
+	vm_page_cnt_shift = 12, 
+	vm_start = 0x0,
+	vm_end = ( 0x1UL << pg_size_shift ) << vm_page_cnt_shift,
+	vm_kernel_start = vm_end >> 1,
+	vm_trap_frame = vm_end - pg_size, 
+};

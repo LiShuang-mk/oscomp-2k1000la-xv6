@@ -9,6 +9,15 @@
 #include "mm/virtual_memory_manager.hh"
 #include "klib/common.hh"
 #include "mm/page.hh"
+#include "mm/memlayout.hh"
+#include "pm/process.hh"
+
+uint64 VirtualMemoryManager::kstack_vm_from_gid( uint gid )
+{
+	if ( gid >= num_process )
+		panic( "vmm: invalid gid" );
+	return ( vml::vm_trap_frame - ( ( ( gid + 1 ) << 1 ) << pg_size_shift ) );
+}
 
 void VirtualMemoryManager::init()
 {

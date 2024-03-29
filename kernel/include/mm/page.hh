@@ -10,9 +10,10 @@
 
 #include "types.hh"
 
-enum PageEnum
+enum PageEnum : uint64 
 {
-	pg_size = CommonSize::_1K << 2, 		// 4KiB page 
+	pg_size_shift = 12, 
+	pg_size = 0x1 << pg_size_shift, 		// 4KiB page 
 };
 
 /// @brief This struct just be used to unused physical page;

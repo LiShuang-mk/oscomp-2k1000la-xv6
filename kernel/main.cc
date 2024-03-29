@@ -14,13 +14,20 @@ int main()
 {
 	if ( loongarch::Cpu::read_tp() == 0 )
 	{
+		// console init 
 		k_console.init( "console" );
+
+		// printf init 
 		kernellib::k_printer.init( &k_console, "printer" );
 		printf( "Hello World!\n" );
+
+		// physical memory init 
 		k_pmm.init( "physical memory manager",
 			loongarch::qemuls2k::memory::mem_start,
 			loongarch::qemuls2k::memory::mem_end );
 		printf( "pmm init\n" );
+
+		
 		while ( 1 ); // stop here
 	}
 	else

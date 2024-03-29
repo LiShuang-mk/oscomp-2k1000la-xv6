@@ -6,15 +6,18 @@
 // --------------------------------------------------------------
 //
 
+#include "pm/process_manager.hh"
 #include "pm/process.hh"
-#include "mm/virtual_memory_manager.hh"
 
-Pcb k_proc_pool[ num_process ];
+ProcessManager k_pm;
 
-void Pcb::init( const char *lock_name, uint gid )
+void ProcessManager::init( const char *pid_lock_name, const char *wait_lock_name )
 {
-	_lock.init( lock_name );
-	_state = ProcState::unused;
-	_gid = gid;
-	_kstack = VirtualMemoryManager::kstack_vm_from_gid( _gid );
+	_pid_lock.init( pid_lock_name );
+	_wait_lock.init( wait_lock_name );
+	for ( uint i = 0; i < num_process; ++i )
+	{
+		Pcb &p = k_proc_pool[ i ];
+		p.init( "pcb", i ); 
+	}
 }
