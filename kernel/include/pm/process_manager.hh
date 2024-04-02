@@ -10,15 +10,18 @@
 
 #include "smp/lock.hh"
 
-class ProcessManager
+namespace pm
 {
-private:
-	smp::Lock _pid_lock;
-	smp::Lock _wait_lock;
+	class ProcessManager
+	{
+	private:
+		smp::Lock _pid_lock;
+		smp::Lock _wait_lock;
 
-public:
-	ProcessManager() = default;
-	void init( const char *pid_lock_name, const char *wait_lock_name );
-};
+	public:
+		ProcessManager() = default;
+		void init( const char *pid_lock_name, const char *wait_lock_name );
+	};
 
-extern ProcessManager k_pm;
+	extern ProcessManager k_pm;
+}

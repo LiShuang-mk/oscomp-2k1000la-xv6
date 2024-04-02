@@ -9,15 +9,18 @@
 #include "pm/process_manager.hh"
 #include "pm/process.hh"
 
-ProcessManager k_pm;
-
-void ProcessManager::init( const char *pid_lock_name, const char *wait_lock_name )
+namespace pm
 {
-	_pid_lock.init( pid_lock_name );
-	_wait_lock.init( wait_lock_name );
-	for ( uint i = 0; i < num_process; ++i )
+	ProcessManager k_pm;
+
+	void ProcessManager::init( const char *pid_lock_name, const char *wait_lock_name )
 	{
-		Pcb &p = k_proc_pool[ i ];
-		p.init( "pcb", i ); 
+		_pid_lock.init( pid_lock_name );
+		_wait_lock.init( wait_lock_name );
+		for ( uint i = 0; i < num_process; ++i )
+		{
+			Pcb &p = k_proc_pool[ i ];
+			p.init( "pcb", i );
+		}
 	}
 }

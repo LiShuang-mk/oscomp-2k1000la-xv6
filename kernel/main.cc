@@ -22,11 +22,10 @@ int main()
 		printf( "Hello World!\n" );
 
 		// physical memory init 
-		k_pmm.init( "physical memory manager",
+		mm::k_pmm.init( "physical memory manager",
 			loongarch::qemuls2k::memory::mem_start,
 			loongarch::qemuls2k::memory::mem_end );
 		printf( "pmm init\n" );
-
 		
 		while ( 1 ); // stop here
 	}

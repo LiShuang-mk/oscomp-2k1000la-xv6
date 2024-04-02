@@ -1,6 +1,6 @@
 #!/bin/bash 
 
-RUNENV_PREFIX="/home/lishuang/qemu-loongarch/qemu-ls2k"
+RUNENV_PREFIX="/home/lishuang/qemu-loongarch/qemu0331"
 KERNEL_PREFIX=`pwd`
 
 cd $RUNENV_PREFIX

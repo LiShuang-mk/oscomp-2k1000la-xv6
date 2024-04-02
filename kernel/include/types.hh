@@ -15,6 +15,8 @@ using uint8 = unsigned char;
 using uint16 = unsigned short;
 using uint32 = unsigned int;
 using uint64 = unsigned long;
+using flag_t = uint64;
+using pte_t = uint64;
 
 enum CommonSize : uint64
 {

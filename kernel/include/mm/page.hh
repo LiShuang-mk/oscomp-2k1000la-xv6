@@ -9,26 +9,55 @@
 #pragma once 
 
 #include "types.hh"
+#include "smp/lock.hh"
 
-enum PageEnum : uint64 
+namespace mm
 {
-	pg_size_shift = 12, 
-	pg_size = 0x1 << pg_size_shift, 		// 4KiB page 
-};
+	enum PageEnum : uint64
+	{
+		pg_size_shift = 12,
+		pg_size = 0x1 << pg_size_shift, 		// 4KiB page 
+	};
 
-/// @brief This struct just be used to unused physical page;
-/// @details A simple link list connect all unused page;
-struct PageHead
-{
-	struct PageHead *_next;
-};
+	/// @brief This struct just be used to unused physical page;
+	/// @details A simple link list connect all unused page;
+	struct PageHead
+	{
+		struct PageHead *_next;
+	};
 
-constexpr uint64 page_round_up( uint64 addr )
-{
-	return ( ( addr + pg_size - 1 ) & ~( pg_size - 1 ) );
-}
+	constexpr uint64 page_round_up( uint64 addr )
+	{
+		return ( ( addr + pg_size - 1 ) & ~( pg_size - 1 ) );
+	}
 
-constexpr uint64 page_round_down( uint64 addr )
-{
-	return ( addr & ~( pg_size - 1 ) );
+	constexpr uint64 page_round_down( uint64 addr )
+	{
+		return ( addr & ~( pg_size - 1 ) );
+	}
+
+
+	enum PageStatus
+	{
+		undefined,		// error status 
+		free,			// free in kernel page list, only physical page using 
+		not_init, 		// has been alloc but not init 
+		used,			// is being used by process 
+	};
+
+
+	/// @brief virtual class for page 
+	class Page
+	{
+	protected:
+		void *_addr_start = 0;
+		PageStatus _stat = undefined;
+		smp::Lock _lock;
+
+	public:
+		/// @brief init page by writing null 
+		virtual void init_null() = 0;
+
+
+	};
 }

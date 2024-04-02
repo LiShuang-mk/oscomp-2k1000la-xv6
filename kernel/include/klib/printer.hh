@@ -41,7 +41,7 @@ namespace kernellib
 		void printint( int xx, int base, int sign );
 		void printptr( uint64 x );
 
-		static void panic( const char *s );
+		static void panic( const char *f, uint l, const char *info, ... );
 	};
 
 	extern Printer k_printer;

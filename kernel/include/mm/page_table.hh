@@ -8,13 +8,20 @@
 
 #pragma once 
 
-class PageTable
-{
-private:
-	uint64 _base_addr;
+#include "types.hh"
 
-public:
-	PageTable() {};
-	void set_base( uint64 addr ) { _base_addr = addr; }
-	uint64 get_base() { return _base_addr; }
-};
+namespace mm
+{
+	class PageTable
+	{
+	private:
+		uint64 _base_addr;
+
+	public:
+		PageTable() {};
+		void set_base( uint64 addr ) { _base_addr = addr; }
+		uint64 get_base() { return _base_addr; }
+	};
+
+	extern PageTable k_pagetable;
+}

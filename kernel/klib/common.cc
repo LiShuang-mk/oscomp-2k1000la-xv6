@@ -7,7 +7,6 @@
 //
 
 #include "klib/common.hh"
-#include "klib/printer.hh"
 
 void printf( const char *fmt, ... )
 {
@@ -28,7 +27,8 @@ void *memset( void *dst, int c, uint n )
 	return dst;
 }
 
-void panic( const char *s )
-{
-	kernellib::k_printer.panic( s );
-}
+// void panic( const char *s )
+// {
+// 	kernellib::k_printer.panic( s );
+// }
+

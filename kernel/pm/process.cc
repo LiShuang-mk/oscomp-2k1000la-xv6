@@ -7,14 +7,27 @@
 //
 
 #include "pm/process.hh"
+#include "mm/physical_memory_manager.hh"
 #include "mm/virtual_memory_manager.hh"
+#include "klib/common.hh"
 
-Pcb k_proc_pool[ num_process ];
-
-void Pcb::init( const char *lock_name, uint gid )
+namespace pm
 {
-	_lock.init( lock_name );
-	_state = ProcState::unused;
-	_gid = gid;
-	_kstack = VirtualMemoryManager::kstack_vm_from_gid( _gid );
+	Pcb k_proc_pool[ num_process ];
+
+	void Pcb::init( const char *lock_name, uint gid )
+	{
+		_lock.init( lock_name );
+		_state = ProcState::unused;
+		_gid = gid;
+		_kstack = mm::VirtualMemoryManager::kstack_vm_from_gid( _gid );
+	}
+
+	void Pcb::map_kstack( mm::PageTable &pt )
+	{
+		char *pa = ( char * ) mm::k_pmm.alloc_page();
+		if ( pa == 0 )
+			log_panic( "pcb map kstack: no memory" );
+
+	}
 }

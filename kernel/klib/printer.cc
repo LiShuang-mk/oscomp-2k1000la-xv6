@@ -7,6 +7,7 @@
 //
 
 #include "klib/printer.hh"
+#include "klib/common.hh"
 #include "console.hh"
 
 namespace kernellib
@@ -80,7 +81,7 @@ namespace kernellib
 			_lock.acquire();
 
 		if ( fmt == 0 )
-			panic( "null fmt" );
+			log_panic( "null fmt" );
 
 		for ( i = 0; ( c = fmt[ i ] & 0xff ) != 0; i++ )
 		{
@@ -130,11 +131,14 @@ namespace kernellib
 			_lock.release();
 	}
 
-	void Printer::panic( const char *s )
+	void Printer::panic( const char *f, uint l, const char *info, ... )
 	{
 		k_printer._locking = 0;
-		k_printer.printf( "panic: " );
-		k_printer.printf( s );
+		k_printer.printf( "!panic! => " );
+		k_printer.printf( f );
+		k_printer.printf( " : " );
+		k_printer.printf( "%d", l );
+		k_printer.printf( " :\n\t=> %s", info );
 		k_printer.printf( "\n" );
 		k_printer._panicked = 1;
 		while ( 1 );
