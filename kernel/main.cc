@@ -26,7 +26,12 @@ int main()
 			loongarch::qemuls2k::memory::mem_start,
 			loongarch::qemuls2k::memory::mem_end );
 		printf( "pmm init\n" );
-		
+
+		log__info( "测试info" );
+		log__warn( "测试warn" );
+		log_error( "测试error" );
+		log_panic( "中文panic" );
+
 		while ( 1 ); // stop here
 	}
 	else

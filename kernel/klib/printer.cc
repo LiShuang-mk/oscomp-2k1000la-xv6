@@ -134,13 +134,81 @@ namespace kernellib
 	void Printer::panic( const char *f, uint l, const char *info, ... )
 	{
 		k_printer._locking = 0;
-		k_printer.printf( "!panic! => " );
+#ifdef LINUX_BUILD
+		k_printer.printf( "\033[31m> panic => " );
+#else 
+		k_printer.printf( "> panic => " );
+#endif 
 		k_printer.printf( f );
 		k_printer.printf( " : " );
 		k_printer.printf( "%d", l );
 		k_printer.printf( " :\n\t=> %s", info );
-		k_printer.printf( "\n" );
+#ifdef LINUX_BUILD
+		k_printer.printf( "\n\033[0m" );
+#else 
+		k_printer.printf( "\n\033[0m" );
+#endif 
 		k_printer._panicked = 1;
 		while ( 1 );
+	}
+
+	void Printer::error( const char *f, uint l, const char *info, ... )
+	{
+		k_printer._locking = 0;
+#ifdef LINUX_BUILD
+		k_printer.printf( "\033[35m> error => " );
+#else 
+		k_printer.printf( "> error => " );
+#endif  
+		k_printer.printf( f );
+		k_printer.printf( " : " );
+		k_printer.printf( "%d", l );
+		k_printer.printf( " :\n\t=> %s", info );
+#ifdef LINUX_BUILD
+		k_printer.printf( "\n\033[0m" );
+#else 
+		k_printer.printf( "\n\033[0m" );
+#endif 
+		k_printer._locking = 1;
+	}
+
+	void Printer::warn( const char *f, uint l, const char *info, ... )
+	{
+		k_printer._locking = 0;
+#ifdef LINUX_BUILD
+		k_printer.printf( "\033[33m> warn  => " );
+#else 
+		k_printer.printf( "> warn  => " );
+#endif 
+		k_printer.printf( f );
+		k_printer.printf( " : " );
+		k_printer.printf( "%d", l );
+		k_printer.printf( " :\n\t=> %s", info );
+#ifdef LINUX_BUILD
+		k_printer.printf( "\n\033[0m" );
+#else 
+		k_printer.printf( "\n\033[0m" );
+#endif 
+		k_printer._locking = 1;
+	}
+
+	void Printer::info( const char *f, uint l, const char *info, ... )
+	{
+		k_printer._locking = 0;
+#ifdef LINUX_BUILD
+		k_printer.printf( "\033[36m> info  => " );
+#else 
+		k_printer.printf( "> info  => " );
+#endif 
+		k_printer.printf( f );
+		k_printer.printf( " : " );
+		k_printer.printf( "%d", l );
+		k_printer.printf( " :\n\t=> %s", info );
+#ifdef LINUX_BUILD
+		k_printer.printf( "\n\033[0m" );
+#else 
+		k_printer.printf( "\n\033[0m" );
+#endif 
+		k_printer._locking = 1;
 	}
 }

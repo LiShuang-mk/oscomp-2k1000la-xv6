@@ -37,27 +37,19 @@ namespace mm
 	}
 
 
-	enum PageStatus
-	{
-		undefined,		// error status 
-		free,			// free in kernel page list, only physical page using 
-		not_init, 		// has been alloc but not init 
-		used,			// is being used by process 
-	};
+	// enum PageStatus
+	// {
+	// 	undefined,		// error status 
+	// 	free,			// free in kernel page list, only physical page using 
+	// 	not_init, 		// has been alloc but not init 
+	// 	used,			// is being used by process 
+	// };
 
 
-	/// @brief virtual class for page 
-	class Page
-	{
-	protected:
-		void *_addr_start = 0;
-		PageStatus _stat = undefined;
-		smp::Lock _lock;
+	// /// @brief virtual class for page 
+	// class Page
+	// {
+	// public:
 
-	public:
-		/// @brief init page by writing null 
-		virtual void init_null() = 0;
-
-
-	};
+	// };
 }

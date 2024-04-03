@@ -1,4 +1,4 @@
-<font face="ubuntu mono">
+<font face="Liberation Mono">
 
 ###### OS大赛 - 内核设计loongarch赛道 - 俺争取不掉队
 

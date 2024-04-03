@@ -3,8 +3,11 @@
 
 # configure 
 CONF_CPU_NUM = 1
+# CONF_LINUX_BUILD = 1
 
 # make variable define 
+
+HOST_OS = $(shell uname)
 
 export TOOLPREFIX = loongarch64-linux-gnu-
 
@@ -21,6 +24,9 @@ export ASFLAGS += -MD
 export CFLAGS = -Wall -Werror -O0 -fno-omit-frame-pointer -ggdb
 export CFLAGS += -MD 
 export CFLAGS += -DNUMCPU=$(CONF_CPU_NUM)
+ifeq ($(HOST_OS),Linux)
+export CFLAGS += -DLINUX_BUILD=1
+endif
 export CFLAGS += -march=loongarch64 -mabi=lp64s
 export CFLAGS += -ffreestanding -fno-common -nostdlib
 export CFLAGS += -I ./include -fno-stack-protector
@@ -36,6 +42,7 @@ export BUILDPATH = $(WORKPATH)/build
 # rules define 
 
 all:
+	@echo "当前主机操作系统：$(HOST_OS)"
 	$(MAKE) -C kernel
 	@echo "_________________________"
 	@echo "-------- 生成成功 --------"

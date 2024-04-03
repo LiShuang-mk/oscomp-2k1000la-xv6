@@ -7,8 +7,17 @@
 //
 
 #include "mm/page_table.hh"
+#include "mm/memlayout.hh"
+#include "klib/common.hh"
 
 namespace mm
 {
 	PageTable k_pagetable;
+
+	Pte mm::PageTable::walk( uint64 va, bool alloc )
+	{
+		if ( va >= vml::vm_end )
+			log_panic( "va out of bounds" );
+			return Pte();
+	}
 }

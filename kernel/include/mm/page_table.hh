@@ -9,6 +9,7 @@
 #pragma once 
 
 #include "types.hh"
+#include "mm/pte.hh"
 
 namespace mm
 {
@@ -21,6 +22,12 @@ namespace mm
 		PageTable() {};
 		void set_base( uint64 addr ) { _base_addr = addr; }
 		uint64 get_base() { return _base_addr; }
+
+		/// @brief 软件遍历页表，通常，只能由全局页目录调用
+		/// @param va virtual address 
+		/// @param alloc either alloc physical page or not 
+		/// @return PTE in the last level page table 
+		Pte walk( uint64 va, bool alloc );
 	};
 
 	extern PageTable k_pagetable;
