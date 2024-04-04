@@ -29,17 +29,22 @@ namespace mm
 		pg_size = 0x1 << pg_size_shift, 		// 4KiB page 
 		pg_offset_mask = 0xFFFUL,
 
-		pt_bits_mask = 0x1FFUL, 
+		pt_bits_null = 0, 
+		pt_bits_width = 9,
+		pt_bits_mask = 0x1FFUL,
 		pt_vpn_shift = pg_size_shift,
 		pt_vpn_mask = pt_bits_mask << pt_vpn_shift,
 
 		dir1_vpn_shift = 21,
 		dir2_vpn_shift = 30, 
 		dir3_vpn_shift = 39,
+		dir4_vpn_shift = 48,
 
 		dir1_vpn_mask = pt_bits_mask << dir1_vpn_shift,
 		dir2_vpn_mask = pt_bits_mask << dir2_vpn_shift,
 		dir3_vpn_mask = pt_bits_mask << dir3_vpn_shift,
+
+		pte_width = 0x0UL 
 	};
 
 	/// @brief This struct just be used to unused physical page;

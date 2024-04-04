@@ -8,6 +8,7 @@
 
 #pragma once 
 
+#include "smp/lock.hh"
 #include "mm/physical_memory_manager.hh"
 #include "mm/page_table.hh"
 
@@ -16,14 +17,14 @@ namespace mm
 	class VirtualMemoryManager
 	{
 	private:
-
+		smp::Lock _lock;
 
 	public:
 		static uint64 kstack_vm_from_gid( uint gid );
 
 	public:
 		VirtualMemoryManager() {};
-		void init();
+		void init( const char *lock_name );
 
 		/// @brief map va to pa through pt 
 		/// @param pt pagetable to use 
@@ -36,7 +37,7 @@ namespace mm
 
 
 	private:
-		
+
 	};
 
 	extern VirtualMemoryManager k_vmm;

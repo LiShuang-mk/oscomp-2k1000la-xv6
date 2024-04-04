@@ -11,7 +11,7 @@
 #include "types.hh"
 
 extern "C" {
-	#include "hal/laregs.h"
+#include "hal/laregs.h"
 }
 
 namespace loongarch
@@ -21,18 +21,24 @@ namespace loongarch
 		enum CsrAddr : uint64
 		{
 			crmd = 0x0,
+			tlbehi = 0x11,
+			asid = 0x18,
+			pgdl = 0x19,
+			pgdh = 0x1a,
+			pgd = 0x1b,
+			pwcl = 0x1c,
+			pwch = 0x1d, 
+			stlbps = 0x1e,
 			cpuid = 0x20,
 			save0 = 0x30,
+			tlbrentry = 0x88,
+			tlbrbadv = 0x89,
+			tlbrsave = 0x8b,
+			tlbrehi = 0x8e,
 			dmwin0 = 0x180,
 			dmwin1 = 0x181,
 			dmwin2 = 0x182,
 			dmwin3 = 0x183,
-			tlbehi = 0x11,
-			pgdl = 0x19,
-			pgd = 0x1b,
-			tlbrentry = 0x88,
-			tlbrbadv = 0x89,
-			tlbrsave = 0x8b,
 		};
 
 		/// @brief	s: shift;

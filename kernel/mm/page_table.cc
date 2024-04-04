@@ -66,7 +66,7 @@ namespace mm
 		{
 			if ( !alloc )
 			{
-				log__warn( "try to walk to next level but next level page table is not alloced." );
+				log_panic( "try to walk to next level but next level page table is not alloced." );
 				return false;
 			}
 			void *page_addr = k_pmm.alloc_page();

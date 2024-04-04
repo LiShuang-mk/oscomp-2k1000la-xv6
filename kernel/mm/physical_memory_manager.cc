@@ -65,7 +65,7 @@ namespace mm
 			_fill_junk( ( void* ) r, MemJunk::alloc_junk );
 			// memset( ( char* ) r, 5, pg_size );
 
-		return 0;
+		return ( void * ) r;
 	}
 
 

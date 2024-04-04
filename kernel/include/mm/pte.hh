@@ -38,6 +38,6 @@ namespace mm
 		bool is_executable() { return ( ( *_data_addr & loongarch::PteEnum::nx_m ) == 0 ); }
 		bool is_restrict_plv() { return ( ( *_data_addr & loongarch::PteEnum::rplv_m ) != 0 ); }
 
-		void set_data( uint64 data ) { *_data_addr &= data; }
+		void set_data( uint64 data ) { *_data_addr |= data; }
 	};
 }
