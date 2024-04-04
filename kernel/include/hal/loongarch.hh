@@ -84,4 +84,12 @@ namespace loongarch
 		rplv_m = 0x1UL << rplv_s,
 	};
 
+	enum MatEnum : uint
+	{
+		mat_suc = 0x0,			// 强序非缓存
+		mat_cc = 0x1,			// 一致可缓存
+		mat_wuc = 0x2,			// 弱序非缓存
+		mat_undefined = 0x3 
+	};
+
 } // namespace loongarch

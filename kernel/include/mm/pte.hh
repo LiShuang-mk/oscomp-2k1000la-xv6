@@ -19,22 +19,25 @@ namespace mm
 	class Pte
 	{
 	private:
-		pte_t _data = 0;
+		pte_t *_data_addr = 0;
 	public:
 		Pte() = default;
-		Pte( uint64 data ) : _data( data ) {};
+		Pte( pte_t *addr ) : _data_addr( addr ) {};
+		void set_addr( pte_t *addr ) { _data_addr = addr; }
+		bool is_null() { return _data_addr == 0; }
 
+		bool is_valid() { return ( ( *_data_addr & loongarch::PteEnum::valid_m ) != 0 ); }
+		bool is_dirty() { return ( ( *_data_addr & loongarch::PteEnum::dirty_m ) != 0 ); }
+		uint64 plv() { return ( ( *_data_addr & loongarch::PteEnum::plv_m ) ); }
+		uint64 mat() { return ( ( *_data_addr & loongarch::PteEnum::mat_m ) ); }
+		bool is_global() { return ( ( *_data_addr & loongarch::PteEnum::b_global_m ) != 0 ); }
+		bool is_present() { return ( ( *_data_addr & loongarch::PteEnum::presence_m ) != 0 ); }
+		bool is_writable() { return ( ( *_data_addr & loongarch::PteEnum::writable_m ) != 0 ); }
+		void *pa() { return ( void* ) ( ( *_data_addr & loongarch::PteEnum::b_pa_m ) | loongarch::qemuls2k::dmwin::win_0 ); }
+		bool is_readable() { return ( ( *_data_addr & loongarch::PteEnum::nr_m ) == 0 ); }
+		bool is_executable() { return ( ( *_data_addr & loongarch::PteEnum::nx_m ) == 0 ); }
+		bool is_restrict_plv() { return ( ( *_data_addr & loongarch::PteEnum::rplv_m ) != 0 ); }
 
-		bool is_valid() { return ( ( _data & loongarch::PteEnum::valid_m ) != 0 ); }
-		bool is_dirty() { return ( ( _data & loongarch::PteEnum::dirty_m ) != 0 ); }
-		uint64 plv() { return ( ( _data & loongarch::PteEnum::plv_m ) ); }
-		uint64 mat() { return ( ( _data & loongarch::PteEnum::mat_m ) ); }
-		bool is_global() { return ( ( _data & loongarch::PteEnum::b_global_m ) != 0 ); }
-		bool is_present() { return ( ( _data & loongarch::PteEnum::presence_m ) != 0 ); }
-		bool is_writable() { return ( ( _data & loongarch::PteEnum::writable_m ) != 0 ); }
-		void *pa() { return ( void* ) ( ( _data & loongarch::PteEnum::b_pa_m ) ); }
-		bool is_readable() { return ( ( _data & loongarch::PteEnum::nr_m ) == 0 ); }
-		bool is_executable() { return ( ( _data & loongarch::PteEnum::nx_m ) == 0 ); }
-		bool is_restrict_plv() { return ( ( _data & loongarch::PteEnum::rplv_m ) != 0 ); }
+		void set_data( uint64 data ) { *_data_addr &= data; }
 	};
 }

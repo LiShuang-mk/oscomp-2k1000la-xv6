@@ -48,7 +48,7 @@ namespace pm
 		Pcb *parent;         // Parent process
 
 		// these are private to the process, so p->lock need not be held.
-		uint64 _kstack;               // Virtual address of kernel stack
+		uint64 _kstack = 0;               // Virtual address of kernel stack
 		uint64 _sz;                   // Size of process memory (bytes)
 		mm::PageTable _pt;    // User lower half address page table
 		struct TrapFrame *_trapframe; // data page for uservec.S, use DMW address

@@ -16,7 +16,7 @@ namespace loongarch
 
 	inline int Cpu::get_intr_stat()
 	{
-		uint32 x = _read_crmd();
+		uint32 x = read_csr( csr::CsrAddr::crmd );
 		return ( x & csr::crmd::ie_m ) != 0;
 	}
 
@@ -51,55 +51,23 @@ namespace loongarch
 
 // ---- private:
 
-	// inline uint32 Cpu::_read_csr( uint32 x )
-	// {
-	// 	uint32 v;
-
-	// 	asm volatile(
-	// 		"csrrd %0, %1"
-	// 		: "=r" ( v )
-	// 		: "r" ( x )
-	// 		);
-	// 	return v;
-	// }
-
-	// inline void Cpu::_write_csr( uint32 x, uint32 v )
-	// {
-	// 	asm volatile(
-	// 		"csrwr %0, %1"
-	// 		:: "r" ( v ),
-	// 		"r" ( x )
-	// 		);
-	// }
-
-	inline uint32 Cpu::_read_crmd()
+	uint64 Cpu::read_csr( csr::CsrAddr r )
 	{
-		uint32 v;
-
-		asm volatile(
-			"csrrd %0, %1"
-			: "=r" ( v )
-			: "i" ( csr::CsrAddr::crmd )
-			);
-		return v;
+		return csr::_read_csr_( r );
 	}
 
-	inline void Cpu::_write_crmd( uint32 v )
+	void Cpu::write_csr( csr::CsrAddr r, uint64 d )
 	{
-		asm volatile(
-			"csrwr %0, %1"
-			:: "r" ( v ),
-			"i" ( csr::CsrAddr::crmd )
-			);
+		return csr::_write_csr_( r, d );
 	}
 
 	void Cpu::_intr_on()
 	{
-		_write_crmd( _read_crmd() | csr::crmd::ie_m );
+		write_csr( csr::CsrAddr::crmd, read_csr( csr::CsrAddr::crmd ) | csr::crmd::ie_m );
 	}
 
 	void Cpu::_intr_off()
 	{
-		_write_crmd( _read_crmd() & ~csr::crmd::ie_m );
+		write_csr( csr::CsrAddr::crmd, read_csr( csr::CsrAddr::crmd ) & ~csr::crmd::ie_m );
 	}
 } // namespace loongarch

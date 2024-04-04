@@ -10,11 +10,15 @@
 
 #include "types.hh"
 
+extern "C" {
+	#include "hal/laregs.h"
+}
+
 namespace loongarch
 {
 	namespace csr
 	{
-		enum CsrAddr 
+		enum CsrAddr : uint64
 		{
 			crmd = 0x0,
 			cpuid = 0x20,
@@ -50,6 +54,16 @@ namespace loongarch
 			we_s = 0x9,
 			we_m = 0x1 << we_s,
 		};
+
+		static inline uint64 _read_csr_( CsrAddr _csr )
+		{
+			return _la_r_csr_[ ( uint64 ) _csr ]();
+		}
+
+		static inline void _write_csr_( CsrAddr _csr, uint64 _data )
+		{
+			return _la_w_csr_[ ( uint64 ) _csr ]( _data );
+		}
 
 	} // namespace csr
 } // namespace loongarch

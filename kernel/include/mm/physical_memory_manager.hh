@@ -17,7 +17,8 @@ namespace mm
 	enum MemJunk : uint64
 	{
 		freed_junk = 0x0101010101010101UL,
-		alloc_junk = 0x0505050505050505UL
+		alloc_junk = 0x0505050505050505UL,
+		null_junk = 0x0UL
 	};
 
 	class PhysicalMemoryManager
@@ -33,6 +34,7 @@ namespace mm
 		void init( const char *name, uint64 ram_base, uint64 ram_end );
 		void free_page( void *pa );
 		void *alloc_page();
+		void clear_page( void *pa );
 
 	private:
 		void _free_range( void *pa_start, void *pa_end );

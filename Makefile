@@ -32,6 +32,7 @@ export CFLAGS += -ffreestanding -fno-common -nostdlib
 export CFLAGS += -I ./include -fno-stack-protector
 export CFLAGS += -fno-pie -no-pie
 export CXXFLAGS = $(CFLAGS)
+# export CXXFLAGS += -std=gnu++23
 export LDFLAGS = -z max-page-size=4096
 
 export WORKPATH = $(shell pwd)

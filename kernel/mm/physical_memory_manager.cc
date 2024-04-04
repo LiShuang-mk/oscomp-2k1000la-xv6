@@ -86,4 +86,9 @@ namespace mm
 	{
 		return _alloc_page();
 	}
+
+	void PhysicalMemoryManager::clear_page( void *pa )
+	{
+		_fill_junk( pa, MemJunk::null_junk );
+	}
 }

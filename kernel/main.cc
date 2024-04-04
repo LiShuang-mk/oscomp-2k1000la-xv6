@@ -4,6 +4,7 @@
 #include "hal/loongarch.hh"
 #include "hal/cpu.hh"
 #include "mm/physical_memory_manager.hh"
+#include "pm/process_manager.hh"
 #include "klib/printer.hh"
 #include "klib/common.hh"
 
@@ -26,6 +27,12 @@ int main()
 			loongarch::qemuls2k::memory::mem_start,
 			loongarch::qemuls2k::memory::mem_end );
 		printf( "pmm init\n" );
+
+		// process init 
+		pm::k_pm.init( "next pid", "wait lock" );
+		printf( "pm init\n" );
+
+		
 
 		log__info( "测试info" );
 		log__warn( "测试warn" );
