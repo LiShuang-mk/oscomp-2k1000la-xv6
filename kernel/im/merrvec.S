@@ -6,23 +6,10 @@
 // --------------------------------------------------------------
 //
 
-#pragma once 
-
-#include "smp/lock.hh"
-
-namespace im
-{
-	class ExceptionManager
-	{
-	private:
-		smp::Lock _lock;
-
-	public:
-		ExceptionManager() = default;
-		void init( const char *lock_name );
-		void kernel_trap();
-		void machine_trap();
-	};
-
-	extern ExceptionManager k_em;
-} // namespace im
+.section merrentry
+.globl machine_trap
+.globl handle_merr
+.align 0x4
+handle_merr:
+    bl machine_trap
+    ertn

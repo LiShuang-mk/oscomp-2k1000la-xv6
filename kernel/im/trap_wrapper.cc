@@ -6,23 +6,17 @@
 // --------------------------------------------------------------
 //
 
-#pragma once 
+#include "im/trap_wrapper.hh"
+#include "im/exception_manager.hh"
 
-#include "smp/lock.hh"
-
-namespace im
-{
-	class ExceptionManager
+extern "C" {
+	void kerneltrap( void )
 	{
-	private:
-		smp::Lock _lock;
+		im::k_em.kernel_trap();
+	}
 
-	public:
-		ExceptionManager() = default;
-		void init( const char *lock_name );
-		void kernel_trap();
-		void machine_trap();
-	};
-
-	extern ExceptionManager k_em;
-} // namespace im
+	void machine_trap( void )
+	{
+		im::k_em.machine_trap();
+	}
+}

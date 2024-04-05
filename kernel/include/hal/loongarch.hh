@@ -30,27 +30,6 @@ namespace loongarch
 		uint64 fp;
 	};
 
-	namespace qemuls2k
-	{
-		enum dmwin : uint64
-		{
-			win_0 = 0x9UL << 60,
-		};
-
-		/// @brief interface address 
-		enum InterAddr : uint64
-		{
-			uart0 = 0x1fe20000UL | dmwin::win_0,
-		};
-
-		enum memory : uint64
-		{
-			mem_start = 0x90000000UL | dmwin::win_0,
-			mem_size = CommonSize::_1M << 7, 			// 128M 
-			mem_end = mem_start + mem_size
-		};
-	} // namespace qemuls2k
-
 	enum PteEnum : uint64
 	{
 		valid_s = 0,

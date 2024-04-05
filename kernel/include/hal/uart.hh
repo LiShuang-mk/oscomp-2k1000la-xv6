@@ -8,7 +8,6 @@
 
 #pragma once 
 
-#include "hal/loongarch.hh"
 #include "smp/lock.hh"
 
 class UartManager

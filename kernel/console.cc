@@ -7,6 +7,7 @@
 //
 
 #include "console.hh"
+#include "hal/qemu_ls2k.hh"
 
 Console k_console;
 

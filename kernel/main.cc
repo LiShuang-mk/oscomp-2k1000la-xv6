@@ -1,5 +1,6 @@
 #include "console.hh"
 #include "hal/loongarch.hh"
+#include "hal/qemu_ls2k.hh"
 #include "hal/cpu.hh"
 #include "tm/timer_manager.hh"
 #include "im/exception_manager.hh"
@@ -44,6 +45,16 @@ int main()
 		// exception init 
 		im::k_em.init( "exception manager " );
 		log__info( "em init" );
+
+		// uint32 apbh[ 64 ];
+		// uint64 addr = ( ( 0xFE0UL << 28 ) | ( 0x0UL << 16 ) | ( 0x2UL << 11 ) | ( 0x0UL << 8 ) );
+		// printf( "addr: \n%p\n", addr | loongarch::qemuls2k::dmwin::win_1 );
+		// printf( "head: \n" );
+		// volatile uint32 * p = ( volatile uint32 * ) ( addr | loongarch::qemuls2k::dmwin::win_1 );
+		// for ( int i = 0; i < 16; i++, p++ )
+		// 	apbh[ i ] = *p;
+		// for ( int i = 0; i < 16; i++ )
+		// 	printf( "%x\n", apbh[ i ] );
 
 		while ( 1 ); // stop here
 	}

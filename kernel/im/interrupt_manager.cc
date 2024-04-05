@@ -6,23 +6,9 @@
 // --------------------------------------------------------------
 //
 
-#pragma once 
-
-#include "smp/lock.hh"
+#include "im/interrupt_manager.hh"
 
 namespace im
 {
-	class ExceptionManager
-	{
-	private:
-		smp::Lock _lock;
-
-	public:
-		ExceptionManager() = default;
-		void init( const char *lock_name );
-		void kernel_trap();
-		void machine_trap();
-	};
-
-	extern ExceptionManager k_em;
+	InterruptMananger k_im;
 } // namespace im

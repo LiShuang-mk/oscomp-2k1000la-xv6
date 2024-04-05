@@ -54,6 +54,9 @@ namespace loongarch
 		static void write_csr( csr::CsrAddr r, uint64 d );
 		static uint64 read_csr( csr::CsrAddr r );
 
+		static inline void interrupt_on() { return _intr_on(); }
+		static inline void interrupt_off() { return _intr_off(); }
+
 	private:
 		static void _intr_on();
 		static void _intr_off();

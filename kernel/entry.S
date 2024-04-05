@@ -12,8 +12,9 @@ _entry:
         jirl        $zero, $t0, 0
 0:      li.d        $t0, 0x9000000000000011   # CA, PLV0, 0x9000 xxxx xxxx xxxx
         csrwr       $t0, LOONGARCH_CSR_DMWIN0 
-        li.d        $t0, 0x0000000000000000   
+        li.d        $t0, 0x8000000000000001	  # UA, PLV0, 0x8000 xxxx xxxx xxxx   
         csrwr       $t0, LOONGARCH_CSR_DMWIN1
+        li.d        $t0, 0x0000000000000000 
         csrwr       $t0, LOONGARCH_CSR_DMWIN2
         csrwr       $t0, LOONGARCH_CSR_DMWIN3
         csrwr       $t0, LOONGARCH_CSR_TLBRENTRY	
