@@ -29,4 +29,10 @@ namespace pm
 		uint64 s8;
 		uint64 fp;
 	};
+
+	struct vma{
+		uint64 address; 	//start of mem block
+		int length;			//length of mem block
+		int next;			//next block	
+	};
 }

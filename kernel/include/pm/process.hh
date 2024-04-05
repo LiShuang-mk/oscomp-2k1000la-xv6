@@ -11,7 +11,7 @@
 #include "smp/lock.hh"
 #include "mm/page_table.hh"
 #include "pm/context.hh"
-
+#include "pm/shmmanager.hh"
 struct TrapFrame;
 
 namespace pm
@@ -33,6 +33,7 @@ namespace pm
 	class Pcb
 	{
 		friend ProcessManager;
+		friend ShmManager;
 	private:
 		smp::Lock _lock;
 		int _gid = num_process;					// global ID in pool 
@@ -68,6 +69,9 @@ namespace pm
 		//about msg queue 
 		uint _mqmask;
 
+		// vm
+		struct vma *vm[10];  // virtual memory area
+		
 	public:
 		Pcb() {};
 		void init( const char *lock_name, uint gid );
