@@ -35,6 +35,7 @@ es_buildpath = $(subst /,\/,$(BUILDPATH))
 all: $(BUILDPATH)/kernel.elf
 
 initdir:
+	mkdir -p $(BUILDPATH)
 	cd $(BUILDPATH); for dir in $(submod); do mkdir -p "$(BUILDPATH)/kernel/$$dir"; done
 
 $(BUILDPATH)/kernel.elf: $(objs) kernel.ld 
