@@ -1,8 +1,8 @@
-#define NCPU 1 
-
 #include "console.hh"
 #include "hal/loongarch.hh"
 #include "hal/cpu.hh"
+#include "tm/timer_manager.hh"
+#include "im/exception_manager.hh"
 #include "mm/physical_memory_manager.hh"
 #include "mm/virtual_memory_manager.hh"
 #include "pm/process_manager.hh"
@@ -10,7 +10,7 @@
 #include "klib/common.hh"
 
 // entry.S needs one stack per CPU.
-__attribute__( ( aligned( 16 ) ) ) char stack0[ 4096 * NCPU ];
+__attribute__( ( aligned( 16 ) ) ) char stack0[ 4096 * NUMCPU ];
 
 int main()
 {
@@ -36,6 +36,14 @@ int main()
 		// vm init 
 		mm::k_vmm.init( "virtual memory manager " );
 		log__info( "vm init" );
+
+		// timer init 
+		tm::k_tm.init( "timer manager" );
+		log__info( "tm init" );
+
+		// exception init 
+		im::k_em.init( "exception manager " );
+		log__info( "em init" );
 
 		while ( 1 ); // stop here
 	}

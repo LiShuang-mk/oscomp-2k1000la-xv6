@@ -4,3 +4,4 @@
 **/kernel.elf
 ls2k_debug.sh
 build/kernel.elf
+.vscode/settings.json

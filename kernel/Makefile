@@ -1,5 +1,5 @@
 
-submod = hal smp klib mm pm
+submod = hal smp klib mm pm im tm 
 
 
 srcs = $(wildcard *.cc *.c *.S) 
