@@ -24,12 +24,12 @@ namespace pm
 		}
 	}
 
-	// Pcb *ProcessManager::get_cur_pcb()
-	// {
-	// 	loongarch::Cpu::push_intr_off();
-	// 	loongarch::Cpu *c_cpu = Cpu::get_cpu();
-	// 	pm::Pcb *pcb = pm::k_proc_pool[0];//c_cpu->_cur_proc;
-	// 	loongarch::Cpu::pop_intr_off();
-	// 	return pcb;
-	// }
+	Pcb *ProcessManager::get_cur_pcb()
+	{
+		loongarch::Cpu::push_intr_off();
+		loongarch::Cpu *c_cpu = loongarch::Cpu::get_cpu();
+		pm::Pcb *pcb = c_cpu->get_cur_proc();
+		loongarch::Cpu::pop_intr_off();
+		return pcb;
+	}
 }

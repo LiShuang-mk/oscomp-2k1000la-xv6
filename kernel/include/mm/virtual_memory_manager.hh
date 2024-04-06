@@ -34,8 +34,28 @@ namespace mm
 		/// @param flags page table entry flags 
 		/// @return success if true 
 		bool map_pages( PageTable &pt, uint64 va, uint64 size, uint64 pa, flag_t flags );
-
-
+		/// @brief allocate shm
+		/// @param pt pagetable to use
+		/// @param oldshm oldshm lower address
+		/// @param newshm newshm lower address
+		/// @param sz shmsize
+		/// @param phyaddr 
+		/// @return newshm if success
+		uint64 allocshm( PageTable &pt, uint64 oldshm, uint64 newshm, uint64 sz, void *phyaddr[MAX_SHM_PGNUM] );
+		/// @brief map shm pages to physical pages, it is similar with map_pages
+		/// @param pt pagetable to use
+		/// @param oldshm oldshm lower address
+		/// @param newshm newshm lower address
+		/// @param sz shmsize
+		/// @param phyaddr 
+		/// @return newshm if success
+		uint64 mapshm( PageTable &pt, uint64 oldshm, uint64 newshm, uint sz, void **phyaddr );
+		/// @brief deallocate shm , when allocate shm failed
+		/// @param pt pagetable to use
+		/// @param oldshm oldshm lower address
+		/// @param newshm newshm lower address 
+		/// @return oldshm if success
+		uint64 deallocshm(PageTable &pt, uint64 oldshm, uint64 newshm );
 	private:
 
 	};

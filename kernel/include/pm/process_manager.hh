@@ -7,7 +7,7 @@
 //
 
 #pragma once 
-
+#include "pm/process.hh"
 #include "smp/lock.hh"
 
 namespace pm
@@ -21,6 +21,7 @@ namespace pm
 	public:
 		ProcessManager() = default;
 		void init( const char *pid_lock_name, const char *wait_lock_name );
+		Pcb *get_cur_pcb();
 	};
 
 	extern ProcessManager k_pm;
