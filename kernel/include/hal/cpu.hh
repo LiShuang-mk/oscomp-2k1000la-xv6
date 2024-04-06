@@ -10,12 +10,13 @@
 
 #include "hal/loongarch.hh"
 #include "hal/csr.hh"
-
+#include "pm/process.hh"
 namespace loongarch
 {
 	class Cpu
 	{
 	private:
+		pm::Pcb *_cur_proc;			// 当前进程
 		struct Context _context;	// 进程上下文
 		int _num_off;				// 关闭中断层数
 		int _int_ena;				// 关中断前中断开关状态
@@ -56,7 +57,7 @@ namespace loongarch
 
 		static inline void interrupt_on() { return _intr_on(); }
 		static inline void interrupt_off() { return _intr_off(); }
-
+		pm::Pcb *get_cur_proc() { return _cur_proc; }
 	private:
 		static void _intr_on();
 		static void _intr_off();
