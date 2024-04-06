@@ -71,9 +71,14 @@ namespace loongarch
 		/// @param x > core number 
 		/// @param y > pin number 
 		/// @return 
-		constexpr uchar itr_route_xy( uchar x, uchar y )
+		constexpr inline uchar itr_route_xy( uchar x, uchar y )
 		{
 			return ( ( 0x1U << x ) << 0 ) | ( ( 0x1U << y ) << 4 );
+		}
+
+		constexpr inline void write_itr_cfg( ItrCfg itrReg, uint32 data )
+		{
+			*( volatile uint32 * ) itrReg = data;
 		}
 	} // namespace qemuls2k
 

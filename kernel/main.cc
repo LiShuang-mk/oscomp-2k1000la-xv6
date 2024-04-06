@@ -4,6 +4,7 @@
 #include "hal/cpu.hh"
 #include "tm/timer_manager.hh"
 #include "im/exception_manager.hh"
+#include "im/interrupt_manager.hh"
 #include "mm/physical_memory_manager.hh"
 #include "mm/virtual_memory_manager.hh"
 #include "pm/process_manager.hh"
@@ -46,6 +47,10 @@ int main()
 		// exception init 
 		im::k_em.init( "exception manager " );
 		log__info( "em init" );
+
+		// interrupt init 
+		im::k_im.init( "interrupt init" );
+		log__info( "im init" );
 
 		// sharemem init
 		pm::k_shmManager.init( "shm lock" );

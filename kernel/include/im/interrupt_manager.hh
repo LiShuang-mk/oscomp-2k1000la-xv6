@@ -8,11 +8,18 @@
 
 #pragma once 
 
+#include "smp/lock.hh"
+
 namespace im
 {
 	class InterruptManager
 	{
+	private:
+		smp::Lock _lock;
 
+	public:
+		InterruptManager() = default;
+		void init( const char *lock_name );
 	};
 
 	extern InterruptManager k_im;
