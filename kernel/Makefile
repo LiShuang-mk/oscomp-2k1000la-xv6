@@ -1,15 +1,25 @@
 
-submod = hal smp klib mm pm im tm 
+#submod = hal smp klib mm pm im tm 
 
+# card src function
+# -> $1: directory
+# -> $2: file type 
+card_src = $(foreach d,$(wildcard $1*),$(call card_src,$d/,$2)$(filter $2,$d))
 
-srcs = $(wildcard *.cc *.c *.S) 
-srcs += $(foreach dir, $(submod), \
-		$(wildcard $(dir)/*.cc $(dir)/*.c $(dir)/*.S) \
-		)
+card_dir = $(foreach d, $(filter-out include/, $(wildcard $1*/)), $(call card_dir, $1$d) $d)
 
-c_src = $(filter %.c,$(srcs))
-cc_src = $(filter %.cc,$(srcs))
-s_src = $(filter %.S,$(srcs))
+submod = $(call card_dir,)
+
+#srcs = $(wildcard *.cc *.c *.S) 
+#srcs += $(foreach dir, $(submod), \
+#		$(wildcard $(dir)/*.cc $(dir)/*.c $(dir)/*.S) \ 
+#		)
+
+c_src = $(foreach d, $(submod), $(wildcard $(d)*.c)) $(wildcard *.c)
+cc_src = $(foreach d, $(submod), $(wildcard $(d)*.cc)) $(wildcard *.cc)
+s_src = $(foreach d, $(submod), $(wildcard $(d)*.S)) $(wildcard *.S)
+
+srcs = $(c_src) $(cc_src) $(s_src)
 
 c_obj = $(patsubst %.c,$(BUILDPATH)/kernel/%.o,$(c_src))
 cc_obj = $(patsubst %.cc,$(BUILDPATH)/kernel/%.o,$(cc_src))
@@ -58,10 +68,15 @@ $(s_obj): $(BUILDPATH)/kernel/%.o: %.S
 -include $(depends)
 
 test:
-	@echo "--------> depd  : $(depends)"
+	@echo $(submod)
+#	@echo $(call test_wild, $(test_dir), %.$(test_cc_ext))
+#	@echo $(call test_wild, $(test_dir), %.$(test_c_ext))
+#	@echo $(call test_wild, $(test_dir), %.$(test_S_ext))
+#	@echo "--------> depd  : $(depends)"
 	@echo "--------> srcs  : $(c_src)"
 	@echo "--------> srcs  : $(cc_src)"
-	@echo "--------> srcs  : $(s_src)"
+# @echo "--------> srcs  : $(s_src)"
+# @echo "--------> srcs  : $(srcs)"
 #	@echo "--------> objs  : $(objs)"
 #	@echo "--------> build : $(BUILDPATH)"
 
