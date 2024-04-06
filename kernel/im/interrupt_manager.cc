@@ -10,5 +10,5 @@
 
 namespace im
 {
-	InterruptMananger k_im;
+	InterruptManager k_im;
 } // namespace im
