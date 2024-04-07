@@ -32,4 +32,20 @@ namespace pm
 		loongarch::Cpu::pop_intr_off();
 		return pcb;
 	}
+
+	bool ProcessManager::change_state( Pcb *p, ProcState state )
+	{
+		_pid_lock.acquire();
+		p->_lock.acquire();
+		if ( p->_state == ProcState::unused )
+		{
+			p->_lock.release();
+			_pid_lock.release();
+			return false;
+		}
+		p->_state = state;
+		p->_lock.release();
+		_pid_lock.release();
+		return true;
+	}
 }

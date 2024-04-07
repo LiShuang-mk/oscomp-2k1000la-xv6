@@ -41,7 +41,7 @@ namespace mm
 		/// @param sz shmsize
 		/// @param phyaddr 
 		/// @return newshm if success
-		uint64 allocshm( PageTable &pt, uint64 oldshm, uint64 newshm, uint64 sz, void *phyaddr[MAX_SHM_PGNUM] );
+		uint64 allocshm( PageTable &pt, uint64 oldshm, uint64 newshm, uint64 sz, void *phyaddr[pm::MAX_SHM_PGNUM] );
 		/// @brief map shm pages to physical pages, it is similar with map_pages
 		/// @param pt pagetable to use
 		/// @param oldshm oldshm lower address

@@ -1,13 +1,15 @@
 #include "pm/shmmanager.hh"
 #include "mm/virtual_memory_manager.hh"
 #include "pm/process_manager.hh"
+#include "mm/page.hh"
+#include "mm/memlayout.hh"
 namespace pm{
 
     ShmManager k_shmManager;
 
     void ShmManager::init(const char* _lock_name)
     {
-        for (int i = 0; i < SHM_NUM; i++)
+        for (uint i = 0; i < SHM_NUM; i++)
         {
             Shm &shm = Shmtabs[i];
             shm.init(_lock_name);
@@ -94,16 +96,7 @@ namespace pm{
         }
         return 0;
     }
-
-    void ShmManager::shmaddcnt(uint key)
-    {
-        if(key < 0 || key >= SHM_NUM)
-        {
-            return;
-        }
-        Shmtabs[key].refcnt++;
-    }
-
+    
     int ShmManager::shmrefcnt(uint key)
     {
         if(key < 0 || key >= SHM_NUM)
@@ -131,5 +124,37 @@ namespace pm{
         }
         shmem->refcnt = 0;
         return 0;
+    }
+
+    int ShmManager::shmrelease(mm::PageTable &pt, uint64 shm, uint keymask)
+    {
+        Shmtabs[keymask]._lock.acquire();
+        mm::k_vmm.deallocshm(pt, shm, mm::vml::vm_trap_frame - 64 * 2 * mm::pg_size);
+        for(int k=0 ;k<8 ;k++)
+        {
+            if(shmkeyused(k, keymask))
+            {
+                Shmtabs[k].refcnt--;
+                if(Shmtabs[k].refcnt == 0)
+                {
+                    shmrm(k);
+                }
+            }
+        }
+        Shmtabs[keymask]._lock.release();
+        return 0;
+    }
+
+    void ShmManager::shmaddcnt(uint mask)
+    {
+        for(int i = 0; i < 8; i++)
+        {
+            Shmtabs[i]._lock.acquire();
+            if(mask & (1 << i))
+            {
+                Shmtabs[i].refcnt++;
+            }
+            Shmtabs[i]._lock.release();
+        }
     }
 }

@@ -15,7 +15,6 @@
 #include "mm/memlayout.hh"
 #include "mm/tlb_manager.hh"
 #include "pm/process.hh"
-
 namespace mm
 {
 	VirtualMemoryManager k_vmm;
@@ -98,12 +97,12 @@ namespace mm
 		return true;
 	}
 
-	uint64 VirtualMemoryManager::allocshm(PageTable &pt, uint64 oldshm, uint64 newshm, uint64 sz, void *phyaddr[MAX_SHM_PGNUM])
+	uint64 VirtualMemoryManager::allocshm(PageTable &pt, uint64 oldshm, uint64 newshm, uint64 sz, void *phyaddr[pm::MAX_SHM_PGNUM])
 	{
 		void *mem;
 		uint64 a;
 
-		if(oldshm & 0xfff || newshm & 0xfff || newshm < sz || oldshm > (TRAPEFRAME - 64 *2 * pg_size))
+		if(oldshm & 0xfff || newshm & 0xfff || newshm < sz || oldshm > (vm_trap_frame - 64 *2 * pg_size))
 		{
 			log_panic("allocshm: bad parameters");
 			return 0;
@@ -129,7 +128,7 @@ namespace mm
 	uint64 VirtualMemoryManager::mapshm(PageTable &pt, uint64 oldshm, uint64 newshm, uint sz, void **phyaddr)
 	{
 		uint64 a;
-		if(oldshm & 0xfff || newshm & 0xfff || newshm < sz || oldshm > (TRAPEFRAME - 64 *2 * pg_size))
+		if(oldshm & 0xfff || newshm & 0xfff || newshm < sz || oldshm > (vm_trap_frame - 64 *2 * pg_size))
 		{
 			log_panic("mapshm: bad parameters when shmmap");
 			return 0;

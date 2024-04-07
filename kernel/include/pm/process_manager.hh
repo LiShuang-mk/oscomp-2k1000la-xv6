@@ -22,6 +22,7 @@ namespace pm
 		ProcessManager() = default;
 		void init( const char *pid_lock_name, const char *wait_lock_name );
 		Pcb *get_cur_pcb();
+		bool change_state( Pcb *p, ProcState state );
 	};
 
 	extern ProcessManager k_pm;
