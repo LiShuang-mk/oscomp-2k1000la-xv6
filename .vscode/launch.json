@@ -12,7 +12,7 @@
             "environment": [],
             "externalConsole": true,
             "MIMode": "gdb",
-            "miDebuggerPath": "loongarch64-linux-gnu-gdb",
+            "miDebuggerPath": "/home/amaranta/Downloads/loongarch64-linux-gnu-gdb",
             "miDebuggerServerAddress": "localhost:1234",
 			"preLaunchTask": "start qemu", 
         },
@@ -24,10 +24,12 @@
             "program": "./build/kernel.elf",
             "args": [],
             "stopAtEntry": true,
-            "environment": [],
+            "environment": [
+                
+            ],
             "externalConsole": true,
             "MIMode": "gdb",
-            "miDebuggerPath": "loongarch64-linux-gnu-gdb",
+            "miDebuggerPath": "/home/amaranta/Downloads/loongarch64-linux-gnu-gdb/bin/loongarch64-linux-gnu-gdb",
             "miDebuggerServerAddress": "localhost:1234",
 			"preLaunchTask": "qemu ls2k", 
         },

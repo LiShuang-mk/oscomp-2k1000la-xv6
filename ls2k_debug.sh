@@ -1,6 +1,6 @@
 #!/bin/bash 
 
-RUNENV_PREFIX="/home/lishuang/qemu-loongarch/qemu0331"
+RUNENV_PREFIX="/home/amaranta/Downloads/qemu-static-20240401/qemu"
 KERNEL_PREFIX=`pwd`
 
 cd $RUNENV_PREFIX
@@ -14,8 +14,6 @@ cd $RUNENV_PREFIX
 	-m 1G \
 	-device usb-kbd,bus=usb-bus.0 \
 	-device usb-tablet,bus=usb-bus.0 \
-	-device usb-storage,drive=udisk \
-	-drive if=none,id=udisk,file=./tmp/disk \
 	-net nic \
 	-net user,net=127.0.0.1/8,tftp=/srv/tftp \
 	-vnc :0 \
