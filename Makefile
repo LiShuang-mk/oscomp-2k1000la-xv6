@@ -3,6 +3,8 @@
 
 # configure 
 CONF_CPU_NUM = 1
+CONF_ARCH = loongarch 
+CONF_PLATFORM = ls2k
 # CONF_LINUX_BUILD = 1
 
 # make variable define 
@@ -14,7 +16,7 @@ export TOOLPREFIX = loongarch64-linux-gnu-
 export CC  = ${TOOLPREFIX}gcc
 export CXX = ${TOOLPREFIX}g++
 export AS  = ${TOOLPREFIX}as
-export LD  = ${TOOLPREFIX}ld 
+export LD  = ${TOOLPREFIX}ld
 export OBJCOPY = ${TOOLPREFIX}objcopy
 export OBJDUMP = ${TOOLPREFIX}objdump
 
@@ -24,6 +26,8 @@ export ASFLAGS += -MD
 export CFLAGS = -Wall -Werror -O0 -fno-omit-frame-pointer -ggdb
 export CFLAGS += -MD 
 export CFLAGS += -DNUMCPU=$(CONF_CPU_NUM)
+export CFLAGS += -DARCH=$(CONF_ARCH)
+export CFLAGS += -DPLATFORM=$(CONF_PLATFORM)
 ifeq ($(HOST_OS),Linux)
 export CFLAGS += -DLINUX_BUILD=1
 endif
@@ -42,7 +46,7 @@ export BUILDPATH = $(WORKPATH)/build
 
 # rules define 
 
-all:
+all: initdir
 	@echo "当前主机操作系统：$(HOST_OS)"
 	$(MAKE) -C kernel
 	@echo "_________________________"

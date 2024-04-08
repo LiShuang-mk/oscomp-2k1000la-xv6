@@ -2,6 +2,8 @@
 #include "hal/loongarch.hh"
 #include "hal/qemu_ls2k.hh"
 #include "hal/cpu.hh"
+#include "hal/sata/hba_mem.hh"
+#include "hal/sata/hba_cmd.hh"
 #include "tm/timer_manager.hh"
 #include "im/exception_manager.hh"
 #include "im/interrupt_manager.hh"
@@ -66,9 +68,11 @@ int main()
 		// for ( int i = 0; i < 16; i++ )
 		// 	printf( "%x\n", apbh[ i ] );
 
-		volatile uint32 *p = ( volatile uint32 * ) ( 0x400e0000 | loongarch::qemuls2k::dmwin::win_1 );
-		for ( int i = 0; i < 0x200; i += 4, p++ )
-			printf( "%x\t\t%p\n", i, *p );
+		// volatile uint32 *p = ( volatile uint32 * ) ( 0x400e0000 | loongarch::qemuls2k::dmwin::win_1 );
+		// for ( int i = 0; i < 0x200; i += 4, p++ )
+		// 	printf( "%x\t\t%p\n", i, *p );
+
+		
 
 		while ( 1 ); // stop here
 	}
