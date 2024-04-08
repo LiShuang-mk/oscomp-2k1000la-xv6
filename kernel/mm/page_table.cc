@@ -82,6 +82,28 @@ namespace mm
 		return true;
 	}
 
+	void PageTable::freewalk()
+	{ // pte num is 4096 / 8 = 512 in pgtable
+		for(uint i=0; i< 512;i++)
+		{
+			uint64 pte_data = get_pte_data(i);
+			Pte _pte((pte_t *)pte_data);
+			if((_pte.to_pte_t_() & loongarch::PteEnum::valid_m) && (_pte.pte_flags() == loongarch::PteEnum::valid_m))      // PGT -> PTE -> _pte
+			{																							//  get_pte_addr
+				// this PTE is points to a lower-level page table
+				PageTable child;
+				child.set_base(_pte.pte_to_pa() | loongarch::qemuls2k::dmwin::win_0);
+				child.freewalk();
+				reset_pte_data(i);
+			}
+			else if(_pte.to_pte_t_() & loongarch::PteEnum::valid_m )
+			{
+				log_panic("freewalk: leaf");
+			}
+		}
+		k_pmm.free_page((void *)_base_addr);
+	}
+
 	uint64 PageTable::dir3_num( uint64 va )
 	{
 		return ( va & PageEnum::dir3_vpn_mask ) >> PageEnum::dir3_vpn_shift;

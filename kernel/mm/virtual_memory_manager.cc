@@ -152,10 +152,40 @@ namespace mm
 		{
 			int npages = page_round_up(newshm) - page_round_up(oldshm) / pg_size;
 			return npages; // This temp varible is not used in the code, but uvmunmap is not writed so it is just a placeholder 
-			//uvmunmap(pt,page_round_up(oldshm),npages,0);
+			vmunmap(pt,page_round_up(oldshm),npages,0);
 		}
 		return oldshm;
 	}
 
+	void VirtualMemoryManager::vmunmap(PageTable &pt, uint64 va, uint64 npages, int do_free)
+	{
+		uint64 a;
+		Pte pte;
 
+		if((va % PageEnum::pg_size) != 0)
+			log_panic("vmunmap: not aligned");
+
+		for(a = va; a< va + npages * PageEnum::pg_size; a+= PageEnum::pg_size)
+		{
+			if((pte = pt.walk(a,0)).is_default_constructed())
+				log_panic("vmunmap: walk");
+			if((pte.to_pte_t_() & loongarch::PteEnum::valid_m) == 0)
+				log_panic("vmunmap: not mapped");
+			if(pte.pte_flags() == loongarch::PteEnum::valid_m) 
+				log_panic("vmunmap: not a leaf");
+			if(do_free)
+			{
+				uint64 pa = pte.pte_to_pa();
+				k_pmm.free_page((void *)(pa | loongarch::qemuls2k::dmwin::win_0));
+			}
+			pte = 0;
+		}
+	}
+
+	void VirtualMemoryManager::vmfree(PageTable &pt, uint64 sz)
+	{
+		if(sz > 0)
+			vmunmap(pt, 0 ,page_round_up(sz) / PageEnum::pg_size, 1);
+		pt.freewalk();
+	}
 }

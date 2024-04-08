@@ -12,6 +12,7 @@
 
 #include "hal/loongarch.hh"
 #include "hal/qemu_ls2k.hh"
+#include "mm/page.hh"
 
 namespace mm
 {
@@ -37,7 +38,12 @@ namespace mm
 		bool is_readable() { return ( ( *_data_addr & loongarch::PteEnum::nr_m ) == 0 ); }
 		bool is_executable() { return ( ( *_data_addr & loongarch::PteEnum::nx_m ) == 0 ); }
 		bool is_restrict_plv() { return ( ( *_data_addr & loongarch::PteEnum::rplv_m ) != 0 ); }
+		bool is_default_constructed() { return ( _data_addr == nullptr );}
 
 		void set_data( uint64 data ) { *_data_addr |= data; }
+		uint64 pte_flags() {return (uint64)_data_addr & PageEnum::pg_flags_mask; }
+		uint64 pte_to_pa() {return (uint64)_data_addr & PageEnum::pt_vpn_mask; }
+		pte_t to_pte_t_() { return *_data_addr; }
+
 	};
 }

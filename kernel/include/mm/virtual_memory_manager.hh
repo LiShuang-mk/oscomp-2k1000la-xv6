@@ -34,6 +34,12 @@ namespace mm
 		/// @param flags page table entry flags 
 		/// @return success if true 
 		bool map_pages( PageTable &pt, uint64 va, uint64 size, uint64 pa, flag_t flags );
+		/// @brief unmap va from pt
+		/// @param pt pagetable to use
+		/// @param va virtual address
+		/// @param npages num of pages to unmap
+		/// @param do_free free physical pages?
+		void vmunmap( PageTable &pt, uint64 va, uint64 npages, int do_free );
 		/// @brief allocate shm
 		/// @param pt pagetable to use
 		/// @param oldshm oldshm lower address
@@ -42,6 +48,10 @@ namespace mm
 		/// @param phyaddr 
 		/// @return newshm if success
 		uint64 allocshm( PageTable &pt, uint64 oldshm, uint64 newshm, uint64 sz, void *phyaddr[pm::MAX_SHM_PGNUM] );
+		/// @brief 
+		/// @param pt 
+		/// @param sz 
+		void vmfree(PageTable &pt, uint64 sz);
 		/// @brief map shm pages to physical pages, it is similar with map_pages
 		/// @param pt pagetable to use
 		/// @param oldshm oldshm lower address

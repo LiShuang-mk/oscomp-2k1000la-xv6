@@ -26,6 +26,7 @@ namespace loongarch
 		int get_num_off() { return _num_off; }
 		int get_int_ena() { return _int_ena; }
 		void set_cur_proc( pm::Pcb *p ) { _cur_proc = p; }
+		void swtch( struct Context *old, struct Context *new_ );
 		
 		// read stack pointer
 		static inline uint64 read_sp()

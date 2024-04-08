@@ -28,12 +28,13 @@ namespace mm
 		pg_size_shift = 12,
 		pg_size = 0x1 << pg_size_shift, 		// 4KiB page 
 		pg_offset_mask = 0xFFFUL,
+		pg_flags_mask = 0xE0000000000001FFUL,
 
 		pt_bits_null = 0, 
 		pt_bits_width = 9,
 		pt_bits_mask = 0x1FFUL,
 		pt_vpn_shift = pg_size_shift,
-		pt_vpn_mask = pt_bits_mask << pt_vpn_shift,
+		pt_vpn_mask = pt_bits_mask << pt_vpn_shift,  // 0x FFFFFFFFF000  [39:12]
 
 		dir1_vpn_shift = 21,
 		dir2_vpn_shift = 30, 
