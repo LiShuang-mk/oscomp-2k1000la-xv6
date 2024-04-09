@@ -21,6 +21,7 @@ namespace ata
 		{
 		protected:
 			smp::Lock _lock;
+			void *_cfg_addr;
 			HbaCmdList *_clb;
 			HbaRevFis *_fb;
 

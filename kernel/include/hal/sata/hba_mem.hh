@@ -49,7 +49,7 @@ namespace ata
 			byte vendor_reg[ 0x100 - 0x0A0 ];
 
 			HbaPortReg ports[ hba_port_num ];
-		};
+		}__attribute__( ( __packed__ ) );
 
 	} // namespace sata
 	

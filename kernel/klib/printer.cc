@@ -135,18 +135,18 @@ namespace kernellib
 	{
 		k_printer._locking = 0;
 #ifdef LINUX_BUILD
-		k_printer.printf( "\033[31m> panic => " );
+		k_printer.printf( "\033[31m[ panic ] => " );
 #else 
-		k_printer.printf( "> panic => " );
+		k_printer.printf( "[ panic ] => " );
 #endif 
 		k_printer.printf( f );
 		k_printer.printf( " : " );
 		k_printer.printf( "%d", l );
-		k_printer.printf( " :\n\t=> %s", info );
+		k_printer.printf( " :\n\t  => %s", info );
 #ifdef LINUX_BUILD
 		k_printer.printf( "\n\033[0m" );
 #else 
-		k_printer.printf( "\n\033[0m" );
+		k_printer.printf( "\n" );
 #endif 
 		k_printer._panicked = 1;
 		while ( 1 );
@@ -156,18 +156,18 @@ namespace kernellib
 	{
 		k_printer._locking = 0;
 #ifdef LINUX_BUILD
-		k_printer.printf( "\033[35m> error => " );
+		k_printer.printf( "\033[35m[ error ] => " );
 #else 
-		k_printer.printf( "> error => " );
+		k_printer.printf( "[ error ] => " );
 #endif  
 		k_printer.printf( f );
 		k_printer.printf( " : " );
 		k_printer.printf( "%d", l );
-		k_printer.printf( " :\n\t=> %s", info );
+		k_printer.printf( " :\n\t  => %s", info );
 #ifdef LINUX_BUILD
 		k_printer.printf( "\n\033[0m" );
 #else 
-		k_printer.printf( "\n\033[0m" );
+		k_printer.printf( "\n" );
 #endif 
 		k_printer._locking = 1;
 	}
@@ -176,18 +176,18 @@ namespace kernellib
 	{
 		k_printer._locking = 0;
 #ifdef LINUX_BUILD
-		k_printer.printf( "\033[33m> warn  => " );
+		k_printer.printf( "\033[33m[ warn ]  => " );
 #else 
-		k_printer.printf( "> warn  => " );
+		k_printer.printf( "[ warn ]  => " );
 #endif 
 		k_printer.printf( f );
 		k_printer.printf( " : " );
 		k_printer.printf( "%d", l );
-		k_printer.printf( " :\n\t=> %s", info );
+		k_printer.printf( " :\n\t  => %s", info );
 #ifdef LINUX_BUILD
 		k_printer.printf( "\n\033[0m" );
 #else 
-		k_printer.printf( "\n\033[0m" );
+		k_printer.printf( "\n" );
 #endif 
 		k_printer._locking = 1;
 	}
@@ -196,18 +196,18 @@ namespace kernellib
 	{
 		k_printer._locking = 0;
 #ifdef LINUX_BUILD
-		k_printer.printf( "\033[36m> info  => " );
+		k_printer.printf( "\033[36m[ info ]  => " );
 #else 
-		k_printer.printf( "> info  => " );
+		k_printer.printf( "[ info ]  => " );
 #endif 
 		k_printer.printf( f );
 		k_printer.printf( " : " );
 		k_printer.printf( "%d", l );
-		k_printer.printf( " :\n\t=> %s", info );
+		k_printer.printf( " :\n\t  => %s", info );
 #ifdef LINUX_BUILD
 		k_printer.printf( "\n\033[0m" );
 #else 
-		k_printer.printf( "\n\033[0m" );
+		k_printer.printf( "\n" );
 #endif 
 		k_printer._locking = 1;
 	}

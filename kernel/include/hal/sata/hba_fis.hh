@@ -41,7 +41,7 @@ namespace ata
 			byte sdbfis[ hba_fis_sdb_end - hba_fis_sdb_beg ];
 			byte ufis[ hba_fis_unk_end - hba_fis_unk_beg ];
 			byte rsv3[ hba_rev_siz - hba_fis_unk_end ];
-		};
+		}__attribute__( ( __packed__ ) );
 	} // namespace sata
 
 } // namespace ata

@@ -30,7 +30,7 @@ namespace ata
 			dword testr;
 			dword versionr;
 			dword idr;
-		};
+		}__attribute__( ( __packed__ ) );
 
 		class SataLs2k : public SataDriver
 		{
@@ -40,6 +40,8 @@ namespace ata
 			SataLs2k() : SataDriver() {};
 			void init( const char * lock_name, void *clb, void *fb );
 		};
+
+		extern SataLs2k k_sata_driver;
 	} // namespace sata
 	
 } // namespace ata

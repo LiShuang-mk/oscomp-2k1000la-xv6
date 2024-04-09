@@ -37,9 +37,9 @@ namespace ata
 
 			// vendor specific from 70h to 7fh 
 			byte vendor_reg[ 0x80 - 0x70 ];
-		};
+		}__attribute__( ( __packed__ ) );
 
-		
+
 	} // namespace sata
 
 } // namespace ata

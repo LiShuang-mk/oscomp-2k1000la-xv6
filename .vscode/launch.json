@@ -23,7 +23,7 @@
             "cwd": "${workspaceFolder}",
             "program": "./build/kernel.elf",
             "args": [],
-            "stopAtEntry": true,
+            "stopAtEntry": false,
             "environment": [],
             "externalConsole": true,
             "MIMode": "gdb",

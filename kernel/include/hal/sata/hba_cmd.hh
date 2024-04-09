@@ -46,7 +46,7 @@ namespace ata
 			// DW 4-7 
 			
 			dword rsv_dword[ 4 ];	// [x] reserve 
-		};
+		}__attribute__( ( __packed__ ) );
 
 		constexpr uint hba_cmd_list_size = 32;
 
@@ -54,7 +54,7 @@ namespace ata
 		struct HbaCmdList
 		{
 			HbaCmdHeader headers[ hba_cmd_list_size ];
-		};
+		}__attribute__( ( __packed__ ) );
 
 	} // namespace sata
 	

@@ -2,8 +2,7 @@
 #include "hal/loongarch.hh"
 #include "hal/qemu_ls2k.hh"
 #include "hal/cpu.hh"
-#include "hal/sata/hba_mem.hh"
-#include "hal/sata/hba_cmd.hh"
+#include "hal/sata/sata_ls2k.hh"
 #include "tm/timer_manager.hh"
 #include "im/exception_manager.hh"
 #include "im/interrupt_manager.hh"
@@ -72,7 +71,7 @@ int main()
 		// for ( int i = 0; i < 0x200; i += 4, p++ )
 		// 	printf( "%x\t\t%p\n", i, *p );
 
-		
+		ata::sata::k_sata_driver.init( "sata driver", ( void* ) 0x0, ( void* ) 0x0 );
 
 		while ( 1 ); // stop here
 	}

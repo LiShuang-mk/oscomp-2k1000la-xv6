@@ -63,7 +63,7 @@ namespace ata
 
 			// Dword 4 
 			byte rsv2[ 4 ];					// [x] reserve 
-		};
+		}__attribute__( ( __packed__ ) );
 
 
 		/// @brief refer to SerialATA revision-2.6 - 10.3.10 Register Host to Device 
@@ -104,7 +104,7 @@ namespace ata
 			// Dword 4 
 			word transfer_cnt;
 			byte rsv2[ 2 ];					// [x] reserve 
-		};
+		}__attribute__( ( __packed__ ) );
 
 	} // namespace sata
 	
