@@ -33,7 +33,7 @@ namespace mm
 		pt_bits_width = 9,
 		pt_bits_mask = 0x1FFUL,
 		pt_vpn_shift = pg_size_shift,
-		pt_vpn_mask = pt_bits_mask << pt_vpn_shift,
+		pt_vpn_mask = pt_bits_mask << pt_vpn_shift,  // 0x FFFFFFFFF000  [39:12]
 
 		dir1_vpn_shift = 21,
 		dir2_vpn_shift = 30, 

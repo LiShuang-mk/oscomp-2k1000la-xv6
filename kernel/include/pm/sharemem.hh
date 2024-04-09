@@ -1,12 +1,12 @@
 
 #pragma once
 #include "smp/lock.hh"
-#define SHM_NUM 8
-#define MAX_SHM_PGNUM 4
-
 namespace pm
 {
     class ShmManager;
+
+    constexpr uint SHM_NUM = 10;
+	constexpr uint MAX_SHM_PGNUM = 4;
     class Shm
     {
         friend ShmManager;
@@ -15,12 +15,12 @@ namespace pm
             smp::Lock _lock;
             int refcnt;     // reference count
             int pagenum;    // number of pages
-            void *phyaddr[MAX_SHM_PGNUM];   // physical address
+            void *phyaddr[ pm::MAX_SHM_PGNUM ];   // physical address
 
         public:
             Shm() {};
             void init(const char* _lock_name);
     };    
     
-    extern Shm Shmtabs[ SHM_NUM ];
+    extern Shm Shmtabs[ pm::SHM_NUM ];
 }
