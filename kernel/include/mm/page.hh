@@ -28,7 +28,6 @@ namespace mm
 		pg_size_shift = 12,
 		pg_size = 0x1 << pg_size_shift, 		// 4KiB page 
 		pg_offset_mask = 0xFFFUL,
-		pg_flags_mask = 0xE0000000000001FFUL,
 
 		pt_bits_null = 0, 
 		pt_bits_width = 9,

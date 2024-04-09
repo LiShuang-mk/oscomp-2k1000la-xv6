@@ -151,7 +151,6 @@ namespace mm
 		if(page_round_up(newshm) >  page_round_up(oldshm))
 		{
 			int npages = page_round_up(newshm) - page_round_up(oldshm) / pg_size;
-			return npages; // This temp varible is not used in the code, but uvmunmap is not writed so it is just a placeholder 
 			vmunmap(pt,page_round_up(oldshm),npages,0);
 		}
 		return oldshm;
@@ -167,16 +166,15 @@ namespace mm
 
 		for(a = va; a< va + npages * PageEnum::pg_size; a+= PageEnum::pg_size)
 		{
-			if((pte = pt.walk(a,0)).is_default_constructed())
+			if((pte = pt.walk(a,0)).is_null())
 				log_panic("vmunmap: walk");
-			if((pte.to_pte_t_() & loongarch::PteEnum::valid_m) == 0)
+			if(!pte.is_valid())
 				log_panic("vmunmap: not mapped");
-			if(pte.pte_flags() == loongarch::PteEnum::valid_m) 
+			if(!pte.is_leaf()) 
 				log_panic("vmunmap: not a leaf");
 			if(do_free)
 			{
-				uint64 pa = pte.pte_to_pa();
-				k_pmm.free_page((void *)(pa | loongarch::qemuls2k::dmwin::win_0));
+				k_pmm.free_page(pte.pa());
 			}
 			pte = 0;
 		}

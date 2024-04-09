@@ -25,7 +25,7 @@ namespace mm
 		uint64 get_base() { return _base_addr; }
 		void set_global() { _is_global = true; }
 		void unset_global() { _is_global = false; }
-		bool is_default_constructed() { return _base_addr == 0; }	
+		bool is_null() { return _base_addr == 0; }	
 		/// @brief 软件遍历页表，通常，只能由全局页目录调用
 		/// @param va virtual address 
 		/// @param alloc either alloc physical page or not 

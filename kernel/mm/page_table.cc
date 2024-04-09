@@ -88,15 +88,15 @@ namespace mm
 		{
 			uint64 pte_data = get_pte_data(i);
 			Pte _pte((pte_t *)pte_data);
-			if((_pte.to_pte_t_() & loongarch::PteEnum::valid_m) && (_pte.pte_flags() == loongarch::PteEnum::valid_m))      // PGT -> PTE -> _pte
+			if(_pte.is_valid() && ! _pte.is_leaf())      // PGT -> PTE -> _pte
 			{																							//  get_pte_addr
 				// this PTE is points to a lower-level page table
 				PageTable child;
-				child.set_base(_pte.pte_to_pa() | loongarch::qemuls2k::dmwin::win_0);
+				child.set_base( ( uint64 ) _pte.pa());
 				child.freewalk();
 				reset_pte_data(i);
 			}
-			else if(_pte.to_pte_t_() & loongarch::PteEnum::valid_m )
+			else if( _pte.is_valid() )
 			{
 				log_panic("freewalk: leaf");
 			}

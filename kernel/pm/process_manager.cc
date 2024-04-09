@@ -143,7 +143,7 @@ namespace pm
 		if(p->_trapframe)
 			mm::k_pmm.free_page((void *)p->_trapframe);	
 		p->_trapframe = 0;
-		if(!p->_pt.is_default_constructed())
+		if(!p->_pt.is_null())
 		{
 			mm::k_vmm.vmunmap(p->_pt,mm::PageEnum::pg_size,1,0);
 			mm::k_vmm.vmfree(p->_pt,p->_sz);
