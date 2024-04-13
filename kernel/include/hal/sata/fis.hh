@@ -8,7 +8,7 @@
 
 #pragma once 
 
-#include "hal/sata/sata_types.hh"
+#include "hal/ata/ata_types.hh"
 
 namespace ata
 {
@@ -98,12 +98,12 @@ namespace ata
 
 			byte sector_cnt;
 			byte sector_cnt_exp;
-			byte rsv1;						// [x] reserve 
+			byte rsv3;						// [x] reserve 
 			byte e_status;
 
 			// Dword 4 
 			word transfer_cnt;
-			byte rsv2[ 2 ];					// [x] reserve 
+			byte rsv4[ 2 ];					// [x] reserve 
 		}__attribute__( ( __packed__ ) );
 
 	} // namespace sata

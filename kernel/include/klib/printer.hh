@@ -29,6 +29,7 @@ namespace kernellib
 		smp::Lock _lock;
 		int _locking = 1;
 		int _panicked = 0;
+		static int _trace_flag;
 		static char _digits[];
 
 	public:
@@ -45,6 +46,7 @@ namespace kernellib
 		static void error( const char *f, uint l, const char *info, ... );
 		static void warn( const char *f, uint l, const char *info, ... );
 		static void info( const char *f, uint l, const char *info, ... );
+		static void trace( const char *f, uint l, const char *info, va_list ap );
 	};
 
 	extern Printer k_printer;

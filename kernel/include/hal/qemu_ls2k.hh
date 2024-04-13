@@ -14,6 +14,7 @@ namespace loongarch
 {
 	namespace qemuls2k
 	{
+		constexpr uint64 dmwin_mask = 0xFUL << 60;
 		enum dmwin : uint64
 		{
 			win_0 = 0x9UL << 60,
@@ -193,6 +194,54 @@ namespace loongarch
 		};
 
 #undef _build_pci_cfg_base_
+
+		constexpr uint64 xbar_win4_cfg_base = 0x1fe02400UL | dmwin::win_1;
+
+		constexpr uint64 iodma_win_base = 0x0UL << 60;
+		constexpr uint64 iodma_win_mask = ~( 0x0UL ) << 28;
+
+		enum XbarWin : uint64 
+		{
+			xwin4_base0 = 0x00 + xbar_win4_cfg_base,
+			xwin4_base1 = 0x08 + xbar_win4_cfg_base,
+			xwin4_base2 = 0x10 + xbar_win4_cfg_base,
+			xwin4_base3 = 0x18 + xbar_win4_cfg_base,
+			xwin4_base4 = 0x20 + xbar_win4_cfg_base,
+			xwin4_base5 = 0x28 + xbar_win4_cfg_base,
+			xwin4_base6 = 0x30 + xbar_win4_cfg_base,
+			xwin4_base7 = 0x38 + xbar_win4_cfg_base,
+
+			xwin4_mask0 = 0x40 + xbar_win4_cfg_base,
+			xwin4_mask1 = 0x48 + xbar_win4_cfg_base,
+			xwin4_mask2 = 0x50 + xbar_win4_cfg_base,
+			xwin4_mask3 = 0x58 + xbar_win4_cfg_base,
+			xwin4_mask4 = 0x60 + xbar_win4_cfg_base,
+			xwin4_mask5 = 0x68 + xbar_win4_cfg_base,
+			xwin4_mask6 = 0x70 + xbar_win4_cfg_base,
+			xwin4_mask7 = 0x78 + xbar_win4_cfg_base,
+
+			xwin4_mmap0 = 0x80 + xbar_win4_cfg_base,
+			xwin4_mmap1 = 0x88 + xbar_win4_cfg_base,
+			xwin4_mmap2 = 0x90 + xbar_win4_cfg_base,
+			xwin4_mmap3 = 0x98 + xbar_win4_cfg_base,
+			xwin4_mmap4 = 0xa0 + xbar_win4_cfg_base,
+			xwin4_mmap5 = 0xa8 + xbar_win4_cfg_base,
+			xwin4_mmap6 = 0xb0 + xbar_win4_cfg_base,
+			xwin4_mmap7 = 0xb8 + xbar_win4_cfg_base,
+		};
+
+		enum XbarWinMmap : uint64 
+		{
+			xbar_win_num_s = 0,
+			xbar_win_cac_s = 5,
+			xbar_win_typ_s = 6,
+			xbar_win_ena_s = 7,
+
+			xbar_win_num_m = 0x1 << xbar_win_num_s,
+			xbar_win_cac_m = 0x1 << xbar_win_cac_s,
+			xbar_win_typ_m = 0x1 << xbar_win_typ_s,
+			xbar_win_ena_m = 0x1 << xbar_win_ena_s,
+		};
 
 	} // namespace qemuls2k
 

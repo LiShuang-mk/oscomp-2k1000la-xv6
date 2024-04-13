@@ -14,6 +14,7 @@ namespace kernellib
 {
 	Printer k_printer;
 
+	int Printer::_trace_flag = 0;
 	char Printer::_digits[] = "0123456789abcdef";
 
 	void Printer::init( Console *console, const char *name )
@@ -88,7 +89,20 @@ namespace kernellib
 			if ( c != '%' )
 			{
 				if ( _type == out_type::console && _console )
-					_console->putc( c );
+				{
+					if ( _trace_flag == 1 && c == '\n' )
+					{
+						_locking = 0;
+						_trace_flag = 0;
+						printf( "\n\t   > " );
+						_trace_flag = 1;
+						_locking = 1;
+					}
+					else
+					{
+						_console->putc( c );
+					}
+				}
 				continue;
 			}
 			c = fmt[ ++i ] & 0xff;
@@ -142,7 +156,10 @@ namespace kernellib
 		k_printer.printf( f );
 		k_printer.printf( " : " );
 		k_printer.printf( "%d", l );
-		k_printer.printf( " :\n\t  => %s", info );
+		k_printer.printf( " :\n\t   > " );
+		_trace_flag = 1;
+		k_printer.printf( "%s", info );
+		_trace_flag = 0;
 #ifdef LINUX_BUILD
 		k_printer.printf( "\n\033[0m" );
 #else 
@@ -163,7 +180,10 @@ namespace kernellib
 		k_printer.printf( f );
 		k_printer.printf( " : " );
 		k_printer.printf( "%d", l );
-		k_printer.printf( " :\n\t  => %s", info );
+		k_printer.printf( " :\n\t   > " );
+		_trace_flag = 1;
+		k_printer.printf( "%s", info );
+		_trace_flag = 0;
 #ifdef LINUX_BUILD
 		k_printer.printf( "\n\033[0m" );
 #else 
@@ -183,7 +203,10 @@ namespace kernellib
 		k_printer.printf( f );
 		k_printer.printf( " : " );
 		k_printer.printf( "%d", l );
-		k_printer.printf( " :\n\t  => %s", info );
+		k_printer.printf( " :\n\t   > " );
+		_trace_flag = 1;
+		k_printer.printf( "%s", info );
+		_trace_flag = 0;
 #ifdef LINUX_BUILD
 		k_printer.printf( "\n\033[0m" );
 #else 
@@ -203,7 +226,33 @@ namespace kernellib
 		k_printer.printf( f );
 		k_printer.printf( " : " );
 		k_printer.printf( "%d", l );
-		k_printer.printf( " :\n\t  => %s", info );
+		k_printer.printf( " :\n\t   > " );
+		_trace_flag = 1;
+		k_printer.printf( "%s", info );
+		_trace_flag = 0;
+#ifdef LINUX_BUILD
+		k_printer.printf( "\n\033[0m" );
+#else 
+		k_printer.printf( "\n" );
+#endif 
+		k_printer._locking = 1;
+	}
+
+	void Printer::trace( const char *f, uint l, const char *info, va_list ap )
+	{
+		k_printer._locking = 0;
+#ifdef LINUX_BUILD
+		k_printer.printf( "\033[93m[ trace ] => " );
+#else 
+		k_printer.printf( "[ trace ] => " );
+#endif 
+		k_printer.printf( f );
+		k_printer.printf( " : " );
+		k_printer.printf( "%d", l );
+		k_printer.printf( " :\n\t   > " );
+		_trace_flag = 1;
+		k_printer.vprintf( info, ap );
+		_trace_flag = 0;
 #ifdef LINUX_BUILD
 		k_printer.printf( "\n\033[0m" );
 #else 

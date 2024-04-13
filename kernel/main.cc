@@ -2,7 +2,7 @@
 #include "hal/loongarch.hh"
 #include "hal/qemu_ls2k.hh"
 #include "hal/cpu.hh"
-#include "hal/sata/sata_ls2k.hh"
+#include "fs/dev/pci_driver.hh"
 #include "tm/timer_manager.hh"
 #include "im/exception_manager.hh"
 #include "im/interrupt_manager.hh"
@@ -71,8 +71,17 @@ int main()
 		// for ( int i = 0; i < 0x200; i += 4, p++ )
 		// 	printf( "%x\t\t%p\n", i, *p );
 
-		ata::sata::k_sata_driver.init( "sata driver", ( void* ) 0x0, ( void* ) 0x0 );
+		// ata::sata::k_sata_driver.init( "sata driver", ( void* ) 0x0, ( void* ) 0x0 );
+		dev::pci::k_pci_driver.init( "pci dirver" );
 
+		printf( "\n" );
+		log_trace( "test\n%s", "trace" );
+		log__info( "test info" );
+		log__warn( "test warn " );
+		log_error( "test error" );
+		log_panic( "test panic" );
+
+		log__info( "Kernel not complete. About to enter loop. " );
 		while ( 1 ); // stop here
 	}
 	else
