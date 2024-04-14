@@ -17,6 +17,7 @@ namespace ata
 	{
 		struct HbaMemReg;
 		struct HbaPortReg;
+		struct HbaCmdHeader;
 
 		struct HbaMemVendorRegLs2k
 		{
@@ -46,7 +47,7 @@ namespace ata
 		};
 
 		constexpr uint max_port_num = 32;
-		
+
 		class SataLs2k : public SataDriver
 		{
 		private:
@@ -66,6 +67,8 @@ namespace ata
 			int ahci_host_init();
 			void set_port_cl( uint port, void *base ) { _port_cmd_lst_base[ port ] = base; }
 			void set_port_fb( uint port, void *base ) { _port_rec_fis_base[ port ] = base; }
+
+			struct HbaCmdHeader* get_cmd_header( uint port, uint head_index );
 
 		public:
 			void debug_print_cmd_lst_base();

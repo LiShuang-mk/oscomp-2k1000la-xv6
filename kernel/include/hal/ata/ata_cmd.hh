@@ -12,7 +12,7 @@
 
 namespace ata
 {
-	enum AtaCmd
+	enum AtaCmd : byte 
 	{
 		cmd_indentify_device = 0xEC,
 	};

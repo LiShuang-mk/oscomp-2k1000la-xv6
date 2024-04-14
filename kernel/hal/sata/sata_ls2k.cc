@@ -10,6 +10,7 @@
 #include "hal/sata/hba_mem.hh"
 #include "hal/sata/hba_port.hh"
 #include "hal/sata/hba_fis.hh"
+#include "hal/sata/hba_cmd.hh"
 #include "hal/qemu_ls2k.hh"
 #include "hal/pci/pci_cfg_header.hh"
 #include "klib/common.hh"
@@ -33,6 +34,7 @@ namespace ata
 			sata_mem_base |= ( uint64 ) pciHead->base_address[ 1 ] << 32;
 			sata_mem_base |= loongarch::qemuls2k::dmwin::win_1;
 			log_trace( "SATA Memory Registers Base: %p\n", sata_mem_base );
+			_cfg_addr = ( void* ) sata_mem_base;
 
 			_hba_mem_reg = ( ata::sata::HbaMemReg * ) sata_mem_base;
 			log_trace( "SATA CAP: %x", _hba_mem_reg->cap );
@@ -355,7 +357,11 @@ namespace ata
 				return;
 			}
 
-			( ( void ) 0 );
+			port_reg->clb = ( ( uint32 ) &_port_cmd_lst_base[ i ] );
+			port_reg->clbu = ( uint32 ) ( ( uint64 ) &_port_cmd_lst_base[ i ] >> 32 );
+
+			port_reg->fb = ( ( uint32 ) &_port_rec_fis_base[ i ] );
+			port_reg->fbu = ( uint32 ) ( ( uint64 ) &_port_rec_fis_base[ i ] >> 32 );
 		}
 
 		void SataLs2k::debug_print_cmd_lst_base()
@@ -377,6 +383,13 @@ namespace ata
 				printf( "port %d -> %p\n", i, _port_rec_fis_base[ i ] );
 			}
 			printf( "________________________________\n" );
+		}
+
+		struct HbaCmdHeader* SataLs2k::get_cmd_header( uint port, uint head_index )
+		{
+			struct HbaCmdHeader *head = ( struct HbaCmdHeader * ) _port_cmd_lst_base[ port ];
+			head += head_index;
+			return head;
 		}
 	} // namespace sata
 

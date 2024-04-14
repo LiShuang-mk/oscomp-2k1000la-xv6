@@ -10,6 +10,7 @@
 
 #include "hal/ata/ata_types.hh"
 #include "hal/sata/hba_param.hh"
+#include "mm/page.hh"
 
 namespace ata
 {
@@ -44,18 +45,43 @@ namespace ata
 			dword ctbau;		// CTBA Upper 32-bit
 
 			// DW 4-7 
-			
+
 			dword rsv_dword[ 4 ];	// [x] reserve 
 		}__attribute__( ( __packed__ ) );
+		static_assert( sizeof( struct HbaCmdHeader ) == 0x20U, "AHCI command header size must be 0x20 bytes." );
 
-		constexpr uint hba_cmd_list_size = 32;
+		constexpr uint hba_cmd_list_length = 32;
 
 		/// @brief refer to AHCI - 4.2.2 Command List Structure
 		struct HbaCmdList
 		{
-			HbaCmdHeader headers[ hba_cmd_list_size ];
+			HbaCmdHeader headers[ hba_cmd_list_length ];
 		}__attribute__( ( __packed__ ) );
 
+		/// @brief refer to AHCI - 4.2.3 Command Table 
+		struct HbaCmdTbl
+		{
+			byte cmd_fis[ 0x40U ];
+			byte acmd[ 0x10U ];
+			byte resv[ 0x30U ];
+			byte prdt[ mm::pg_size - 0x80U ];
+		}__attribute__( ( __packed__ ) );
+		static_assert( sizeof( struct HbaCmdTbl ) == mm::pg_size, "AHCI command table size must equal to page size." );
+
+
+		/// @brief physical region descriptor
+		/// refer to AHCI - 4.2.3 Command Table 
+		struct HbaPrd
+		{
+			uint64 dba;				// data base address 
+			uint32 resv1;
+			uint8 interrupt : 1;
+			uint16 resv2 : 9;
+			uint32 dbc : 22;		// data byte count 
+		}__attribute__( ( __packed__ ) );
+		static_assert( sizeof( struct HbaPrd ) == 4 * sizeof( uint32 ), "PRD size must equal to 16 bytes." );
+
+
 	} // namespace sata
-	
+
 } // namespace ata

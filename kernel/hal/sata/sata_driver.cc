@@ -8,6 +8,7 @@
 
 #include "hal/sata/sata_driver.hh"
 #include "hal/sata/hba_mem.hh"
+#include "hal/sata/fis.hh"
 
 namespace ata
 {

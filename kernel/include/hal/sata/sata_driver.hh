@@ -16,6 +16,7 @@ namespace ata
 	{
 		struct HbaCmdList;
 		struct HbaRevFis;
+		struct FisRegH2D;
 
 		class SataDriver
 		{
