@@ -79,7 +79,8 @@ int main()
 		log__info( "test info" );
 		log__warn( "test warn " );
 		log_error( "test error" );
-		log_panic( "test panic" );
+		// log_panic( "test panic" );
+		assert( 0 );
 
 		log__info( "Kernel not complete. About to enter loop. " );
 		while ( 1 ); // stop here

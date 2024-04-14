@@ -22,3 +22,5 @@ void *memset( void *dst, int c, uint n );
 #define log__info(info__info) kernellib::k_printer.info( __FILE__, __LINE__, info__info )
 
 #define log_trace(trace_info, args...) ktrace( __FILE__, __LINE__, trace_info, args )
+
+#define assert(expr) ((expr)? (void)0 : kernellib::k_printer.assrt( __FILE__, __LINE__, #expr ))

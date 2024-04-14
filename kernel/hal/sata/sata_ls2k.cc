@@ -335,6 +335,9 @@ namespace ata
 
 		void SataLs2k::_start_port( uint i )
 		{
+			assert( _port_cmd_lst_base[ i ] != 0x0UL );
+			assert( _port_rec_fis_base[ i ] != 0x0UL );
+
 			uint32 tmp;
 
 			HbaPortReg *port_reg = &_hba_mem_reg->ports[ i ];
@@ -351,6 +354,8 @@ namespace ata
 				log_error( "启动端口失败" );
 				return;
 			}
+
+			( ( void ) 0 );
 		}
 
 		void SataLs2k::debug_print_cmd_lst_base()

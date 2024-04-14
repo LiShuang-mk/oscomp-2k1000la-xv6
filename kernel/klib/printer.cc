@@ -260,4 +260,29 @@ namespace kernellib
 #endif 
 		k_printer._locking = 1;
 	}
+
+	void Printer::assrt( const char *f, uint l, const char *expr )
+	{
+		k_printer._locking = 0;
+#ifdef LINUX_BUILD
+		k_printer.printf( "\033[91m[ assert ]=> " );
+#else 
+		k_printer.printf( "[ assert ]=> " );
+#endif 
+		k_printer.printf( f );
+		k_printer.printf( " : " );
+		k_printer.printf( "%d", l );
+		k_printer.printf( " :\n\t     " );
+		_trace_flag = 1;
+		k_printer.printf( expr );
+		_trace_flag = 0;
+#ifdef LINUX_BUILD
+		k_printer.printf( "\n\033[0m" );
+#else 
+		k_printer.printf( "\n" );
+#endif 
+		k_printer._locking = 1;
+
+		panic( f, l, "assert fail for above reason." );
+	}
 }
