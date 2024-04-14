@@ -39,6 +39,9 @@ namespace ata
 			byte vendor_reg[ 0x80 - 0x70 ];
 		}__attribute__( ( __packed__ ) );
 
+		constexpr uint hba_cmd_lst_len = 0x400U;
+		constexpr uint hba_rec_fis_len = 0x100U;
+
 #define _build_cmd_bit_(name, mask, shift) \
 	hba_port_cmd_##name##_s = shift, \
 	hba_port_cmd_##name##_m = mask << hba_port_cmd_##name##_s, 

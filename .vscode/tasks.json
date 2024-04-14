@@ -32,7 +32,7 @@
 		{
 			"label": "qemu ls2k",
 			"type": "shell",
-			"command": "echo 'TaskInfo: QEMU Starting' && echo 'TaskInfo: Start Debug' && gnome-terminal -e 'bash ./ls2k_debug.sh'",
+			"command": "echo 'TaskInfo: QEMU Starting' && echo 'TaskInfo: Start Debug' && gnome-terminal -e './ls2k_debug.sh'",
 			"presentation": {
 				"echo": true,
 				"clear": true,

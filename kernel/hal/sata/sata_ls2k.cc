@@ -79,6 +79,16 @@ namespace ata
 			}
 
 			_print_ahci_info();
+
+			uint i = 0;
+			for ( uint j = 0x1U; i < _port_num; j <<= 1 )
+			{
+				if ( ( _port_map & j ) == 0 )
+					continue;
+
+				_start_port( i );
+				++i;
+			}
 		}
 
 		/// @brief ahci 主设备初始化
@@ -95,8 +105,13 @@ namespace ata
 			// hba 控制器复位
 			uint32 tmp;
 			tmp = _hba_mem_reg->ghc;
+			log_trace( "sata 控制器复位前, ghc = %x", tmp );
 			if ( ( tmp & HbaRegGhc::hba_ghc_hr_m ) == 0 )
-				_hba_mem_reg->ghc |= HbaRegGhc::hba_ghc_hr_m;
+			{
+				log__info( "sata 控制器复位" );
+				_hba_mem_reg->ghc = tmp | HbaRegGhc::hba_ghc_hr_m;
+			}
+			log_trace( "sata 控制器复位后, ghc = %x", tmp );
 
 			time_out = 1000;
 			while ( ( _hba_mem_reg->ghc & HbaRegGhc::hba_ghc_hr_m ) && time_out )
@@ -117,8 +132,10 @@ namespace ata
 			// 使能 AHCI 
 			_hba_mem_reg->ghc = HbaRegGhc::hba_ghc_ae_m;
 
+			log_trace( "before enable stag, cap = %x", _hba_mem_reg->cap );
 			// 使能 staggered spin-up 
 			_hba_mem_reg->cap = cap_save;
+			log_trace( "after enable stag, cap = %x", _hba_mem_reg->cap );
 
 			// 获得端口数量
 			_port_num = ( cap_save & HbaRegCap::hba_cap_np_m ) + 1;
@@ -140,13 +157,12 @@ namespace ata
 
 			// 接下来对每个端口初始化
 			HbaPortReg *port_reg;
-			for ( uint i = 0; i < _port_num; ++i )
+			uint i = 0;
+			for ( uint j = 0x1U; i < _port_num && j != 0; j <<= 1 )
 			{
-				if ( ( _port_map & ( 0x1U << i ) ) == 0 )
-				{
-					--i;
+				if ( ( _port_map & j ) == 0 )
 					continue;
-				}
+
 				port_reg = &_hba_mem_reg->ports[ i ];
 
 				// 确保控制器端口处于 idle 状态
@@ -246,6 +262,7 @@ namespace ata
 				tmp = port_reg->ssts;
 				log_trace( "port %d status = %p", i, tmp );
 
+				++i;
 			}
 
 			tmp = _hba_mem_reg->ghc;
@@ -256,7 +273,6 @@ namespace ata
 
 			return 0;
 		}
-
 		/// @brief 打印 ahci 信息
 		void SataLs2k::_print_ahci_info()
 		{
@@ -314,7 +330,48 @@ namespace ata
 				_cap_cache & hba_cap_ssc_m ? "slum " : "",
 				_cap_cache & hba_cap_psc_m ? "part " : "" );
 
-			log_trace( "\nvendor 版本 = %x\n", _hba_vendor_reg->versionr );
+			log_trace( "vendor 版本 = %x\n", _hba_vendor_reg->versionr );
+		}
+
+		void SataLs2k::_start_port( uint i )
+		{
+			uint32 tmp;
+
+			HbaPortReg *port_reg = &_hba_mem_reg->ports[ i ];
+
+			tmp = port_reg->ssts;
+			log_trace(
+				"enter start port : %d\n"
+				"          status : %p"
+				, i, tmp );
+
+			if ( ( tmp & HbaRegPortSsts::hba_port_ssts_det_m ) != 0x03U )
+			{
+				log_trace( "没有连接到 port %d", i );
+				log_error( "启动端口失败" );
+				return;
+			}
+		}
+
+		void SataLs2k::debug_print_cmd_lst_base()
+		{
+			printf( "________________________________\n" );
+			printf( "HBA port command list space:\n" );
+			for ( uint i = 0; i < max_port_num; ++i )
+			{
+				printf( "port %d -> %p\n", i, _port_cmd_lst_base[ i ] );
+			}
+			printf( "________________________________\n" );
+		}
+		void SataLs2k::debug_print_rec_fis_base()
+		{
+			printf( "________________________________\n" );
+			printf( "HBA port receive FIS space:\n" );
+			for ( uint i = 0; i < max_port_num; ++i )
+			{
+				printf( "port %d -> %p\n", i, _port_rec_fis_base[ i ] );
+			}
+			printf( "________________________________\n" );
 		}
 	} // namespace sata
 

@@ -12,18 +12,18 @@ cd $RUNENV_PREFIX
 	-kernel ${KERNEL_PREFIX}/build/kernel.elf \
 	-serial vc \
 	-m 1G \
+	-device usb-kbd,bus=usb-bus.0 \
+	-device usb-tablet,bus=usb-bus.0 \
+	-device usb-storage,drive=udisk \
+	-drive if=none,id=udisk,file=./tmp/disk \
 	-net nic \
-	-net user,net=127.0.0.1/8,tftp=/srv/tftp \
+	-net user,net=10.0.2.0/24,tftp=/srv/tftp \
 	-vnc :0 \
 	-s -S \
-	-hda ./disk.img
-	# -device usb-kbd,bus=usb-bus.0 \
-	# -device usb-tablet,bus=usb-bus.0 \
-	# -device usb-storage,drive=udisk \
-	# -drive if=none,id=udisk,file=./tmp/disk \
-	# -hda ./tmp/2kfs.img 
+	-hda ./tmp/2kfs.img \
+	-hdb ./sdcard.img
+	# -D ./tmp/qemu.log \
 	# -D /dev/null \
-	# -vnc :0 -D ./tmp/qemu.log
 
 	#-initrd ${KERNEL_PREFIX}/fs.img \	 
 # init ram file system 

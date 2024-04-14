@@ -94,7 +94,7 @@ namespace kernellib
 					{
 						_locking = 0;
 						_trace_flag = 0;
-						printf( "\n\t   > " );
+						printf( "\n\t     " );
 						_trace_flag = 1;
 						_locking = 1;
 					}
@@ -156,7 +156,7 @@ namespace kernellib
 		k_printer.printf( f );
 		k_printer.printf( " : " );
 		k_printer.printf( "%d", l );
-		k_printer.printf( " :\n\t   > " );
+		k_printer.printf( " :\n\t     " );
 		_trace_flag = 1;
 		k_printer.printf( "%s", info );
 		_trace_flag = 0;
@@ -180,7 +180,7 @@ namespace kernellib
 		k_printer.printf( f );
 		k_printer.printf( " : " );
 		k_printer.printf( "%d", l );
-		k_printer.printf( " :\n\t   > " );
+		k_printer.printf( " :\n\t     " );
 		_trace_flag = 1;
 		k_printer.printf( "%s", info );
 		_trace_flag = 0;
@@ -203,7 +203,7 @@ namespace kernellib
 		k_printer.printf( f );
 		k_printer.printf( " : " );
 		k_printer.printf( "%d", l );
-		k_printer.printf( " :\n\t   > " );
+		k_printer.printf( " :\n\t     " );
 		_trace_flag = 1;
 		k_printer.printf( "%s", info );
 		_trace_flag = 0;
@@ -226,7 +226,7 @@ namespace kernellib
 		k_printer.printf( f );
 		k_printer.printf( " : " );
 		k_printer.printf( "%d", l );
-		k_printer.printf( " :\n\t   > " );
+		k_printer.printf( " :\n\t     " );
 		_trace_flag = 1;
 		k_printer.printf( "%s", info );
 		_trace_flag = 0;
@@ -249,7 +249,7 @@ namespace kernellib
 		k_printer.printf( f );
 		k_printer.printf( " : " );
 		k_printer.printf( "%d", l );
-		k_printer.printf( " :\n\t   > " );
+		k_printer.printf( " :\n\t     " );
 		_trace_flag = 1;
 		k_printer.vprintf( info, ap );
 		_trace_flag = 0;

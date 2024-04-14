@@ -171,7 +171,7 @@ namespace loongarch
 		};
 
 #define _build_pci_cfg_base_(name) pci_cfg_##name = pci_type0_base | ( name##_bus << pci_cfg_busnum_s ) | ( name##_dev << pci_cfg_devnum_s ) | ( name##_fun << pci_cfg_funnum_s )
-		
+
 		enum PciCfgDevAddr : uint64
 		{
 			_build_pci_cfg_base_( apb ),
@@ -190,7 +190,7 @@ namespace loongarch
 			_build_pci_cfg_base_( pcie0p3 ),
 			_build_pci_cfg_base_( pcie1p0 ),
 			_build_pci_cfg_base_( pcie1p1 ),
-			_build_pci_cfg_base_( dma ), 
+			_build_pci_cfg_base_( dma ),
 		};
 
 #undef _build_pci_cfg_base_
@@ -198,9 +198,9 @@ namespace loongarch
 		constexpr uint64 xbar_win4_cfg_base = 0x1fe02400UL | dmwin::win_1;
 
 		constexpr uint64 iodma_win_base = 0x0UL << 60;
-		constexpr uint64 iodma_win_mask = ~( 0x0UL ) << 28;
+		constexpr uint64 iodma_win_mask = ~( 0x0UL ) << 32;
 
-		enum XbarWin : uint64 
+		enum XbarWin : uint64
 		{
 			xwin4_base0 = 0x00 + xbar_win4_cfg_base,
 			xwin4_base1 = 0x08 + xbar_win4_cfg_base,
@@ -230,7 +230,7 @@ namespace loongarch
 			xwin4_mmap7 = 0xb8 + xbar_win4_cfg_base,
 		};
 
-		enum XbarWinMmap : uint64 
+		enum XbarWinMmap : uint64
 		{
 			xbar_win_num_s = 0,
 			xbar_win_cac_s = 5,
@@ -242,6 +242,55 @@ namespace loongarch
 			xbar_win_typ_m = 0x1 << xbar_win_typ_s,
 			xbar_win_ena_m = 0x1 << xbar_win_ena_s,
 		};
+
+		constexpr uint64 second_cpu_win_cfg_base = 0x1fe02000UL | dmwin::win_1;
+		constexpr uint64 second_pci_win_cfg_base = 0x1fe02100UL | dmwin::win_1;
+#define _build_cpu_win_( num ) \
+	cpu_win##num##_base = second_cpu_win_cfg_base + 0x00UL + num * 8, \
+	cpu_win##num##_mask = second_cpu_win_cfg_base + 0x40UL + num * 8, \
+	cpu_win##num##_mmap = second_cpu_win_cfg_base + 0x80UL + num * 8,
+#define _build_pci_win_( num ) \
+	pci_win##num##_base = second_pci_win_cfg_base + 0x00UL + num * 8, \
+	pci_win##num##_mask = second_pci_win_cfg_base + 0x40UL + num * 8, \
+	pci_win##num##_mmap = second_pci_win_cfg_base + 0x80UL + num * 8, 
+		enum SecondWin : uint64
+		{
+			_build_cpu_win_( 0 )
+			_build_cpu_win_( 1 )
+			_build_cpu_win_( 2 )
+			_build_cpu_win_( 3 )
+			_build_cpu_win_( 4 )
+			_build_cpu_win_( 5 )
+			_build_cpu_win_( 6 )
+			_build_cpu_win_( 7 )
+
+			_build_pci_win_( 0 )
+			_build_pci_win_( 1 )
+			_build_pci_win_( 2 )
+			_build_pci_win_( 3 )
+			_build_pci_win_( 4 )
+			_build_pci_win_( 5 )
+			_build_pci_win_( 6 )
+			_build_pci_win_( 7 )
+		};
+#undef _build_cpu_win_
+#undef _build_pci_win_
+
+		constexpr uint64 sec_win_route_ddr = 0;
+		constexpr uint64 sec_win_route_spi = 2;
+		enum SecondWinMmap : uint64
+		{
+			sec_win_rt_s = 0,	// route 
+			sec_win_fi_s = 4, 	// allow fetch instructions 
+			sec_win_br_s = 5,	// allow block read 
+			sec_win_en_s = 7, 	// enable 
+
+			sec_win_rt_m = 0x7UL << sec_win_rt_s,
+			sec_win_fi_m = 0x1UL << sec_win_fi_s,
+			sec_win_br_m = 0x1UL << sec_win_br_s,
+			sec_win_en_m = 0x1UL << sec_win_en_s,
+		};
+
 
 	} // namespace qemuls2k
 

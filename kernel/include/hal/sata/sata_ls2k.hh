@@ -57,13 +57,23 @@ namespace ata
 			uint32 _port_map = 0;
 			uint32 _cap_cache = 0;
 
+			void *_port_cmd_lst_base[ max_port_num ];
+			void *_port_rec_fis_base[ max_port_num ];
+
 		public:
 			SataLs2k() : SataDriver() {};
 			void init( const char * lock_name, void *clb, void *fb );
 			int ahci_host_init();
+			void set_port_cl( uint port, void *base ) { _port_cmd_lst_base[ port ] = base; }
+			void set_port_fb( uint port, void *base ) { _port_rec_fis_base[ port ] = base; }
+
+		public:
+			void debug_print_cmd_lst_base();
+			void debug_print_rec_fis_base();
 
 		private:
 			void _print_ahci_info();
+			void _start_port( uint i );
 		};
 
 		extern SataLs2k k_sata_driver;
