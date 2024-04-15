@@ -11,7 +11,7 @@
 #include "types.hh"
 
 #include "hal/loongarch.hh"
-
+#include "hal/qemu_ls2k.hh"
 
 namespace mm
 {

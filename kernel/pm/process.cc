@@ -12,7 +12,7 @@
 #include "mm/page_table.hh"
 #include "mm/page.hh"
 #include "klib/common.hh"
-
+#include "pm/sharemem.hh"
 namespace pm
 {
 	Pcb k_proc_pool[ num_process ];

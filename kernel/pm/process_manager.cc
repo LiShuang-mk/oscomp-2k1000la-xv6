@@ -8,7 +8,7 @@
 
 #include "pm/process_manager.hh"
 #include "pm/process.hh"
-
+#include "hal/cpu.hh"
 namespace pm
 {
 	ProcessManager k_pm;
@@ -22,5 +22,14 @@ namespace pm
 			Pcb &p = k_proc_pool[ i ];
 			p.init( "pcb", i );
 		}
+	}
+
+	Pcb *ProcessManager::get_cur_pcb()
+	{
+		loongarch::Cpu::push_intr_off();
+		loongarch::Cpu *c_cpu = loongarch::Cpu::get_cpu();
+		pm::Pcb *pcb = c_cpu->get_cur_proc();
+		loongarch::Cpu::pop_intr_off();
+		return pcb;
 	}
 }

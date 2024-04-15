@@ -11,7 +11,7 @@
 #include "smp/lock.hh"
 #include "mm/page_table.hh"
 #include "pm/context.hh"
-
+#include "pm/sharemem.hh"
 struct TrapFrame;
 
 namespace pm
@@ -29,10 +29,11 @@ namespace pm
 	};
 
 	class ProcessManager;
-
+	class ShmManager;
 	class Pcb
 	{
 		friend ProcessManager;
+		friend ShmManager;
 	private:
 		smp::Lock _lock;
 		int _gid = num_process;					// global ID in pool 
@@ -62,12 +63,15 @@ namespace pm
 
 		// about share memory 
 		uint _shm;					// The low-boundary address of share memory 
+		void *_shmva[SHM_NUM];				// The sharemem of process
 		uint _shmkeymask;			// The mask of using shared physical memory page 
-		// void *_shmva[ MAX_SHM_NUM ];			// The starting virtual address list of shared memory 
 
 		//about msg queue 
 		uint _mqmask;
 
+		// vm
+		struct vma *vm[10];  // virtual memory area
+		
 	public:
 		Pcb() {};
 		void init( const char *lock_name, uint gid );

@@ -11,6 +11,7 @@
 #include "types.hh"
 #include "page.hh"
 
+#define TRAPEFRAME PageEnum::pg_size
 // virtual memory layout 
 
 namespace mm

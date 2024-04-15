@@ -1,5 +1,5 @@
 //
-// Created by Li shuang ( pseudonym ) on 2024-03-28 
+// Created by Li shuang ( pseudonym ) on 2024-04-05 
 // --------------------------------------------------------------
 // | Note: This code file just for study, not for commercial use 
 // | Contact Author: lishuang.mk@whu.edu.cn 
@@ -7,22 +7,22 @@
 //
 
 #pragma once 
-#include "pm/process.hh"
+
 #include "smp/lock.hh"
 
-namespace pm
+namespace im
 {
-	class ProcessManager
+	class ExceptionManager
 	{
 	private:
-		smp::Lock _pid_lock;
-		smp::Lock _wait_lock;
+		smp::Lock _lock;
 
 	public:
-		ProcessManager() = default;
-		void init( const char *pid_lock_name, const char *wait_lock_name );
-		Pcb *get_cur_pcb();
+		ExceptionManager() = default;
+		void init( const char *lock_name );
+		void kernel_trap();
+		void machine_trap();
 	};
 
-	extern ProcessManager k_pm;
-}
+	extern ExceptionManager k_em;
+} // namespace im
