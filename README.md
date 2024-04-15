@@ -34,3 +34,5 @@
 #### 1. [=> Makefile工程](./doc/project.md)
 
 #### 2. [=> 关于HAL与CSR](./doc/hal.md)
+
+#### 3. [=> ls2k的IO方式](./doc/ls2k_io.md)

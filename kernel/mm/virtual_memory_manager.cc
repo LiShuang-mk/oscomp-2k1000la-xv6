@@ -15,7 +15,6 @@
 #include "mm/memlayout.hh"
 #include "mm/tlb_manager.hh"
 #include "pm/process.hh"
-
 namespace mm
 {
 	VirtualMemoryManager k_vmm;
@@ -98,12 +97,12 @@ namespace mm
 		return true;
 	}
 
-	uint64 VirtualMemoryManager::allocshm(PageTable &pt, uint64 oldshm, uint64 newshm, uint64 sz, void *phyaddr[MAX_SHM_PGNUM])
+	uint64 VirtualMemoryManager::allocshm(PageTable &pt, uint64 oldshm, uint64 newshm, uint64 sz, void *phyaddr[pm::MAX_SHM_PGNUM])
 	{
 		void *mem;
 		uint64 a;
 
-		if(oldshm & 0xfff || newshm & 0xfff || newshm < sz || oldshm > (TRAPEFRAME - 64 *2 * pg_size))
+		if(oldshm & 0xfff || newshm & 0xfff || newshm < sz || oldshm > (vm_trap_frame - 64 *2 * pg_size))
 		{
 			log_panic("allocshm: bad parameters");
 			return 0;
@@ -129,7 +128,7 @@ namespace mm
 	uint64 VirtualMemoryManager::mapshm(PageTable &pt, uint64 oldshm, uint64 newshm, uint sz, void **phyaddr)
 	{
 		uint64 a;
-		if(oldshm & 0xfff || newshm & 0xfff || newshm < sz || oldshm > (TRAPEFRAME - 64 *2 * pg_size))
+		if(oldshm & 0xfff || newshm & 0xfff || newshm < sz || oldshm > (vm_trap_frame - 64 *2 * pg_size))
 		{
 			log_panic("mapshm: bad parameters when shmmap");
 			return 0;
@@ -152,11 +151,39 @@ namespace mm
 		if(page_round_up(newshm) >  page_round_up(oldshm))
 		{
 			int npages = page_round_up(newshm) - page_round_up(oldshm) / pg_size;
-			return npages; // This temp varible is not used in the code, but uvmunmap is not writed so it is just a placeholder 
-			//uvmunmap(pt,page_round_up(oldshm),npages,0);
+			vmunmap(pt,page_round_up(oldshm),npages,0);
 		}
 		return oldshm;
 	}
 
+	void VirtualMemoryManager::vmunmap(PageTable &pt, uint64 va, uint64 npages, int do_free)
+	{
+		uint64 a;
+		Pte pte;
 
+		if((va % PageEnum::pg_size) != 0)
+			log_panic("vmunmap: not aligned");
+
+		for(a = va; a< va + npages * PageEnum::pg_size; a+= PageEnum::pg_size)
+		{
+			if((pte = pt.walk(a,0)).is_null())
+				log_panic("vmunmap: walk");
+			if(!pte.is_valid())
+				log_panic("vmunmap: not mapped");
+			if(!pte.is_leaf()) 
+				log_panic("vmunmap: not a leaf");
+			if(do_free)
+			{
+				k_pmm.free_page(pte.pa());
+			}
+			pte = 0;
+		}
+	}
+
+	void VirtualMemoryManager::vmfree(PageTable &pt, uint64 sz)
+	{
+		if(sz > 0)
+			vmunmap(pt, 0 ,page_round_up(sz) / PageEnum::pg_size, 1);
+		pt.freewalk();
+	}
 }
