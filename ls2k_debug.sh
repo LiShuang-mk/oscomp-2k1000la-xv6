@@ -20,8 +20,8 @@ cd $RUNENV_PREFIX
 	-net user,net=10.0.2.0/24,tftp=/srv/tftp \
 	-vnc :0 \
 	-s -S \
-	-hda ./tmp/2kfs.img \
-	-hdb ./sdcard.img
+	-hda ./sdcard.img
+	# -hda ./tmp/2kfs.img \
 	# -D ./tmp/qemu.log \
 	# -D /dev/null \
 

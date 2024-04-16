@@ -7,6 +7,7 @@
 //
 
 #include "hal/cpu.hh"
+#include "klib/common.hh"
 
 namespace loongarch
 {
@@ -17,7 +18,7 @@ namespace loongarch
 	inline int Cpu::get_intr_stat()
 	{
 		uint32 x = read_csr( csr::CsrAddr::crmd );
-		return ( x & csr::crmd::ie_m ) != 0;
+		return ( x & csr::Crmd::ie_m ) != 0;
 	}
 
 	Cpu *Cpu::get_cpu()
@@ -41,11 +42,11 @@ namespace loongarch
 	{
 		Cpu *c_cpu = get_cpu();
 		if ( get_intr_stat() )
-			while ( 1 );// panic: pop_off - interruptible 
+			log_panic("pop intr off - interruptible");
 		if ( c_cpu->_num_off < 1 )
-			while ( 1 );// panic: pop_off - none to pop off 
+			log_panic("pop intr off - none to pop off");
 		c_cpu->_num_off -= 1;
-		if ( c_cpu->_num_off == 1 && c_cpu->_int_ena )
+		if ( c_cpu->_num_off == 0 && c_cpu->_int_ena )
 			_intr_on();
 	}
 
@@ -63,11 +64,13 @@ namespace loongarch
 
 	void Cpu::_intr_on()
 	{
-		write_csr( csr::CsrAddr::crmd, read_csr( csr::CsrAddr::crmd ) | csr::crmd::ie_m );
+		uint64 tmp = read_csr( csr::CsrAddr::crmd );
+		write_csr( csr::CsrAddr::crmd, tmp | csr::Crmd::ie_m );
 	}
 
 	void Cpu::_intr_off()
 	{
-		write_csr( csr::CsrAddr::crmd, read_csr( csr::CsrAddr::crmd ) & ~csr::crmd::ie_m );
+		uint64 tmp = read_csr( csr::CsrAddr::crmd );
+		write_csr( csr::CsrAddr::crmd, tmp & ~csr::Crmd::ie_m );
 	}
 } // namespace loongarch

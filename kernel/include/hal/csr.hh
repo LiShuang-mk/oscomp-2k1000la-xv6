@@ -84,7 +84,7 @@ namespace loongarch
 
 		/// @brief	s: shift;
 		///			m: mask;
-		enum crmd : uint32
+		enum Crmd : uint32
 		{
 			plv_s = 0x0,
 			plv_m = 0x3 << plv_s,
@@ -162,6 +162,31 @@ namespace loongarch
 			ecfg_lie_m = 0x1FFF << ecfg_lie_s,
 			ecfg_vs_m = 0x7 << ecfg_vs_s,
 		};
+
+#define _build_estat_bit_( name, mask, shift ) \
+	estat_##name##_s = shift, \
+	estat_##name##_m = mask << estat_##name##_s, 
+		enum Estat : uint32
+		{
+			_build_estat_bit_( is, 0x1FFFU, 0 )
+			_build_estat_bit_( is_swi0, 0x1U, 0 )
+			_build_estat_bit_( is_swi1, 0x1U, 1 )
+			_build_estat_bit_( is_hwi0, 0x1U, 2 )
+			_build_estat_bit_( is_hwi1, 0x1U, 3 )
+			_build_estat_bit_( is_hwi2, 0x1U, 4 )
+			_build_estat_bit_( is_hwi3, 0x1U, 5 )
+			_build_estat_bit_( is_hwi4, 0x1U, 6 )
+			_build_estat_bit_( is_hwi5, 0x1U, 7 )
+			_build_estat_bit_( is_hwi6, 0x1U, 8 )
+			_build_estat_bit_( is_hwi7, 0x1U, 9 )
+			_build_estat_bit_( is_pmi, 0x1U, 10 )
+			_build_estat_bit_( is_ti, 0x1U, 11 )
+			_build_estat_bit_( is_ipi, 0x1U, 12 )
+			_build_estat_bit_( msgint, 0x1U, 14 )
+			_build_estat_bit_( ecode, 0x3FU, 16 )
+			_build_estat_bit_( esubcode, 0x1FFU, 22 )
+		};
+#undef _build_estat_bit_ 
 
 		static inline uint64 _read_csr_( CsrAddr _csr )
 		{

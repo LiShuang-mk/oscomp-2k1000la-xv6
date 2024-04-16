@@ -30,3 +30,9 @@ void Console::putc( char c )
 	else
 		_uart_m.putc_sync( c );
 }
+
+void Console::handle_uart_intr()
+{
+	_uart_m.read_lsr();
+	_uart_m.read_rhr();
+}

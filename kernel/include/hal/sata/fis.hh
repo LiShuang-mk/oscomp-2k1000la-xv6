@@ -16,7 +16,7 @@ namespace ata
 	{
 		/// @brief FIS type value enum. | 
 		/// refer to SerialATA revision-2.6 - 10.3.1 FIS Type Values 
-		enum FisType : unit8 
+		enum FisType : byte 
 		{
 			fis_reg_h2d = 0x27,
 			fis_reg_d2h = 0x34,

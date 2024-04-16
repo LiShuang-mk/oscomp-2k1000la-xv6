@@ -20,6 +20,8 @@ namespace im
 	public:
 		InterruptManager() = default;
 		void init( const char *lock_name );
+
+		void clear_uart0_intr();
 	};
 
 	extern InterruptManager k_im;

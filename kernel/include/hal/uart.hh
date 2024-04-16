@@ -24,6 +24,8 @@ public:
 	UartManager() {}
 	void init( uint64 u_addr );
 	void putc_sync( int c );
+	uint8 read_lsr();
+	uint8 read_rhr();
 
 private:
 	enum UartReg

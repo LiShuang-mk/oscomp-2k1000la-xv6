@@ -16,6 +16,9 @@ namespace ata
 {
 	namespace sata
 	{
+		struct HbaPrd;
+
+
 		/// @brief refer to AHCI - 4.2.2 Command List Structure 
 		struct HbaCmdHeader
 		{
@@ -58,17 +61,6 @@ namespace ata
 			HbaCmdHeader headers[ hba_cmd_list_length ];
 		}__attribute__( ( __packed__ ) );
 
-		/// @brief refer to AHCI - 4.2.3 Command Table 
-		struct HbaCmdTbl
-		{
-			byte cmd_fis[ 0x40U ];
-			byte acmd[ 0x10U ];
-			byte resv[ 0x30U ];
-			byte prdt[ mm::pg_size - 0x80U ];
-		}__attribute__( ( __packed__ ) );
-		static_assert( sizeof( struct HbaCmdTbl ) == mm::pg_size, "AHCI command table size must equal to page size." );
-
-
 		/// @brief physical region descriptor
 		/// refer to AHCI - 4.2.3 Command Table 
 		struct HbaPrd
@@ -80,6 +72,17 @@ namespace ata
 			uint32 dbc : 22;		// data byte count 
 		}__attribute__( ( __packed__ ) );
 		static_assert( sizeof( struct HbaPrd ) == 4 * sizeof( uint32 ), "PRD size must equal to 16 bytes." );
+
+
+		/// @brief refer to AHCI - 4.2.3 Command Table 
+		struct HbaCmdTbl
+		{
+			byte cmd_fis[ 0x40U ];
+			byte acmd[ 0x10U ];
+			byte resv[ 0x30U ];
+			struct HbaPrd prdt[ ( mm::pg_size - 0x80U ) / sizeof( struct HbaPrd ) ];
+		}__attribute__( ( __packed__ ) );
+		static_assert( sizeof( struct HbaCmdTbl ) == mm::pg_size, "AHCI command table size must equal to page size." );
 
 
 	} // namespace sata

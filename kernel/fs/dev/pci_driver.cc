@@ -62,6 +62,7 @@ namespace dev
 					log_trace( "alloc port %d command list space: no mem", port );
 					log_panic( "no mem" );
 				}
+				mm::k_pmm.clear_page( ( void* ) addr_base );
 				addr_base &= ~loongarch::qemuls2k::dmwin_mask;
 				addr_base |= loongarch::qemuls2k::iodma_win_base;
 				for (
@@ -85,6 +86,7 @@ namespace dev
 					log_trace( "alloc port %d receive FIS space: no mem", port );
 					log_panic( "no mem" );
 				}
+				mm::k_pmm.clear_page( ( void* ) addr_base );
 				addr_base &= ~loongarch::qemuls2k::dmwin_mask;
 				addr_base |= loongarch::qemuls2k::iodma_win_base;
 				for (
@@ -101,7 +103,8 @@ namespace dev
 			ata::sata::k_sata_driver.debug_print_cmd_lst_base();
 			ata::sata::k_sata_driver.debug_print_rec_fis_base();
 
-			ata::sata::k_sata_driver.init( "sata driver", 0, 0 );
+			// ata::sata::k_sata_driver.init( "sata driver", 0, 0 );
+			ata::sata::k_sata_driver.simple_init();
 		}
 
 	} // namespace pci

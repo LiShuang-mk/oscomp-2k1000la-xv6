@@ -50,6 +50,7 @@ namespace ata
 
 			HbaPortReg ports[ hba_port_num ];
 		}__attribute__( ( __packed__ ) );
+		// static_assert( ( uint64 )( ( ( HbaMemReg* ) 0x0UL )->ports ) == 0x100 );
 
 #define _build_cap_bit_(name, mask, shift) \
 	hba_cap_##name##_s = shift, \

@@ -14,6 +14,9 @@ namespace ata
 {
 	namespace sata
 	{
+#define _BPRS_(reg, name) hba_port_##reg##_##name##_s 
+#define _BPRM_(reg, name) hba_port_##reg##_##name##_m 
+
 		/// @brief refer to AHCI - 3.3 Port Registers 
 		struct  HbaPortReg
 		{
@@ -25,6 +28,7 @@ namespace ata
 			dword ie;
 			dword cmd;
 			dword tfd;
+			dword resv0;
 			dword sig;
 			dword ssts;
 			dword sctl;
@@ -35,9 +39,14 @@ namespace ata
 			dword fbs;
 			dword devslp;
 
+			// reserved 
+			byte resv1[ 0x70 - 0x48 ];
+
 			// vendor specific from 70h to 7fh 
 			byte vendor_reg[ 0x80 - 0x70 ];
 		}__attribute__( ( __packed__ ) );
+		static_assert( sizeof( struct HbaPortReg ) == 0x80 );
+		// static_assert( ( uint64 ) &( ( ( HbaPortReg* ) nullptr )->cmd ) == 0x18 );
 
 		constexpr uint hba_cmd_lst_len = 0x400U;
 		constexpr uint hba_rec_fis_len = 0x100U;
@@ -49,6 +58,11 @@ namespace ata
 		enum HbaRegPortCmd : uint32
 		{
 			_build_cmd_bit_( icc, 0xFU, 28 )
+			_build_cmd_bit_( icc_devsleep, 0x8U, 28 )
+			_build_cmd_bit_( icc_slumber, 0x6U, 28 )
+			_build_cmd_bit_( icc_partial, 0x2U, 28 )
+			_build_cmd_bit_( icc_active, 0x1U, 28 )
+			_build_cmd_bit_( icc_idle, 0x0U, 28 )
 			_build_cmd_bit_( asp, 0x1U, 27 )
 			_build_cmd_bit_( alpe, 0x1U, 26 )
 			_build_cmd_bit_( dlae, 0x1U, 25 )
@@ -85,6 +99,17 @@ namespace ata
 		};
 #undef _build_ssts_bit_
 
+#define _build_sctl_bit_(name, mask, shift) \
+	_BPRS_(sctl, name) = shift, \
+	_BPRM_(sctl, name) = mask << _BPRS_(sctl, name), 
+		enum HbaRegPortSctl : uint32
+		{
+			_build_sctl_bit_( ipm, 0xFU, 8 )
+			_build_sctl_bit_( spd, 0xFU, 4 )
+			_build_sctl_bit_( det, 0xFU, 0 )
+		};
+#undef _build_sctl_bit_ 
+
 #define _build_serr_bit_( name, mask, shift ) \
 	hba_port_serr_##name##_s = shift, \
 	hba_port_ssts_##name##_m = mask << hba_port_serr_##name##_s, 
@@ -114,6 +139,33 @@ namespace ata
 		};
 #undef _build_serr_bit_
 
+
+#define _build_is_bit_( name, mask, shift ) \
+	_BPRS_( is, name ) = shift, \
+	_BPRM_( is, name ) = mask << _BPRS_( is, name ), 
+
+		enum HbaRegPortIs : uint32
+		{
+			_build_is_bit_( cpds, 0x1U, 31 )
+			_build_is_bit_( tfes, 0x1U, 30 )
+			_build_is_bit_( hbfs, 0x1U, 29 )
+			_build_is_bit_( hbds, 0x1U, 28 )
+			_build_is_bit_( ifs, 0x1U, 27 )
+			_build_is_bit_( infs, 0x1U, 26 )
+			_build_is_bit_( ofs, 0x1U, 24 )
+			_build_is_bit_( ipms, 0x1U, 23 )
+			_build_is_bit_( prcs, 0x1U, 22 )
+			_build_is_bit_( dmps, 0x1U, 7 )
+			_build_is_bit_( pcs, 0x1U, 6 )
+			_build_is_bit_( dps, 0x1U, 5 )
+			_build_is_bit_( ufs, 0x1U, 4 )
+			_build_is_bit_( sdbs, 0x1U, 3 )
+			_build_is_bit_( dss, 0x1U, 2 )
+			_build_is_bit_( pss, 0x1U, 1 )
+			_build_is_bit_( dhrs, 0x1U, 0 )
+		};
+#undef _build_ie_bit_ 
+
 #define _build_ie_bit_( name, mask, shift ) \
 	hba_port_ie_##name##_s = shift, \
 	hba_port_ie_##name##_m = mask << hba_port_ie_##name##_s, 
@@ -139,6 +191,20 @@ namespace ata
 			_build_ie_bit_( dhre, 0x1U, 0 )
 		};
 #undef _build_ie_bit_ 
+
+#define _build_tfd_bit_( name, mask, shift ) \
+	_BPRS_(tfd, name) = shift, \
+	_BPRM_(tfd, name) = mask << _BPRS_(tfd, name), 
+
+		enum HbaRegPortTfd : uint32
+		{
+			_build_tfd_bit_( err, 0xFFU, 8 )
+			_build_tfd_bit_( sts, 0xFFU, 0 )
+			_build_tfd_bit_( sts_bsy, 0x1U, 7 )
+			_build_tfd_bit_( sts_drq, 0x1U, 3 )
+			_build_tfd_bit_( sts_err, 0x1U, 0 )
+		};
+#undef _build_tfd_bit_
 
 	} // namespace sata
 

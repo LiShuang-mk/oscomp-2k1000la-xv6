@@ -6,8 +6,10 @@
 // --------------------------------------------------------------
 //
 
+#include "console.hh"
 #include "hal/qemu_ls2k.hh"
 #include "im/interrupt_manager.hh"
+#include "klib/common.hh"
 
 namespace im
 {
@@ -32,11 +34,41 @@ namespace im
 
 		loongarch::qemuls2k::write_itr_cfg(
 			loongarch::qemuls2k::ItrCfg::itr_enr_l,
-			loongarch::qemuls2k::ItrCfg::itr_bit_uart0_m
+			loongarch::qemuls2k::ItrCfg::itr_bit_uart0_m |
+			loongarch::qemuls2k::ItrCfg::itr_bit_sata_m 
 		);
 		loongarch::qemuls2k::write_itr_cfg(
 			loongarch::qemuls2k::ItrCfg::itr_route_uart0,
 			loongarch::qemuls2k::itr_route_xy( 0, 2 )
+		);
+		loongarch::qemuls2k::write_itr_cfg(
+			loongarch::qemuls2k::ItrCfg::itr_route_sata,
+			loongarch::qemuls2k::itr_route_xy( 0, 3 )
+		);
+	}
+
+	void InterruptManager::clear_uart0_intr()
+	{
+		log_trace(
+			"before clear uart0 intrn\n"
+			"itr status : %p\n"
+			"ena status : %p\n",
+			loongarch::qemuls2k::read_itr_cfg(
+				loongarch::qemuls2k::ItrCfg::itr_isr_l ),
+			loongarch::qemuls2k::read_itr_cfg(
+				loongarch::qemuls2k::ItrCfg::itr_esr_l )
+		);
+
+		k_console.handle_uart_intr();
+		
+		log_trace(
+			"after clear uart0 intrn\n"
+			"itr status : %p\n"
+			"ena status : %p\n",
+			loongarch::qemuls2k::read_itr_cfg(
+				loongarch::qemuls2k::ItrCfg::itr_isr_l ),
+			loongarch::qemuls2k::read_itr_cfg(
+				loongarch::qemuls2k::ItrCfg::itr_esr_l )
 		);
 	}
 } // namespace im

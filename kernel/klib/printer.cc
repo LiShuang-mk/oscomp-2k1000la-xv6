@@ -52,6 +52,22 @@ namespace kernellib
 				_console->putc( buf[ i ] );
 	}
 
+
+	void Printer::printbyte( uchar x )
+	{
+		char buf[ 2 ];
+		
+		buf[ 0 ] = _digits[ x & 0xFU ];
+		x >>= 4;
+		buf[ 1 ] = _digits[ x & 0xFU ];
+
+		if ( _type == out_type::console && _console )
+		{
+			_console->putc( buf[ 1 ] );
+			_console->putc( buf[ 0 ] );
+		}
+	}
+
 	void Printer::printptr( uint64 x )
 	{
 		if ( _type != out_type::console || _console == nullptr )
@@ -125,6 +141,9 @@ namespace kernellib
 					if ( _type == out_type::console && _console )
 						for ( ; *s; s++ )
 							_console->putc( *s );
+					break;
+				case 'B':
+					printbyte( ( uchar ) va_arg( ap, int ) );
 					break;
 				case '%':
 					if ( _type == out_type::console && _console )

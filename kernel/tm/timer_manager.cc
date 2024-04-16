@@ -22,5 +22,6 @@ namespace tm
 			( loongarch::csr::tcfg::tcfg_en_m ) |
 			( loongarch::csr::tcfg::tcfg_periodic_m );
 		loongarch::Cpu::write_csr( loongarch::csr::CsrAddr::tcfg, tcfg_data );
+		// asm volatile( "csrwr %0, 0x41" : : "r" ( tcfg_data ) );
 	}
 } // namespace tm

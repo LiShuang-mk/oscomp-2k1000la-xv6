@@ -40,6 +40,7 @@ namespace kernellib
 		void vprintf( const char *fmt, va_list ap );
 		void printf( const char *fmt, ... );
 		void printint( int xx, int base, int sign );
+		void printbyte( uint8 x );
 		void printptr( uint64 x );
 
 		static void panic( const char *f, uint l, const char *info, ... );

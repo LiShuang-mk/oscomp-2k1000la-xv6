@@ -22,6 +22,9 @@ namespace im
 		void init( const char *lock_name );
 		void kernel_trap();
 		void machine_trap();
+
+	public:
+		void ahci_read_handle();
 	};
 
 	extern ExceptionManager k_em;

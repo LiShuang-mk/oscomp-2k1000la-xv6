@@ -21,6 +21,8 @@ public:
 	Console();
 	void init( const char *name );
 	void putc( char c );
+
+	void handle_uart_intr();
 };
 
 extern Console k_console;

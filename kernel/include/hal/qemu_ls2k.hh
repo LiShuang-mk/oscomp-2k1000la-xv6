@@ -20,6 +20,10 @@ namespace loongarch
 			win_0 = 0x9UL << 60,
 			win_1 = 0x8UL << 60,
 		};
+		constexpr uint64 virt_to_phy_address( uint64 virt )
+		{
+			return virt & ~dmwin_mask;
+		}
 
 		/// @brief interface address 
 		enum InterAddr : uint64
@@ -46,8 +50,11 @@ namespace loongarch
 
 			itr_bit_uart0_s = 0,
 			itr_bit_uart0_m = 0x1UL << itr_bit_uart0_s,
+			itr_bit_sata_s = 19,
+			itr_bit_sata_m = 0x1UL << itr_bit_sata_s,
 
 			itr_route_uart0 = 0x0UL + itr_route_base,
+			itr_route_sata = 0x13UL + itr_route_base,
 
 			itr_isr_l = 0x00UL + itr_low_bit,
 			itr_isr_h = 0x00UL + itr_high_bit,
@@ -79,6 +86,10 @@ namespace loongarch
 		constexpr inline void write_itr_cfg( ItrCfg itrReg, uint32 data )
 		{
 			*( volatile uint32 * ) itrReg = data;
+		}
+		inline uint32 read_itr_cfg( ItrCfg itrReg )
+		{
+			return *( ( volatile uint32 * ) itrReg );
 		}
 
 		constexpr uint64 pci_type0_base = 0xFE00000000 | dmwin::win_0;

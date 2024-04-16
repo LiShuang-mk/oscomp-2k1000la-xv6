@@ -16,7 +16,7 @@ namespace ata
 	{
 
 #if PLATFORM == ls2k 
-		constexpr uint hba_port_num = 2;
+		constexpr uint hba_port_num = 32;
 #else 
 		constexpr uint hba_port_num = 1;
 #endif

@@ -3,6 +3,7 @@
 #include "hal/qemu_ls2k.hh"
 #include "hal/cpu.hh"
 #include "fs/dev/pci_driver.hh"
+#include "fs/dev/ahci_controller.hh"
 #include "tm/timer_manager.hh"
 #include "im/exception_manager.hh"
 #include "im/interrupt_manager.hh"
@@ -27,6 +28,10 @@ int main()
 		kernellib::k_printer.init( &k_console, "printer" );
 		log__info( "Hello World!\n" );
 
+
+		uint64 tmp = loongarch::Cpu::read_csr( loongarch::csr::crmd );
+		log_trace( "crmd: %p", tmp );
+
 		// physical memory init 
 		mm::k_pmm.init( "physical memory manager",
 			loongarch::qemuls2k::memory::mem_start,
@@ -45,13 +50,14 @@ int main()
 		tm::k_tm.init( "timer manager" );
 		log__info( "tm init" );
 
-		// exception init 
-		im::k_em.init( "exception manager " );
-		log__info( "em init" );
-
 		// interrupt init 
 		im::k_im.init( "interrupt init" );
 		log__info( "im init" );
+
+		// exception init 
+		im::k_em.init( "exception manager " );
+		log__info( "em init" );
+		// while ( 1 );
 
 		// sharemem init
 		pm::k_shmManager.init( "shm lock" );
@@ -73,6 +79,13 @@ int main()
 
 		// ata::sata::k_sata_driver.init( "sata driver", ( void* ) 0x0, ( void* ) 0x0 );
 		dev::pci::k_pci_driver.init( "pci dirver" );
+
+		// loongarch::Cpu::interrupt_on();
+		// dev::ahci::k_ahci_ctl.isu_cmd_identify();
+		dev::ahci::k_ahci_ctl.isu_cmd_read_dma( 0 );
+		// dev::ahci::k_ahci_ctl.simple_read( 0 );
+
+		while ( 1 );
 
 		printf( "\n" );
 		log_trace( "test\n%s", "trace" );

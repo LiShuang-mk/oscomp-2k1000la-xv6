@@ -21,6 +21,56 @@ namespace ata
 	{
 		SataLs2k k_sata_driver;
 
+		void SataLs2k::simple_init()
+		{
+			// 读取 PCI 配置头
+			pci::PciCfgHeader *pciHead = ( pci::PciCfgHeader * ) loongarch::qemuls2k::PciCfgDevAddr::pci_cfg_sata;
+			if ( pciHead->vendor_id != 0x0014 )
+				log_panic( "PCI 配置头不合规 - vendor id is not 0x0014" );
+
+			// 从配置头获取 HBA Memory Registers base address 
+			uint64 sata_mem_base = pciHead->base_address[ 0 ];
+			sata_mem_base |= ( uint64 ) pciHead->base_address[ 1 ] << 32;
+			sata_mem_base |= loongarch::qemuls2k::dmwin::win_1;				// 使用非缓存窗口 
+			log_trace( "SATA 内部寄存器基地址: %p\n", sata_mem_base );
+			_cfg_addr = ( void* ) sata_mem_base;
+
+			_hba_mem_reg = ( HbaMemReg * ) sata_mem_base;
+
+			// 设置端口 0 的配置地址
+			for ( int i = 0; i < 32; i++ )
+				_hba_port_reg[ i ] = ( HbaPortReg * ) &_hba_mem_reg->ports[ i ];
+			log_trace( "SATA port 0 配置基地址: %p\n", &_hba_mem_reg->ports[ 0 ] );
+
+			sata_probe();
+
+			// 清中断
+			// _hba_port_reg[ 0 ]->is = ( uint32 ) ~0x0U;
+			// _hba_mem_reg->is = ( uint32 ) ~0x0U;
+
+			for ( int i = 0; i < 3; ++i )
+			{
+				// 配置 command list 地址
+				log_trace( "set port %d clb : %p", i, _port_cmd_lst_base[ i ] );
+				_hba_port_reg[ i ]->clb = ( ( uint32 ) ( uint64 ) _port_cmd_lst_base[ i ] );
+				_hba_port_reg[ i ]->clbu = ( uint32 ) ( ( uint64 ) _port_cmd_lst_base[ i ] >> 32 );
+
+				// 配置 receive FIS 地址 
+				log_trace( "set port %d fb : %p", i, _port_rec_fis_base[ i ] );
+				_hba_port_reg[ i ]->fb = ( ( uint32 ) ( uint64 ) _port_rec_fis_base[ i ] );
+				_hba_port_reg[ i ]->fbu = ( uint32 ) ( ( uint64 ) _port_rec_fis_base[ i ] >> 32 );
+
+				// 使能中断
+				_hba_mem_reg->ghc |= HbaRegGhc::hba_ghc_ie_m;
+				_hba_port_reg[ i ]->ie |= HbaRegPortIe::hba_port_ie_dhre_m;
+
+				// 启动设备 
+				_hba_port_reg[ i ]->cmd |= HbaRegPortCmd::hba_port_cmd_fre_m;
+				_hba_port_reg[ i ]->cmd |= HbaRegPortCmd::hba_port_cmd_st_m;
+			}
+		}
+
+
 		void SataLs2k::init( const char * lock_name, void *clb, void *fb )
 		{
 			SataDriver::init( lock_name, clb, fb );
@@ -37,6 +87,7 @@ namespace ata
 			_cfg_addr = ( void* ) sata_mem_base;
 
 			_hba_mem_reg = ( ata::sata::HbaMemReg * ) sata_mem_base;
+
 			log_trace( "SATA CAP: %x", _hba_mem_reg->cap );
 			log_trace( "SATA Ports Implemented: %x", _hba_mem_reg->pi );
 			log_trace( "SATA AHCI Version: %x", _hba_mem_reg->vs );
@@ -73,6 +124,8 @@ namespace ata
 			// 		printf( "%x ", rev_fis->rfis[ i ] );
 			// 	printf( "\n" );
 			// }
+
+
 			int rc = ahci_host_init();
 			if ( rc < 0 )
 			{
@@ -113,6 +166,7 @@ namespace ata
 				log__info( "sata 控制器复位" );
 				_hba_mem_reg->ghc = tmp | HbaRegGhc::hba_ghc_hr_m;
 			}
+			tmp = _hba_mem_reg->ghc;
 			log_trace( "sata 控制器复位后, ghc = %x", tmp );
 
 			time_out = 1000;
@@ -125,11 +179,11 @@ namespace ata
 			}
 
 			/* Set timer 1ms @ 100MHz*/
-			_hba_vendor_reg->timer1ms = 100000000 / 1000;
+			// _hba_vendor_reg->timer1ms = 100000000 / 1000;
 
 			/* Setup OOBR */
-			_hba_vendor_reg->oobr = HbaLs2kOobr::hba_oobr_we;
-			_hba_vendor_reg->oobr = 0x02060b14;
+			// _hba_vendor_reg->oobr = HbaLs2kOobr::hba_oobr_we;
+			// _hba_vendor_reg->oobr = 0x02060b14;
 
 			// 使能 AHCI 
 			_hba_mem_reg->ghc = HbaRegGhc::hba_ghc_ae_m;
@@ -155,7 +209,7 @@ namespace ata
 			//
 			// 这里暂时将端口硬设置为1个 
 			//
-			_port_num = 1;
+			_port_num = 32;
 
 			// 接下来对每个端口初始化
 			HbaPortReg *port_reg;
@@ -203,6 +257,7 @@ namespace ata
 				}
 
 				// 等待检测设备
+				log_trace( "port %d, ssts %p", i, port_reg->ssts );
 				time_out = 1000;
 				while ( time_out )
 				{
@@ -219,7 +274,34 @@ namespace ata
 				{
 					log_trace( "port %d 检测设备超时", i );
 					log_error( "sata 未能检测到设备！" );
-					return -4;
+					// return 1;
+					++i;
+					continue;
+				}
+
+				// 创建连接
+				port_reg->sctl |= 0x1U << HbaRegPortSctl::hba_port_sctl_det_s;
+				time_out = 200000;
+				while ( time_out )
+				{
+					tmp = port_reg->ssts;
+					tmp &= HbaRegPortSsts::hba_port_ssts_det_m;
+					if ( tmp == 0x3 ) // device detected 
+					{
+						log_trace( "device detection: %x", tmp );
+						break;
+					}
+					port_reg->sctl |= 0x1U << HbaRegPortSctl::hba_port_sctl_det_s;
+					for ( int k = 0; k < 100; ++k );
+					--time_out;
+				}
+				if ( time_out <= 0 )
+				{
+					log_trace( "port %d 连接设备超时", i );
+					log_error( "sata 未能连接到设备！" );
+					// return 1;
+					++i;
+					continue;
 				}
 
 				// 等待 COMINIT 状态设置 SERR 寄存器的 26 位（DIAG.X）
@@ -241,9 +323,9 @@ namespace ata
 				port_reg->serr = tmp;
 
 				// 应答当前端口的中断请求
-				tmp = _hba_mem_reg->is;
+				tmp = port_reg->is;
 				if ( tmp )
-					_hba_mem_reg->is = tmp;
+					port_reg->is = tmp;
 
 				// 设置中断掩码 
 				_hba_mem_reg->is = 0x1U << i;
@@ -343,25 +425,53 @@ namespace ata
 			uint32 tmp;
 
 			HbaPortReg *port_reg = &_hba_mem_reg->ports[ i ];
+			_hba_port_reg[ i ] = port_reg;
 
 			tmp = port_reg->ssts;
 			log_trace(
 				"enter start port : %d\n"
-				"          status : %p"
+				"SATA status      : %p\n"
 				, i, tmp );
 
 			if ( ( tmp & HbaRegPortSsts::hba_port_ssts_det_m ) != 0x03U )
 			{
 				log_trace( "没有连接到 port %d", i );
+				// log__warn( "检测到端口连接异常，可能导致端口启动失败！" );
 				log_error( "启动端口失败" );
 				return;
 			}
 
-			port_reg->clb = ( ( uint32 ) &_port_cmd_lst_base[ i ] );
+			port_reg->clb = ( ( uint32 ) ( uint64 ) _port_cmd_lst_base[ i ] );
 			port_reg->clbu = ( uint32 ) ( ( uint64 ) &_port_cmd_lst_base[ i ] >> 32 );
 
-			port_reg->fb = ( ( uint32 ) &_port_rec_fis_base[ i ] );
+			port_reg->fb = ( ( uint32 ) ( uint64 ) _port_rec_fis_base[ i ] );
 			port_reg->fbu = ( uint32 ) ( ( uint64 ) &_port_rec_fis_base[ i ] >> 32 );
+
+			port_reg->cmd |= HbaRegPortCmd::hba_port_cmd_fre_m;
+
+			int time_out = 1000;
+			while ( time_out &&
+				( port_reg->tfd & ( HbaRegPortTfd::hba_port_tfd_sts_bsy_m |
+					HbaRegPortTfd::hba_port_tfd_sts_drq_m |
+					HbaRegPortTfd::hba_port_tfd_sts_err_m ) ) )
+				--time_out;
+			if ( time_out <= 0 )
+			{
+				log_trace( "SATA port %d start error", i );
+				log_error( "SATA Port: Device not ready for BSY DRQ ERR in TFD!" );
+				return;
+			}
+
+			port_reg->cmd =
+				HbaRegPortCmd::hba_port_cmd_icc_active_m |
+				HbaRegPortCmd::hba_port_cmd_fre_m |
+				HbaRegPortCmd::hba_port_cmd_pod_m |
+				HbaRegPortCmd::hba_port_cmd_sud_m |
+				HbaRegPortCmd::hba_port_cmd_st_m;
+
+			log_trace( "debug test port=%d IS=%p", i, port_reg->is );
+
+			log_trace( "finish starting port %d", i );
 		}
 
 		void SataLs2k::debug_print_cmd_lst_base()
@@ -385,12 +495,76 @@ namespace ata
 			printf( "________________________________\n" );
 		}
 
+		void SataLs2k::debug_print_port_d2h_fis( uint i )
+		{
+			assert( i < 32 );
+			log_trace( "port[%d].is  = %x", i, _hba_port_reg[ i ]->is );
+			if ( ( _hba_port_reg[ i ]->is & 0x1U ) )
+			{
+				HbaRevFis *rev_fis = ( HbaRevFis* ) ( ( uint64 ) _hba_port_reg[ i ]->fb | loongarch::qemuls2k::dmwin::win_0 );
+				log_trace( "receive d2h fis => addr: %p", rev_fis );
+				for ( int i = 0; i < 20; ++i )
+					printf( "%B ", rev_fis->rfis[ i ] );
+				printf( "\n" );
+			}
+		}
+
 		struct HbaCmdHeader* SataLs2k::get_cmd_header( uint port, uint head_index )
 		{
-			struct HbaCmdHeader *head = ( struct HbaCmdHeader * ) _port_cmd_lst_base[ port ];
+			struct HbaCmdHeader *head = ( struct HbaCmdHeader * ) ( ( uint64 ) _port_cmd_lst_base[ port ] | loongarch::qemuls2k::dmwin::win_1 );
 			head += head_index;
 			return head;
 		}
+
+		bool SataLs2k::request_port_intr( uint port, HbaRegPortIs intr )
+		{
+			return ( _hba_port_reg[ port ]->is & intr );
+		}
+
+		void SataLs2k::clear_port_intr( uint port, HbaRegPortIs intr )
+		{
+			// log_trace( "sata: test clear itr. is = %p", _hba_port_reg[ port ]->is );
+			_hba_port_reg[ port ]->is = intr;
+			// log_trace( "sata: test clear itr. is = %p", _hba_port_reg[ port ]->is );
+			// _hba_port_reg[ port ]->is = 0;
+			// log_trace( "sata: test clear itr. is = %p", _hba_port_reg[ port ]->is );
+		}
+
+		void SataLs2k::start_send_cmd( uint port, uint cmd_slot )
+		{
+			assert( cmd_slot < 32 );
+			_hba_port_reg[ port ]->ci = 0x1U << cmd_slot;
+			log_trace( "ci snd: %x", _hba_port_reg[ port ]->ci );
+			// while ( !_hba_port_reg[ port ]->is );
+			log_trace( "debug port-is : %p", _hba_port_reg[ port ]->is );
+		}
+
+		bool SataLs2k::request_cmd_finish( uint port, uint cmd_slot )
+		{
+			assert( cmd_slot < 32 );
+			return ( _hba_port_reg[ port ]->ci & ( 0x1U << cmd_slot ) );
+		}
+
+
+
+		void SataLs2k::sata_probe()
+		{
+			uint pn = 32;
+			uint i = 0;
+			HbaPortReg *port_reg;
+			for ( ; i < pn; ++i )
+			{
+				port_reg = &_hba_mem_reg->ports[ i ];
+				log_trace(
+					"[探测] port %d(%p), ssts %p\n"
+					"signature : %p",
+					i,
+					port_reg,
+					port_reg->ssts,
+					port_reg->sig );
+			}
+		}
+
 	} // namespace sata
 
 } // namespace ata

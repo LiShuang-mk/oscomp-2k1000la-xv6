@@ -49,3 +49,13 @@ uint8 UartManager::_read_reg( uint32 reg )
 {
 	return *( volatile unsigned char * ) ( _uart_base + reg );
 }
+
+uint8 UartManager::read_lsr()
+{
+	return _read_reg( UartReg::LSR );
+}
+
+uint8 UartManager::read_rhr()
+{
+	return _read_reg( UartReg::RHR );
+}
