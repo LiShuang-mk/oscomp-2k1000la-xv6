@@ -13,6 +13,7 @@
 #include "hal/ata/ata_cmd.hh"
 #include "hal/qemu_ls2k.hh"
 #include "fs/dev/ahci_controller.hh"
+#include "fs/fat/fat32.hh"
 #include "mm/physical_memory_manager.hh"
 #include "klib/common.hh"
 
@@ -28,8 +29,10 @@ namespace dev
 		}
 
 
-		void AhciController::isu_cmd_identify()
+		void AhciController::isu_cmd_identify( uint port )
 		{
+			assert( port < 32 );
+
 			// command table address 
 			struct ata::sata::HbaCmdTbl *cmd_tbl = ( struct ata::sata::HbaCmdTbl * ) mm::k_pmm.alloc_page();
 			assert( ( uint64 ) cmd_tbl != 0x0UL );
@@ -48,7 +51,7 @@ namespace dev
 			mm::k_pmm.clear_page( pr );
 
 			// 暂时直接引用指定的 0 号端口 0 号命令槽
-			struct ata::sata::HbaCmdHeader* head = ata::sata::k_sata_driver.get_cmd_header( 0, 0 );
+			struct ata::sata::HbaCmdHeader* head = ata::sata::k_sata_driver.get_cmd_header( port, 0 );
 			log_trace( "head address: %p", head );
 
 			// 设置命令头 
@@ -74,7 +77,7 @@ namespace dev
 			_cmd_tbl = cmd_tbl;
 
 			// 发布命令
-			ata::sata::k_sata_driver.start_send_cmd( 0, 0 );
+			ata::sata::k_sata_driver.start_send_cmd( port, 0 );
 
 			log__info( "debug测试, 进入loop等待中断" );
 			while ( 1 )
@@ -180,6 +183,7 @@ namespace dev
 
 			_pr = pr;
 			_cmd_tbl = cmd_tbl;
+			
 
 			log_trace( "before issue cmd, port pss: %d", ata::sata::k_sata_driver.request_port_intr( 0, ata::sata::HbaRegPortIs::hba_port_is_pss_m ) );
 			// 发布命令
@@ -234,49 +238,6 @@ namespace dev
 			mm::k_pmm.free_page( pr );
 		}
 
-		void AhciController::simple_read( uint64 lba )
-		{
-			ata::sata::k_sata_driver.clear_port_intr( 0, ata::sata::HbaRegPortIs::hba_port_is_dhrs_m );
-			log__info( "AHCI 开始读取" );
-			ata::sata::HbaPortReg *port_reg = ata::sata::k_sata_driver.debug_get_port_reg_base( 0 );
-			log_trace( "调试 : port 0 tfd = %p", port_reg->tfd );
-
-			// command table address 
-			struct ata::sata::HbaCmdTbl *cmd_tbl = ( struct ata::sata::HbaCmdTbl * ) mm::k_pmm.alloc_page();
-			assert( ( uint64 ) cmd_tbl != 0x0UL );
-			mm::k_pmm.clear_page( ( void* ) cmd_tbl );
-
-			struct ata::sata::FisRegH2D *fis_h2d = ( struct ata::sata::FisRegH2D * ) cmd_tbl->cmd_fis;
-			fis_h2d->fis_type = ata::sata::FisType::fis_reg_h2d;
-
-			// physical region address 
-			void *pr = mm::k_pmm.alloc_page();
-			assert( ( uint64 ) pr != 0x0UL );
-			mm::k_pmm.clear_page( pr );
-
-			// 使用 0 号命令槽
-			struct ata::sata::HbaCmdHeader* head = ata::sata::k_sata_driver.get_cmd_header( 0, 0 );
-			log_trace( "head address: %p", head );
-
-			head->ctba = ( uint32 ) loongarch::qemuls2k::virt_to_phy_address( ( uint64 ) cmd_tbl );
-			head->ctbau = ( uint32 ) ( loongarch::qemuls2k::virt_to_phy_address( ( uint64 ) cmd_tbl ) >> 32 );
-			cmd_tbl->prdt[ 0 ].dba = loongarch::qemuls2k::virt_to_phy_address( ( uint64 ) pr );
-			fis_h2d->lba_low = ( lba >> 0x00 ) & 0xFFU;
-			fis_h2d->lba_low_exp = ( lba >> 0x08 ) & 0xFFU;
-			fis_h2d->lba_mid = ( lba >> 0x10 ) & 0xFFU;
-			fis_h2d->lba_mid_exp = ( lba >> 0x18 ) & 0xFFU;
-			fis_h2d->lba_high = ( lba >> 0x20 ) & 0xFFU;
-			fis_h2d->lba_high_exp = ( lba >> 0x28 ) & 0xFFU;
-			fis_h2d->command = ata::AtaCmd::cmd_read_dma;
-
-			_cmd_tbl = cmd_tbl;
-			_pr = pr;
-
-			ata::sata::k_sata_driver.start_send_cmd( 0, 0 );
-
-			log_trace( "调试 : port 0 tfd = %p", port_reg->tfd );
-		}
-
 		void AhciController::simple_intr_handle()
 		{
 			uint32 tmp;
@@ -312,6 +273,60 @@ namespace dev
 				printf( "%B ", p[ i ] );
 				if ( i % 0x10 == 0xF )
 					printf( "\n" );
+			}
+
+			if ( _is_idtf )
+			{
+				for ( int i = 0; i < 4; i++ )
+				{
+					p = ( uchar * ) _pr + 0X1BE + i * 16;
+					log_trace(
+						"partition %d:\n"
+						"\tdrive attribute = %B\n"
+						"\tCHS addr start  = %B%B%Bh\n"
+						"\tpartition type  = %B\n"
+						"\tCHS addr end    = %B%B%Bh\n"
+						"\tLBA addr start  = %p\n"
+						"\tnumber of sector= %d\n",
+						i, *p,
+						*( p + 3 ), *( p + 2 ), *( p + 1 ),
+						*( p + 4 ),
+						*( p + 7 ), *( p + 6 ), *( p + 5 ),
+						*( uint32* ) ( p + 8 ),
+						*( uint32* ) ( p + 0xc )
+					);
+				}
+
+				_is_idtf = false;
+			}
+			else
+			{
+				struct fs::fat::Fat32Dbr* dbr = ( struct fs::fat::Fat32Dbr* ) _pr;
+				if ( compare( dbr->ebpb.system_id, "FAT32 ", 6 ) == 0 )
+				{
+					log_trace(
+						"扇区大小:              %d bytes\n"
+						"簇大小:                %d sectors\n"
+						"保留扇区数:            %d\n"
+						"FAT 数量:              %d\n"
+						"根目录条目数量:        %d\n"
+						"硬盘介质类型:          %x\n"
+						"一个磁道的扇区数:      %d\n"
+						"磁头的数量:            %d\n"
+						"隐藏扇区数量:          %d\n"
+						"逻辑分区中的扇区数量:  %d\n",
+						dbr->bpb.bytes_per_sector,
+						dbr->bpb.sectors_per_cluster,
+						dbr->bpb.reserved_sector_count,
+						dbr->bpb.table_count,
+						dbr->bpb.root_entry_count,
+						dbr->bpb.media_type,
+						dbr->bpb.sectors_per_track,
+						dbr->bpb.head_side_count,
+						dbr->bpb.hidden_sector_count,
+						dbr->bpb.total_sectors_32
+					);
+				}
 			}
 
 			mm::k_pmm.free_page( ( void * ) _cmd_tbl );

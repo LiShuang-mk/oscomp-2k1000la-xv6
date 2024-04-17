@@ -81,7 +81,7 @@ int main()
 		dev::pci::k_pci_driver.init( "pci dirver" );
 
 		// loongarch::Cpu::interrupt_on();
-		// dev::ahci::k_ahci_ctl.isu_cmd_identify();
+		// dev::ahci::k_ahci_ctl.isu_cmd_identify( 0 );
 		dev::ahci::k_ahci_ctl.isu_cmd_read_dma( 0 );
 		// dev::ahci::k_ahci_ctl.simple_read( 0 );
 

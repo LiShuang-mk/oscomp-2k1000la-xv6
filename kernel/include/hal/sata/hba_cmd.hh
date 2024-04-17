@@ -83,8 +83,6 @@ namespace ata
 			struct HbaPrd prdt[ ( mm::pg_size - 0x80U ) / sizeof( struct HbaPrd ) ];
 		}__attribute__( ( __packed__ ) );
 		static_assert( sizeof( struct HbaCmdTbl ) == mm::pg_size, "AHCI command table size must equal to page size." );
-
-
 	} // namespace sata
 
 } // namespace ata

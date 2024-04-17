@@ -43,6 +43,7 @@ namespace ata
 			log_trace( "SATA port 0 配置基地址: %p\n", &_hba_mem_reg->ports[ 0 ] );
 
 			sata_probe();
+			// debug_print_hba_mem();
 
 			// 清中断
 			// _hba_port_reg[ 0 ]->is = ( uint32 ) ~0x0U;
@@ -562,6 +563,20 @@ namespace ata
 					port_reg,
 					port_reg->ssts,
 					port_reg->sig );
+			}
+		}
+
+		void SataLs2k::debug_print_hba_mem()
+		{
+			uint8 *p = ( uint8 * ) _hba_mem_reg;
+			printf( "\t\t    00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
+			for ( ; p < ( uint8* ) _hba_mem_reg + 0x100; ++p )
+			{
+				if ( ( uint64 ) p % 0x10 == 0 )
+					printf( "%p: ", p );
+				printf( "%B ", *p );
+				if ( ( uint64 ) p % 0x10 == 0xF )
+					printf( "\n" );
 			}
 		}
 

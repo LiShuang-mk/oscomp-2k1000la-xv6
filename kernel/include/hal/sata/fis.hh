@@ -64,7 +64,7 @@ namespace ata
 			// Dword 4 
 			byte rsv2[ 4 ];					// [x] reserve 
 		}__attribute__( ( __packed__ ) );
-
+		static_assert( sizeof( struct FisRegH2D) == 20);
 
 		/// @brief refer to SerialATA revision-2.6 - 10.3.10 Register Host to Device 
 		struct FisPioD2H

@@ -35,6 +35,14 @@ void *memset( void *dst, int c, uint n )
 	return dst;
 }
 
+int compare( const char *s, const char *t, uint len )
+{
+	for (uint i = 0; i < len; i++)
+		if ( *( s + i ) != *( t + i ) )
+			return i;
+	return 0;
+}
+
 // void panic( const char *s )
 // {
 // 	kernellib::k_printer.panic( s );

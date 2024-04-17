@@ -14,6 +14,13 @@
 void printf( const char *fmt, ... );
 void ktrace( const char *f, uint l, const char *info, ... );
 void *memset( void *dst, int c, uint n );
+
+/// @brief 比较字符串
+/// @param s 字符串1
+/// @param t 字符串2
+/// @param len 字符串长度，保证两个字符串长度一样
+/// @return 字符串相同返回0，否则返回不相同字符的偏移
+int compare( const char *s, const char *t, uint len );
 // void panic( const char *s );
 
 #define log_panic(panic_info) kernellib::k_printer.panic( __FILE__, __LINE__, panic_info )

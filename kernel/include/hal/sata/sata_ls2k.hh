@@ -86,6 +86,7 @@ namespace ata
 			void debug_print_cmd_lst_base();
 			void debug_print_rec_fis_base();
 			void debug_print_port_d2h_fis( uint i );
+			void debug_print_hba_mem();
 
 			HbaPortReg *debug_get_port_reg_base( uint port ) { return _hba_port_reg[ 0 ]; }
 
