@@ -82,6 +82,8 @@ namespace ata
 
 			void sata_probe();
 
+			virtual void test() override;
+
 		public:
 			void debug_print_cmd_lst_base();
 			void debug_print_rec_fis_base();

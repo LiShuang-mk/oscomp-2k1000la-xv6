@@ -9,6 +9,7 @@
 #pragma once 
 
 #include "smp/lock.hh"
+#include "klib/typeinfo.hh"
 
 namespace ata
 {
@@ -29,6 +30,8 @@ namespace ata
 		public:
 			SataDriver() = default;
 			void init( const char * lock_name, void *clb, void *fb );
+
+			virtual void test() = 0;
 		};
 	} // namespace sata
 

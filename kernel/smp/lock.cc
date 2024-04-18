@@ -8,6 +8,9 @@
 
 #include "smp/lock.hh"
 #include "hal/cpu.hh"
+#include <atomic>
+#include <expected>
+#include <typeinfo>
 
 using namespace smp;
 
@@ -18,6 +21,12 @@ void Lock::init( const char *name )
 	this->name = name;
 	this->locked = 0;
 	this->cpu = 0;
+}
+
+enum err{normal};
+std::expected<bool,err> test(){
+	// typeid(bool).name();
+	return std::expected<bool,err>(true);
 }
 
 void Lock::acquire()
@@ -38,6 +47,7 @@ void Lock::release()
 	cpu = 0;
 	__sync_synchronize();
 	__sync_lock_release( &locked );
+	std::atomic<int> a;
 	loongarch::Cpu::pop_intr_off();
 }
 

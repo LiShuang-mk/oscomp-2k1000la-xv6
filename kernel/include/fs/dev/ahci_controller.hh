@@ -39,6 +39,7 @@ namespace dev
 			void isu_cmd_identify();
 
 			void isu_cmd_read_dma( uint64 lba );
+			void isu_cmd_write_dma( uint64 lba );
 
 			void simple_read( uint64 lba );
 			void simple_intr_handle();

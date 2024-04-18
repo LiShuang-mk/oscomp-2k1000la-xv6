@@ -21,6 +21,11 @@ namespace ata
 	{
 		SataLs2k k_sata_driver;
 
+		void SataLs2k::test()
+		{
+
+		}
+
 		void SataLs2k::simple_init()
 		{
 			// 读取 PCI 配置头
