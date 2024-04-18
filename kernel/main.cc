@@ -11,7 +11,7 @@
 #include "pm/shmmanager.hh"
 #include "klib/printer.hh"
 #include "klib/common.hh"
-
+#include "sdio/sdio_host.hh"
 // entry.S needs one stack per CPU.
 __attribute__( ( aligned( 16 ) ) ) char stack0[ 4096 * NUMCPU ];
 
@@ -55,6 +55,10 @@ int main()
 		// sharemem init
 		pm::k_shmManager.init( "shm lock" );
 		log__info( "shm init" );
+		
+		// sdio_test
+		sdio::k_sdio_host.init( 0x1fe2c000, "sdio" );
+		sdio::k_sdio_host.sdio_init();	
 		// uint32 apbh[ 64 ];
 		// uint64 addr = ( ( 0xFE0UL << 28 ) | ( 0x0UL << 16 ) | ( 0x2UL << 11 ) | ( 0x0UL << 8 ) );
 		// printf( "addr: \n%p\n", addr | loongarch::qemuls2k::dmwin::win_1 );
@@ -64,7 +68,7 @@ int main()
 		// 	apbh[ i ] = *p;
 		// for ( int i = 0; i < 16; i++ )
 		// 	printf( "%x\n", apbh[ i ] );
-
+		
 		while ( 1 ); // stop here
 	}
 	else
