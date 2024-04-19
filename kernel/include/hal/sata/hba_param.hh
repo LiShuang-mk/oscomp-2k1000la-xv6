@@ -14,12 +14,7 @@ namespace ata
 {
 	namespace sata
 	{
-
-#if PLATFORM == ls2k 
-		constexpr uint hba_port_num = 32;
-#else 
-		constexpr uint hba_port_num = 1;
-#endif
+		constexpr uint max_port_num = 32;
 	} // namespace sata
 
 } // namespace ata

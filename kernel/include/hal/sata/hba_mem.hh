@@ -48,7 +48,7 @@ namespace ata
 			// from A0h to FFh
 			byte vendor_reg[ 0x100 - 0x0A0 ];
 
-			HbaPortReg ports[ hba_port_num ];
+			HbaPortReg ports[ max_port_num ];
 		}__attribute__( ( __packed__ ) );
 		// static_assert( ( uint64 )( ( ( HbaMemReg* ) 0x0UL )->ports ) == 0x100 );
 

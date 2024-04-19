@@ -7,8 +7,9 @@
 //
 
 #include "fs/dev/pci_driver.hh"
+#include "fs/dev/sata_driver.hh"
 #include "hal/qemu_ls2k.hh"
-#include "hal/sata/sata_ls2k.hh"
+#include "hal/pci/pci_cfg_header.hh"
 #include "hal/sata/hba_port.hh"
 #include "mm/page.hh"
 #include "mm/physical_memory_manager.hh"
@@ -46,6 +47,11 @@ namespace dev
 				( loongarch::qemuls2k::sec_win_br_m ) |
 				( loongarch::qemuls2k::sec_win_en_m );
 
+			sata_init();
+		}
+
+		void PciDriver::sata_init()
+		{
 			// distribute command list and FIS buffer space 
 
 			uint page_cnt, port;
@@ -70,7 +76,7 @@ namespace dev
 					addr < ( uint64 ) addr_base + mm::pg_size;
 					addr += ata::sata::hba_cmd_lst_len )
 				{
-					ata::sata::k_sata_driver.set_port_cl( port, ( void* ) addr );
+					sata::k_sata_driver.set_port_clb( port, ( void* ) addr );
 					++port;
 				}
 			}
@@ -94,17 +100,31 @@ namespace dev
 					addr < ( uint64 ) addr_base + mm::pg_size;
 					addr += ata::sata::hba_rec_fis_len )
 				{
-					ata::sata::k_sata_driver.set_port_fb( port, ( void* ) addr );
+					sata::k_sata_driver.set_port_fb( port, ( void* ) addr );
 					++port;
 				}
 			}
 
-			log__info( "debug print clb and fb" );
-			ata::sata::k_sata_driver.debug_print_cmd_lst_base();
-			ata::sata::k_sata_driver.debug_print_rec_fis_base();
+			// 读取 PCI 配置头
+			dev::pci::PciCfgHeader *pciHead = ( dev::pci::PciCfgHeader * ) loongarch::qemuls2k::PciCfgDevAddr::pci_cfg_sata;
+			if ( pciHead->vendor_id != 0x0014 )
+				log_panic( "PCI SATA配置头不合规 - vendor id is not 0x0014" );
 
-			// ata::sata::k_sata_driver.init( "sata driver", 0, 0 );
-			ata::sata::k_sata_driver.simple_init();
+			// 从配置头获取 HBA Memory Registers base address 
+			uint64 sata_mem_base = pciHead->base_address[ 0 ];
+			sata_mem_base |= ( uint64 ) pciHead->base_address[ 1 ] << 32;
+			sata_mem_base |= loongarch::qemuls2k::dmwin::win_1;				// 使用非缓存窗口 
+			log_trace( "SATA 内部寄存器基地址: %p\n", sata_mem_base );
+			sata::k_sata_driver.set_hba_mem_reg( ( void* ) sata_mem_base );
+
+			log__info( "debug print clb and fb" );
+			// sata::k_sata_driver.debug_print_cmd_lst_base();
+			// sata::k_sata_driver.debug_print_rec_fis_base();
+
+			// 设置SATA端口数量，这里硬设置为3
+			sata::k_sata_driver.set_port_num( 3 );
+
+			sata::k_sata_driver.init( "sata" );
 		}
 
 	} // namespace pci

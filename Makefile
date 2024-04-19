@@ -16,11 +16,11 @@ export TOOLPREFIX = loongarch64-linux-gnu-
 export CC  = ${TOOLPREFIX}gcc
 export CXX = ${TOOLPREFIX}g++
 export AS  = ${TOOLPREFIX}as
-export LD  = ${TOOLPREFIX}ld
+export LD  = ${TOOLPREFIX}g++
 export OBJCOPY = ${TOOLPREFIX}objcopy
 export OBJDUMP = ${TOOLPREFIX}objdump
 
-export ASFLAGS = -march=loongarch64 -mabi=lp64s
+export ASFLAGS = -march=loongarch64 -mabi=lp64d
 export ASFLAGS += -I ./include
 export ASFLAGS += -MD 
 export CFLAGS = -Wall -Werror -O0 -fno-omit-frame-pointer -ggdb
@@ -31,13 +31,15 @@ export CFLAGS += -DPLATFORM=$(CONF_PLATFORM)
 ifeq ($(HOST_OS),Linux)
 export CFLAGS += -DLINUX_BUILD=1
 endif
-export CFLAGS += -march=loongarch64 -mabi=lp64s
+export CFLAGS += -march=loongarch64 -mabi=lp64d
 export CFLAGS += -ffreestanding -fno-common -nostdlib
 export CFLAGS += -I ./include -fno-stack-protector
-export CFLAGS += -fno-pie -no-pie
+export CFLAGS += -fno-pie -no-pie 
+# export CFLAGS += -static-libstdc++ -lstdc++
 export CXXFLAGS = $(CFLAGS)
-# export CXXFLAGS += -std=gnu++23
-export LDFLAGS = -z max-page-size=4096
+export CXXFLAGS += -std=gnu++23
+export CXXFLAGS += 
+export LDFLAGS = -z max-page-size=4096  
 
 export WORKPATH = $(shell pwd)
 export BUILDPATH = $(WORKPATH)/build

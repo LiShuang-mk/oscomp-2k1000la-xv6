@@ -9,6 +9,7 @@
 #pragma once 
 
 #include "hba_param.hh"
+#include "hal/ata/ata_types.hh"
 
 namespace ata
 {
