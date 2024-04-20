@@ -21,6 +21,7 @@ namespace ata
 		struct HbaPortReg;
 		struct HbaCmdList;
 		struct HbaCmdHeader;
+		struct HbaCmdTbl;
 		struct HbaRevFis;
 		struct FisRegH2D;
 	} // namespace sata

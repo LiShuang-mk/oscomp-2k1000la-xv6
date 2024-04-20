@@ -58,9 +58,9 @@ namespace dev
 			fis_h2d->control = 0;
 
 			// physical region address 
-			void *pr =
-				loongarch::qemuls2k::virt_to_phy_address( ( uint64 ) buffer )
-				| loongarch::qemuls2k::iodma_win_base;
+			void *pr = ( void * )
+				( loongarch::qemuls2k::virt_to_phy_address( ( uint64 ) buffer )
+					| loongarch::qemuls2k::iodma_win_base );
 
 			// 暂时直接引用 0 号命令槽
 			struct ata::sata::HbaCmdHeader* head = sata::k_sata_driver.get_cmd_header( port, 0 );

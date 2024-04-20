@@ -3,7 +3,7 @@ ENTRY( _entry )
 
 SECTIONS
 {
-  . = 0x9000000000200000;
+  . = 0x9000000008000000;
 
   .text : {
     *(.text .text.*)

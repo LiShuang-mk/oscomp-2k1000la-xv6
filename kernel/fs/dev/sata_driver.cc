@@ -54,7 +54,7 @@ namespace dev
 					head->ctba = ( uint32 ) page;
 					head->ctbau = ( uint32 ) ( page >> 32 );
 				}
-				
+
 				// 配置 receive FIS 地址 
 				log_trace( "set port %d fb : %p", i, _port_rec_fis_base[ i ] );
 				_hba_port_reg[ i ]->fb = ( ( uint32 ) ( uint64 ) _port_rec_fis_base[ i ] );
@@ -76,7 +76,7 @@ namespace dev
 			assert( head_index < ata::sata::max_cmd_slot );
 
 			// 使用非缓存窗口
-			ata::sata::HbaCmdHeader _port_cmd_lst_base*head =
+			ata::sata::HbaCmdHeader *head =
 				( ata::sata::HbaCmdHeader* ) ( ( uint64 ) _port_cmd_lst_base[ port ]
 					| loongarch::qemuls2k::dmwin::win_1 );
 			head += head_index;
@@ -89,11 +89,11 @@ namespace dev
 			assert( slot_index < ata::sata::max_cmd_slot );
 
 			ata::sata::HbaCmdHeader *head = get_cmd_header( port, slot_index );
-			uint64 addr = ( uint4 ) ( head->ctba );
+			uint64 addr = ( uint64 ) ( head->ctba );
 			addr |= ( uint64 ) ( head->ctbau ) << 32;
 			// 使用非缓存窗口
 			addr |= loongarch::qemuls2k::dmwin::win_0;
-			ata::sata::HbaCmdTbl *tbl = ( uint64 ) addr;
+			ata::sata::HbaCmdTbl *tbl = ( ata::sata::HbaCmdTbl * ) addr;
 			return tbl;
 		}
 
@@ -114,7 +114,7 @@ namespace dev
 		void SataDriver::sata_probe()
 		{
 			ata::sata::HbaPortReg *port_reg;
-			for (uint i = 0; i < ata::sata::max_port_num; i++)
+			for ( uint i = 0; i < ata::sata::max_port_num; i++ )
 			{
 				port_reg = &_hba_mem_reg->ports[ i ];
 				log_trace(
@@ -126,7 +126,7 @@ namespace dev
 					port_reg->sig
 				);
 			}
-			
+
 		}
 
 		void SataDriver::debug_print_port_d2h_fis( uint i )
