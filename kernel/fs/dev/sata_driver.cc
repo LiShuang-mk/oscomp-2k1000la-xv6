@@ -6,8 +6,9 @@
 // --------------------------------------------------------------
 //
 
-#include "hal/qemu_ls2k.hh"
+#include "mm/physical_memory_manager.hh"
 #include "fs/dev/sata_driver.hh"
+#include "hal/qemu_ls2k.hh"
 #include "hal/sata/hba_mem.hh"
 #include "hal/sata/hba_cmd.hh"
 #include "hal/sata/hba_fis.hh"
@@ -42,6 +43,18 @@ namespace dev
 				_hba_port_reg[ i ]->clb = ( ( uint32 ) ( uint64 ) _port_cmd_lst_base[ i ] );
 				_hba_port_reg[ i ]->clbu = ( uint32 ) ( ( uint64 ) _port_cmd_lst_base[ i ] >> 32 );
 
+				// 分配 command table 
+				ata::sata::HbaCmdHeader *head;
+				uint64 page;
+				for ( uint j = 0; j < ata::sata::max_cmd_slot; j++ )
+				{
+					head = get_cmd_header( i, j );
+					page = ( uint64 ) mm::k_pmm.alloc_page();
+					page = loongarch::qemuls2k::virt_to_phy_address( page );
+					head->ctba = ( uint32 ) page;
+					head->ctbau = ( uint32 ) ( page >> 32 );
+				}
+				
 				// 配置 receive FIS 地址 
 				log_trace( "set port %d fb : %p", i, _port_rec_fis_base[ i ] );
 				_hba_port_reg[ i ]->fb = ( ( uint32 ) ( uint64 ) _port_rec_fis_base[ i ] );
@@ -60,27 +73,41 @@ namespace dev
 		ata::sata::HbaCmdHeader* SataDriver::get_cmd_header( uint port, uint head_index )
 		{
 			assert( port < _port_num );
-			assert( head_index < ata::sata::max_port_num );
+			assert( head_index < ata::sata::max_cmd_slot );
 
 			// 使用非缓存窗口
-			ata::sata::HbaCmdHeader *head =
+			ata::sata::HbaCmdHeader _port_cmd_lst_base*head =
 				( ata::sata::HbaCmdHeader* ) ( ( uint64 ) _port_cmd_lst_base[ port ]
 					| loongarch::qemuls2k::dmwin::win_1 );
 			head += head_index;
 			return head;
 		}
 
+		ata::sata::HbaCmdTbl* SataDriver::get_cmd_table( uint port, uint slot_index )
+		{
+			assert( port < _port_num );
+			assert( slot_index < ata::sata::max_cmd_slot );
+
+			ata::sata::HbaCmdHeader *head = get_cmd_header( port, slot_index );
+			uint64 addr = ( uint4 ) ( head->ctba );
+			addr |= ( uint64 ) ( head->ctbau ) << 32;
+			// 使用非缓存窗口
+			addr |= loongarch::qemuls2k::dmwin::win_0;
+			ata::sata::HbaCmdTbl *tbl = ( uint64 ) addr;
+			return tbl;
+		}
+
 		void SataDriver::send_cmd( uint port, uint cmd_slot )
 		{
 			assert( port < _port_num );
-			assert( cmd_slot < ata::sata::max_port_num );
+			assert( cmd_slot < ata::sata::max_cmd_slot );
 			_hba_port_reg[ port ]->ci = 0x1U << cmd_slot;
 		}
 
 		bool SataDriver::request_cmdslot_idle( uint port, uint cmd_slot )
 		{
 			assert( port < _port_num );
-			assert( cmd_slot < ata::sata::max_port_num );
+			assert( cmd_slot < ata::sata::max_cmd_slot );
 			return !( _hba_port_reg[ port ]->ci & ( 0x1U << cmd_slot ) );
 		}
 

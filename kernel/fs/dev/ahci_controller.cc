@@ -28,162 +28,76 @@ namespace dev
 			_lock.init( lock_name );
 		}
 
-
-		void AhciController::isu_cmd_identify( uint port )
+		void AhciController::isu_cmd_identify( uint port, void *buffer, uint len )
 		{
-			assert( port < 32 );
+			assert( port < sata::k_sata_driver.get_port_num() );
+			if ( len < 512 )
+			{
+				log__warn(
+					"buffer size is not enough.\n"
+					"identify command would not be issue" );
+				return;
+			}
 
-			// command table address 
-			struct ata::sata::HbaCmdTbl *cmd_tbl = ( struct ata::sata::HbaCmdTbl * ) mm::k_pmm.alloc_page();
+			// 获取command table 
+			ata::sata::HbaCmdTbl *cmd_tbl = sata::k_sata_driver.get_cmd_table( port, 0 );
 			assert( ( uint64 ) cmd_tbl != 0x0UL );
-			mm::k_pmm.clear_page( ( void* ) cmd_tbl );
 
 			// 命令表使用的 FIS 为 H2D
 			struct ata::sata::FisRegH2D *fis_h2d = ( struct ata::sata::FisRegH2D * ) cmd_tbl->cmd_fis;
 			fis_h2d->fis_type = ata::sata::FisType::fis_reg_h2d;
-			fis_h2d->command = ata::AtaCmd::cmd_indentify_device;
-			fis_h2d->c = 1;				// write command register 
-			fis_h2d->device = 0;		// master device 
+			fis_h2d->pm_port = 0;		// 端口复用使用的值，这里写0就可以了，不涉及端口复用
+			fis_h2d->c = 1;				// 表示这是一个主机发给设备的命令帧
+			fis_h2d->command = ata::AtaCmd::cmd_identify_device;
+			fis_h2d->features = fis_h2d->features_exp = 0;		// refer to ATA8-ACS, this field should be N/A ( or 0 ) when the command is 'indentify' 
+			fis_h2d->device = 0;								// similar to above 
+			fis_h2d->lba_low = fis_h2d->lba_low_exp = 0;
+			fis_h2d->lba_mid = fis_h2d->lba_mid_exp = 0;
+			fis_h2d->lba_high = fis_h2d->lba_high_exp = 0;
+			fis_h2d->sector_cnt = fis_h2d->sector_cnt_exp = 0;
+			fis_h2d->control = 0;
 
 			// physical region address 
-			void *pr = mm::k_pmm.alloc_page();
-			assert( ( uint64 ) pr != 0x0UL );
-			mm::k_pmm.clear_page( pr );
+			void *pr =
+				loongarch::qemuls2k::virt_to_phy_address( ( uint64 ) buffer )
+				| loongarch::qemuls2k::iodma_win_base;
 
-			// 暂时直接引用指定的 0 号端口 0 号命令槽
+			// 暂时直接引用 0 号命令槽
 			struct ata::sata::HbaCmdHeader* head = sata::k_sata_driver.get_cmd_header( port, 0 );
 			log_trace( "head address: %p", head );
 
 			// 设置命令头 
 			head->prdtl = 1;
-			head->c = 1;
+			head->pmp = 0;
+			head->c = 1;		// 传输结束清除忙状态
+			head->b = 0;
+			head->r = 0;
+			head->p = 0;
+			head->w = 0;
+			head->a = 0;// 先清除上次的中断
 			head->cfl = 5;
-			head->prdbc = 0;
-			head->ctba = ( uint32 ) loongarch::qemuls2k::virt_to_phy_address( ( uint64 ) cmd_tbl );
-			head->ctbau = ( uint32 ) ( loongarch::qemuls2k::virt_to_phy_address( ( uint64 ) cmd_tbl ) >> 32 );
+			head->prdbc = 0;	// should be set 0 before issue command 
+
+			// 注意下面两句已经被废弃，命令表的空间分配被迁移至初始化过程中
+			// 发送命令不再需要分配空间给命令表
+			// head->ctba = ( uint32 ) loongarch::qemuls2k::virt_to_phy_address( ( uint64 ) cmd_tbl );
+			// head->ctbau = ( uint32 ) ( loongarch::qemuls2k::virt_to_phy_address( ( uint64 ) cmd_tbl ) >> 32 );
 
 			// 设置数据区 
-			struct ata::sata::HbaPrd *prd0 = &cmd_tbl->prdt[ 0 ];
+			ata::sata::HbaPrd *prd0 = &cmd_tbl->prdt[ 0 ];
 			prd0->dba = ( uint64 ) loongarch::qemuls2k::virt_to_phy_address( ( uint64 ) pr );
 			prd0->interrupt = 1;
-			prd0->dbc = mm::pg_size - 1;
+			prd0->dbc = 512 - 1;
 
-			// 先清除上次的中断
-			sata::k_sata_driver.clear_interrupt( 0, ata::sata::HbaRegPortIs::hba_port_is_pss_m );
+			// 这里的清中断应转移到中断处理函数中
+			// sata::k_sata_driver.clear_interrupt( 0, ata::sata::HbaRegPortIs::hba_port_is_pss_m );
 
 			// log_trace( "before issue cmd, port pss: %d", sata::k_sata_driver.request_port_intr( 0, ata::sata::HbaRegPortIs::hba_port_is_pss_m ) );
 
 			_pr = pr;
-			_cmd_tbl = cmd_tbl;
 
 			// 发布命令
 			sata::k_sata_driver.send_cmd( port, 0 );
-
-			// log__info( "debug测试, 进入loop等待中断" );
-			// while ( 1 )
-			// 	;
-
-			// int time_out = 1000;
-			// // log_trace( "after issue cmd, port pss: %d", sata::k_sata_driver.request_port_intr( 0, ata::sata::HbaRegPortIs::hba_port_is_pss_m ) );
-			// while ( ata::sata::k_sata_driver.request_port_intr( 0, ata::sata::HbaRegPortIs::hba_port_is_pss_m )
-			// 	&& time_out )
-			// 	--time_out;
-			// if ( time_out <= 0 )
-			// {
-			// 	log_error( "AHCI: 发送 Indentify 指令没有响应" );
-			// 	mm::k_pmm.free_page( ( void* ) cmd_tbl );
-			// 	mm::k_pmm.free_page( pr );
-			// 	return;
-			// }
-
-			// time_out = 10000;
-			// while ( !sata::k_sata_driver.request_cmd_finish( 0, 0 )
-			// 	&& time_out )
-			// 	// --time_out;
-			// 	;
-			// if ( time_out <= 0 )
-			// {
-			// 	log_error( "AHCI: HBA 接收数据超时" );
-			// 	mm::k_pmm.free_page( ( void* ) cmd_tbl );
-			// 	mm::k_pmm.free_page( pr );
-			// 	return;
-			// }
-
-			// time_out = 10000;
-			// while ( time_out )
-			// 	--time_out;
-
-
-			// sata::k_sata_driver.debug_print_port_d2h_fis( 0 );
-
-			// log__info( "AHCI: Identify 指令结束" );
-			// log_trace( "打印硬盘识别信息, 地址: %p", pr );
-
-			// printf( "________________________________________________________________\n" );
-			// uchar *rec_dat = ( uchar* ) pr;
-			// for ( uint i = 0; i < 512; ++i )
-			// {
-			// 	if ( i % 0x10 == 0 )
-			// 		printf( "%B\t", i );
-			// 	printf( "%B ", rec_dat[ i log__info( "debug测试, 进入loop等待中断" );
-			// while ( 1 )
-			// 	;
-
-			// int time_out = 1000;
-			// // log_trace( "after issue cmd, port pss: %d", sata::k_sata_driver.request_port_intr( 0, ata::sata::HbaRegPortIs::hba_port_is_pss_m ) );
-			// while ( ata::sata::k_sata_driver.request_port_intr( 0, ata::sata::HbaRegPortIs::hba_port_is_pss_m )
-			// 	&& time_out )
-			// 	--time_out;
-			// if ( time_out <= 0 )
-			// {
-			// 	log_error( "AHCI: 发送 Indentify 指令没有响应" );
-			// 	mm::k_pmm.free_page( ( void* ) cmd_tbl );
-			// 	mm::k_pmm.free_page( pr );
-			// 	return;
-			// }
-
-			// time_out = 10000;
-			// while ( !sata::k_sata_driver.request_cmd_finish( 0, 0 )
-			// 	&& time_out )
-			// 	// --time_out;
-			// 	;
-			// if ( time_out <= 0 )
-			// {
-			// 	log_error( "AHCI: HBA 接收数据超时" );
-			// 	mm::k_pmm.free_page( ( void* ) cmd_tbl );
-			// 	mm::k_pmm.free_page( pr );
-			// 	return;
-			// }
-
-			// time_out = 10000;
-			// while ( time_out )
-			// 	--time_out;
-
-
-			// sata::k_sata_driver.debug_print_port_d2h_fis( 0 );
-
-			// log__info( "AHCI: Identify 指令结束" );
-			// log_trace( "打印硬盘识别信息, 地址: %p", pr );
-
-			// printf( "________________________________________________________________\n" );
-			// uchar *rec_dat = ( uchar* ) pr;
-			// for ( uint i = 0; i < 512; ++i )
-			// {
-			// 	if ( i % 0x10 == 0 )
-			// 		printf( "%B\t", i );
-			// 	printf( "%B ", rec_dat[ i ] );
-			// 	if ( i % 0x10 == 0xF )
-			// 		printf( "\n" );
-			// }
-
-			// mm::k_pmm.free_page( ( void* ) cmd_tbl );
-			// mm::k_pmm.free_page( pr );] );
-			// 	if ( i % 0x10 == 0xF )
-			// 		printf( "\n" );
-			// }
-
-			// mm::k_pmm.free_page( ( void* ) cmd_tbl );
-			// mm::k_pmm.free_page( pr );
 		}
 
 
@@ -230,12 +144,12 @@ namespace dev
 			prd0->interrupt = 1;
 			prd0->dbc = mm::pg_size - 1;
 
-			// 先清除上次的中断
-			sata::k_sata_driver.clear_interrupt( 0, ata::sata::HbaRegPortIs::hba_port_is_dhrs_m );
+			// 这里的清中断应转移到中断处理函数中
+			// sata::k_sata_driver.clear_interrupt( 0, ata::sata::HbaRegPortIs::hba_port_is_dhrs_m );
 
 			_pr = pr;
 			_cmd_tbl = cmd_tbl;
-			
+
 
 			// log_trace( "before issue cmd, port pss: %d", sata::k_sata_driver.request_port_intr( 0, ata::sata::HbaRegPortIs::hba_port_is_pss_m ) );
 			// 发布命令
@@ -380,9 +294,6 @@ namespace dev
 					);
 				}
 			}
-
-			mm::k_pmm.free_page( ( void * ) _cmd_tbl );
-			mm::k_pmm.free_page( ( void * ) _pr );
 		}
 	}
 // namespace ahci

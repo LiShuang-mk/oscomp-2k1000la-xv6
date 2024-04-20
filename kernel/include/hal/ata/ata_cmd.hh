@@ -14,7 +14,7 @@ namespace ata
 {
 	enum AtaCmd : byte 
 	{
-		cmd_indentify_device = 0xEC,
+		cmd_identify_device = 0xEC,
 		cmd_read_dma = 0x25, 
 	};
 } // namespace ata

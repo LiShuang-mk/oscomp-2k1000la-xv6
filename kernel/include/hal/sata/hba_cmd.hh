@@ -75,6 +75,9 @@ namespace ata
 
 
 		/// @brief refer to AHCI - 4.2.3 Command Table 
+		/// @details 注意虽然文档中说明了PRD最多有65535个item
+		///          但此处使item填满一个物理页剩下的空间
+		///          计算得出一个物理页（4K）可以填下248个PRD
 		struct HbaCmdTbl
 		{
 			byte cmd_fis[ 0x40U ];

@@ -15,6 +15,7 @@ namespace ata
 	namespace sata
 	{
 		constexpr uint max_port_num = 32;
+		constexpr uint max_cmd_slot = 32;
 	} // namespace sata
 
 } // namespace ata
