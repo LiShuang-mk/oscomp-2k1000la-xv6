@@ -17,6 +17,8 @@
 // entry.S needs one stack per CPU.
 __attribute__( ( aligned( 16 ) ) ) char stack0[ 4096 * NUMCPU ];
 
+void test_sata();
+
 int main()
 {
 	if ( loongarch::Cpu::read_tp() == 0 )
@@ -78,12 +80,13 @@ int main()
 		// 	printf( "%x\t\t%p\n", i, *p );
 
 		// ata::sata::k_sata_driver.init( "sata driver", ( void* ) 0x0, ( void* ) 0x0 );
-		dev::pci::k_pci_driver.init( "pci dirver" );
 
-		// loongarch::Cpu::interrupt_on();
-		// dev::ahci::k_ahci_ctl.isu_cmd_identify( 0 );
-		dev::ahci::k_ahci_ctl.isu_cmd_read_dma( 0 );
-		// dev::ahci::k_ahci_ctl.simple_read( 0 );
+		dev::ahci::k_ahci_ctl.init( "ahci controller" );
+
+		dev::pci::k_pci_driver.init( "pci driver" );
+
+
+		test_sata();
 
 		while ( 1 );
 
@@ -102,4 +105,21 @@ int main()
 		while ( 1 );
 
 	return 0;
+}
+
+void test_sata()
+{
+	void* buffer = mm::k_pmm.alloc_page();
+	mm::k_pmm.clear_page( buffer );
+	// loongarch::Cpu::interrupt_on();
+
+	dev::ahci::k_ahci_ctl.set_intr_handler( [] () -> void
+	{
+		log__info( "<----中断回调---->" );
+	} );
+
+	dev::ahci::k_ahci_ctl.isu_cmd_identify( 0, buffer, mm::PageEnum::pg_size );
+	// dev::ahci::k_ahci_ctl.isu_cmd_read_dma( 0 );
+	// dev::ahci::k_ahci_ctl.simple_read( 0 );
+	while ( 1 );
 }

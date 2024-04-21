@@ -33,11 +33,11 @@ export CFLAGS += -DLINUX_BUILD=1
 endif
 export CFLAGS += -march=loongarch64 -mabi=lp64d
 export CFLAGS += -ffreestanding -fno-common -nostdlib
-export CFLAGS += -I ./include -fno-stack-protector
+export CFLAGS += -I ./include -fno-stack-protector 
 export CFLAGS += -fno-pie -no-pie 
 # export CFLAGS += -static-libstdc++ -lstdc++
 export CXXFLAGS = $(CFLAGS)
-export CXXFLAGS += -std=gnu++23
+export CXXFLAGS += -std=c++23
 export CXXFLAGS += 
 export LDFLAGS = -z max-page-size=4096  
 

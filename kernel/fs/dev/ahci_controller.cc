@@ -17,6 +17,11 @@
 #include "mm/physical_memory_manager.hh"
 #include "klib/common.hh"
 
+void default_call_back( void )
+{
+	log__info( "<----中断处理回调---->" );
+}
+
 namespace dev
 {
 	namespace ahci
@@ -26,6 +31,7 @@ namespace dev
 		void AhciController::init( const char *lock_name )
 		{
 			_lock.init( lock_name );
+			test_call_back = &default_call_back;
 		}
 
 		void AhciController::isu_cmd_identify( uint port, void *buffer, uint len )
@@ -94,7 +100,11 @@ namespace dev
 
 			// log_trace( "before issue cmd, port pss: %d", sata::k_sata_driver.request_port_intr( 0, ata::sata::HbaRegPortIs::hba_port_is_pss_m ) );
 
-			_pr = pr;
+			_pr = ( void* ) ( ( uint64 ) pr | loongarch::qemuls2k::dmwin::win_0 );
+			test_call_back = [] () -> void
+			{
+				log__info( "<----中断回调---->" );
+			};
 
 			// 发布命令
 			sata::k_sata_driver.send_cmd( port, 0 );
@@ -204,10 +214,10 @@ namespace dev
 			// mm::k_pmm.free_page( pr );
 		}
 
-		void AhciController::simple_intr_handle()
+		void AhciController::intr_handle()
 		{
 			uint32 tmp;
-			for ( int i = 0; i < 3; i++ )
+			for ( uint i = 0; i < sata::k_sata_driver.get_port_num(); i++ )
 			{
 				tmp = sata::k_sata_driver.get_port_is( i );
 				if ( tmp )
@@ -222,8 +232,31 @@ namespace dev
 				}
 			}
 
+			test_call_back();
+		}
+
+		void AhciController::simple_intr_handle()
+		{
+			uint32 tmp;
+			for ( uint i = 0; i < sata::k_sata_driver.get_port_num(); i++ )
+			{
+				tmp = sata::k_sata_driver.get_port_is( i );
+				if ( tmp )
+				{
+					log_trace(
+						"sata intr.\n"
+						"port %d - is = %p",
+						i, tmp
+					);
+					sata::k_sata_driver.debug_print_port_d2h_fis( i );
+					sata::k_sata_driver.clear_interrupt( i, ( ata::sata::HbaRegPortIs ) tmp );
+				}
+			}
+
+			test_call_back();
 			if ( _pr == nullptr )
 				return;
+
 
 			log__info(
 				"打印收到的数据\n"
@@ -235,7 +268,7 @@ namespace dev
 			for ( uint i = 0; i < 512; ++i )
 			{
 				if ( i % 0x10 == 0 )
-					printf( "%B\t", i );
+					printf( "%B%B\t", i >> 8, i );
 				printf( "%B ", p[ i ] );
 				if ( i % 0x10 == 0xF )
 					printf( "\n" );

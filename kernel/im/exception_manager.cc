@@ -87,7 +87,11 @@ namespace im
 
 	void ExceptionManager::ahci_read_handle()
 	{
+		// todo:
+		// 正式的中断处理函数完成后应当删除simple intr handle
 		dev::ahci::k_ahci_ctl.simple_intr_handle();
+
+		dev::ahci::k_ahci_ctl.intr_handle();
 	}
 }// namespace im
 

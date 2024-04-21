@@ -44,6 +44,17 @@ namespace fs
 		}__attribute__( ( __packed__ ) );
 		static_assert( sizeof( struct Fat32Dbr ) == 0x200 );
 
+		struct Fsinfo
+		{
+			dword lead_signature;				// 开头签名必须是 0x41615252
+			byte  reserved0[ 480 ];				//
+			dword another_signature;			// 另一个签名必须是 0x61417272
+			dword free_cluster_count;			// 分卷上可能的可用簇数量
+			dword available_cluster_number;		// 搜索可用簇的提示簇号，即下一个可用簇被提示为在此之后出现
+			byte  reserved1[ 12 ];				//
+			dword trail_signature;				// 尾部签名必须是0xAA550000
+		}__attribute__( ( __packed__ ) );
+		static_assert( sizeof( struct Fsinfo ) == 0x200 );
 
 	} // namespace fat
 
