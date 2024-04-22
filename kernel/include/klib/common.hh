@@ -23,6 +23,16 @@ void *memset( void *dst, int c, uint n );
 int compare( const char *s, const char *t, uint len );
 // void panic( const char *s );
 
+namespace math
+{
+	/// @brief 求幂
+	/// @param x 底数
+	/// @param y 指数
+	/// @return 
+	uint64 power( uint64 x, uint64 y );
+} // namespace math
+
+
 #define log_panic(panic_info) kernellib::k_printer.panic( __FILE__, __LINE__, panic_info )
 #define log_error(error_info) kernellib::k_printer.error( __FILE__, __LINE__, error_info )
 #define log__warn(warn__info) kernellib::k_printer.warn( __FILE__, __LINE__, warn__info )

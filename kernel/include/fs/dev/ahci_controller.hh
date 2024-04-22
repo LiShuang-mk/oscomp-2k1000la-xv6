@@ -9,12 +9,14 @@
 #pragma once 
 
 #include "smp/lock.hh"
+#include "hal/sata/hba_param.hh"
 
 namespace ata
 {
 	namespace sata
 	{
 		struct HbaCmdTbl;
+		struct FisRegH2D;
 	} // namespace sata
 
 } // namespace ata
@@ -30,12 +32,12 @@ namespace dev
 		private:
 			smp::Lock _lock;
 			struct ata::sata::HbaCmdTbl *_cmd_tbl = nullptr;
-			void *_pr = nullptr;
+			// void *_pr = nullptr;
 			int _is_idtf = false;
 
 			using callback_t = void( * )( void );
 
-			callback_t test_call_back = default_call_back;
+			callback_t _call_back_handlers[ ata::sata::max_port_num * ata::sata::max_cmd_slot ];
 
 		public:
 			AhciController() = default;
@@ -56,19 +58,22 @@ namespace dev
 			/// @param port 端口号
 			/// @param buffer 接受数据的缓存基地址，请注意buffer由调用者来管理
 			/// @param len buffer缓存的大小（不小于512byte）
-			void isu_cmd_identify( uint port, void *buffer, uint len );
+			/// @param callback_handler 回调函数指针，为空指针时使用默认回调函数
+			void isu_cmd_identify( uint port, void *buffer, uint len, callback_t callback_handler );
 
-			void isu_cmd_read_dma( uint64 lba );
+			void isu_cmd_read_dma( uint port, uint64 lba, void *buffer, uint64 len, callback_t callback_handler );
 
 			/// @brief 尽管当前这个中断处理函数仍在测试中使用，但这个函数在
 			///        正式的代码中应该被废弃
-			void simple_intr_handle();
+			// void simple_intr_handle();
 
 			/// @brief 正式的中断处理函数应当在此处使用
 			void intr_handle();
 
-			void set_intr_handler( callback_t f ) { test_call_back = f; }
+			// void set_intr_handler( callback_t f ) { test_call_back = f; }
 
+		private:
+			void fill_fis_h2d_lba( ata::sata::FisRegH2D *fis, uint64 lba );
 		};
 
 		extern AhciController k_ahci_ctl;

@@ -37,14 +37,30 @@ void *memset( void *dst, int c, uint n )
 
 int compare( const char *s, const char *t, uint len )
 {
-	for (uint i = 0; i < len; i++)
+	for ( uint i = 0; i < len; i++ )
 		if ( *( s + i ) != *( t + i ) )
 			return i;
 	return 0;
 }
 
-// void panic( const char *s )
-// {
-// 	kernellib::k_printer.panic( s );
-// }
+namespace math
+{
+	uint64 power( uint64 x, uint64 y )
+	{
+		uint64 ans = 1;
+		while ( y )
+		{
+			if ( y & 1UL )
+				ans *= x;
+			x *= x;
+			y >>= 1;
+		}
+		return ans;
+	} // namespace math
+}
+
+	// void panic( const char *s )
+	// {
+	// 	kernellib::k_printer.panic( s );
+	// }
 
