@@ -7,6 +7,7 @@
 #include "fs/dev/ahci_controller.hh"
 #include "fs/fat/fat32.hh"
 #include "fs/ext4/super_block.hh"
+#include "fs/buffer_manager.hh"
 #include "tm/timer_manager.hh"
 #include "im/exception_manager.hh"
 #include "im/interrupt_manager.hh"
@@ -88,8 +89,10 @@ int main()
 
 		dev::pci::k_pci_driver.init( "pci driver" );
 
+		fs::k_bufm.init( "buffer manager" );
+		log__info( "bufm init" );
 
-		test_sata();
+		// test_sata();
 
 		while ( 1 );
 

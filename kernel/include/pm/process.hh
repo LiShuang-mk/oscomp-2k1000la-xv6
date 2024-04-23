@@ -76,6 +76,9 @@ namespace pm
 		Pcb() {};
 		void init( const char *lock_name, uint gid );
 		void map_kstack( mm::PageTable &pt );
+
+	public:
+		uint get_pid() { return _pid; }
 	};
 
 	extern Pcb k_proc_pool[ num_process ];

@@ -8,6 +8,7 @@
 
 #include "smp/lock.hh"
 #include "hal/cpu.hh"
+#include "klib/common.hh"
 
 using namespace smp;
 
@@ -24,7 +25,7 @@ void Lock::acquire()
 {
 	loongarch::Cpu::push_intr_off();
 	if ( is_held() )
-		while ( 1 ); // panic: lock - repeat acquire
+		log_panic( "lock acquire: repeat" );
 	while ( __sync_lock_test_and_set( &locked, 1 ) != 0 )
 		;
 	__sync_synchronize();
@@ -34,7 +35,7 @@ void Lock::acquire()
 void Lock::release()
 {
 	if ( !is_held() )
-		while ( 1 ); // panic: lock - not hold lock 
+		log_panic("lock release: not hold lock"); 
 	cpu = 0;
 	__sync_synchronize();
 	__sync_lock_release( &locked );
