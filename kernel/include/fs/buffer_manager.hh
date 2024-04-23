@@ -13,7 +13,7 @@
 
 namespace fs
 {
-	constexpr uint block_per_pool = ( uint64 ) CommonSize::_1M / ( uint64 ) mm::pg_size;
+	constexpr uint block_per_pool = ( uint64 ) CommonSize::_1M * 4 / ( uint64 ) mm::pg_size;
 
 	class BufferManager
 	{
@@ -25,7 +25,7 @@ namespace fs
 		BufferManager() {};
 		void init( const char *lock_name );
 
-		Buffer get_buffer();
+		Buffer get_buffer( uint dev, uint64 lba );
 	};
 
 	extern BufferManager k_bufm;

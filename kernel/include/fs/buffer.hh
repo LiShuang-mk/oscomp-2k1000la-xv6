@@ -15,7 +15,7 @@
 namespace fs
 {
 	constexpr uint default_buffer_size = 512/*bytes*/;
-	constexpr uint buffer_per_block = mm::pg_size / 512;
+	constexpr uint buffer_per_block = mm::pg_size / default_buffer_size;
 
 	class BufferBlock;
 	class BufferManager;
@@ -26,9 +26,10 @@ namespace fs
 		friend BufferBlock;
 	private:
 		void *_buffer_base;
-		uint _buffer_size = default_buffer_size;
 	public:
-
+		Buffer();
+		Buffer( uint64 buffer_base );
+		Buffer( void *buffer_base );
 	};
 
 	/// @brief 每个block拥有一个页面的空间
@@ -40,13 +41,23 @@ namespace fs
 		bool _valid[ buffer_per_block ];
 		bool _disk_own[ buffer_per_block ];
 		uint _device[ buffer_per_block ];
+		uint _ref_cnt[ buffer_per_block ];
+		uint64 _tag_number[ buffer_per_block ];
+		pm::SleepLock _sleep_lock[ buffer_per_block ];
+
+		smp::Lock _lock;
 		uint _block_number;
-		pm::SleepLock _sleep_lock;
-		uint _ref_cnt;
 		void const *_page_base;
 	public:
 		BufferBlock() {};
 		BufferBlock( const BufferBlock &b ) = delete;
 		void init( void *page_base, uint block_number );
+
+
+		int search_buffer( uint dev, uint block_num, uint64 tag_num );
+
+		Buffer get_buffer( int buffer_index );
+
+		int alloc_buffer( uint dev, uint block_num, uint64 tag_num );
 	};
 } // namespace fs
