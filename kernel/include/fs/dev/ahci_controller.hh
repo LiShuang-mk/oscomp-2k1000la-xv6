@@ -10,6 +10,8 @@
 
 #include "smp/lock.hh"
 #include "hal/sata/hba_param.hh"
+#include "klib/common.hh"
+#include "klib/function.hh"
 
 namespace ata
 {
@@ -20,8 +22,6 @@ namespace ata
 	} // namespace sata
 
 } // namespace ata
-
-extern void default_call_back();
 
 namespace dev
 {
@@ -35,9 +35,7 @@ namespace dev
 			// void *_pr = nullptr;
 			int _is_idtf = false;
 
-			using callback_t = void( * )( void );
-
-			callback_t _call_back_handlers[ ata::sata::max_port_num * ata::sata::max_cmd_slot ];
+			std::function<void( void )> _call_back_function[ ata::sata::max_port_num ][ ata::sata::max_cmd_slot ];
 
 		public:
 			AhciController() = default;
@@ -59,9 +57,9 @@ namespace dev
 			/// @param buffer 接受数据的缓存基地址，请注意buffer由调用者来管理
 			/// @param len buffer缓存的大小（不小于512byte）
 			/// @param callback_handler 回调函数指针，为空指针时使用默认回调函数
-			void isu_cmd_identify( uint port, void *buffer, uint len, callback_t callback_handler );
+			void isu_cmd_identify( uint port, void *buffer, uint len, std::function<void( void )> callback_handler );
 
-			void isu_cmd_read_dma( uint port, uint64 lba, void *buffer, uint64 len, callback_t callback_handler );
+			void isu_cmd_read_dma( uint port, uint64 lba, void *buffer, uint64 len, std::function<void( void )> callback_handler );
 
 			/// @brief 尽管当前这个中断处理函数仍在测试中使用，但这个函数在
 			///        正式的代码中应该被废弃

@@ -23,6 +23,9 @@ namespace dev
 			PciDriver() = default;
 			void init( const char *lock_name );
 			void sata_init();
+
+		private:
+			void sata_identify_intr_handler();
 		};
 
 		extern PciDriver k_pci_driver;

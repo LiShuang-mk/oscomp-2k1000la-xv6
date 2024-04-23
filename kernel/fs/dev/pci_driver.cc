@@ -7,6 +7,7 @@
 //
 
 #include "fs/dev/pci_driver.hh"
+#include "fs/dev/ahci_controller.hh"
 #include "fs/dev/sata_driver.hh"
 #include "hal/qemu_ls2k.hh"
 #include "hal/pci/pci_cfg_header.hh"
@@ -14,6 +15,8 @@
 #include "mm/page.hh"
 #include "mm/physical_memory_manager.hh"
 #include "klib/common.hh"
+
+#include <functional>
 
 namespace dev
 {
@@ -125,6 +128,15 @@ namespace dev
 			sata::k_sata_driver.set_port_num( 3 );
 
 			sata::k_sata_driver.init( "sata" );
+
+			// uchar buf[ 1024 ];
+			// ahci::k_ahci_ctl.isu_cmd_identify( 0, ( void * ) buf, sizeof( buf ), k_pci_driver.sata_identify_intr_handler );
+
+		}
+
+		void PciDriver::sata_identify_intr_handler()
+		{
+			log__info( "<<==== identify handle ====>>" );
 		}
 
 	} // namespace pci

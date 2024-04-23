@@ -17,6 +17,7 @@ namespace fs
 	constexpr uint default_buffer_size = 512/*bytes*/;
 	constexpr uint buffer_per_block = mm::pg_size / 512;
 
+	class BufferBlock;
 	class BufferManager;
 
 	class Buffer
@@ -27,8 +28,8 @@ namespace fs
 		void *_buffer_base;
 		uint _buffer_size = default_buffer_size;
 	public:
-		
-	}
+
+	};
 
 	/// @brief 每个block拥有一个页面的空间
 	/// @details 每个buffer都是512byte，4K页面可以有8个buffer

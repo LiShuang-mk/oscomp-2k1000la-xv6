@@ -17,11 +17,6 @@
 #include "mm/physical_memory_manager.hh"
 #include "klib/common.hh"
 
-void default_call_back( void )
-{
-	log__info( "<----中断处理回调---->" );
-}
-
 namespace dev
 {
 	namespace ahci
@@ -31,13 +26,19 @@ namespace dev
 		void AhciController::init( const char *lock_name )
 		{
 			_lock.init( lock_name );
-			for ( callback_t &callback : _call_back_handlers )
+			for ( auto &port_call_back_list : _call_back_function )
 			{
-				callback = default_call_back;
+				for ( auto &call_back : port_call_back_list )
+				{
+					call_back = [] ()->void
+					{
+						log__info( "<---- AHCI -- 默认中断回调 ---->" );
+					};
+				}
 			}
 		}
 
-		void AhciController::isu_cmd_identify( uint port, void *buffer, uint len, callback_t callback_handler )
+		void AhciController::isu_cmd_identify( uint port, void *buffer, uint len, std::function<void( void )> callback_handler )
 		{
 			assert( port < sata::k_sata_driver.get_port_num() );
 			if ( len < 512 )
@@ -107,14 +108,14 @@ namespace dev
 
 			// 设置中断回调函数
 			if ( callback_handler != nullptr )
-				_call_back_handlers[ 0 ] = callback_handler;
+				_call_back_function[ port ][ 0 ] = callback_handler;
 
 				// 发布命令
 			sata::k_sata_driver.send_cmd( port, 0 );
 		}
 
 
-		void AhciController::isu_cmd_read_dma( uint port, uint64 lba, void *buffer, uint64 len, callback_t callback_handler )
+		void AhciController::isu_cmd_read_dma( uint port, uint64 lba, void *buffer, uint64 len, std::function<void( void )> callback_handler )
 		{
 			assert( port < sata::k_sata_driver.get_port_num() );
 			if ( len < 512 )
@@ -190,7 +191,7 @@ namespace dev
 
 			// 设置中断回调函数
 			if ( callback_handler != nullptr )
-				_call_back_handlers[ 0 ] = callback_handler;
+				_call_back_function[ port ][ 0 ] = callback_handler;
 
 			// 发布命令
 			sata::k_sata_driver.send_cmd( port, 0 );
@@ -214,7 +215,7 @@ namespace dev
 				}
 			}
 
-			_call_back_handlers[ 0 ]();
+			_call_back_function[ 0 ][ 0 ]();
 		}
 
 		// void AhciController::simple_intr_handle()

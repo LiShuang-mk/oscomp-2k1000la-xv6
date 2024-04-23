@@ -31,10 +31,24 @@ namespace ata
 
 namespace dev
 {
+	namespace pci
+	{
+		class PciDriver;
+	} // namespace pci
+	
+
+	namespace ahci
+	{
+		class AhciController;
+	} // namespace ahci
+	
+
 	namespace sata
 	{
 		class SataDriver
 		{
+			friend ahci::AhciController;
+			friend pci::PciDriver;
 		protected:
 			smp::Lock _lock;
 			ata::sata::HbaMemReg *_hba_mem_reg = nullptr;
@@ -48,6 +62,8 @@ namespace dev
 			ata::sata::HbaCmdList *_port_cmd_lst_base[ ata::sata::max_port_num ];
 			uint8 _port_cmd_slot_num[ ata::sata::max_port_num ];
 			ata::sata::HbaRevFis *_port_rec_fis_base[ ata::sata::max_port_num ];
+
+			uint _logical_sector_size;
 
 		public:
 			SataDriver() {};
@@ -84,6 +100,12 @@ namespace dev
 			/// @brief 获取可用端口数量
 			/// @return 
 			uint get_port_num() { return _port_num; }
+
+			// void set_sector_size( uint sector_size ) { _logical_sector_size = sector_size; }
+
+			/// @brief 获取逻辑扇区大小
+			/// @return 逻辑扇区大小是访问硬盘的最小单位
+			uint get_sector_size() { return _logical_sector_size; }
 
 		// 初始化前使用的函数
 		public:
