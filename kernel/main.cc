@@ -263,8 +263,8 @@ void test_sata()
 	mm::k_pmm.clear_page( buffer );
 	// loongarch::Cpu::interrupt_on();
 
-	dev::ahci::k_ahci_ctl.isu_cmd_identify( 0, buffer, mm::PageEnum::pg_size, test_sata_handle_identify );
-	// dev::ahci::k_ahci_ctl.isu_cmd_read_dma( 0, 0, &mbr, 512, test_sata_call_back );
+	// dev::ahci::k_ahci_ctl.isu_cmd_identify( 0, buffer, mm::PageEnum::pg_size, test_sata_handle_identify );
+	dev::ahci::k_ahci_ctl.isu_cmd_read_dma( 0, 0, &mbr, 512, test_sata_call_back );
 
 	while ( !mbr_init );
 

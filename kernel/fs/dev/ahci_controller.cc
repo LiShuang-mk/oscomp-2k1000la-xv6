@@ -118,20 +118,28 @@ namespace dev
 		void AhciController::isu_cmd_read_dma( uint port, uint64 lba, void *buffer, uint64 len, std::function<void( void )> callback_handler )
 		{
 			assert( port < sata::k_sata_driver.get_port_num() );
-			if ( len < 512 )
+			if ( len < sata::k_sata_driver._logical_sector_size )
 			{
 				log__warn(
 					"buffer size is not enough.\n"
 					"read dma command would not be issue" );
 				return;
 			}
-			if ( len % 512 != 0 )
+			if ( len % sata::k_sata_driver._logical_sector_size != 0 )
 			{
 				log__warn(
-					"buffer size is not align to 512 byte( minimum sector size )\n"
+					"buffer size is not align to logical sector size\n"
 					"read dma command would not be issue"
 				);
+				log_trace( "^^^^ logcial sector size : %d bytes ^^^^", sata::k_sata_driver._logical_sector_size );
 				return;
+			}
+			if ( len > _1M * 4 )
+			{
+				log_error(
+					"AHCI : 当前不支持超过4MiB的数据通过DMA读取\n"
+					"       read DMA command would not be issue"
+				);
 			}
 
 			// 获取command table 
@@ -147,7 +155,7 @@ namespace dev
 			fis_h2d->features = fis_h2d->features_exp = 0;		// refer to ATA8-ACS, this field should be N/A ( or 0 ) when the command is 'indentify' 
 			fis_h2d->device = 1 << 6;							// similar to above 
 			fill_fis_h2d_lba( fis_h2d, lba );
-			fis_h2d->sector_cnt = fis_h2d->sector_cnt_exp = len / 512;
+			fis_h2d->sector_cnt = fis_h2d->sector_cnt_exp = len / sata::k_sata_driver._logical_sector_size;
 			fis_h2d->control = 0;
 
 			// physical region address 
@@ -156,7 +164,8 @@ namespace dev
 					| loongarch::qemuls2k::iodma_win_base );
 
 			// 暂时直接引用 0 号命令槽
-			struct ata::sata::HbaCmdHeader* head = sata::k_sata_driver.get_cmd_header( port, 0 );
+			uint cmd_slot_num = 0;
+			struct ata::sata::HbaCmdHeader* head = sata::k_sata_driver.get_cmd_header( port, cmd_slot_num );
 			// log_trace( "head address: %p", head );
 
 			// 设置命令头 
@@ -191,10 +200,10 @@ namespace dev
 
 			// 设置中断回调函数
 			if ( callback_handler != nullptr )
-				_call_back_function[ port ][ 0 ] = callback_handler;
+				_call_back_function[ port ][ cmd_slot_num ] = callback_handler;
 
 			// 发布命令
-			sata::k_sata_driver.send_cmd( port, 0 );
+			sata::k_sata_driver.send_cmd( port, cmd_slot_num );
 		}
 
 		void AhciController::intr_handle()

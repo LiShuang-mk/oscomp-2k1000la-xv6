@@ -129,15 +129,34 @@ namespace dev
 
 			sata::k_sata_driver.init( "sata" );
 
-			// uchar buf[ 1024 ];
-			// ahci::k_ahci_ctl.isu_cmd_identify( 0, ( void * ) buf, sizeof( buf ), k_pci_driver.sata_identify_intr_handler );
+			uchar buf[ 1024 ];
+			bool flag = false;
+			ahci::k_ahci_ctl.isu_cmd_identify( 0, ( void * ) buf, sizeof( buf ), [ & ] () -> void
+			{
+				log__info( "<<<<<<<< identify 回调 >>>>>>>>" );
 
+				uint16 sec_size_word = *( ( uint16 * ) buf + 106 );
+				log_trace( "106 word : %x", sec_size_word );
+				if ( ( sec_size_word >> 14 ) != 1U )
+					log_panic( "identify disk - 无效的返回数据" );
+				if ( sec_size_word & ( 1U << 12 ) )
+				{
+					uint32 logical_sec_size = *( ( uint16* ) buf + 117 );
+					logical_sec_size += *( ( uint16* ) buf + 118 ) << 16;
+					sata::k_sata_driver._logical_sector_size = logical_sec_size;
+				}
+				else
+				{
+					sata::k_sata_driver._logical_sector_size = 512/*bytes*/;
+				}
+				log_trace( "identify disk - 逻辑扇区大小 %d bytes", sata::k_sata_driver.get_sector_size() );
+
+				flag = true;
+			} );
+			while ( !flag );
+			log__info( ">>>>>>>> flag change <<<<<<<<" );
 		}
 
-		void PciDriver::sata_identify_intr_handler()
-		{
-			log__info( "<<==== identify handle ====>>" );
-		}
 
 	} // namespace pci
 
