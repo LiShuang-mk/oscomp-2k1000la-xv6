@@ -76,6 +76,10 @@ namespace pm
 		Pcb() {};
 		void init( const char *lock_name, uint gid );
 		void map_kstack( mm::PageTable &pt );
+		ProcState get_state();
+		int get_priority();
+		Context &get_context() { return _context; }
+		smp::Lock &get_lock() { return _lock; }
 
 	public:
 		uint get_pid() { return _pid; }

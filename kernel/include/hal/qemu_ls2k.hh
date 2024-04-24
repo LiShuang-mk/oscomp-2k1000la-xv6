@@ -14,6 +14,11 @@ namespace loongarch
 {
 	namespace qemuls2k
 	{
+		enum ls2kPgEnum : uint64
+		{
+			pg_flags_mask = 0xE0000000000001FFUL,
+		};
+
 		constexpr uint64 dmwin_mask = 0xFUL << 60;
 		enum dmwin : uint64
 		{
