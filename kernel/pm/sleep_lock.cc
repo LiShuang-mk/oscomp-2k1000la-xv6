@@ -24,7 +24,7 @@ namespace pm
 	{
 		_lock.acquire();
 		while ( _locked )
-			log_error( "sleep not implement" );
+			log_panic( "sleep not implement" );
 		_locked = true;
 		_pid = pm::k_pm.get_cur_pcb()->get_pid();
 		_lock.release();

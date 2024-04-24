@@ -89,10 +89,17 @@ int main()
 
 		dev::pci::k_pci_driver.init( "pci driver" );
 
+		// test_sata();
+
 		fs::k_bufm.init( "buffer manager" );
 		log__info( "bufm init" );
 
-		test_sata();
+		fs::Buffer buf = fs::k_bufm.get_buffer( 0, 0 );
+		log_trace( "测试 buffer : %p", buf.debug_get_buffer_base() );
+		// fs::k_bufm.release_buffer( buf );
+		buf = fs::k_bufm.get_buffer( 0, 1024 );
+		log_trace( "测试 buffer : %p", buf.debug_get_buffer_base() );
+		// fs::k_bufm.release_buffer( buf );
 
 		while ( 1 );
 

@@ -25,7 +25,21 @@ namespace fs
 		BufferManager() {};
 		void init( const char *lock_name );
 
+		/// @brief 将device映射为SATA端口号
+		/// @details todo: 
+		///          此处的函数只是简单的恒同映射
+		///          在后续完善设备管理后可能发生变化
+		/// @param dev 虚拟设备号
+		/// @return SATA端口号，超过32是不合法的
+		uint dev_to_sata_port( uint dev );
+
 		Buffer get_buffer( uint dev, uint64 lba );
+
+		void release_buffer( Buffer buf );
+
+		Buffer read( uint dev, uint lba );
+
+		
 	};
 
 	extern BufferManager k_bufm;

@@ -15,16 +15,18 @@ namespace fs
 // >>>> class Buffer 
 
 	Buffer::Buffer()
-		: Buffer( ( void * ) 0 )
+		: Buffer( ( void * ) 0, 0, 0 )
 	{
 
 	}
-	Buffer::Buffer( void *base )
+	Buffer::Buffer( void *base, uint number, uint index )
 		: _buffer_base( base )
+		, _block_number( number )
+		, _buffer_index( index )
 	{
 	}
-	Buffer::Buffer( uint64 base )
-		: Buffer( ( void * ) base )
+	Buffer::Buffer( uint64 base, uint number, uint index )
+		: Buffer( ( void * ) base, number, index )
 	{
 	}
 
@@ -42,7 +44,7 @@ namespace fs
 		for ( uint &d : _device )
 			d = 0;
 		for ( uint64 &tag : _tag_number )
-			tag = 0;
+			tag = ~0;
 		for ( uint &ref : _ref_cnt )
 			ref = 0;
 
@@ -69,12 +71,12 @@ namespace fs
 
 	Buffer BufferBlock::get_buffer( int index )
 	{
-		assert( index > 0 );
+		assert( index >= 0 );
 		assert( index < ( int ) buffer_per_block );
 
 		uint64 buf_base = ( uint64 ) _page_base + default_buffer_size * index;
 
-		return Buffer( buf_base );
+		return Buffer( buf_base, _block_number, index );
 	}
 
 	int BufferBlock::alloc_buffer( uint dev, uint block_num, uint64 tag_num )

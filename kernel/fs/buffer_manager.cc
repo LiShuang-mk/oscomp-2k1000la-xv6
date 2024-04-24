@@ -7,6 +7,7 @@
 //
 
 #include "fs/buffer_manager.hh"
+#include "fs/dev/ahci_controller.hh"
 #include "mm/physical_memory_manager.hh"
 #include "klib/common.hh"
 
@@ -26,6 +27,11 @@ namespace fs
 		}
 	}
 
+	uint BufferManager::dev_to_sata_port( uint dev )
+	{
+		return dev;
+	}
+
 	Buffer BufferManager::get_buffer( uint dev, uint64 lba )
 	{
 		_lock.acquire();
@@ -36,8 +42,7 @@ namespace fs
 		if ( buf_index >= 0 )
 		{
 			_buffer_pool[ block_number ]._ref_cnt[ buf_index ]++;
-			_lock.release();
-			_buffer_pool[ block_number ]._sleep_lock[ buf_index ].acquire();
+
 		}
 		else
 		{
@@ -50,8 +55,38 @@ namespace fs
 					"but sleep not implement"
 				);
 			}
-			_buffer_pool[ block_number ]._sleep_lock[ buf_index ].acquire();
 		}
+		_lock.release();
+		_buffer_pool[ block_number ]._sleep_lock[ buf_index ].acquire();
 		return _buffer_pool[ block_number ].get_buffer( buf_index );
+	}
+
+	void BufferManager::release_buffer( Buffer buf )
+	{
+		uint blk = buf._block_number;
+		uint idx = buf._buffer_index;
+		if ( !_buffer_pool[ blk ]._sleep_lock[ idx ].is_holding() )
+			log_panic( "not hold buffer sleep-lock" );
+		_buffer_pool[ blk ]._sleep_lock[ idx ].release();
+		_lock.acquire();
+		_buffer_pool[ blk ]._ref_cnt[ idx ]--;
+		_lock.release();
+	}
+
+	Buffer BufferManager::read( uint dev, uint lba )
+	{
+		Buffer buf = get_buffer( dev, lba );
+		if ( _buffer_pool[ buf._block_number ]._valid[ buf._buffer_index ] == false )
+		{
+			log__warn( "sleep not implement, so read disk will utilize synchronous way." );
+			bool dma_finish = false;
+			dev::ahci::k_ahci_ctl.isu_cmd_read_dma( dev_to_sata_port( dev ), lba, buf._buffer_base, default_buffer_size, [ & ] () -> void
+			{
+				dma_finish = true;
+			} );
+			while ( !dma_finish );
+			_buffer_pool[ buf._block_number ]._valid[ buf._buffer_index ] = true;
+		}
+		return buf;
 	}
 } // namespace fs

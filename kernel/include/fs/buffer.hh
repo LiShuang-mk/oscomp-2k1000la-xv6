@@ -26,10 +26,16 @@ namespace fs
 		friend BufferBlock;
 	private:
 		void *_buffer_base;
+		uint _block_number;
+		uint _buffer_index;
 	public:
 		Buffer();
-		Buffer( uint64 buffer_base );
-		Buffer( void *buffer_base );
+		Buffer( uint64 buffer_base, uint number, uint index );
+		Buffer( void *buffer_base, uint number, uint index );
+
+	// for debugging
+	public:
+		uint64 debug_get_buffer_base() { return ( uint64 ) _buffer_base; }
 	};
 
 	/// @brief 每个block拥有一个页面的空间
