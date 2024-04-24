@@ -1,0 +1,27 @@
+//
+// Created by Li shuang ( pseudonym ) on 2024-03-29 
+// --------------------------------------------------------------
+// | Note: This code file just for study, not for commercial use 
+// | Contact Author: lishuang.mk@whu.edu.cn 
+// --------------------------------------------------------------
+//
+
+#pragma once 
+
+#include "types.hh"
+#include "page.hh"
+
+#define TRAPEFRAME PageEnum::pg_size
+// virtual memory layout 
+
+namespace mm
+{
+	enum vml : uint64
+	{
+		vm_page_cnt_shift = 12,
+		vm_start = 0x0,
+		vm_end = ( 0x1UL << pg_size_shift ) << vm_page_cnt_shift,
+		vm_kernel_start = vm_end >> 1,
+		vm_trap_frame = vm_end - pg_size,
+	};
+}
