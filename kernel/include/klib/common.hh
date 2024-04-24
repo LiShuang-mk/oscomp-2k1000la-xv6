@@ -14,6 +14,7 @@
 void printf( const char *fmt, ... );
 void ktrace( const char *f, uint l, const char *info, ... );
 void *memset( void *dst, int c, uint n );
+void *memcpy(void *dst, const void *src, int len);
 
 /// @brief 比较字符串
 /// @param s 字符串1
