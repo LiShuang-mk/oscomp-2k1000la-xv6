@@ -61,6 +61,8 @@ namespace dev
 
 			void isu_cmd_read_dma( uint port, uint64 lba, void *buffer, uint64 len, std::function<void( void )> callback_handler );
 
+			void isu_cmd_write_dma( uint port, void *buffer,uint64 lba ,const char* content,uint len, std::function<void( void )> callback_handler );
+
 			/// @brief 尽管当前这个中断处理函数仍在测试中使用，但这个函数在
 			///        正式的代码中应该被废弃
 			// void simple_intr_handle();

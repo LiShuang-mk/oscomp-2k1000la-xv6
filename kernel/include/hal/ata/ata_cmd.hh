@@ -16,5 +16,6 @@ namespace ata
 	{
 		cmd_identify_device = 0xEC,
 		cmd_read_dma = 0x25, 
+		cmd_write_dma=0x35,
 	};
 } // namespace ata

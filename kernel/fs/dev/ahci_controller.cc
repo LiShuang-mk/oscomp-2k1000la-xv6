@@ -205,6 +205,68 @@ namespace dev
 			// 发布命令
 			sata::k_sata_driver.send_cmd( port, cmd_slot_num );
 		}
+		void AhciController::isu_cmd_write_dma( uint port, void *buffer,uint64 lba ,const char* content,uint len, std::function<void( void )> callback_handler )
+		{
+			assert( port < sata::k_sata_driver.get_port_num() );
+
+			// 获取command table 
+			ata::sata::HbaCmdTbl *cmd_tbl = sata::k_sata_driver.get_cmd_table( 0, 0 );
+			assert( ( uint64 ) cmd_tbl != 0x0UL );
+
+			// 命令表使用的 FIS 类型是 H2D
+			struct ata::sata::FisRegH2D *fis_h2d = ( struct ata::sata::FisRegH2D * ) cmd_tbl->cmd_fis;
+			fis_h2d->fis_type = ata::sata::FisType::fis_reg_h2d;
+			fis_h2d->command = ata::AtaCmd::cmd_write_dma;
+			fis_h2d->pm_port=0;
+			fis_h2d->features=fis_h2d->features_exp=0;
+			fill_fis_h2d_lba( fis_h2d, lba );
+			fis_h2d->sector_cnt = 1;
+			fis_h2d->sector_cnt_exp = 0;
+			fis_h2d->c = 1;
+			fis_h2d->device = 1 << 6;
+
+			// physical region address 
+			void *pr = ( void * )
+				( loongarch::qemuls2k::virt_to_phy_address( ( uint64 ) buffer )
+					| loongarch::qemuls2k::iodma_win_base );
+			// copy the content to the memory
+			memcpy((void *)((uint64)pr|loongarch::qemuls2k::dmwin::win_1),content,len);
+
+			// 暂时直接引用指定的 0 号端口 0 号命令槽
+			uint cmd_slot_num = 0;
+			struct ata::sata::HbaCmdHeader* head = sata::k_sata_driver.get_cmd_header( port, cmd_slot_num );
+			log_trace( "head address: %p", head );
+
+			head->prdtl = 1;
+			// head->pmp=0;
+			head->c = 1;
+			head->b = 0;
+			head->r = 0;
+			head->p = 0;
+			head->w = 0;
+			head->a = 0;// 先清除上次的中断
+			head->cfl = 5;
+			head->prdbc = 0;
+
+			// 设置数据区 
+			ata::sata::HbaPrd *prd0 = &cmd_tbl->prdt[ 0 ];
+			prd0->dba = ( uint64 ) loongarch::qemuls2k::virt_to_phy_address( ( uint64 ) pr );
+			prd0->interrupt = 1;
+			prd0->dbc = 512 - 1;
+
+			// 这里的清中断应转移到中断处理函数中
+			// sata::k_sata_driver.clear_interrupt( 0, ata::sata::HbaRegPortIs::hba_port_is_dhrs_m );
+
+			// _pr = pr;
+			// _cmd_tbl = cmd_tbl;
+			// _pr = ( void* ) ( ( uint64 ) pr | loongarch::qemuls2k::dmwin::win_0 );
+			// 设置中断回调函数
+			if ( callback_handler != nullptr )
+				_call_back_function[ port ][ cmd_slot_num ] = callback_handler;
+
+			// 发布命令
+			sata::k_sata_driver.send_cmd( port, cmd_slot_num );
+		}
 
 		void AhciController::intr_handle()
 		{
