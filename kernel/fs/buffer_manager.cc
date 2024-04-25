@@ -79,13 +79,14 @@ namespace fs
 		if ( _buffer_pool[ buf._block_number ]._valid[ buf._buffer_index ] == false )
 		{
 			log__warn( "sleep not implement, so read disk will utilize synchronous way." );
-			bool dma_finish = false;
-			dev::ahci::k_ahci_ctl.isu_cmd_read_dma( dev_to_sata_port( dev ), lba, buf._buffer_base, default_buffer_size, [ & ] () -> void
-			{
-				dma_finish = true;
-			} );
-			while ( !dma_finish );
-			_buffer_pool[ buf._block_number ]._valid[ buf._buffer_index ] = true;
+			assert( true, "not implement" );
+			// bool dma_finish = false;
+			// dev::ahci::k_ahci_ctl.isu_cmd_read_dma( dev_to_sata_port( dev ), lba, buf._buffer_base, default_buffer_size, [ & ] () -> void
+			// {
+			// 	dma_finish = true;
+			// } );
+			// while ( !dma_finish );
+			// _buffer_pool[ buf._block_number ]._valid[ buf._buffer_index ] = true;
 		}
 		return buf;
 	}

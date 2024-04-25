@@ -75,7 +75,7 @@ namespace im
 			}
 		}
 		uint ecode = ( estat & loongarch::csr::Estat::estat_ecode_m ) >> loongarch::csr::Estat::estat_ecode_s;
-		assert( ecode < 0x40 );
+		assert( ecode < 0x40, "" );
 		log__info( _la_ecode_spec_[ ecode ] );
 		log_panic( "not implement" );
 	}

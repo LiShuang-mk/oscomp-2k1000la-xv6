@@ -280,7 +280,7 @@ namespace kernellib
 		k_printer._locking = 1;
 	}
 
-	void Printer::assrt( const char *f, uint l, const char *expr )
+	void Printer::assrt( const char *f, uint l, const char *expr, const char *detail )
 	{
 		k_printer._locking = 0;
 #ifdef LINUX_BUILD
@@ -293,7 +293,10 @@ namespace kernellib
 		k_printer.printf( "%d", l );
 		k_printer.printf( " :\n\t     " );
 		_trace_flag = 1;
+		k_printer.printf( "assert fail for '" );
 		k_printer.printf( expr );
+		k_printer.printf( "'\n[detail] " );
+		k_printer.printf( detail );
 		_trace_flag = 0;
 #ifdef LINUX_BUILD
 		k_printer.printf( "\n\033[0m" );

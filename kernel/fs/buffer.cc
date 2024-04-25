@@ -31,6 +31,17 @@ namespace fs
 	}
 
 //_______________________________________________________________
+// >>>> class BufferNode
+
+	BufferNode::BufferNode()
+		: _buf_index( -1 )
+		, _next( nullptr )
+		, _prev( nullptr )
+	{
+
+	}
+
+//_______________________________________________________________
 // >>>> class BufferBlock 
 
 	void BufferBlock::init( void *page_base, uint block_number )
@@ -48,6 +59,16 @@ namespace fs
 		for ( uint &ref : _ref_cnt )
 			ref = 0;
 
+		_node_head._next = &_node_head;
+		_node_head._prev = &_node_head;
+		for ( int i = 0; i < ( int ) buffer_per_block; i++ )
+		{
+			_nodes[ i ]._next = _node_head._next;
+			_nodes[ i ]._prev = &_node_head;
+			_node_head._next->_prev = &_nodes[ i ];
+			_node_head._next = &_nodes[ i ];
+		}
+
 		_lock.init( "buffer block" );
 		_block_number = block_number;
 		_page_base = page_base;
@@ -55,7 +76,7 @@ namespace fs
 
 	int BufferBlock::search_buffer( uint dev, uint block_num, uint64 tag_num )
 	{
-		assert( block_num == _block_number );
+		assert( block_num == _block_number, "" );
 		_lock.acquire();
 		for ( uint i = 0; i < buffer_per_block; i++ )
 		{
@@ -71,8 +92,8 @@ namespace fs
 
 	Buffer BufferBlock::get_buffer( int index )
 	{
-		assert( index >= 0 );
-		assert( index < ( int ) buffer_per_block );
+		assert( index >= 0, "" );
+		assert( index < ( int ) buffer_per_block, "" );
 
 		uint64 buf_base = ( uint64 ) _page_base + default_buffer_size * index;
 
@@ -81,7 +102,7 @@ namespace fs
 
 	int BufferBlock::alloc_buffer( uint dev, uint block_num, uint64 tag_num )
 	{
-		assert( block_num == _block_number );
+		assert( block_num == _block_number, "" );
 		_lock.acquire();
 		for ( uint i = 0; i < buffer_per_block; i++ )
 		{

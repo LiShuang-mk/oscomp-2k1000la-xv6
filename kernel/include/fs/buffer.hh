@@ -15,15 +15,17 @@
 namespace fs
 {
 	constexpr uint default_buffer_size = 512/*bytes*/;
-	constexpr uint buffer_per_block = mm::pg_size / default_buffer_size;
+	constexpr uint buffer_per_block = 64;
 
 	class BufferBlock;
 	class BufferManager;
+	class BufferNode;
 
 	class Buffer
 	{
 		friend BufferManager;
 		friend BufferBlock;
+		friend BufferNode;
 	private:
 		void *_buffer_base;
 		uint _block_number;
@@ -38,6 +40,18 @@ namespace fs
 		uint64 debug_get_buffer_base() { return ( uint64 ) _buffer_base; }
 	};
 
+	class BufferNode
+	{
+		friend BufferBlock;
+		friend BufferManager;
+	private:
+		int _buf_index;
+		BufferNode *_next;
+		BufferNode *_prev;
+	public:
+		BufferNode();
+	};
+
 	/// @brief 每个block拥有一个页面的空间
 	/// @details 每个buffer都是512byte，4K页面可以有8个buffer
 	class BufferBlock
@@ -50,6 +64,10 @@ namespace fs
 		uint _ref_cnt[ buffer_per_block ];
 		uint64 _tag_number[ buffer_per_block ];
 		pm::SleepLock _sleep_lock[ buffer_per_block ];
+
+		// buffer 链表
+		BufferNode _nodes[ buffer_per_block ];
+		BufferNode _node_head;
 
 		smp::Lock _lock;
 		uint _block_number;

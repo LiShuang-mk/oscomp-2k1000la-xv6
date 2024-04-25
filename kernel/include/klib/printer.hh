@@ -48,7 +48,7 @@ namespace kernellib
 		static void warn( const char *f, uint l, const char *info, ... );
 		static void info( const char *f, uint l, const char *info, ... );
 		static void trace( const char *f, uint l, const char *info, va_list ap );
-		static void assrt( const char *f, uint l, const char *expr );
+		static void assrt( const char *f, uint l, const char *expr, const char *detail );
 	};
 
 	extern Printer k_printer;
