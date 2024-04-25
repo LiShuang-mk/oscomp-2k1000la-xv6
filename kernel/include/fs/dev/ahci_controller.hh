@@ -59,15 +59,28 @@ namespace dev
 			/// @param callback_handler 回调函数指针，为空指针时使用默认回调函数
 			void isu_cmd_identify( uint port, void *buffer, uint len, std::function<void( void )> callback_handler );
 
+			/// @brief 向SATA设备发送read DMA命令
+			/// @param port 端口号
+			/// @param lba 逻辑扇区号
+			/// @param len 读取数据的长度(byte)，按逻辑扇区大小对齐（通常是512bytes）
+			/// @param prd_cnt 指定PRD数量
+			/// @param set_prd_handler 设置PRD的回调函数
+			/// @param callback_handler 命令结束后中断的回调函数
 			void isu_cmd_read_dma(
 				uint port,
 				uint64 lba,
 				uint64 len,
 				uint prd_cnt,
-				std::function<void( uint prd_i, uint64 &pr_base, uint32 &pr_size )> set_prd_handler, 
+				std::function<void( uint prd_i, uint64 &pr_base, uint32 &pr_size )> set_prd_handler,
 				std::function<void( void )> callback_handler );
 
-			void isu_cmd_write_dma( uint port, void *buffer, uint64 lba, const char* content, uint len, std::function<void( void )> callback_handler );
+			void isu_cmd_write_dma(
+				uint port,
+				uint64 lba,
+				uint64 len,
+				uint prd_cnt,
+				std::function<void( uint prd_i, uint64 &pr_base, uint32 &pr_size )> set_prd_handler,
+				std::function<void( void )> callback_handler );
 
 			/// @brief 尽管当前这个中断处理函数仍在测试中使用，但这个函数在
 			///        正式的代码中应该被废弃

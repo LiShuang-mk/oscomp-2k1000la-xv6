@@ -123,24 +123,26 @@ namespace dev
 			std::function<void( uint, uint64&, uint32& )> set_prd_handler,
 			std::function<void( void )> callback_handler )
 		{
-			assert( port < sata::k_sata_driver._port_num, "端口号非法" );
+			assert( port < sata::k_sata_driver._port_num, "端口号非法(0~%d)", sata::k_sata_driver._port_num + 1 );
 			if ( len < sata::k_sata_driver._logical_sector_size )
 			{
 				log__warn(
-					"buffer size is not enough.\n"
-					"read dma command would not be issue" );
+					"read length is shorter than sector size ( %d bytes ).\n"
+					"read dma command would not be issue",
+					sata::k_sata_driver._logical_sector_size
+				);
 				return;
 			}
 			if ( len % sata::k_sata_driver._logical_sector_size != 0 )
 			{
 				log__warn(
-					"buffer size is not align to logical sector size\n"
-					"read dma command would not be issue"
+					"read length is not align to logical sector size ( %d bytes )\n"
+					"read dma command would not be issue",
+					sata::k_sata_driver._logical_sector_size
 				);
-				log_trace( "^^^^ logcial sector size : %d bytes ^^^^", sata::k_sata_driver._logical_sector_size );
 				return;
 			}
-			assert( prd_cnt <= sizeof( ata::sata::prd_max_cnt ), "PRD数量过多" );
+			assert( prd_cnt <= sizeof( ata::sata::prd_max_cnt ), "PRD数量不得超过 %d", ata::sata::prd_max_cnt );
 
 			// 暂时直接引用 0 号命令槽
 			uint cmd_slot_num = 0;
@@ -186,6 +188,11 @@ namespace dev
 			{
 				prd = &cmd_tbl->prdt[ i ];
 				set_prd_handler( i, dba, dbc );
+				if ( dbc > _1M * 4 )
+				{
+					log__warn( "PR长度超过4MiB, read DMA命令将不会被发送" );
+					return;
+				}
 				prd->dba =
 					loongarch::qemuls2k::virt_to_phy_address( dba ) |
 					loongarch::qemuls2k::iodma_win_base;
@@ -196,68 +203,107 @@ namespace dev
 			// 设置中断回调函数
 			if ( callback_handler != nullptr )
 				_call_back_function[ port ][ cmd_slot_num ] = callback_handler;
+			else _call_back_function[ port ][ cmd_slot_num ] = [] () ->void
+			{
+				log__info( "<---- AHCI -- read DMA 默认中断回调 ---->" );
+			};
 
 			// 发布命令
 			sata::k_sata_driver.send_cmd( port, cmd_slot_num );
 		}
-		void AhciController::isu_cmd_write_dma( uint port, void *buffer, uint64 lba, const char* content, uint len, std::function<void( void )> callback_handler )
+
+		void AhciController::isu_cmd_write_dma(
+			uint port,
+			uint64 lba,
+			uint64 len,
+			uint prd_cnt,
+			std::function<void( uint prd_i, uint64 &pr_base, uint32 &pr_size )> set_prd_handler,
+			std::function<void( void )> callback_handler )
 		{
-			assert( port < sata::k_sata_driver.get_port_num(), "" );
+			assert( port < sata::k_sata_driver._port_num, "端口号非法(0~%d)", sata::k_sata_driver._port_num + 1 );
+			if ( len < sata::k_sata_driver._logical_sector_size )
+			{
+				log__warn(
+					"read length is shorter than sector size ( %d bytes ).\n"
+					"read dma command would not be issue",
+					sata::k_sata_driver._logical_sector_size
+				);
+				return;
+			}
+			if ( len % sata::k_sata_driver._logical_sector_size != 0 )
+			{
+				log__warn(
+					"read length is not align to logical sector size ( %d bytes )\n"
+					"read dma command would not be issue",
+					sata::k_sata_driver._logical_sector_size
+				);
+				return;
+			}
+			assert( prd_cnt <= sizeof( ata::sata::prd_max_cnt ), "PRD数量不得超过 %d", ata::sata::prd_max_cnt );
+
+			// 暂时直接引用 0 号命令槽
+			uint cmd_slot_num = 0;
 
 			// 获取command table 
-			ata::sata::HbaCmdTbl *cmd_tbl = sata::k_sata_driver.get_cmd_table( 0, 0 );
+			ata::sata::HbaCmdTbl *cmd_tbl = sata::k_sata_driver.get_cmd_table( port, cmd_slot_num );
 			assert( ( uint64 ) cmd_tbl != 0x0UL, "" );
 
-			// 命令表使用的 FIS 类型是 H2D
+			// 命令表使用的 FIS 为 H2D
 			struct ata::sata::FisRegH2D *fis_h2d = ( struct ata::sata::FisRegH2D * ) cmd_tbl->cmd_fis;
 			fis_h2d->fis_type = ata::sata::FisType::fis_reg_h2d;
+			fis_h2d->pm_port = 0;		// 端口复用使用的值，这里写0就可以了，不涉及端口复用
+			fis_h2d->c = 1;				// 表示这是一个主机发给设备的uint64 lba 命令帧
 			fis_h2d->command = ata::AtaCmd::cmd_write_dma;
-			fis_h2d->pm_port = 0;
-			fis_h2d->features = fis_h2d->features_exp = 0;
+			fis_h2d->features = fis_h2d->features_exp = 0;		// refer to ATA8-ACS, this field should be reserved when the command is 'write dma' 
+			fis_h2d->device = 1 << 6;							// refer to ATA8-ACS, bit 6 of this field should be set when the command is 'write dma' 
 			fill_fis_h2d_lba( fis_h2d, lba );
-			fis_h2d->sector_cnt = 1;
-			fis_h2d->sector_cnt_exp = 0;
-			fis_h2d->c = 1;
-			fis_h2d->device = 1 << 6;
+			uint64 sec_cnt = len / sata::k_sata_driver._logical_sector_size;
+			fis_h2d->sector_cnt = ( uint32 ) ( sec_cnt >> 0 );
+			fis_h2d->sector_cnt_exp = ( uint32 ) ( sec_cnt >> 32 );
+			fis_h2d->control = 0;
 
-			// physical region address 
-			void *pr = ( void * )
-				( loongarch::qemuls2k::virt_to_phy_address( ( uint64 ) buffer )
-					| loongarch::qemuls2k::iodma_win_base );
-			// copy the content to the memory
-			memcpy( ( void * ) ( ( uint64 ) pr | loongarch::qemuls2k::dmwin::win_1 ), content, len );
-
-			// 暂时直接引用指定的 0 号端口 0 号命令槽
-			uint cmd_slot_num = 0;
+			// 获取命令头
 			struct ata::sata::HbaCmdHeader* head = sata::k_sata_driver.get_cmd_header( port, cmd_slot_num );
-			log_trace( "head address: %p", head );
 
-			head->prdtl = 1;
-			// head->pmp=0;
-			head->c = 1;
+			// 设置命令头 
+			head->prdtl = prd_cnt;	// PRD 数量
+			head->pmp = 0;
+			head->c = 1;		// 传输结束清除忙状态
 			head->b = 0;
 			head->r = 0;
 			head->p = 0;
-			head->w = 0;
-			head->a = 0;// 先清除上次的中断
+			head->w = 1;		// 本命令是一个写命令（数据方向从host到device）
+			head->a = 0;
 			head->cfl = 5;
-			head->prdbc = 0;
+			head->prdbc = 0;	// should be set 0 before issue command 
 
-			// 设置数据区 
-			ata::sata::HbaPrd *prd0 = &cmd_tbl->prdt[ 0 ];
-			prd0->dba = ( uint64 ) loongarch::qemuls2k::virt_to_phy_address( ( uint64 ) pr );
-			prd0->interrupt = 1;
-			prd0->dbc = 512 - 1;
+			// 设置各个PRD
+			ata::sata::HbaPrd *prd;
+			uint64 dba;
+			uint32 dbc;
+			for ( uint i = 0; i < prd_cnt; i++ )
+			{
+				prd = &cmd_tbl->prdt[ i ];
+				set_prd_handler( i, dba, dbc );
+				if ( dbc > _1M * 4 )
+				{
+					log__warn( "PR长度超过4MiB, write DMA命令将不会被发送" );
+					return;
+				}
+				prd->dba =
+					loongarch::qemuls2k::virt_to_phy_address( dba ) |
+					loongarch::qemuls2k::iodma_win_base;
+				prd->dbc = dbc - 1;
+				prd->interrupt = 1;
+			}
 
-			// 这里的清中断应转移到中断处理函数中
-			// sata::k_sata_driver.clear_interrupt( 0, ata::sata::HbaRegPortIs::hba_port_is_dhrs_m );
-
-			// _pr = pr;
-			// _cmd_tbl = cmd_tbl;
-			// _pr = ( void* ) ( ( uint64 ) pr | loongarch::qemuls2k::dmwin::win_0 );
 			// 设置中断回调函数
 			if ( callback_handler != nullptr )
 				_call_back_function[ port ][ cmd_slot_num ] = callback_handler;
+			else _call_back_function[ port ][ cmd_slot_num ] = [] () ->void
+			{
+				log__info( "<---- AHCI -- write DMA 默认中断回调 ---->" );
+			};
 
 			// 发布命令
 			sata::k_sata_driver.send_cmd( port, cmd_slot_num );

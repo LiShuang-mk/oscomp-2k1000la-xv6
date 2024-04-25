@@ -280,29 +280,69 @@ void test_sata()
 
 	// dev::ahci::k_ahci_ctl.isu_cmd_read_dma( 0, mbr.partition_table[ 0 ].lba_addr_start + 2, ( void* ) &ext4_super_block, sizeof( fs::ext4::SuperBlock ), test_sata_call_back_2 );
 
-	dev::ahci::k_ahci_ctl.isu_cmd_read_dma(
-		0, 0, 512, 2,
-		[ & ] ( uint i, uint64 &dba, uint32 &dbc ) -> void
+	// dev::ahci::k_ahci_ctl.isu_cmd_read_dma(
+	// 	0, 0, 512, 2,
+	// 	[ & ] ( uint i, uint64 &dba, uint32 &dbc ) -> void
+	// {
+	// 	if ( i == 0 )
+	// 		dba = ( uint64 ) buffer1;
+	// 	else if ( i == 1 )
+	// 		dba = ( uint64 ) buffer2;
+	// 	dbc = 256;
+	// },
+	// 	[ & ] () -> void
+	// {
+	// 	log__info(
+	// 		"<!------ debug read dma ------!>\n"
+	// 		">> 试验多个PRD读取\n"
+	// 		">> 打印结果"
+	// 	);
+	// 	uchar *p;
+
+	// 	log__info( ">>>> PRD - 0 >>>>" );
+	// 	printf( "  \t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
+	// 	p = ( uchar * ) buffer1;
+	// 	for ( uint i = 0; i < 512; ++i )
+	// 	{
+	// 		if ( i % 0x10 == 0 )
+	// 			printf( "%B%B\t", i >> 8, i );
+	// 		printf( "%B ", p[ i ] );
+	// 		if ( i % 0x10 == 0xF )
+	// 			printf( "\n" );
+	// 	}
+
+	// 	log__info( ">>>> PRD - 1 >>>>" );
+	// 	printf( "  \t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
+	// 	p = ( uchar * ) buffer2;
+	// 	for ( uint i = 0; i < 512; ++i )
+	// 	{
+	// 		if ( i % 0x10 == 0 )
+	// 			printf( "%B%B\t", i >> 8, i );
+	// 		printf( "%B ", p[ i ] );
+	// 		if ( i % 0x10 == 0xF )
+	// 			printf( "\n" );
+	// 	}
+	// } );
+	bool busy;
+
+	dev::ahci::k_ahci_ctl.isu_cmd_read_dma( 0, 0, 512, 2,
+		[ & ] ( uint i, uint64& prb, uint32& prs )->void
 	{
+		busy = true;
 		if ( i == 0 )
-			dba = ( uint64 ) buffer1;
+			prb = ( uint64 ) buffer1;
 		else if ( i == 1 )
-			dba = ( uint64 ) buffer2;
-		dbc = 256;
+			prb = ( uint64 ) buffer2;
+		else return;
+		prs = 256;
 	},
 		[ & ] () -> void
 	{
-		log__info(
-			"<!------ debug read dma ------!>\n"
-			">> 试验多个PRD读取\n"
-			">> 打印结果"
-		);
+		log__info( "[test] 先将0号扇区读取出来" );
 		uchar *p;
-
-		log__info( ">>>> PRD - 0 >>>>" );
-		printf( "  \t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
+		printf( "buf0\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
 		p = ( uchar * ) buffer1;
-		for ( uint i = 0; i < 512; ++i )
+		for ( uint i = 0; i < 256; ++i )
 		{
 			if ( i % 0x10 == 0 )
 				printf( "%B%B\t", i >> 8, i );
@@ -310,11 +350,9 @@ void test_sata()
 			if ( i % 0x10 == 0xF )
 				printf( "\n" );
 		}
-
-		log__info( ">>>> PRD - 1 >>>>" );
-		printf( "  \t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
 		p = ( uchar * ) buffer2;
-		for ( uint i = 0; i < 512; ++i )
+		printf( "buf1\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
+		for ( uint i = 0; i < 256; ++i )
 		{
 			if ( i % 0x10 == 0 )
 				printf( "%B%B\t", i >> 8, i );
@@ -322,6 +360,73 @@ void test_sata()
 			if ( i % 0x10 == 0xF )
 				printf( "\n" );
 		}
+		busy = false;
+	} );
+
+	while ( busy );
+
+	// 修改一下开头的字符
+	const char str[] = "\0\0\0\0\0\0\0\0\0\0\0\0\0";
+	for ( uint i = 0; i < sizeof( str ); ++i )
+	{
+		*( ( char * ) buffer1 + i ) = str[ i ];
+	}
+
+	dev::ahci::k_ahci_ctl.isu_cmd_write_dma( 0, 0, 512, 2,
+		[ & ] ( uint i, uint64& prb, uint32& prs ) -> void
+	{
+		busy = true;
+		if ( i == 0 )
+			prb = ( uint64 ) buffer1;
+		else if ( i == 1 )
+			prb = ( uint64 ) buffer2;
+		else return;
+		prs = 256;
+	},
+		[ & ] () ->void
+	{
+		log__info( "[test] 硬盘写入完成" );
+		busy = false;
+	} );
+
+	while ( busy );
+
+	dev::ahci::k_ahci_ctl.isu_cmd_read_dma( 0, 0, 512, 2,
+		[ & ] ( uint i, uint64& prb, uint32& prs )->void
+	{
+		busy = true;
+		if ( i == 0 )
+			prb = ( uint64 ) buffer1;
+		else if ( i == 1 )
+			prb = ( uint64 ) buffer2;
+		else return;
+		prs = 256;
+	},
+		[ & ] () -> void
+	{
+		log__info( "[test] 打印修改后的0号扇区" );
+		uchar *p;
+		printf( "buf0\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
+		p = ( uchar * ) buffer1;
+		for ( uint i = 0; i < 256; ++i )
+		{
+			if ( i % 0x10 == 0 )
+				printf( "%B%B\t", i >> 8, i );
+			printf( "%B ", p[ i ] );
+			if ( i % 0x10 == 0xF )
+				printf( "\n" );
+		}
+		p = ( uchar * ) buffer2;
+		printf( "buf1\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
+		for ( uint i = 0; i < 256; ++i )
+		{
+			if ( i % 0x10 == 0 )
+				printf( "%B%B\t", i >> 8, i );
+			printf( "%B ", p[ i ] );
+			if ( i % 0x10 == 0xF )
+				printf( "\n" );
+		}
+		busy = false;
 	} );
 
 	while ( 1 );
