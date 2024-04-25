@@ -35,13 +35,13 @@ namespace dev
 	{
 		class PciDriver;
 	} // namespace pci
-	
+
 
 	namespace ahci
 	{
 		class AhciController;
 	} // namespace ahci
-	
+
 
 	namespace sata
 	{
@@ -95,7 +95,7 @@ namespace dev
 			/// @brief 清除端口中断
 			/// @param port 端口
 			/// @param intr 中断号枚举
-			void clear_interrupt( uint port, ata::sata::HbaRegPortIs intr ) { assert( port < _port_num ); _hba_port_reg[ port ]->is = intr; }
+			void clear_interrupt( uint port, ata::sata::HbaRegPortIs intr ) { assert( port < _port_num, "" ); _hba_port_reg[ port ]->is = intr; }
 
 			/// @brief 获取可用端口数量
 			/// @return 
@@ -122,7 +122,7 @@ namespace dev
 			/// @details 一个命令槽会分配一个页面，一个端口最多32个命令槽
 			/// @param port 端口号
 			/// @param cmd_slot_cnt 命令槽
-			void set_port_cmd_slot_cnt( uint port, uint8 cmd_slot_cnt ) { assert( cmd_slot_cnt < 32 ); _port_cmd_slot_num[ port ] = cmd_slot_cnt; }
+			void set_port_cmd_slot_cnt( uint port, uint8 cmd_slot_cnt ) { assert( cmd_slot_cnt < 32, "" ); _port_cmd_slot_num[ port ] = cmd_slot_cnt; }
 
 			/// @brief 设置端口的Receive FIS基地址，应在初始化前完成设置
 			/// @param port 端口号
@@ -131,7 +131,7 @@ namespace dev
 
 			/// @brief 设置端口数量，应在初始化前完成设置
 			/// @param num 端口数量，最大32个，通常不超过6个
-			void set_port_num( uint num ) { assert( num < 32 ); _port_num = num; }
+			void set_port_num( uint num ) { assert( num < 32, "" ); _port_num = num; }
 
 		// debug using 
 		public:

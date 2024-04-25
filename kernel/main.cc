@@ -89,17 +89,17 @@ int main()
 
 		dev::pci::k_pci_driver.init( "pci driver" );
 
-		// test_sata();
+		test_sata();
 
-		fs::k_bufm.init( "buffer manager" );
-		log__info( "bufm init" );
+		// fs::k_bufm.init( "buffer manager" );
+		// log__info( "bufm init" );
 
-		fs::Buffer buf = fs::k_bufm.get_buffer( 0, 0 );
-		log_trace( "测试 buffer : %p", buf.debug_get_buffer_base() );
-		// fs::k_bufm.release_buffer( buf );
-		buf = fs::k_bufm.get_buffer( 0, 1024 );
-		log_trace( "测试 buffer : %p", buf.debug_get_buffer_base() );
-		// fs::k_bufm.release_buffer( buf );
+		// fs::Buffer buf = fs::k_bufm.get_buffer( 0, 0 );
+		// log_trace( "测试 buffer : %p", buf.debug_get_buffer_base() );
+		// // fs::k_bufm.release_buffer( buf );
+		// buf = fs::k_bufm.get_buffer( 0, 1024 );
+		// log_trace( "测试 buffer : %p", buf.debug_get_buffer_base() );
+		// // fs::k_bufm.release_buffer( buf );
 
 		while ( 1 );
 
@@ -109,7 +109,7 @@ int main()
 		log__warn( "test warn " );
 		log_error( "test error" );
 		// log_panic( "test panic" );
-		assert( 0 );
+		// assert( 0 );
 
 		log__info( "Kernel not complete. About to enter loop. " );
 		while ( 1 ); // stop here
@@ -120,7 +120,8 @@ int main()
 	return 0;
 }
 
-void* buffer;
+void* buffer1;
+void* buffer2;
 void test_sata_handle_identify()
 {
 	log__info( "<----identify命令执行成功---->" );
@@ -130,7 +131,7 @@ void test_sata_handle_identify()
 	);
 
 	printf( "\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
-	uchar *p = ( uchar * ) buffer;
+	uchar *p = ( uchar * ) buffer1;
 	for ( uint i = 0; i < 512; ++i )
 	{
 		if ( i % 0x10 == 0 )
@@ -143,8 +144,8 @@ void test_sata_handle_identify()
 	log_trace(
 		"- word 106 : %x\n"
 		"- logical sector size : %d\n",
-		*( ( uint16* ) buffer + 106 ),
-		*( uint32* ) ( ( uint16* ) buffer + 117 )
+		*( ( uint16* ) buffer1 + 106 ),
+		*( uint32* ) ( ( uint16* ) buffer1 + 117 )
 	);
 }
 
@@ -195,7 +196,7 @@ void test_sata_call_back()
 	mbr_init = true;
 	return;
 
-	struct fs::fat::Fat32Dbr* dbr = ( struct fs::fat::Fat32Dbr* ) buffer;
+	struct fs::fat::Fat32Dbr* dbr = ( struct fs::fat::Fat32Dbr* ) buffer1;
 	if ( compare( dbr->ebpb.system_id, "FAT32 ", 6 ) == 0 )
 	{
 		log_trace(
@@ -266,17 +267,61 @@ void test_sata_call_back_2()
 
 void test_sata()
 {
-	buffer = mm::k_pmm.alloc_page();
-	mm::k_pmm.clear_page( buffer );
+	buffer1 = mm::k_pmm.alloc_page();
+	// mm::k_pmm.clear_page( buffer1 );
+	buffer2 = mm::k_pmm.alloc_page();
 	// loongarch::Cpu::interrupt_on();
 
 	// dev::ahci::k_ahci_ctl.isu_cmd_identify( 0, buffer, mm::PageEnum::pg_size, test_sata_handle_identify );
-	dev::ahci::k_ahci_ctl.isu_cmd_read_dma( 0, 0, &mbr, 512, test_sata_call_back );
+	// dev::ahci::k_ahci_ctl.isu_cmd_read_dma( 0, 0, &mbr, 512, test_sata_call_back );
 
-	while ( !mbr_init );
+	// while ( !mbr_init );
 
-	dev::ahci::k_ahci_ctl.isu_cmd_read_dma( 0, mbr.partition_table[ 0 ].lba_addr_start + 2, ( void* ) &ext4_super_block, sizeof( fs::ext4::SuperBlock ), test_sata_call_back_2 );
+	// dev::ahci::k_ahci_ctl.isu_cmd_read_dma( 0, mbr.partition_table[ 0 ].lba_addr_start + 2, ( void* ) &ext4_super_block, sizeof( fs::ext4::SuperBlock ), test_sata_call_back_2 );
 
-// dev::ahci::k_ahci_ctl.simple_read( 0 );
+	dev::ahci::k_ahci_ctl.isu_cmd_read_dma(
+		0, 0, 512, 2,
+		[] ( uint i, uint64 &dba, uint32 &dbc ) -> void
+	{
+		if ( i == 0 )
+			dba = ( uint64 ) buffer1;
+		else if ( i == 1 )
+			dba = ( uint64 ) buffer2;
+		dbc = 256;
+	},
+		[ & ] () -> void
+	{
+		log__info(
+			"<!------ debug read dma ------!>\n"
+			">> 试验多个PRD读取\n"
+			">> 打印结果"
+		);
+		uchar *p;
+
+		log__info( ">>>> PRD - 0 >>>>" );
+		printf( "  \t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
+		p = ( uchar * ) buffer1;
+		for ( uint i = 0; i < 512; ++i )
+		{
+			if ( i % 0x10 == 0 )
+				printf( "%B%B\t", i >> 8, i );
+			printf( "%B ", p[ i ] );
+			if ( i % 0x10 == 0xF )
+				printf( "\n" );
+		}
+
+		log__info( ">>>> PRD - 1 >>>>" );
+		printf( "  \t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
+		p = ( uchar * ) buffer2;
+		for ( uint i = 0; i < 512; ++i )
+		{
+			if ( i % 0x10 == 0 )
+				printf( "%B%B\t", i >> 8, i );
+			printf( "%B ", p[ i ] );
+			if ( i % 0x10 == 0xF )
+				printf( "\n" );
+		}
+	} );
+
 	while ( 1 );
 }

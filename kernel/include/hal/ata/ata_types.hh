@@ -15,5 +15,5 @@ namespace ata
 	using byte = uchar;
 	using word = uint16;
 	using dword = uint32;
-
+	using qword = uint64;
 } // namespace ata

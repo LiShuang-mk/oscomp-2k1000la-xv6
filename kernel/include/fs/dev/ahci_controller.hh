@@ -59,9 +59,15 @@ namespace dev
 			/// @param callback_handler 回调函数指针，为空指针时使用默认回调函数
 			void isu_cmd_identify( uint port, void *buffer, uint len, std::function<void( void )> callback_handler );
 
-			void isu_cmd_read_dma( uint port, uint64 lba, void *buffer, uint64 len, std::function<void( void )> callback_handler );
+			void isu_cmd_read_dma(
+				uint port,
+				uint64 lba,
+				uint64 len,
+				uint prd_cnt,
+				std::function<void( uint prd_i, uint64 &pr_base, uint32 &pr_size )> set_prd_handler, 
+				std::function<void( void )> callback_handler );
 
-			void isu_cmd_write_dma( uint port, void *buffer,uint64 lba ,const char* content,uint len, std::function<void( void )> callback_handler );
+			void isu_cmd_write_dma( uint port, void *buffer, uint64 lba, const char* content, uint len, std::function<void( void )> callback_handler );
 
 			/// @brief 尽管当前这个中断处理函数仍在测试中使用，但这个函数在
 			///        正式的代码中应该被废弃
@@ -71,6 +77,9 @@ namespace dev
 			void intr_handle();
 
 			// void set_intr_handler( callback_t f ) { test_call_back = f; }
+
+		// for debugging 
+		public:
 
 		private:
 			void fill_fis_h2d_lba( ata::sata::FisRegH2D *fis, uint64 lba );

@@ -151,6 +151,21 @@ namespace dev
 				}
 				log_trace( "identify disk - 逻辑扇区大小 %d bytes", sata::k_sata_driver.get_sector_size() );
 
+				uint16 queue_depth = *( ( uint16 * ) buf + 75 );
+				uint16 sata_cap = *( ( uint16 * ) buf + 76 );
+				uint16 feature = *( ( uint16 * ) buf + 83 );
+				log_trace(
+					"word 76 : %x\n"
+					"word 83 : %x\n"
+					"command support : %s %s\n"
+					"queue depth : %d",
+					sata_cap,
+					feature,
+					( feature & ( 0x1U << 1 ) ) ? "DMA-QEUEUD" : "",
+					( sata_cap & ( 0x1U << 8 ) ) ? "FPDMA" : "",
+					queue_depth
+				);
+
 				flag = true;
 			} );
 			while ( !flag );
