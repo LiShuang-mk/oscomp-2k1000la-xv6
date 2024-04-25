@@ -40,3 +40,5 @@
 #### 3. [=> ls2k的IO方式](./doc/ls2k_io.md)
 
 #### 4. [=> qemu-ls2k + gdb 调试方式](./doc/qemu_debug.md)
+
+#### 5. [=> 文件系统](./doc/fs.md)
