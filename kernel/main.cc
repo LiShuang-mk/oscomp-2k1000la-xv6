@@ -89,7 +89,9 @@ int main()
 
 		dev::pci::k_pci_driver.init( "pci driver" );
 
-		test_sata();
+		// 这个测试里面包含修改硬盘数据的敏感操作
+		// 使用前先备份2kfs.img或sdcard.img
+		// test_sata();
 
 		// fs::k_bufm.init( "buffer manager" );
 		// log__info( "bufm init" );
@@ -366,7 +368,7 @@ void test_sata()
 	while ( busy );
 
 	// 修改一下开头的字符
-	const char str[] = "\0\0\0\0\0\0\0\0\0\0\0\0\0";
+	const char str[] = "123456789";
 	for ( uint i = 0; i < sizeof( str ); ++i )
 	{
 		*( ( char * ) buffer1 + i ) = str[ i ];
