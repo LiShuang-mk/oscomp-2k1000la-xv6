@@ -6,6 +6,8 @@
 
 # xv6-qemu-Loongarch-ls2k 
 
+## [** <!重要!> 自2024年4月25日起本仓库迁移至gitlab进行开发 **](https://gitlab.eduxiji.net/T202410486992576/OSKernel2024-2k1000la-xv6.git)
+
 俺争取不掉队设计的基于qemu-ls2k的os是基于xv6-ls3A5000修改而来的。
 
 ### 搭建开发环境
