@@ -104,12 +104,13 @@ int main()
 		while ( 1 );
 
 		printf( "\n" );
+		log_trace( "simple trace" );
 		log_trace( "test\n%s", "trace" );
 		log__info( "test info" );
 		log__warn( "test warn " );
 		log_error( "test error" );
 		// log_panic( "test panic" );
-		// assert( 0 );
+		assert( 0, "" );
 
 		log__info( "Kernel not complete. About to enter loop. " );
 		while ( 1 ); // stop here
@@ -281,7 +282,7 @@ void test_sata()
 
 	dev::ahci::k_ahci_ctl.isu_cmd_read_dma(
 		0, 0, 512, 2,
-		[] ( uint i, uint64 &dba, uint32 &dbc ) -> void
+		[ & ] ( uint i, uint64 &dba, uint32 &dbc ) -> void
 	{
 		if ( i == 0 )
 			dba = ( uint64 ) buffer1;

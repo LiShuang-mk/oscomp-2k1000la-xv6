@@ -16,14 +16,6 @@ void printf( const char *fmt, ... )
 	va_end( ap );
 }
 
-void ktrace( const char *f, uint l, const char *info, ... )
-{
-	va_list ap;
-	va_start( ap, info );
-	kernellib::k_printer.trace( f, l, info, ap );
-	va_end( ap );
-}
-
 void *memset( void *dst, int c, uint n )
 {
 	char *cdst = ( char * ) dst;

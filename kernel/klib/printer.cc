@@ -56,7 +56,7 @@ namespace kernellib
 	void Printer::printbyte( uchar x )
 	{
 		char buf[ 2 ];
-		
+
 		buf[ 0 ] = _digits[ x & 0xFU ];
 		x >>= 4;
 		buf[ 1 ] = _digits[ x & 0xFU ];
@@ -177,7 +177,10 @@ namespace kernellib
 		k_printer.printf( "%d", l );
 		k_printer.printf( " :\n\t     " );
 		_trace_flag = 1;
-		k_printer.printf( "%s", info );
+		va_list ap;
+		va_start( ap, info );
+		k_printer.vprintf( info, ap );
+		va_end( ap );
 		_trace_flag = 0;
 #ifdef LINUX_BUILD
 		k_printer.printf( "\n\033[0m" );
@@ -201,7 +204,10 @@ namespace kernellib
 		k_printer.printf( "%d", l );
 		k_printer.printf( " :\n\t     " );
 		_trace_flag = 1;
-		k_printer.printf( "%s", info );
+		va_list ap;
+		va_start( ap, info );
+		k_printer.vprintf( info, ap );
+		va_end( ap );
 		_trace_flag = 0;
 #ifdef LINUX_BUILD
 		k_printer.printf( "\n\033[0m" );
@@ -224,7 +230,10 @@ namespace kernellib
 		k_printer.printf( "%d", l );
 		k_printer.printf( " :\n\t     " );
 		_trace_flag = 1;
-		k_printer.printf( "%s", info );
+		va_list ap;
+		va_start( ap, info );
+		k_printer.vprintf( info, ap );
+		va_end( ap );
 		_trace_flag = 0;
 #ifdef LINUX_BUILD
 		k_printer.printf( "\n\033[0m" );
@@ -247,7 +256,10 @@ namespace kernellib
 		k_printer.printf( "%d", l );
 		k_printer.printf( " :\n\t     " );
 		_trace_flag = 1;
-		k_printer.printf( "%s", info );
+		va_list ap;
+		va_start( ap, info );
+		k_printer.vprintf( info, ap );
+		va_end( ap );
 		_trace_flag = 0;
 #ifdef LINUX_BUILD
 		k_printer.printf( "\n\033[0m" );
@@ -257,7 +269,7 @@ namespace kernellib
 		k_printer._locking = 1;
 	}
 
-	void Printer::trace( const char *f, uint l, const char *info, va_list ap )
+	void Printer::trace( const char *f, uint l, const char *info, ... )
 	{
 		k_printer._locking = 0;
 #ifdef LINUX_BUILD
@@ -270,7 +282,10 @@ namespace kernellib
 		k_printer.printf( "%d", l );
 		k_printer.printf( " :\n\t     " );
 		_trace_flag = 1;
+		va_list ap;
+		va_start( ap, info );
 		k_printer.vprintf( info, ap );
+		va_end( ap );
 		_trace_flag = 0;
 #ifdef LINUX_BUILD
 		k_printer.printf( "\n\033[0m" );
@@ -280,7 +295,7 @@ namespace kernellib
 		k_printer._locking = 1;
 	}
 
-	void Printer::assrt( const char *f, uint l, const char *expr, const char *detail )
+	void Printer::assrt( const char *f, uint l, const char *expr, const char *detail, ... )
 	{
 		k_printer._locking = 0;
 #ifdef LINUX_BUILD
@@ -296,7 +311,10 @@ namespace kernellib
 		k_printer.printf( "assert fail for '" );
 		k_printer.printf( expr );
 		k_printer.printf( "'\n[detail] " );
-		k_printer.printf( detail );
+		va_list ap;
+		va_start( ap, detail );
+		k_printer.vprintf( detail, ap );
+		va_end( ap );
 		_trace_flag = 0;
 #ifdef LINUX_BUILD
 		k_printer.printf( "\n\033[0m" );
