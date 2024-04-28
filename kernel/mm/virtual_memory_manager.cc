@@ -10,6 +10,7 @@
 #include "hal/cpu.hh"
 #include "klib/common.hh"
 #include "mm/virtual_memory_manager.hh"
+#include "mm/physical_memory_manager.hh"
 #include "mm/page.hh"
 #include "mm/page_table.hh"
 #include "mm/memlayout.hh"

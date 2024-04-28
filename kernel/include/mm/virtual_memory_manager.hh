@@ -9,8 +9,8 @@
 #pragma once 
 
 #include "smp/lock.hh"
-#include "mm/physical_memory_manager.hh"
 #include "mm/page_table.hh"
+#include "pm/sharemem.hh"
 
 namespace mm
 {
