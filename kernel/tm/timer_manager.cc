@@ -18,9 +18,9 @@ namespace tm
 	{
 		_lock.init( lock_name );
 		uint64 tcfg_data =
-			( ( ( uint64 ) div_fre ) << loongarch::csr::tcfg::tcfg_initval_s ) |
-			( loongarch::csr::tcfg::tcfg_en_m ) |
-			( loongarch::csr::tcfg::tcfg_periodic_m );
+			( ( ( uint64 ) div_fre ) << loongarch::csr::Tcfg::tcfg_initval_s ) |
+			( loongarch::csr::Tcfg::tcfg_en_m ) |
+			( loongarch::csr::Tcfg::tcfg_periodic_m );
 		loongarch::Cpu::write_csr( loongarch::csr::CsrAddr::tcfg, tcfg_data );
 		// asm volatile( "csrwr %0, 0x41" : : "r" ( tcfg_data ) );
 	}

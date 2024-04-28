@@ -22,32 +22,30 @@ namespace fs
 		for ( uint i = 0; i < block_per_pool; i++ )
 		{
 			block = &_buffer_pool[ i ];
-			void *page = mm::k_pmm.alloc_page();
-			block->init( page, i );
+			block->init( i );
 		}
 	}
 
-	uint BufferManager::dev_to_sata_port( uint dev )
+	int BufferManager::dev_to_sata_port( int dev )
 	{
 		return dev;
 	}
 
-	Buffer BufferManager::get_buffer( uint dev, uint64 lba )
+	Buffer BufferManager::get_buffer( int dev, uint64 lba )
 	{
 		_lock.acquire();
 
 		uint block_number = lba % block_per_pool;
 		uint tag_number = lba / block_per_pool;
-		int buf_index = _buffer_pool[ block_number ].search_buffer( dev, block_number, tag_number );
-		if ( buf_index >= 0 )
+		BufferNode *node = _buffer_pool[ block_number ].search_buffer( dev, block_number, tag_number );
+		if ( node != nullptr )
 		{
-			_buffer_pool[ block_number ]._ref_cnt[ buf_index ]++;
-
+			_buffer_pool[ block_number ]._ref_cnt[ node->_buf_index ]++;
 		}
 		else
 		{
-			buf_index = _buffer_pool[ block_number ].alloc_buffer( dev, block_number, tag_number );
-			if ( buf_index < 0 )
+			node = _buffer_pool[ block_number ].alloc_buffer( dev, block_number, tag_number );
+			if ( node == nullptr )
 			{
 				log_panic(
 					"BufferManager : try to get buffer fail\n"
@@ -57,37 +55,72 @@ namespace fs
 			}
 		}
 		_lock.release();
-		_buffer_pool[ block_number ]._sleep_lock[ buf_index ].acquire();
-		return _buffer_pool[ block_number ].get_buffer( buf_index );
+		_buffer_pool[ block_number ]._sleep_lock[ node->_buf_index ].acquire();
+		return _buffer_pool[ block_number ].get_buffer( node );
 	}
 
 	void BufferManager::release_buffer( Buffer buf )
 	{
 		uint blk = buf._block_number;
 		uint idx = buf._buffer_index;
+
 		if ( !_buffer_pool[ blk ]._sleep_lock[ idx ].is_holding() )
 			log_panic( "not hold buffer sleep-lock" );
 		_buffer_pool[ blk ]._sleep_lock[ idx ].release();
+
 		_lock.acquire();
-		_buffer_pool[ blk ]._ref_cnt[ idx ]--;
+		BufferBlock &block = _buffer_pool[ blk ];
+		block._ref_cnt[ idx ]--;
+		if ( block._ref_cnt[ idx ] == 0 )
+		{
+			BufferNode &node = block._nodes[ idx ];
+			node._next->_prev = node._prev;
+			node._prev->_next = node._next;
+			node._next = block._node_head._next;
+			node._prev = &block._node_head;
+			block._node_head._next->_prev = &node;
+			block._node_head._next = &node;
+		}
 		_lock.release();
 	}
 
-	Buffer BufferManager::read( uint dev, uint lba )
+	Buffer BufferManager::read( int dev, uint lba )
 	{
 		Buffer buf = get_buffer( dev, lba );
-		if ( _buffer_pool[ buf._block_number ]._valid[ buf._buffer_index ] == false )
+		if ( bit_test( ( void* ) &_buffer_pool[ buf._block_number ]._valid_map, buf._buffer_index ) == false )
 		{
 			log__warn( "sleep not implement, so read disk will utilize synchronous way." );
-			assert( true, "not implement" );
-			// bool dma_finish = false;
-			// dev::ahci::k_ahci_ctl.isu_cmd_read_dma( dev_to_sata_port( dev ), lba, buf._buffer_base, default_buffer_size, [ & ] () -> void
-			// {
-			// 	dma_finish = true;
-			// } );
-			// while ( !dma_finish );
-			// _buffer_pool[ buf._block_number ]._valid[ buf._buffer_index ] = true;
+
+			uint blk = buf._block_number;
+			uint idx = buf._buffer_index;
+
+			bool dma_finish = false;
+			
+			auto lam1 = [ & ] ( uint i, uint64& prb, uint32& prs ) -> void
+			{
+				if ( i > 0 )
+					return;
+				prb = ( uint64 ) _buffer_pool[ blk ]._buffer_base[ idx ];
+				prs = default_buffer_size;
+			};
+
+			auto lam2 = [ & ] () -> void
+			{
+				log_trace( "buffer : read from disk. LBA : %x", lba );
+				dma_finish = true;
+			};
+
+			dev::ahci::k_ahci_ctl.isu_cmd_read_dma(
+				dev_to_sata_port( dev ), lba, default_buffer_size, 1,
+				lam1,
+				lam2
+			);
+
+			while ( !dma_finish );
+			bit_set( ( void* ) &_buffer_pool[ buf._block_number ]._valid_map, buf._buffer_index );
 		}
 		return buf;
 	}
+
+
 } // namespace fs

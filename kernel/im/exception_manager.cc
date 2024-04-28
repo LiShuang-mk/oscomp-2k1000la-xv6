@@ -9,6 +9,8 @@
 #include "im/exception_manager.hh"
 #include "im/interrupt_manager.hh"
 #include "hal/cpu.hh"
+#include "hal/csr.hh"
+#include "hal/loongarch.hh"
 #include "fs/dev/ahci_controller.hh"
 #include "klib/common.hh"
 
@@ -27,6 +29,16 @@ namespace im
 	void ExceptionManager::init( const char *lock_name )
 	{
 		_lock.init( lock_name );
+
+		for ( auto &f : _exception_handlers )
+		{
+			f = [] () -> void
+			{
+				log_panic( "not implement" );
+			};
+		}
+
+		_exception_handlers[ loongarch::csr::ecode_pif ] = &handle_pif;
 
 		uint32 ecfg_data =
 			( 0x0U << loongarch::csr::ecfg_vs_s ) |
@@ -75,9 +87,10 @@ namespace im
 			}
 		}
 		uint ecode = ( estat & loongarch::csr::Estat::estat_ecode_m ) >> loongarch::csr::Estat::estat_ecode_s;
-		assert( ecode < 0x40, "" );
+		assert( ecode < _LA_ECODE_MAX_NUM_, "" );
 		log__info( _la_ecode_spec_[ ecode ] );
-		log_panic( "not implement" );
+		_exception_handlers[ ecode ]();
+		// log_panic( "not implement" );
 	}
 
 	void ExceptionManager::machine_trap()
@@ -92,6 +105,19 @@ namespace im
 		// dev::ahci::k_ahci_ctl.simple_intr_handle();
 
 		dev::ahci::k_ahci_ctl.intr_handle();
+	}
+
+// -------- private --------
+
+	void ExceptionManager::handle_pif()
+	{
+		log_panic(
+			"handle PIF :\n"
+			"    badv : %x"
+			"    badi : %x",
+			loongarch::Cpu::read_csr( loongarch::csr::badv ),
+			loongarch::Cpu::read_csr( loongarch::csr::badi )
+		);
 	}
 }// namespace im
 

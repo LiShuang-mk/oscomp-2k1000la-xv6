@@ -7,6 +7,7 @@
 //
 
 #include "fs/buffer.hh"
+#include "mm/physical_memory_manager.hh"
 #include "klib/common.hh"
 
 namespace fs
@@ -44,25 +45,27 @@ namespace fs
 //_______________________________________________________________
 // >>>> class BufferBlock 
 
-	void BufferBlock::init( void *page_base, uint block_number )
+	void BufferBlock::init( uint block_number )
 	{
-		for ( pm::SleepLock &lock : _sleep_lock )
-			lock.init( "buffer-block lock", "buffer-block sleep-lock" );
-		for ( bool &v : _valid )
-			v = false;
-		for ( bool &d : _disk_own )
-			d = false;
-		for ( uint &d : _device )
+		_valid_map = 0UL;
+		_disk_own_map = 0UL;
+		_dirty_map = 0UL;
+		_current_buffer_counts = max_buffer_per_block;
+		for ( int &d : _device )
 			d = 0;
+		for ( int &ref : _ref_cnt )
+			ref = 0;
 		for ( uint64 &tag : _tag_number )
 			tag = ~0;
-		for ( uint &ref : _ref_cnt )
-			ref = 0;
+		for ( pm::SleepLock &lock : _sleep_lock )
+			lock.init( "buffer-block lock", "buffer-block sleep-lock" );
 
 		_node_head._next = &_node_head;
 		_node_head._prev = &_node_head;
-		for ( int i = 0; i < ( int ) buffer_per_block; i++ )
+		_node_head._buf_index = -1;
+		for ( int i = 0; i < ( int ) _current_buffer_counts; i++ )
 		{
+			_nodes[ i ]._buf_index = i;
 			_nodes[ i ]._next = _node_head._next;
 			_nodes[ i ]._prev = &_node_head;
 			_node_head._next->_prev = &_nodes[ i ];
@@ -71,55 +74,66 @@ namespace fs
 
 		_lock.init( "buffer block" );
 		_block_number = block_number;
-		_page_base = page_base;
+
+		for ( int i = 0; i < ( int ) _current_buffer_counts; ++i )
+		{
+			_buffer_base[ i ] = mm::k_pmm.alloc_page();
+			if ( _buffer_base[ i ] == nullptr )
+				log_panic(
+					"[ buffer alloc ] no memory.\n"
+					"block number : %d\n"
+					"buffer index : %d",
+					_block_number, i
+				);
+		}
 	}
 
-	int BufferBlock::search_buffer( uint dev, uint block_num, uint64 tag_num )
+	BufferNode* BufferBlock::search_buffer( int dev, uint block_num, uint64 tag_num )
 	{
-		assert( block_num == _block_number, "" );
+		assert( block_num == _block_number, "对 buffer block 而言非法的块号, 需求 %d, 而输入 %d", _block_number, block_num );
 		_lock.acquire();
-		for ( uint i = 0; i < buffer_per_block; i++ )
+		for ( BufferNode *node = _node_head._next; node != &_node_head; node = node->_next )
 		{
-			if ( _device[ i ] == dev && _tag_number[ i ] == tag_num )
+			if ( _device[ node->_buf_index ] == dev && _tag_number[ node->_buf_index ] == tag_num )
 			{
 				_lock.release();
-				return i;
+				return node;
 			}
 		}
 		_lock.release();
-		return -1;
+		return nullptr;
 	}
 
-	Buffer BufferBlock::get_buffer( int index )
+	Buffer BufferBlock::get_buffer( BufferNode* buf_node )
 	{
-		assert( index >= 0, "" );
-		assert( index < ( int ) buffer_per_block, "" );
+		assert( buf_node->_buf_index >= 0, "非法的buffer-node : buffer index is %d", buf_node->_buf_index );
+		assert( buf_node->_buf_index < ( int ) max_buffer_per_block, "非法的buffer-node : buffer index is %d", buf_node->_buf_index );
 
-		uint64 buf_base = ( uint64 ) _page_base + default_buffer_size * index;
+		uint64 buf_base = ( uint64 ) _buffer_base[ buf_node->_buf_index ];
 
-		return Buffer( buf_base, _block_number, index );
+		return Buffer( buf_base, _block_number, buf_node->_buf_index );
 	}
 
-	int BufferBlock::alloc_buffer( uint dev, uint block_num, uint64 tag_num )
+	BufferNode* BufferBlock::alloc_buffer( int dev, uint block_num, uint64 tag_num )
 	{
-		assert( block_num == _block_number, "" );
+		assert( block_num == _block_number, "对 buffer block 而言非法的块号, 需求 %d, 而输入 %d", _block_number, block_num );
 		_lock.acquire();
-		for ( uint i = 0; i < buffer_per_block; i++ )
+		for ( BufferNode *node = _node_head._prev; node != &_node_head; node = node->_prev )
 		{
-			if ( _ref_cnt[ i ] == 0 )
+			if ( _ref_cnt[ node->_buf_index ] == 0 )
 			{
-				_device[ i ] = dev;
-				_tag_number[ i ] = tag_num;
-				_valid[ i ] = 0;
-				_ref_cnt[ i ] = 1;
+				_device[ node->_buf_index ] = dev;
+				_tag_number[ node->_buf_index ] = tag_num;
+				bit_reset( ( void* ) &_valid_map, node->_buf_index );
+				_ref_cnt[ node->_buf_index ] = 1;
 
 				_lock.release();
 				// _sleep_lock[ i ].acquire();
-				return i;
+				return node;
 			}
 		}
 		_lock.release();
 		log__warn( "BufferBlock : no buffer to alloc" );
-		return -1;
+		return nullptr;
 	}
 } // namespace fs

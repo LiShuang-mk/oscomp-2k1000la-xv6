@@ -28,8 +28,20 @@ namespace mm
 	{
 		char *p;
 		p = ( char * ) page_round_up( ( uint64 ) pa_start );
+		int page_cnt = 0;
 		for ( ; p + pg_size <= ( char * ) pa_end; p += pg_size )
+		{
 			_free_page( p );
+			page_cnt++;
+		}
+		log_trace(
+			"物理页式内存起始地址 : %p\n"
+			"物理页式内存长度     : %d MiB\n"
+			"物理内存页数量       : %d",
+			( uint64 ) pa_start,
+			( ( uint64 ) pa_end - ( uint64 ) pa_start ) / _1M,
+			page_cnt
+		);
 	}
 
 	void PhysicalMemoryManager::_free_page( void *pa )

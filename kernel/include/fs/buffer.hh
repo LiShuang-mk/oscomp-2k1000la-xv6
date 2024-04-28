@@ -14,8 +14,8 @@
 
 namespace fs
 {
-	constexpr uint default_buffer_size = 512/*bytes*/;
-	constexpr uint buffer_per_block = 64;
+	constexpr uint default_buffer_size = mm::PageEnum::pg_size/*bytes*/;
+	constexpr uint max_buffer_per_block = 64;
 
 	class BufferBlock;
 	class BufferManager;
@@ -58,30 +58,30 @@ namespace fs
 	{
 		friend BufferManager;
 	private:
-		bool _valid[ buffer_per_block ];
-		bool _disk_own[ buffer_per_block ];
-		uint _device[ buffer_per_block ];
-		uint _ref_cnt[ buffer_per_block ];
-		uint64 _tag_number[ buffer_per_block ];
-		pm::SleepLock _sleep_lock[ buffer_per_block ];
+		uint64 _valid_map;										// 对应位为1表示该buffer是最新的数据，可直接读写
+		uint64 _dirty_map;										// 对应位为1表示该buffer的数据是脏数据，应当写回硬盘
+		uint64 _disk_own_map;									// 对应位为1表示硬盘DMA正在使用这个buffer，内核不应该在此时修改对应的buffer
+		int _device[ max_buffer_per_block ];					// buffer对应的虚拟设备号
+		int _ref_cnt[ max_buffer_per_block ];					// buffer引用计数
+		uint64 _tag_number[ max_buffer_per_block ];				// 块号归属当前块的唯一标识，实际上是LBA的高位
+		pm::SleepLock _sleep_lock[ max_buffer_per_block ];		// 每个buffer均有一个睡眠锁，实际上是Manager使用和管理的
 
-		// buffer 链表
-		BufferNode _nodes[ buffer_per_block ];
-		BufferNode _node_head;
+		BufferNode _nodes[ max_buffer_per_block ];				// buffer 链表节点
+		BufferNode _node_head;									// buffer 链表头
 
 		smp::Lock _lock;
-		uint _block_number;
-		void const *_page_base;
+		uint _block_number;										// 当前block的块号
+		uint _current_buffer_counts;		// 当前block拥有的buffer数量，是实际上的该块拥有的buffer数，可以动态更新
+		void *_buffer_base[ max_buffer_per_block ];				// buffer的基地址
 	public:
 		BufferBlock() {};
 		BufferBlock( const BufferBlock &b ) = delete;
-		void init( void *page_base, uint block_number );
+		void init( uint block_number );
 
+		BufferNode* search_buffer( int dev, uint block_num, uint64 tag_num );
 
-		int search_buffer( uint dev, uint block_num, uint64 tag_num );
+		Buffer get_buffer( BufferNode* buf_node );
 
-		Buffer get_buffer( int buffer_index );
-
-		int alloc_buffer( uint dev, uint block_num, uint64 tag_num );
+		BufferNode* alloc_buffer( int dev, uint block_num, uint64 tag_num );
 	};
 } // namespace fs

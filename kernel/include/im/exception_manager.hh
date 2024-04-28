@@ -9,13 +9,16 @@
 #pragma once 
 
 #include "smp/lock.hh"
+#include "klib/function.hh"
 
 namespace im
 {
+	constexpr uint max_ecode_num = 0x40;
 	class ExceptionManager
 	{
 	private:
 		smp::Lock _lock;
+		std::function<void( void )> _exception_handlers[ max_ecode_num ];
 
 	public:
 		ExceptionManager() = default;
@@ -25,6 +28,10 @@ namespace im
 
 	public:
 		void ahci_read_handle();
+
+	// exception handler 
+	private:
+		static void handle_pif();
 	};
 
 	extern ExceptionManager k_em;

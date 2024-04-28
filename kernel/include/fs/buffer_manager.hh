@@ -13,7 +13,7 @@
 
 namespace fs
 {
-	constexpr uint block_per_pool = ( uint64 ) CommonSize::_1M * 4 / ( uint64 ) mm::pg_size;
+	constexpr uint block_per_pool = 64;
 
 	class BufferManager
 	{
@@ -31,13 +31,13 @@ namespace fs
 		///          在后续完善设备管理后可能发生变化
 		/// @param dev 虚拟设备号
 		/// @return SATA端口号，超过32是不合法的
-		uint dev_to_sata_port( uint dev );
+		int dev_to_sata_port( int dev );
 
-		Buffer get_buffer( uint dev, uint64 lba );
+		Buffer get_buffer( int dev, uint64 lba );
 
 		void release_buffer( Buffer buf );
 
-		Buffer read( uint dev, uint lba );
+		Buffer read( int dev, uint lba );
 
 		
 	};

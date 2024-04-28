@@ -22,6 +22,7 @@
 __attribute__( ( aligned( 16 ) ) ) char stack0[ 4096 * NUMCPU ];
 
 void test_sata();
+void test_buffer();
 
 int main()
 {
@@ -69,6 +70,8 @@ int main()
 		pm::k_shmManager.init( "shm lock" );
 		log__info( "shm init" );
 
+		
+
 		// uint32 apbh[ 64 ];
 		// uint64 addr = ( ( 0xFE0UL << 28 ) | ( 0x0UL << 16 ) | ( 0x2UL << 11 ) | ( 0x0UL << 8 ) );
 		// printf( "addr: \n%p\n", addr | loongarch::qemuls2k::dmwin::win_1 );
@@ -83,8 +86,6 @@ int main()
 		// for ( int i = 0; i < 0x200; i += 4, p++ )
 		// 	printf( "%x\t\t%p\n", i, *p );
 
-		// ata::sata::k_sata_driver.init( "sata driver", ( void* ) 0x0, ( void* ) 0x0 );
-
 		dev::ahci::k_ahci_ctl.init( "ahci controller" );
 
 		dev::pci::k_pci_driver.init( "pci driver" );
@@ -93,8 +94,10 @@ int main()
 		// 使用前先备份2kfs.img或sdcard.img
 		// test_sata();
 
-		// fs::k_bufm.init( "buffer manager" );
-		// log__info( "bufm init" );
+		fs::k_bufm.init( "buffer manager" );
+		log__info( "bufm init" );
+
+		// test_buffer();
 
 		// fs::Buffer buf = fs::k_bufm.get_buffer( 0, 0 );
 		// log_trace( "测试 buffer : %p", buf.debug_get_buffer_base() );
@@ -102,6 +105,11 @@ int main()
 		// buf = fs::k_bufm.get_buffer( 0, 1024 );
 		// log_trace( "测试 buffer : %p", buf.debug_get_buffer_base() );
 		// // fs::k_bufm.release_buffer( buf );
+
+		int tm, tn;
+		tm = 0;
+		tn = 1;
+		assert( tm == tn, "对 buffer block 而言非法的块号, 需求 %d, 而输入 %d", tn, tm );
 
 		while ( 1 );
 
@@ -273,58 +281,7 @@ void test_sata()
 	buffer1 = mm::k_pmm.alloc_page();
 	// mm::k_pmm.clear_page( buffer1 );
 	buffer2 = mm::k_pmm.alloc_page();
-	// loongarch::Cpu::interrupt_on();
 
-	// dev::ahci::k_ahci_ctl.isu_cmd_identify( 0, buffer, mm::PageEnum::pg_size, test_sata_handle_identify );
-	// dev::ahci::k_ahci_ctl.isu_cmd_read_dma( 0, 0, &mbr, 512, test_sata_call_back );
-
-	// while ( !mbr_init );
-
-	// dev::ahci::k_ahci_ctl.isu_cmd_read_dma( 0, mbr.partition_table[ 0 ].lba_addr_start + 2, ( void* ) &ext4_super_block, sizeof( fs::ext4::SuperBlock ), test_sata_call_back_2 );
-
-	// dev::ahci::k_ahci_ctl.isu_cmd_read_dma(
-	// 	0, 0, 512, 2,
-	// 	[ & ] ( uint i, uint64 &dba, uint32 &dbc ) -> void
-	// {
-	// 	if ( i == 0 )
-	// 		dba = ( uint64 ) buffer1;
-	// 	else if ( i == 1 )
-	// 		dba = ( uint64 ) buffer2;
-	// 	dbc = 256;
-	// },
-	// 	[ & ] () -> void
-	// {
-	// 	log__info(
-	// 		"<!------ debug read dma ------!>\n"
-	// 		">> 试验多个PRD读取\n"
-	// 		">> 打印结果"
-	// 	);
-	// 	uchar *p;
-
-	// 	log__info( ">>>> PRD - 0 >>>>" );
-	// 	printf( "  \t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
-	// 	p = ( uchar * ) buffer1;
-	// 	for ( uint i = 0; i < 512; ++i )
-	// 	{
-	// 		if ( i % 0x10 == 0 )
-	// 			printf( "%B%B\t", i >> 8, i );
-	// 		printf( "%B ", p[ i ] );
-	// 		if ( i % 0x10 == 0xF )
-	// 			printf( "\n" );
-	// 	}
-
-	// 	log__info( ">>>> PRD - 1 >>>>" );
-	// 	printf( "  \t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
-	// 	p = ( uchar * ) buffer2;
-	// 	for ( uint i = 0; i < 512; ++i )
-	// 	{
-	// 		if ( i % 0x10 == 0 )
-	// 			printf( "%B%B\t", i >> 8, i );
-	// 		printf( "%B ", p[ i ] );
-	// 		if ( i % 0x10 == 0xF )
-	// 			printf( "\n" );
-	// 	}
-	// } );
 	bool busy;
 
 	dev::ahci::k_ahci_ctl.isu_cmd_read_dma( 0, 0, 512, 2,
@@ -368,7 +325,8 @@ void test_sata()
 	while ( busy );
 
 	// 修改一下开头的字符
-	const char str[] = "123456789";
+	// const char str[10] = "123456789";
+	const char str[10] = "\0\0\0\0\0\0\0\0\0";
 	for ( uint i = 0; i < sizeof( str ); ++i )
 	{
 		*( ( char * ) buffer1 + i ) = str[ i ];
@@ -432,4 +390,20 @@ void test_sata()
 	} );
 
 	while ( 1 );
+}
+
+void test_buffer()
+{
+	fs::Buffer buf = fs::k_bufm.read( 0, 0 );
+	char * p = ( char * ) buf.debug_get_buffer_base();
+	log__info( "打印读取到buffer的内容" );
+	printf( "\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
+	for ( uint i = 0; i < mm::pg_size; ++i )
+	{
+		if ( i % 0x10 == 0 )
+			printf( "%B%B\t", i >> 8, i );
+		printf( "%B ", p[ i ] );
+		if ( i % 0x10 == 0xF )
+			printf( "\n" );
+	}
 }

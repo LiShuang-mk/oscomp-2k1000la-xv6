@@ -15,6 +15,22 @@ void printf( const char *fmt, ... );
 void *memset( void *dst, int c, uint n );
 void *memcpy( void *dst, const void *src, int len );
 
+/// @brief 给 _data 地址指向的数据的第 _kbit 位置位
+/// @param _data 
+/// @param _kbit 
+void bit_set( void *_data, uint _kbit );
+
+/// @brief 给 _data 地址指向的数据的第 _kbit 位复位
+/// @param _data 
+/// @param _kbit 
+void bit_reset( void *_data, uint _kbit );
+
+/// @brief 检测 _data 地址指向的数据的第 _kbit 位的值
+/// @param _data 
+/// @param _kbit 
+/// @return 
+bool bit_test( void *_data, uint _kbit );
+
 /// @brief 比较字符串
 /// @param s 字符串1
 /// @param t 字符串2

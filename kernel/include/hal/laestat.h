@@ -9,6 +9,8 @@
 #ifndef _LAESTAT_H_
 #define _LAESTAT_H_
 
+#define _LA_ECODE_MAX_NUM_ 0x40 
+
 enum _LA_ECODE_
 {
 	_int_ = 0x0,
@@ -38,6 +40,7 @@ enum _LA_ECODE_
 	_gcc_ = 0x18, 
 };
 
-extern const char *_la_ecode_spec_[ 0x40 ];
+extern const char *_la_ecode_spec_[ _LA_ECODE_MAX_NUM_ ];
+// extern void( *_la_ehandle_[ _LA_ECODE_MAX_NUM_ ] )( void );
 
 #endif // laestat.h 

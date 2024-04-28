@@ -104,7 +104,7 @@ namespace loongarch
 
 		/// @brief s: shift;
 		///		   m: mask;	
-		enum tcfg : uint64
+		enum Tcfg : uint64
 		{
 			tcfg_en_s = 0,
 			tcfg_en_m = 0x1UL << tcfg_en_s,
@@ -187,6 +187,38 @@ namespace loongarch
 			_build_estat_bit_( esubcode, 0x1FFU, 22 )
 		};
 #undef _build_estat_bit_ 
+
+#define _build_ecode_enum_(name,code) \
+	ecode_##name = code, 
+		enum Ecode : uint
+		{
+			_build_ecode_enum_( int, 0x0 )
+			_build_ecode_enum_( pil, 0x1 )
+			_build_ecode_enum_( pis, 0x2 )
+			_build_ecode_enum_( pif, 0x3 )
+			_build_ecode_enum_( pme, 0x4 )
+			_build_ecode_enum_( pnr, 0x5 )
+			_build_ecode_enum_( pnx, 0x6 )
+			_build_ecode_enum_( ppi, 0x7 )
+			_build_ecode_enum_( ade, 0x8 )
+			_build_ecode_enum_( ale, 0x9 )
+			_build_ecode_enum_( bce, 0xA )
+			_build_ecode_enum_( sys, 0xB )
+			_build_ecode_enum_( brk, 0xC )
+			_build_ecode_enum_( ine, 0xD )
+			_build_ecode_enum_( ipe, 0xE )
+			_build_ecode_enum_( fpd, 0xF )
+			_build_ecode_enum_( sxd, 0x10 )
+			_build_ecode_enum_( asxd, 0x11 )
+			_build_ecode_enum_( fpe, 0x12 )
+			_build_ecode_enum_( wpe, 0x13 )
+			_build_ecode_enum_( btd, 0x14 )
+			_build_ecode_enum_( bte, 0x15 )
+			_build_ecode_enum_( gspr, 0x16 )
+			_build_ecode_enum_( hvc, 0x17 )
+			_build_ecode_enum_( gcc, 0x18 )
+		};
+#undef _build_ecode_enum_ 
 
 		static inline uint64 _read_csr_( CsrAddr _csr )
 		{
