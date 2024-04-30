@@ -42,3 +42,7 @@
 #### 4. [=> qemu-ls2k + gdb 调试方式](./doc/qemu_debug.md)
 
 #### 5. [=> 文件系统](./doc/fs.md)
+
+#### 6. [=> 动态内存](./doc/dyn_mem.md)
+
+#### 7. [=> 空间地址划分](./doc/memlayout.md)
