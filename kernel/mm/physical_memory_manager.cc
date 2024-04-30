@@ -20,7 +20,8 @@ namespace mm
 		_lock.init( name );
 		_ram_base = ram_base;
 		_ram_end = ram_end;
-		_free_list = 0;
+		_free_list = nullptr;
+		_trace_page_cnt = 0;
 		_free_range( ( void* ) _ram_base, ( void * ) _ram_end );
 	}
 
@@ -60,6 +61,7 @@ namespace mm
 		_lock.acquire();
 		r->_next = _free_list;
 		_free_list = r;
+		_trace_page_cnt++;
 		_lock.release();
 	}
 
@@ -70,12 +72,14 @@ namespace mm
 		_lock.acquire();
 		r = _free_list;
 		if ( r )
+		{
 			_free_list = r->_next;
+			_trace_page_cnt--;
+		}
 		_lock.release();
 
 		if ( r )
 			_fill_junk( ( void* ) r, MemJunk::alloc_junk );
-			// memset( ( char* ) r, 5, pg_size );
 
 		return ( void * ) r;
 	}

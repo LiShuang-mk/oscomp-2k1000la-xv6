@@ -32,7 +32,7 @@ namespace dev
 				{
 					call_back = [] ()->void
 					{
-						log__info( "<---- AHCI -- 默认中断回调 ---->" );
+						log_info( "<---- AHCI -- 默认中断回调 ---->" );
 					};
 				}
 			}
@@ -43,7 +43,7 @@ namespace dev
 			assert( port < sata::k_sata_driver.get_port_num(), "" );
 			if ( len < 512 )
 			{
-				log__warn(
+				log_warn(
 					"buffer size is not enough.\n"
 					"identify command would not be issue" );
 				return;
@@ -126,7 +126,7 @@ namespace dev
 			assert( port < sata::k_sata_driver._port_num, "端口号非法(0~%d)", sata::k_sata_driver._port_num + 1 );
 			if ( len < sata::k_sata_driver._logical_sector_size )
 			{
-				log__warn(
+				log_warn(
 					"read length is shorter than sector size ( %d bytes ).\n"
 					"read dma command would not be issue",
 					sata::k_sata_driver._logical_sector_size
@@ -135,7 +135,7 @@ namespace dev
 			}
 			if ( len % sata::k_sata_driver._logical_sector_size != 0 )
 			{
-				log__warn(
+				log_warn(
 					"read length is not align to logical sector size ( %d bytes )\n"
 					"read dma command would not be issue",
 					sata::k_sata_driver._logical_sector_size
@@ -190,7 +190,7 @@ namespace dev
 				set_prd_handler( i, dba, dbc );
 				if ( dbc > _1M * 4 )
 				{
-					log__warn( "PR长度超过4MiB, read DMA命令将不会被发送" );
+					log_warn( "PR长度超过4MiB, read DMA命令将不会被发送" );
 					return;
 				}
 				prd->dba =
@@ -205,7 +205,7 @@ namespace dev
 				_call_back_function[ port ][ cmd_slot_num ] = callback_handler;
 			else _call_back_function[ port ][ cmd_slot_num ] = [] () ->void
 			{
-				log__info( "<---- AHCI -- read DMA 默认中断回调 ---->" );
+				log_info( "<---- AHCI -- read DMA 默认中断回调 ---->" );
 			};
 
 			// 发布命令
@@ -223,7 +223,7 @@ namespace dev
 			assert( port < sata::k_sata_driver._port_num, "端口号非法(0~%d)", sata::k_sata_driver._port_num + 1 );
 			if ( len < sata::k_sata_driver._logical_sector_size )
 			{
-				log__warn(
+				log_warn(
 					"read length is shorter than sector size ( %d bytes ).\n"
 					"read dma command would not be issue",
 					sata::k_sata_driver._logical_sector_size
@@ -232,7 +232,7 @@ namespace dev
 			}
 			if ( len % sata::k_sata_driver._logical_sector_size != 0 )
 			{
-				log__warn(
+				log_warn(
 					"read length is not align to logical sector size ( %d bytes )\n"
 					"read dma command would not be issue",
 					sata::k_sata_driver._logical_sector_size
@@ -287,7 +287,7 @@ namespace dev
 				set_prd_handler( i, dba, dbc );
 				if ( dbc > _1M * 4 )
 				{
-					log__warn( "PR长度超过4MiB, write DMA命令将不会被发送" );
+					log_warn( "PR长度超过4MiB, write DMA命令将不会被发送" );
 					return;
 				}
 				prd->dba =
@@ -302,7 +302,7 @@ namespace dev
 				_call_back_function[ port ][ cmd_slot_num ] = callback_handler;
 			else _call_back_function[ port ][ cmd_slot_num ] = [] () ->void
 			{
-				log__info( "<---- AHCI -- write DMA 默认中断回调 ---->" );
+				log_info( "<---- AHCI -- write DMA 默认中断回调 ---->" );
 			};
 
 			// 发布命令

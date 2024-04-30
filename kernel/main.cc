@@ -13,6 +13,7 @@
 #include "im/interrupt_manager.hh"
 #include "mm/physical_memory_manager.hh"
 #include "mm/virtual_memory_manager.hh"
+#include "mm/heap_memory_manager.hh"
 #include "pm/process_manager.hh"
 #include "pm/shmmanager.hh"
 #include "klib/printer.hh"
@@ -33,7 +34,7 @@ int main()
 
 		// printf init 
 		kernellib::k_printer.init( &k_console, "printer" );
-		log__info( "Hello World!\n" );
+		log_info( "Hello World!\n" );
 
 
 		uint64 tmp = loongarch::Cpu::read_csr( loongarch::csr::crmd );
@@ -43,34 +44,65 @@ int main()
 		mm::k_pmm.init( "physical memory manager",
 			loongarch::qemuls2k::memory::mem_start,
 			loongarch::qemuls2k::memory::mem_end );
-		log__info( "pmm init" );
+		log_info( "pmm init" );
 
 		// process init 
 		pm::k_pm.init( "next pid", "wait lock" );
-		log__info( "pm init" );
+		log_info( "pm init" );
 
 		// vm init 
 		mm::k_vmm.init( "virtual memory manager " );
-		log__info( "vm init" );
+		log_info( "vm init" );
 
 		// timer init 
 		tm::k_tm.init( "timer manager" );
-		log__info( "tm init" );
+		log_info( "tm init" );
 
 		// interrupt init 
 		im::k_im.init( "interrupt init" );
-		log__info( "im init" );
+		log_info( "im init" );
 
 		// exception init 
 		im::k_em.init( "exception manager " );
-		log__info( "em init" );
+		log_info( "em init" );
 		// while ( 1 );
 
 		// sharemem init
 		pm::k_shmManager.init( "shm lock" );
-		log__info( "shm init" );
+		log_info( "shm init" );
 
-		
+		log_trace(
+			"hmm初始化前跟踪空闲物理页 : %d",
+			mm::k_pmm.trace_free_pages_count()
+		);
+		mm::k_hmm.init( "k_heap manager" );
+		log_info( "hmm init" );
+		log_trace(
+			"hmm初始化后跟踪空闲物理页 : %d",
+			mm::k_pmm.trace_free_pages_count()
+		);
+
+		int *int_arr1 = new int[ 2000 ];
+		int *int_arr2 = new int[ 2000 ];
+		tmp = ( uint64 ) int_arr1[ 0 ];
+		int_arr1[ 0 ] = 0x1234;
+		log_trace(
+			"测试动态内存分配 :\n"
+			"allocated address = %p\n"
+			"read data p[0]    = 0x%x\n"
+			"write data p[0]   = 0x%x\n",
+			int_arr1, tmp, int_arr1[ 0 ]
+		);
+
+		delete[] int_arr1;
+		delete[] int_arr2;
+
+		int *a = new int;
+		if ( a != nullptr )
+			*a = *a;
+		delete a;
+
+		while ( 1 );
 
 		// uint32 apbh[ 64 ];
 		// uint64 addr = ( ( 0xFE0UL << 28 ) | ( 0x0UL << 16 ) | ( 0x2UL << 11 ) | ( 0x0UL << 8 ) );
@@ -95,7 +127,9 @@ int main()
 		// test_sata();
 
 		fs::k_bufm.init( "buffer manager" );
-		log__info( "bufm init" );
+		log_info( "bufm init" );
+
+
 
 		// test_buffer();
 
@@ -109,20 +143,20 @@ int main()
 		int tm, tn;
 		tm = 0;
 		tn = 1;
-		assert( tm == tn, "对 buffer block 而言非法的块号, 需求 %d, 而输入 %d", tn, tm );
+		assert( tm == tn, "测试assert, 需求 %d, 而输入 %d", tn, tm );
 
 		while ( 1 );
 
 		printf( "\n" );
 		log_trace( "simple trace" );
 		log_trace( "test\n%s", "trace" );
-		log__info( "test info" );
-		log__warn( "test warn " );
+		log_info( "test info" );
+		log_warn( "test warn " );
 		log_error( "test error" );
 		// log_panic( "test panic" );
 		assert( 0, "" );
 
-		log__info( "Kernel not complete. About to enter loop. " );
+		log_info( "Kernel not complete. About to enter loop. " );
 		while ( 1 ); // stop here
 	}
 	else
@@ -135,8 +169,8 @@ void* buffer1;
 void* buffer2;
 void test_sata_handle_identify()
 {
-	log__info( "<----identify命令执行成功---->" );
-	log__info(
+	log_info( "<----identify命令执行成功---->" );
+	log_info(
 		"打印收到的数据\n"
 		"\b\b\b\b________________________________\n"
 	);
@@ -164,8 +198,8 @@ disk::Mbr mbr;
 bool mbr_init = false;
 void test_sata_call_back()
 {
-	log__info( "<----中断回调---->" );
-	log__info(
+	log_info( "<----中断回调---->" );
+	log_info(
 		"打印收到的数据\n"
 		"\b\b\b\b________________________________\n"
 	);
@@ -238,8 +272,8 @@ void test_sata_call_back()
 fs::ext4::SuperBlock ext4_super_block;
 void test_sata_call_back_2()
 {
-	log__info( "<----中断回调2---->" );
-	log__info(
+	log_info( "<----中断回调2---->" );
+	log_info(
 		"打印收到的数据\n"
 		"\b\b\b\b________________________________\n"
 	);
@@ -297,7 +331,7 @@ void test_sata()
 	},
 		[ & ] () -> void
 	{
-		log__info( "[test] 先将0号扇区读取出来" );
+		log_info( "[test] 先将0号扇区读取出来" );
 		uchar *p;
 		printf( "buf0\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
 		p = ( uchar * ) buffer1;
@@ -326,7 +360,7 @@ void test_sata()
 
 	// 修改一下开头的字符
 	// const char str[10] = "123456789";
-	const char str[10] = "\0\0\0\0\0\0\0\0\0";
+	const char str[ 10 ] = "\0\0\0\0\0\0\0\0\0";
 	for ( uint i = 0; i < sizeof( str ); ++i )
 	{
 		*( ( char * ) buffer1 + i ) = str[ i ];
@@ -345,7 +379,7 @@ void test_sata()
 	},
 		[ & ] () ->void
 	{
-		log__info( "[test] 硬盘写入完成" );
+		log_info( "[test] 硬盘写入完成" );
 		busy = false;
 	} );
 
@@ -364,7 +398,7 @@ void test_sata()
 	},
 		[ & ] () -> void
 	{
-		log__info( "[test] 打印修改后的0号扇区" );
+		log_info( "[test] 打印修改后的0号扇区" );
 		uchar *p;
 		printf( "buf0\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
 		p = ( uchar * ) buffer1;
@@ -396,7 +430,7 @@ void test_buffer()
 {
 	fs::Buffer buf = fs::k_bufm.read( 0, 0 );
 	char * p = ( char * ) buf.debug_get_buffer_base();
-	log__info( "打印读取到buffer的内容" );
+	log_info( "打印读取到buffer的内容" );
 	printf( "\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
 	for ( uint i = 0; i < mm::pg_size; ++i )
 	{

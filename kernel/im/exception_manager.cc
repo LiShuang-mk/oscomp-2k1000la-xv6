@@ -55,12 +55,12 @@ namespace im
 
 	void ExceptionManager::kernel_trap()
 	{
-		// log__info( "enter kernel trap" );
+		// log_info( "enter kernel trap" );
 		uint32 estat = ( uint32 ) loongarch::Cpu::read_csr( loongarch::csr::estat );
 		uint32 ecfg = ( uint32 ) loongarch::Cpu::read_csr( loongarch::csr::ecfg );
 		if ( estat & ecfg & loongarch::csr::itr_ti_m )
 		{
-			// log__info( "handle time intr" );
+			// log_info( "handle time intr" );
 			// log_trace( "read isr : %p", loongarch::qemuls2k::read_itr_cfg( loongarch::qemuls2k::ItrCfg::itr_isr_l ) );
 			loongarch::Cpu::write_csr( loongarch::csr::ticlr, loongarch::Cpu::read_csr( loongarch::csr::ticlr ) | 1 );
 			return;
@@ -75,20 +75,20 @@ namespace im
 			);
 			if ( estat & loongarch::csr::itr_hwi_m & ( ( 1 << 3 ) << loongarch::csr::itr_hwi_s ) )
 			{
-				log__info( "SATA 中断." );
+				log_info( "SATA 中断." );
 				ahci_read_handle();
 				return;
 			}
 			else if ( estat & loongarch::csr::itr_hwi_m & ( ( 1 << 2 ) << loongarch::csr::itr_hwi_s ) )
 			{
-				log__info( "键盘中断" );
+				log_info( "键盘中断" );
 				k_im.clear_uart0_intr();
 				return;
 			}
 		}
 		uint ecode = ( estat & loongarch::csr::Estat::estat_ecode_m ) >> loongarch::csr::Estat::estat_ecode_s;
 		assert( ecode < _LA_ECODE_MAX_NUM_, "" );
-		log__info( _la_ecode_spec_[ ecode ] );
+		log_info( _la_ecode_spec_[ ecode ] );
 		_exception_handlers[ ecode ]();
 		// log_panic( "not implement" );
 	}

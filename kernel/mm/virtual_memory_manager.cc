@@ -83,7 +83,7 @@ namespace mm
 			pte = pt.walk( a, /*alloc*/ true );
 			if ( pte.is_null() )
 			{
-				log__warn( "walk failed" );
+				log_warn( "walk failed" );
 				return false;
 			}
 			if ( pte.is_valid() )

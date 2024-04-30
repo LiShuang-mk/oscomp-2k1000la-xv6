@@ -9,57 +9,89 @@
 #pragma once 
 
 #include "smp/lock.hh"
-#include "mm/page.hh"
+#include "mm/buddy.hh"
+#include "klib/common.hh"
 
 namespace mm
 {
 	class PageTable;
-	class BuddyAllocator;
-
-	struct BuddyNode
-	{
-		uint64 _area_start;
-		uint64 _area_size;
-		BuddyNode *_prev;
-		BuddyNode *_next;
-	}__attribute__( ( __packed__ ) );
-
-	constexpr uint node_per_page = mm::pg_size / sizeof( BuddyNode );
 
 	class BuddyAllocator
 	{
 	private:
 		smp::Lock _lock;
 		PageTable *_page_table;
+		void *_heap_addr;
+		uint64 _heap_size;
 
-		BuddyNode _free_node_list;
+		BuddyNodeManager _node_manager;
 
-		BuddyNode *_node_list_array;
-		uint _array_length;
+		enum MappedNodeState
+		{
+			bnode_not_exist,
+			bnode_available,
+			bnode_busy,
+		};
+
+		// used to find bnode from pointer
+		BuddyNode * _bnodes_map[ buddy_max_heap_pages_cnt ];
+
+		// bitmap indicating the bnode is weather busy or available ( 1 indicates busy )
+		uint64 _bnodes_state_map[ buddy_max_heap_pages_cnt / 64 ];
 
 	public:
 		BuddyAllocator() {};
 		void init( const char *lock_name, PageTable *page_table, void *heap_start, uint64 heap_size );
 
+		void * allocate_pages( uint count );
+
+		void free_pages( void * ptr );
+
 	private:
+		// map node to area and insert node into the node list
+		void _set_node( BuddyNode *node, uint64 area, uint64 size, int order );
 
-		BuddyNode *_alloc_node();
-
-		inline void _list_insert_tail( BuddyNode *list,  BuddyNode *bnode )
+		inline uint64 _page_index_in_heap( void *ptr )
 		{
-			bnode->_next = list;
-			bnode->_prev = list->_prev;
-			list->_prev->_next = bnode;
-			list->_prev = bnode;
+			return ( ( uint64 ) ptr - ( uint64 ) _heap_addr ) / mm::pg_size;
 		}
 
-		inline void _list_remove_node( BuddyNode *bnode )
+		inline void _record_node_in_map( BuddyNode *bnode, uint64 index, bool is_busy )
 		{
-			if ( bnode->_prev )
-				bnode->_prev->_next = bnode->_next;
-			if ( bnode->_next )
-				bnode->_next->_prev = bnode->_prev;
-			bnode->_next = bnode->_prev = nullptr;
+			_bnodes_map[ index ] = bnode;
+			is_busy ?
+				bit_set( ( void* ) _bnodes_state_map, index ) :
+				bit_reset( ( void* ) _bnodes_state_map, index );
+		}
+		inline void _record_node_in_map( BuddyNode *bnode, bool is_busy )
+		{
+			uint64 index = _page_index_in_heap( ( void* ) bnode->_area_start );
+			_record_node_in_map( bnode, index, is_busy );
+		}
+
+		inline void _remove_node_in_map( uint64 index )
+		{
+			_bnodes_map[ index ] = nullptr;
+		}
+		inline void _remove_node_in_map( BuddyNode *bnode )
+		{
+			uint64 index = _page_index_in_heap( ( void* ) bnode->_area_start );
+			_remove_node_in_map( index );
+		}
+
+		inline MappedNodeState _get_node_state( uint64 index )
+		{
+			if ( _bnodes_map[ index ] == nullptr )
+				return bnode_not_exist;
+			return bit_test( ( void* ) _bnodes_state_map, index ) ?
+				bnode_busy :
+				bnode_available;
+		}
+
+		inline int _size_to_order( uint64 size )
+		{
+			return lowest_bit( size ) - pg_size_shift;
 		}
 	};
+
 } // namespace mm

@@ -28,6 +28,7 @@ namespace mm
 		PageHead *_free_list = nullptr;
 		uint64 _ram_base;
 		uint64 _ram_end;
+		uint64 _trace_page_cnt;
 
 	public:
 		PhysicalMemoryManager() {};
@@ -35,6 +36,8 @@ namespace mm
 		void free_page( void *pa );
 		void *alloc_page();
 		void clear_page( void *pa );
+
+		inline uint64 trace_free_pages_count() { return _trace_page_cnt; }
 
 	private:
 		void _free_range( void *pa_start, void *pa_end );

@@ -120,7 +120,7 @@ namespace dev
 			log_trace( "SATA 内部寄存器基地址: %p\n", sata_mem_base );
 			sata::k_sata_driver.set_hba_mem_reg( ( void* ) sata_mem_base );
 
-			log__info( "debug print clb and fb" );
+			log_info( "debug print clb and fb" );
 			// sata::k_sata_driver.debug_print_cmd_lst_base();
 			// sata::k_sata_driver.debug_print_rec_fis_base();
 
@@ -133,7 +133,7 @@ namespace dev
 			bool flag = false;
 			ahci::k_ahci_ctl.isu_cmd_identify( 0, ( void * ) buf, sizeof( buf ), [ & ] () -> void
 			{
-				log__info( "<<<<<<<< identify 回调 >>>>>>>>" );
+				log_info( "<<<<<<<< identify 回调 >>>>>>>>" );
 
 				uint16 sec_size_word = *( ( uint16 * ) buf + 106 );
 				log_trace( "106 word : %x", sec_size_word );
@@ -169,7 +169,7 @@ namespace dev
 				flag = true;
 			} );
 			while ( !flag );
-			log__info( ">>>>>>>> flag change <<<<<<<<" );
+			log_info( ">>>>>>>> flag change <<<<<<<<" );
 		}
 
 

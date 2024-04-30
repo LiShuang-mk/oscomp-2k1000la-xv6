@@ -86,7 +86,7 @@ bool bit_test( void *_data, uint _kbit )
 	uchar *p = ( uchar * ) _data;
 	p += mv;
 	*p &= ( uchar ) ~( 1 << rs );
-	return ( (*p) & ( 1 << rs ) );
+	return ( ( *p ) & ( 1 << rs ) );
 }
 
 int compare( const char *s, const char *t, uint len )
@@ -95,6 +95,27 @@ int compare( const char *s, const char *t, uint len )
 		if ( *( s + i ) != *( t + i ) )
 			return i;
 	return 0;
+}
+
+int lowest_bit( uint64 x )
+{
+	if ( x == 0 )
+		return -1;
+	int pos = 0;
+	for ( ; ( x & 1 ) == 0; x >>= 1, pos++ )
+		;
+	return pos;
+}
+
+int highest_bit( uint64 x )
+{
+	if ( x == 0 )
+		return -1;
+	int pos = 63;
+	uint64 test = ( ~0UL ) << 63;
+	for ( ; ( x & test ) == 0; x <<= 1, pos-- )
+		;
+	return pos;
 }
 
 namespace math

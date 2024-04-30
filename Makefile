@@ -37,8 +37,9 @@ export CFLAGS += -I ./include -fno-stack-protector
 export CFLAGS += -fno-pie -no-pie 
 # export CFLAGS += -static-libstdc++ -lstdc++
 export CXXFLAGS = $(CFLAGS)
-export CXXFLAGS += -std=c++23
+export CXXFLAGS += -std=c++20
 export CXXFLAGS += -include ./include/klib/virtual_function.hh
+export CXXFLAGS += -include ./include/klib/global_operator.hh
 export LDFLAGS = -z max-page-size=4096  
 
 export WORKPATH = $(shell pwd)

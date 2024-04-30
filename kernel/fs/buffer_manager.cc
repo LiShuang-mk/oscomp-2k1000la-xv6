@@ -89,7 +89,7 @@ namespace fs
 		Buffer buf = get_buffer( dev, lba );
 		if ( bit_test( ( void* ) &_buffer_pool[ buf._block_number ]._valid_map, buf._buffer_index ) == false )
 		{
-			log__warn( "sleep not implement, so read disk will utilize synchronous way." );
+			log_warn( "sleep not implement, so read disk will utilize synchronous way." );
 
 			uint blk = buf._block_number;
 			uint idx = buf._buffer_index;
