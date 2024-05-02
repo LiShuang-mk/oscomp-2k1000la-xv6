@@ -32,7 +32,7 @@ namespace fs
                 FileSystem(const FileSystem& fs) = delete;
                 virtual ~FileSystem() = default;
                 FileSystem& operator=(const FileSystem& fs);
-                virtual char *rFSTyoe() const = 0; // get file system type
+                virtual char *rFSType() const = 0; // get file system type
                 virtual char *rKey() const = 0; // get fs's key in mount map
                 virtual bool isRootFS() const = 0; // check if it is root fs
                 virtual SuperBlock *getSuperBlock() const = 0; // get super block
@@ -64,8 +64,8 @@ namespace fs
                 virtual int chMod(uint32 mode) = 0;
                 //virtual int chOwn(uid_t uid, gid_t gid) = 0; //change group owner
                 virtual void nodeTrunc() = 0;
-                virtual int nodeRead(uint64 dst_, uint32 off_, uint32 len_) = 0;
-                virtual int nodWrite(uint64 src_, uint32 off_, uint32 len_) = 0;
+                virtual size_t nodeRead(uint64 dst_, size_t off_, size_t len_) = 0;
+                virtual size_t nodWrite(uint64 src_, size_t off_, size_t len_) = 0;
                 
                 //void readvec();
                 //void readPages();
@@ -73,8 +73,8 @@ namespace fs
                 virtual int readLink(char *buf, uint64 len) = 0;
                 virtual int readDir(DStat *buf, uint32 len, uint64 off_) = 0;
                 virtual int ioctl(uint64 req, uint64 arg) = 0;
-                virtual uint32 rMode() const = 0; // get mode
-                virtual uint64 rDev() const = 0; // get device number
+                virtual mode_t rMode() const = 0; // get mode
+                virtual dev_t rDev() const = 0; // get device number
                 virtual uint64 rFIleSize()   const = 0; // get file size
                 virtual uint64 rIno() const = 0; // get inode number
                 // Ctime, Mtime, Atime temporarily not implemented
@@ -90,14 +90,16 @@ namespace fs
                 Inode *node;
                 char *name;
                 bool isMountPoint;
+                int point;
+                Dentry *children[]; //the num of size is just for test
                 //unordered_map<string, Dentry *> children;
             public:
                 Dentry() = delete;
                 Dentry(const Dentry& dentry) = delete;
                 Dentry & operator=(const Dentry& dentry) = delete;
-                Dentry(Dentry *parent_, Inode *node_, char *name_, bool isMountPoint_) : parent(parent_), node(node_), name(name_), isMountPoint(isMountPoint_) {};
-                Dentry * EntrySearch(Dentry * self, const char *name);
-                Dentry * EntryCreate(Dentry * self, const char *name, uint32 mode);
+                Dentry(Dentry *parent_, Inode *node_, char *name_) : parent(parent_), node(node_), name(name_), isMountPoint(false), point(0) {};
+                Dentry * EntrySearch(Dentry * self, char *name);
+                Dentry * EntryCreate(Dentry * self, char *name, uint32 mode);
                 inline void setMountPoint() {isMountPoint = true;}
                 inline void cleanMountPoint() {isMountPoint = false;}
                 inline bool isMount() const {return isMountPoint;}
@@ -113,7 +115,7 @@ namespace fs
             FT_PIPE,
             FT_STDIN,
             FT_STDOUT,
-            FT_ERROR,
+            FT_STDERR,
             FT_INODE,
             FT_DEVICE,
             FT_ENTRY
@@ -144,16 +146,16 @@ namespace fs
 
         class Kstat{
             public:
-                uint64 dev;
+                dev_t dev;
                 uint64 ino;
                 uint32 nlink;
-                uint32 mode;
+                mode_t mode;
                 uint32 uid;     //user id
                 uint32 gid;     //group id
-                uint64 rdev;
+                dev_t rdev;
                 uint64 __pad;
                 uint64 size;
-                uint32 blksize;
+                size_t blksize;
                 uint64 __pad2;
                 uint64 blocks;
 
@@ -179,7 +181,6 @@ namespace fs
                     size(0),blksize(0),__pad2(0),blocks(0) {};
                 ~Kstat() = default;
         };
-
 
         class File{
                 FileTypes type;
@@ -209,8 +210,8 @@ namespace fs
                 File(Dentry *de_, int flags_) : flags(flags_), ops(flags_),  data(de_)   {}
                 ~File() = default;
 
-                int write(const void *buf, uint64 len);
-                int read(void *buf, uint64 off_ = -1, bool update = true);
+                int write(void *buf, size_t len);
+                int read(void *buf, size_t len, int off_ = -1, bool update = true);
 
        };
 
