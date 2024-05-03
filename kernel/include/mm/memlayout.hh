@@ -20,7 +20,11 @@ namespace mm
 		vm_page_cnt_shift = 12,
 		vm_start = 0x0,
 		vm_end = ( 0x1UL << pg_size_shift ) << vm_page_cnt_shift,
+
 		vm_kernel_start = vm_end >> 1,
 		vm_trap_frame = vm_end - pg_size,
+
+		vm_kernel_heap_start = vm_kernel_start >> 1,
+		vm_kernel_heap_size = _1M * 4,
 	};
 }

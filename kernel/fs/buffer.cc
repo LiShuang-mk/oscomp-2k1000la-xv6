@@ -133,7 +133,7 @@ namespace fs
 			}
 		}
 		_lock.release();
-		log__warn( "BufferBlock : no buffer to alloc" );
+		log_warn( "BufferBlock : no buffer to alloc" );
 		return nullptr;
 	}
 } // namespace fs

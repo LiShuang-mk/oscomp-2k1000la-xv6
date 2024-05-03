@@ -10,6 +10,7 @@
 #include "hal/cpu.hh"
 #include "klib/common.hh"
 #include "mm/virtual_memory_manager.hh"
+#include "mm/physical_memory_manager.hh"
 #include "mm/page.hh"
 #include "mm/page_table.hh"
 #include "mm/memlayout.hh"
@@ -82,7 +83,7 @@ namespace mm
 			pte = pt.walk( a, /*alloc*/ true );
 			if ( pte.is_null() )
 			{
-				log__warn( "walk failed" );
+				log_warn( "walk failed" );
 				return false;
 			}
 			if ( pte.is_valid() )

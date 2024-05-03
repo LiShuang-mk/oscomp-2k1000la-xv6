@@ -175,7 +175,7 @@
 // 			log_trace( "sata 控制器复位前, ghc = %x", tmp );
 // 			if ( ( tmp & HbaRegGhc::hba_ghc_hr_m ) == 0 )
 // 			{
-// 				log__info( "sata 控制器复位" );
+// 				log_info( "sata 控制器复位" );
 // 				_hba_mem_reg->ghc = tmp | HbaRegGhc::hba_ghc_hr_m;
 // 			}
 // 			tmp = _hba_mem_reg->ghc;
@@ -186,7 +186,7 @@
 // 				--time_out;
 // 			if ( time_out <= 0 )
 // 			{
-// 				log__warn( "sata controller reset fail" );
+// 				log_warn( "sata controller reset fail" );
 // 				return -1;
 // 			}
 
@@ -326,7 +326,7 @@
 // 					log_trace( "port %d IS = %p", i, port_reg->is );
 // 					log_error( "DIAG.X 位没有被置位！" );
 // 					// return -5;
-// 					log__warn( "等待 DIAG.X 置位超时" );
+// 					log_warn( "等待 DIAG.X 置位超时" );
 // 				}
 
 // 				// 通过向 SERR 寄存器写来复位
@@ -448,7 +448,7 @@
 // 			if ( ( tmp & HbaRegPortSsts::hba_port_ssts_det_m ) != 0x03U )
 // 			{
 // 				log_trace( "没有连接到 port %d", i );
-// 				// log__warn( "检测到端口连接异常，可能导致端口启动失败！" );
+// 				// log_warn( "检测到端口连接异常，可能导致端口启动失败！" );
 // 				log_error( "启动端口失败" );
 // 				return;
 // 			}

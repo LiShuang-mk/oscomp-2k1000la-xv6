@@ -20,7 +20,7 @@ namespace mm
 	{
 		if ( !_is_global )
 		{
-			log__warn( "walk: pagetable not global" );
+			log_warn( "walk: pagetable not global" );
 			return Pte();
 		}
 		if ( va >= vml::vm_end )
@@ -34,21 +34,21 @@ namespace mm
 		pte = pt.get_pte( pt.dir3_num( va ) );
 		if ( !_walk_to_next_level( pte, alloc, pt ) )
 		{
-			log__warn( "walk fail" );
+			log_warn( "walk fail" );
 			return Pte();
 		}
 		// search in level-2 
 		pte = pt.get_pte( pt.dir2_num( va ) );
 		if ( !_walk_to_next_level( pte, alloc, pt ) )
 		{
-			log__warn( "walk fail" );
+			log_warn( "walk fail" );
 			return Pte();
 		}
 		// search in level-1 
 		pte = pt.get_pte( pt.dir1_num( va ) );
 		if ( !_walk_to_next_level( pte, alloc, pt ) )
 		{
-			log__warn( "walk fail" );
+			log_warn( "walk fail" );
 			return Pte();
 		}
 
@@ -72,7 +72,7 @@ namespace mm
 			void *page_addr = k_pmm.alloc_page();
 			if ( page_addr == 0 )
 			{
-				log__warn( "physical page alloc failed." );
+				log_warn( "physical page alloc failed." );
 				return false;
 			}
 			k_pmm.clear_page( page_addr );

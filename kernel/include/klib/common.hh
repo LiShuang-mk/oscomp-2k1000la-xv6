@@ -37,7 +37,16 @@ bool bit_test( void *_data, uint _kbit );
 /// @param len 字符串长度，保证两个字符串长度一样
 /// @return 字符串相同返回0，否则返回不相同字符的偏移
 int compare( const char *s, const char *t, uint len );
-// void panic( const char *s );
+
+/// @brief 获取置位为1的最低位位置
+/// @param x 
+/// @return 如果x为0，则返回-1
+int lowest_bit( uint64 x );
+
+/// @brief 获取置位为1的最高位位置，使用负数会出现结果始终为63的问题
+/// @param x 
+/// @return 如果x为0，则返回-1
+int highest_bit( uint64 x );
 
 namespace math
 {
@@ -51,8 +60,8 @@ namespace math
 
 #define log_panic(panic_info,args...) kernellib::k_printer.panic( __FILE__, __LINE__, panic_info,##args )
 #define log_error(error_info,args...) kernellib::k_printer.error( __FILE__, __LINE__, error_info,##args )
-#define log__warn(warn__info,args...) kernellib::k_printer.warn( __FILE__, __LINE__, warn__info,##args )
-#define log__info(info__info,args...) kernellib::k_printer.info( __FILE__, __LINE__, info__info,##args )
+#define log_warn(warn__info,args...) kernellib::k_printer.warn( __FILE__, __LINE__, warn__info,##args )
+#define log_info(info__info,args...) kernellib::k_printer.info( __FILE__, __LINE__, info__info,##args )
 
 #define log_trace(trace_info, args...) kernellib::k_printer.trace( __FILE__, __LINE__, trace_info,##args )
 
