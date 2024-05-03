@@ -11,31 +11,31 @@
 
 void * operator new ( uint64 size )
 {
-	log_info( "new with size %d", size );
+	// log_info( "new with size %d", size );
 	return mm::k_hmm.allocate( size );
 }
 void * operator new[] ( uint64 size )
 {
-	log_info( "new with size %d", size );
+	// log_info( "new with size %d", size );
 	return mm::k_hmm.allocate( size );
 }
 void operator delete ( void * p ) noexcept
 {
-	log_info( "delete 0x%p", p );
+	// log_info( "delete 0x%p", p );
 	mm::k_hmm.free( p );
 }
 void operator delete[] ( void * p ) noexcept
 {
-	log_info( "delete[] 0x%p", p );
+	// log_info( "delete[] 0x%p", p );
 	mm::k_hmm.free( p );
 }
 void operator delete( void * p, uint64 size ) noexcept
 {
-	log_info( "delete 0x%p with size %d", p, size );
+	// log_info( "delete 0x%p with size %d", p, size );
 	mm::k_hmm.free( p );
 }
 void operator delete[] ( void * p, uint64 size ) noexcept
 {
-	log_info( "delete[] 0x%p with size %d", p, size );
+	// log_info( "delete[] 0x%p with size %d", p, size );
 	mm::k_hmm.free( p );
 }

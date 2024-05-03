@@ -10,6 +10,8 @@
 
 #include "smp/lock.hh"
 #include "mm/buddy_allocator.hh"
+#include "klib/liballoc_allocator.hh"
+#include "klib/buddy_page_alloc.hh"
 
 namespace mm
 {
@@ -18,7 +20,9 @@ namespace mm
 	private:
 		smp::Lock _lock;
 
-		BuddyAllocator _k_allocator;
+		BuddyAllocator _k_allocator_coarse;
+
+		kernellib::L_Allocator _k_allocator_fine;
 
 	public:
 		HeapMemoryManager() {};

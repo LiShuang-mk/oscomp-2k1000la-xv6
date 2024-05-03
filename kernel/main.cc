@@ -82,24 +82,41 @@ int main()
 			mm::k_pmm.trace_free_pages_count()
 		);
 
-		int *int_arr1 = new int[ 2000 ];
-		int *int_arr2 = new int[ 2000 ];
+		const uint req_size = 4000;
+		int *int_arr1 = new int[ req_size ];
+		int *int_arr2 = new int[ req_size ];
 		tmp = ( uint64 ) int_arr1[ 0 ];
 		int_arr1[ 0 ] = 0x1234;
 		log_trace(
 			"测试动态内存分配 :\n"
 			"allocated address = %p\n"
+			"allocated size    = %d Bytes\n"
 			"read data p[0]    = 0x%x\n"
 			"write data p[0]   = 0x%x\n",
-			int_arr1, tmp, int_arr1[ 0 ]
+			int_arr1,
+			req_size * sizeof( int ),
+			tmp,
+			int_arr1[ 0 ]
 		);
 
 		delete[] int_arr1;
 		delete[] int_arr2;
 
 		int *a = new int;
-		if ( a != nullptr )
-			*a = *a;
+		assert( a != nullptr, "new int failed!\n" );
+		tmp = *a;
+		*a = 0xdead;
+		log_trace(
+			"test new int :\n"
+			"allocated address = %p\n"
+			"allocated size    = %d Bytes\n"
+			"read data         = 0x%x\n"
+			"write data        = 0x%x\n",
+			a,
+			sizeof( int ),
+			tmp,
+			*a
+		);
 		delete a;
 
 		while ( 1 );

@@ -10,7 +10,7 @@
 
 动态内存分配器的结构总览如下图所示。
 
-![](./img/dynamic-memory.png){:height="70%" width="70%"}
+![](./img/dynamic-memory.png){:height=70% width=70%}
 
 ## 1 Buddy Algorithm 
 
@@ -38,7 +38,7 @@
 
 伙伴算法的数据结构图如下。
 
-![](./img/buddy-allocator.png){:heghit=70% width=70%}
+![](./img/buddy-allocator.png){:height=70% width=70%}
 
 图中的 node 是用于描述一个空间区域的数据结构，此处称其为 **Buddy Node (bnode)**。
 bnode 是动态分配的，一个 bnode 可以描述一个 $2^k$ 个虚拟页的空间区域，指数 k 是区域链表 (area list) 的等级，也是图中链表数组的索引。area list 是由最大长度的，这由 heap 的最大大小所决定，但是 bnode 的动态分配使得 heap 的大小可以动态调整。

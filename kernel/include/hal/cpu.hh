@@ -44,6 +44,14 @@ namespace loongarch
 			return x;
 		}
 
+		// read return address ( register ra )
+		static inline uint64 read_ra()
+		{
+			uint64 x;
+			asm volatile( "addi.d %0, $ra, 0" : "=r" ( x ) );
+			return x;
+		}
+
 		/// @brief get current cpu info 
 		/// @return cpu info 
 		static Cpu *get_cpu();
