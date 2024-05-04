@@ -122,13 +122,13 @@ namespace fs
 		{
 			if ( _ref_cnt[ node->_buf_index ] == 0 )
 			{
-				_device[ node->_buf_index ] = dev;
-				_tag_number[ node->_buf_index ] = tag_num;
-				bit_reset( ( void* ) &_valid_map, node->_buf_index );
-				_ref_cnt[ node->_buf_index ] = 1;
+				// _device[ node->_buf_index ] = dev;
+				// _tag_number[ node->_buf_index ] = tag_num;
+				
+				// _ref_cnt[ node->_buf_index ] = 1;
 
 				_lock.release();
-				// _sleep_lock[ i ].acquire();
+				
 				return node;
 			}
 		}

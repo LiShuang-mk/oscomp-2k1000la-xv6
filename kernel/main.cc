@@ -71,55 +71,16 @@ int main()
 		pm::k_shmManager.init( "shm lock" );
 		log_info( "shm init" );
 
-		log_trace(
-			"hmm初始化前跟踪空闲物理页 : %d",
-			mm::k_pmm.trace_free_pages_count()
-		);
+		// log_trace(
+		// 	"hmm初始化前跟踪空闲物理页 : %d",
+		// 	mm::k_pmm.trace_free_pages_count()
+		// );
 		mm::k_hmm.init( "k_heap manager" );
 		log_info( "hmm init" );
-		log_trace(
-			"hmm初始化后跟踪空闲物理页 : %d",
-			mm::k_pmm.trace_free_pages_count()
-		);
-
-		const uint req_size = 4000;
-		int *int_arr1 = new int[ req_size ];
-		int *int_arr2 = new int[ req_size ];
-		tmp = ( uint64 ) int_arr1[ 0 ];
-		int_arr1[ 0 ] = 0x1234;
-		log_trace(
-			"测试动态内存分配 :\n"
-			"allocated address = %p\n"
-			"allocated size    = %d Bytes\n"
-			"read data p[0]    = 0x%x\n"
-			"write data p[0]   = 0x%x\n",
-			int_arr1,
-			req_size * sizeof( int ),
-			tmp,
-			int_arr1[ 0 ]
-		);
-
-		delete[] int_arr1;
-		delete[] int_arr2;
-
-		int *a = new int;
-		assert( a != nullptr, "new int failed!\n" );
-		tmp = *a;
-		*a = 0xdead;
-		log_trace(
-			"test new int :\n"
-			"allocated address = %p\n"
-			"allocated size    = %d Bytes\n"
-			"read data         = 0x%x\n"
-			"write data        = 0x%x\n",
-			a,
-			sizeof( int ),
-			tmp,
-			*a
-		);
-		delete a;
-
-		while ( 1 );
+		// log_trace(
+		// 	"hmm初始化后跟踪空闲物理页 : %d",
+		// 	mm::k_pmm.trace_free_pages_count()
+		// );
 
 		// uint32 apbh[ 64 ];
 		// uint64 addr = ( ( 0xFE0UL << 28 ) | ( 0x0UL << 16 ) | ( 0x2UL << 11 ) | ( 0x0UL << 8 ) );
@@ -143,12 +104,20 @@ int main()
 		// 使用前先备份2kfs.img或sdcard.img
 		// test_sata();
 
+		log_trace(
+			"bufm 初始化前跟踪空闲物理页 : %d",
+			mm::k_pmm.trace_free_pages_count()
+		);
 		fs::k_bufm.init( "buffer manager" );
 		log_info( "bufm init" );
+		log_trace(
+			"bufm 初始化后跟踪空闲物理页 : %d",
+			mm::k_pmm.trace_free_pages_count()
+		);
 
+		// test_noreturn();
 
-
-		// test_buffer();
+		test_buffer();
 
 		// fs::Buffer buf = fs::k_bufm.get_buffer( 0, 0 );
 		// log_trace( "测试 buffer : %p", buf.debug_get_buffer_base() );
@@ -445,11 +414,26 @@ void test_sata()
 
 void test_buffer()
 {
-	fs::Buffer buf = fs::k_bufm.read( 0, 0 );
+	fs::Buffer buf = fs::k_bufm.read_sync( 0, 0 );
 	char * p = ( char * ) buf.debug_get_buffer_base();
 	log_info( "打印读取到buffer的内容" );
 	printf( "\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
-	for ( uint i = 0; i < mm::pg_size; ++i )
+	for ( uint i = 0; i < 512; ++i )
+	{
+		if ( i % 0x10 == 0 )
+			printf( "%B%B\t", i >> 8, i );
+		printf( "%B ", p[ i ] );
+		if ( i % 0x10 == 0xF )
+			printf( "\n" );
+	}
+
+	fs::k_bufm._release_buffer_sync( buf );
+
+	buf = fs::k_bufm.read_sync( 0, 0 );
+	p = ( char * ) buf.debug_get_buffer_base();
+	log_info( "打印读取到buffer的内容" );
+	printf( "\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
+	for ( uint i = 0; i < 512; ++i )
 	{
 		if ( i % 0x10 == 0 )
 			printf( "%B%B\t", i >> 8, i );

@@ -32,13 +32,11 @@ namespace im
 
 		for ( auto &f : _exception_handlers )
 		{
-			f = [] () -> void
+			f = [] ( uint32 ) -> void
 			{
 				log_panic( "not implement" );
 			};
 		}
-
-		_exception_handlers[ loongarch::csr::ecode_pif ] = &handle_pif;
 
 		uint32 ecfg_data =
 			( 0x0U << loongarch::csr::ecfg_vs_s ) |
@@ -49,6 +47,7 @@ namespace im
 		loongarch::Cpu::write_csr( loongarch::csr::tlbrentry, ( uint64 ) handle_tlbr );
 		loongarch::Cpu::write_csr( loongarch::csr::merrentry, ( uint64 ) handle_merr );
 
+		_init_exception_handler();
 
 		loongarch::Cpu::interrupt_on();
 	}
@@ -89,7 +88,7 @@ namespace im
 		uint ecode = ( estat & loongarch::csr::Estat::estat_ecode_m ) >> loongarch::csr::Estat::estat_ecode_s;
 		assert( ecode < _LA_ECODE_MAX_NUM_, "" );
 		log_info( _la_ecode_spec_[ ecode ] );
-		_exception_handlers[ ecode ]();
+		_exception_handlers[ ecode ]( estat );
 		// log_panic( "not implement" );
 	}
 
@@ -109,15 +108,45 @@ namespace im
 
 // -------- private --------
 
-	void ExceptionManager::handle_pif()
+	// void ExceptionManager::handle_pif()
+	// {
+	// 	log_panic(
+	// 		"handle PIF :\n"
+	// 		"    badv : %x"
+	// 		"    badi : %x",
+	// 		loongarch::Cpu::read_csr( loongarch::csr::badv ),
+	// 		loongarch::Cpu::read_csr( loongarch::csr::badi )
+	// 	);
+	// }
+
+	void ExceptionManager::_init_exception_handler()
 	{
-		log_panic(
-			"handle PIF :\n"
-			"    badv : %x"
-			"    badi : %x",
-			loongarch::Cpu::read_csr( loongarch::csr::badv ),
-			loongarch::Cpu::read_csr( loongarch::csr::badi )
-		);
+		_exception_handlers[ loongarch::csr::ecode_pif ] = [] ( uint32 ) -> void
+		{
+			log_panic(
+				"handle exception PIF :\n"
+				"    badv : %x\n"
+				"    badi : %x",
+				loongarch::Cpu::read_csr( loongarch::csr::badv ),
+				loongarch::Cpu::read_csr( loongarch::csr::badi )
+			);
+		};
+
+		_exception_handlers[ loongarch::csr::ecode_ade ] = [] ( uint32 estat ) -> void
+		{
+			uint e_sub_code =
+				( estat & ( loongarch::csr::Estat::estat_esubcode_m ) )
+				>> loongarch::csr::Estat::estat_esubcode_s;
+			log_panic(
+				"handle exception ADE :\n"
+				"    type : %s\n"
+				"    badv : %x\n"
+				"    badi : %x",
+				e_sub_code ? "取指地址错误(ADEF)" : "访存指令地址错误(ADEM)",
+				loongarch::Cpu::read_csr( loongarch::csr::badv ),
+				loongarch::Cpu::read_csr( loongarch::csr::badi )
+			);
+		};
 	}
 }// namespace im
 
