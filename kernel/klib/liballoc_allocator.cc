@@ -174,7 +174,7 @@ namespace kernellib
 					diff = ( uint64 ) maj + maj->size - ( uint64 ) min - sizeof( L_TagMinor ) - min->size;
 					if ( diff >= size + sizeof( L_TagMinor ) )
 					{
-						min->next = ( L_TagMinor* ) ( ( uint64 ) min + sizeof( L_TagMinor* ) + min->size );
+						min->next = ( L_TagMinor* ) ( ( uint64 ) min + sizeof( L_TagMinor ) + min->size );
 						min->next->prev = min;
 						min = min->next;
 
