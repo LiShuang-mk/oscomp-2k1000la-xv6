@@ -9,7 +9,7 @@
 #ifndef _LAREGS_H_
 #define _LAREGS_H_ 
 
-#define _LA_UINT64_ unsigned long 
+#define _LA_UINT64_ unsigned long long
 #define _LA_CSR_MAX_NUM_ 0x200
 #define _LA_R_CSR_TYPE_ static inline _LA_UINT64_ 
 #define _LA_W_CSR_TYPE_ static inline void 
