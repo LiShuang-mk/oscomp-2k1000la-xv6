@@ -158,8 +158,22 @@ namespace fs
 
 		node = _buffer_pool[ blk ].search_buffer( dev, blk, tag );
 		if ( node != nullptr )
-		{
+		{ // 命中 buffer
 			log_info( "BufferManager : 命中buffer ([%d][%d])", blk, node->_buf_index );
+
+			if ( _buf_is_disk_own( blk, node->_buf_index ) )
+			{ // 虽然命中 buffer，但是这个 buffer 被硬盘占用，应当等待硬盘解除占用
+				assert( need_sleep_lock == true,
+					"synchronously get buffer but disk occupies this buffer\n"
+					">> maybe it is asynchronously getting buffer here?"
+				);
+
+				log_panic(
+					"BufferManager : hit buffer but buffer is occupied by disk\n"
+					">> it should sleep here but sleep not imlement"
+				);
+			}
+
 			_buffer_pool[ blk ]._ref_cnt[ node->_buf_index ]++;
 		}
 		else // 没有命中 buffer，需要分配新的buffer
@@ -208,7 +222,7 @@ namespace fs
 			_buffer_pool[ blk ]._device[ node->_buf_index ] = dev;
 			_buffer_pool[ blk ]._tag_number[ node->_buf_index ] = tag;
 			_buffer_pool[ blk ]._ref_cnt[ node->_buf_index ] = 1;
-			
+
 		} // >> end if ( node == nullptr )
 
 		if ( !_buf_is_valid( blk, node->_buf_index ) )

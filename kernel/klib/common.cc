@@ -85,7 +85,6 @@ bool bit_test( void *_data, uint _kbit )
 	uint rs = _kbit % ( sizeof( uchar ) << 3 );
 	uchar *p = ( uchar * ) _data;
 	p += mv;
-	*p &= ( uchar ) ~( 1 << rs );
 	return ( ( *p ) & ( 1 << rs ) );
 }
 
