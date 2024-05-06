@@ -62,6 +62,22 @@ namespace fs
 			_release_buffer( buf, true );
 		}
 
+		/// @brief 将该缓存pin住，使其长时间保留在内存中
+		void pin_buffer( Buffer &buf )
+		{
+			_lock.acquire();
+			_buffer_pool[ buf._block_number ]._ref_cnt[ buf._buffer_index ]++;
+			_lock.release();
+		}
+
+		/// @brief 不保证缓存会被刷新到磁盘，只解除一次pin
+		void unpin_buffer( Buffer &buf )
+		{
+			_lock.acquire();
+			_buffer_pool[ buf._block_number ]._ref_cnt[ buf._buffer_index ]--;
+			_lock.release();
+		}
+
 	private:
 
 		/// @brief 将device映射为SATA端口号

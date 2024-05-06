@@ -86,8 +86,11 @@ namespace fs
 			* Journaling support valid if EXT4_FEATURE_COMPAT_HAS_JOURNAL set.
 			*/
 			// D0h 
+
 			uint8	journal_uuid[ 16 ];				/* uuid of journal superblock */
+			
 			//E0h
+
 			uint32	journal_inum;					/* inode number of journal file */
 			uint32	journal_dev;					/* device number of journal file */
 			uint32	last_orphan;					/* start of list of inodes to delete */

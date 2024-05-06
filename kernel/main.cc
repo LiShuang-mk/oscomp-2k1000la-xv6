@@ -475,7 +475,8 @@ void test_buffer()
 		"  每个块组的block数:    %d\n"
 		"  每个块组的inode数:    %d\n"
 		"  魔术签名:             %x\n"
-		"  版本号:               %d.%d\n",
+		"  版本号:               %d.%d\n"
+		"  日志inode:            %d\n",
 		s_b->inodes_count,
 		( uint64 ) s_b->blocks_count_lo + ( ( uint64 ) s_b->blocks_count_hi << 32 ),
 		math::power( 2, s_b->log_block_size + 10 ),
@@ -483,7 +484,8 @@ void test_buffer()
 		s_b->inodes_per_group,
 		s_b->magic,
 		s_b->rev_level,
-		s_b->minor_rev_level
+		s_b->minor_rev_level,
+		s_b->journal_inum
 	);
 
 	fs::k_bufm.release_buffer_sync( buf );

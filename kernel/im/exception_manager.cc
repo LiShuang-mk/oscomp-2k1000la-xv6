@@ -147,6 +147,17 @@ namespace im
 				loongarch::Cpu::read_csr( loongarch::csr::badi )
 			);
 		};
+
+		_exception_handlers[ loongarch::csr::ecode_pnx ] = [] ( uint32 ) -> void
+		{
+			log_panic(
+				"handle exception PNX :\n"
+				"    badv : %x\n"
+				"    badi : %x",
+				loongarch::Cpu::read_csr( loongarch::csr::badv ),
+				loongarch::Cpu::read_csr( loongarch::csr::badi )
+			);
+		};
 	}
 }// namespace im
 
