@@ -26,8 +26,7 @@ namespace loongarch
 		int get_num_off() { return _num_off; }
 		int get_int_ena() { return _int_ena; }
 		void set_cur_proc( pm::Pcb *p ) { _cur_proc = p; }
-		void swtch( struct Context *old, struct Context *new_ );
-		
+
 		// read stack pointer
 		static inline uint64 read_sp()
 		{
@@ -58,7 +57,6 @@ namespace loongarch
 
 		static inline int get_intr_stat();
 
-
 		static void push_intr_off();
 		static void pop_intr_off();
 
@@ -74,5 +72,8 @@ namespace loongarch
 	};
 
 	extern Cpu k_cpus[ NUMCPU ];
-
+	
+	extern "C"{
+		void swtch(Context *old_, Context *new_);
+	}
 } // namespace loongarch 
