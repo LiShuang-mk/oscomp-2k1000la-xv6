@@ -274,8 +274,6 @@ void test_sata_call_back_2()
 		if ( i % 0x10 == 0xF )
 			printf( "\n" );
 	}
-
-
 	printf(
 		"||====> EXT4 超级块:\n"
 		"  inode总数:            %d\n"
@@ -414,7 +412,7 @@ void test_sata()
 
 void test_buffer()
 {
-	fs::Buffer buf = fs::k_bufm.read_sync( 0, 1 );
+	fs::Buffer buf = fs::k_bufm.read_sync( 0, 0 );
 	char * p = ( char * ) buf.get_data_ptr();
 	log_info( "打印读取到buffer的内容" );
 	printf( "\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
@@ -427,18 +425,58 @@ void test_buffer()
 			printf( "\n" );
 	}
 
+	disk::Mbr * p_mbr = ( disk::Mbr * ) p;
+	for ( int i = 0; i < 4; ++i )
+	{
+		disk::DiskPartTableEntry *dpte = &p_mbr->partition_table[ i ];
+		if ( dpte->part_type != 0 )
+		{
+			log_trace(
+				"||=> 硬盘分区%d\n"
+				"  分区属性:           %B\n"
+				"  分区起始地址(CHS):  %xH\n"
+				"  分区类型:           %B\n"
+				"  分区结束地址(CHS):  %xH\n"
+				"  分区开始扇区(LBA):  %xH\n"
+				"  分区扇区数量:       %d",
+				i,
+				dpte->drive_attribute,
+				dpte->chs_addr_start,
+				dpte->part_type,
+				dpte->chs_addr_last,
+				dpte->lba_addr_start,
+				dpte->sector_count
+			);
+		}
+	}
+
+	buf = fs::k_bufm.read_sync( 0, 5 );
+
+	// while ( 1 );
 	fs::k_bufm.release_buffer_sync( buf );
 
-	buf = fs::k_bufm.read_sync( 0, 0 );
+	buf = fs::k_bufm.read_sync( 0, 0x802 );
 	p = ( char * ) buf.get_data_ptr();
-	log_info( "打印读取到buffer的内容" );
-	printf( "\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
-	for ( uint i = 0; i < 512; ++i )
-	{
-		if ( i % 0x10 == 0 )
-			printf( "%B%B\t", i >> 8, i );
-		printf( "%B ", p[ i ] );
-		if ( i % 0x10 == 0xF )
-			printf( "\n" );
-	}
+
+	fs::ext4::SuperBlock * s_b = ( fs::ext4::SuperBlock * ) p;
+
+	printf(
+		"||====> EXT4 超级块:\n"
+		"  inode总数:            %d\n"
+		"  block总数:            %d\n"
+		"  block大小:            %d bytes\n"
+		"  每个块组的block数:    %d\n"
+		"  每个块组的inode数:    %d\n"
+		"  魔术签名:             %x\n"
+		"  版本号:               %d.%d\n",
+		s_b->inodes_count,
+		( uint64 ) s_b->blocks_count_lo + ( ( uint64 ) s_b->blocks_count_hi << 32 ),
+		math::power( 2, s_b->log_block_size + 10 ),
+		s_b->blocks_per_group,
+		s_b->inodes_per_group,
+		s_b->magic,
+		s_b->rev_level,
+		s_b->minor_rev_level
+	);
+
 }

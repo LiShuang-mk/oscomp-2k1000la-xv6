@@ -1,6 +1,3 @@
-# K = kernel
-# U = user
-
 # configure 
 CONF_CPU_NUM = 1
 CONF_ARCH = loongarch 
@@ -10,6 +7,8 @@ CONF_PLATFORM = ls2k
 # make variable define 
 
 HOST_OS = $(shell uname)
+
+# 带有export的变量会在递归调用子目录的Makefile时传递下去
 
 export TOOLPREFIX = loongarch64-linux-gnu-
 
@@ -45,7 +44,8 @@ export LDFLAGS = -z max-page-size=4096
 export WORKPATH = $(shell pwd)
 export BUILDPATH = $(WORKPATH)/build
 
-.PHONY: all clean test 
+# .PHONY 是一个伪规则，其后面依赖的规则目标会成为一个伪目标，使得规则执行时不会实际生成这个目标文件
+.PHONY: all clean test initdir
 
 # rules define 
 

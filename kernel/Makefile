@@ -1,46 +1,40 @@
 
-#submod = hal smp klib mm pm im tm 
-
 # card src function
 # -> $1: directory
 # -> $2: file type 
 card_src = $(foreach d,$(wildcard $1*),$(call card_src,$d/,$2)$(filter $2,$d))
 
+# card all sub-directory, but ignore 'include'
+# -> $1: directory to card all sub-direcotry, whose suffix should be '/', such as 'kernel/'
+#        null means current directory
 card_dir = $(foreach d, $(filter-out include/, $(wildcard $1*/)), $(call card_dir, $1$d) $d)
 
-submod = $(call card_dir,)
+submod = $(call card_dir, ) # $1 = null
+# submod = $(call card_idr, kernel/) # means $1 = kernel/
 
-#srcs = $(wildcard *.cc *.c *.S) 
-#srcs += $(foreach dir, $(submod), \
-#		$(wildcard $(dir)/*.cc $(dir)/*.c $(dir)/*.S) \ 
-#		)
-
+# card source
 c_src = $(foreach d, $(submod), $(wildcard $(d)*.c)) $(wildcard *.c)
 cc_src = $(foreach d, $(submod), $(wildcard $(d)*.cc)) $(wildcard *.cc)
 s_src = $(foreach d, $(submod), $(wildcard $(d)*.S)) $(wildcard *.S)
 
 srcs = $(c_src) $(cc_src) $(s_src)
 
+
+# card obj file name
 c_obj = $(patsubst %.c,$(BUILDPATH)/kernel/%.o,$(c_src))
 cc_obj = $(patsubst %.cc,$(BUILDPATH)/kernel/%.o,$(cc_src))
 s_obj = $(patsubst %.S,$(BUILDPATH)/kernel/%.o,$(s_src))
 
 objs = $(c_obj) $(cc_obj) $(s_obj)
-	
-# objs += $(foreach dir, $(submod), \
-# 			$(patsubst %.cc, $(BUILDPATH)/%.o, $(wildcard $(dir)/*.cc)) \
-# 			$(patsubst %.c, $(BUILDPATH)/%.o, $(wildcard $(dir)/*.c)) \
-# 			$(patsubst %.S, $(BUILDPATH)/%.o, $(wildcard $(dir)/*.S)) \
-# 			)
 
+# the source files' dependencies, created by gcc
 depends = \
 	$(patsubst %.cc, $(BUILDPATH)/kernel/%.d, $(cc_src)) \
 	$(patsubst %.c, $(BUILDPATH)/kernel/%.d, $(c_src)) \
 	$(patsubst %.S, $(BUILDPATH)/kernel/%.d, $(s_src))
 
-es_buildpath = $(subst /,\/,$(BUILDPATH))
 
-.PHONY: all clean test initdirm,/
+.PHONY: all clean test initdir
 
 all: $(BUILDPATH)/kernel.elf
 
@@ -48,22 +42,31 @@ initdir:
 	mkdir -p $(BUILDPATH)
 	cd $(BUILDPATH); for dir in $(submod); do mkdir -p "$(BUILDPATH)/kernel/$$dir"; done
 
+# make rules example
+# a.o : a.c
+#(tab)$(CC) -c $(CFLAGS) -o $@ $<
+#       It means that a.o is dependent on a.c
+#       Whenever a.c is newer than a.o, the command in the line behind the rule will be executed
+#       In the command, '$@' means a.0 while '$<' means a.c
+
 $(BUILDPATH)/kernel.elf: $(objs) kernel.ld 
 	$(LD) $(LDFLAGS) -T kernel.ld -o $@ $(objs)
-#	for obj in $(objs); do mv $$obj "$(BUILDPATH)/kernel/$$obj"; done 
-#	mv kernel.elf $(BUILDPATH)/kernel.elf
+
+# mode match example
+# $(objs) : %.o : %.c
+#       $(objs) is a list of all of the object file name
+#       %.o means '%' match the file name without suffix
+#       It generates dependencies for each object file
+#         which is correspondence to the source file with the same name
 
 $(cc_obj): $(BUILDPATH)/kernel/%.o: %.cc 
 	$(CXX) -c $(CXXFLAGS) -MF $(BUILDPATH)/kernel/$*.d -o $@ $<
-#	sed 's/$*.o/$(es_buildpath)\/$*.o/' $(BUILDPATH)/$*.d > $(BUILDPATH)/$*.d
 
 $(c_obj): $(BUILDPATH)/kernel/%.o: %.c 
 	$(CC) -c $(CFLAGS) -MF $(BUILDPATH)/kernel/$*.d -o $@ $<
-#	sed 's/$*.o/$(es_buildpath)\/$*.o/' $(BUILDPATH)/$*.d > $(BUILDPATH)/$*.d
 
 $(s_obj): $(BUILDPATH)/kernel/%.o: %.S 
 	$(CC) -c $(ASFLAGS) -MF $(BUILDPATH)/kernel/$*.d -o $@ $<
-#	sed 's/$*.o/$(es_buildpath)\/$*.o/' $(BUILDPATH)/$*.d > $(BUILDPATH)/$*.d
 
 -include $(depends)
 
