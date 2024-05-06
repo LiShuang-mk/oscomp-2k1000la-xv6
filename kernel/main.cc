@@ -450,16 +450,23 @@ void test_buffer()
 		}
 	}
 
-	buf = fs::k_bufm.read_sync( 0, 5 );
-
 	// while ( 1 );
 	fs::k_bufm.release_buffer_sync( buf );
 
-	buf = fs::k_bufm.read_sync( 0, 0x802 );
+	buf = fs::k_bufm.read_sync( 0, 2050 );
 	p = ( char * ) buf.get_data_ptr();
+	log_info( "打印读取到buffer的内容" );
+	printf( "\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
+	for ( uint i = 0; i < 512; ++i )
+	{
+		if ( i % 0x10 == 0 )
+			printf( "%B%B\t", i >> 8, i );
+		printf( "%B ", p[ i ] );
+		if ( i % 0x10 == 0xF )
+			printf( "\n" );
+	}
 
 	fs::ext4::SuperBlock * s_b = ( fs::ext4::SuperBlock * ) p;
-
 	printf(
 		"||====> EXT4 超级块:\n"
 		"  inode总数:            %d\n"
@@ -479,4 +486,5 @@ void test_buffer()
 		s_b->minor_rev_level
 	);
 
+	fs::k_bufm.release_buffer_sync( buf );
 }

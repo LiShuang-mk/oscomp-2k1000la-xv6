@@ -125,7 +125,7 @@ namespace fs
 		// 对应buffer复位硬盘持有位
 		void _buf_reset_disk_own( uint blk, uint idx );
 
-		uint _offset_from_lba( uint64 lba ) { return ( uint ) ( lba * lba_offset_mask ) >> lba_offset_shift; }
+		uint _offset_from_lba( uint64 lba ) { return ( uint ) ( lba & lba_offset_mask ) >> lba_offset_shift; }
 		uint64 _blk_num_from_lba( uint64 lba ) { return ( lba & lba_blk_num_mask ) >> lba_blk_num_shift; }
 		uint64 _tag_num_from_lba( uint64 lba ) { return ( lba & lba_tag_num_mask ) >> lba_tag_num_shift; }
 		uint64 _lba_blk_align( uint64 lba ) { return lba & ~lba_offset_mask; }
