@@ -20,7 +20,7 @@ namespace fs{
     Dentry* Dentry::EntryCreate(Dentry *self, char *name, uint32 mode){
         for(int i=0;i<10;i++)
             if(children[i]->name == name){
-                log_warn("Couldn't create DeEntry %s, because there is a same one exits!\n", name);
+                log__warn("Couldn't create DeEntry %s, because there is a same one exits!\n", name);
                 return children[i];
             }
 
@@ -39,7 +39,7 @@ namespace fs{
             log_error("File is not allowed to write!\n");
             return RC;
         }
-        log_info("write %d bytes...\n",len);
+        log__info("write %d bytes...\n",len);
 
         switch (data.get_Type())
         {

@@ -12,13 +12,15 @@ namespace sche{
     }
 
     void Scheduler::switch_to_proc(pm::Pcb *p){
-        //loongarch::Cpu *c = loongarch::Cpu::get_cpu();
+        loongarch::Cpu *c = loongarch::Cpu::get_cpu();
         p->get_lock().acquire();
         if(p->get_state() == pm::ProcState::runnable)
         {
             pm::k_pm.change_state(p, pm::ProcState::running);
             loongarch::k_cpus->set_cur_proc(p);
-            //swtch(&(c->get_context()), &(p->get_context()));
+            pm::Context& context_ref = p->get_context();
+            loongarch::Context& loongarch_context_ref = reinterpret_cast<loongarch::Context&>(context_ref);  //应该把pm和loongarch中的context删除一个的
+            swtch(c->get_context(), &loongarch_context_ref);
             loongarch::k_cpus->set_cur_proc(&pm::k_proc_pool[0]);
         }
         p->get_lock().release();

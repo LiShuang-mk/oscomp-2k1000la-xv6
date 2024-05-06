@@ -183,6 +183,7 @@ namespace fs
         };
 
         class File{
+            public:
                 FileTypes type;
                 int flags;
                 FileOps ops;
@@ -215,14 +216,16 @@ namespace fs
 
        };
 
-       class Path {
-            private:
-                Dentry *base;
-                char *path;
+    // class string;
+    //    class Path {
+    //         private:
+    //             Dentry *base;
+    //             string pathname;
+    //             //vector<string> dirname;
 
-            public:
-                Path() = default;
-                Path(const Path& path) = default;
-                Path(char *path_, File *base) : path(path_){}
-       };
+    //         public:
+    //             Path() = default;
+    //             Path(const Path& path) = default;
+    //             Path(const string& path_, File *base_) : base(base == nullptr ? nullptr : base_->data.get_Entry()) ,pathname(path_),{}
+    //    };
 }
