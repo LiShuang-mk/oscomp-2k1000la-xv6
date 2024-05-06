@@ -14,7 +14,28 @@
 
 namespace fs
 {
-	constexpr uint block_per_pool = 64;
+
+	constexpr uint block_per_pool_shift = 6;
+	constexpr uint block_per_pool = 1U << block_per_pool_shift;
+
+
+	/*****************************************************************
+	 The 48-bit LBA dividing shall be like this:
+	  ------------------------------------------------------
+	 |  bit  | 47       9 | 8          3 | 2              0 |
+	 | ----- | ---------- | ------------ | ---------------- |
+	 | usage | tag number | block number | offset in buffer |
+	  ------------------------------------------------------
+	 *****************************************************************/
+
+#define _build_lba_divide_( name, shift, mask_width ) \
+	constexpr uint64 lba_##name##_shift = shift; \
+	constexpr uint64 lba_##name##_mask = (~0UL) >> (64-mask_width) << lba_##name##_shift
+
+	_build_lba_divide_( offset, 0, sector_per_buffer_shift );
+	_build_lba_divide_( blk_num, lba_offset_shift + sector_per_buffer_shift, block_per_pool_shift );
+	_build_lba_divide_( tag_num, lba_blk_num_shift + block_per_pool_shift, 48 - lba_blk_num_shift - lba_offset_shift );
+#undef _build_lba_divide_
 
 	class BufferManager
 	{
@@ -31,12 +52,12 @@ namespace fs
 		Buffer read_sync( int dev, uint lba );
 
 		/// @brief 同步方法，比较费时，应当在调度开始前供内核使用
-		void _release_buffer_sync( Buffer &buf )
+		void release_buffer_sync( Buffer &buf )
 		{
 			_release_buffer( buf, false );
 		}
 		/// @brief 异步方法，允许进程间调度
-		void _release_buffer( Buffer &buf )
+		void release_buffer( Buffer &buf )
 		{
 			_release_buffer( buf, true );
 		}
@@ -104,6 +125,10 @@ namespace fs
 		// 对应buffer复位硬盘持有位
 		void _buf_reset_disk_own( uint blk, uint idx );
 
+		uint _offset_from_lba( uint64 lba ) { return ( uint ) ( lba * lba_offset_mask ) >> lba_offset_shift; }
+		uint64 _blk_num_from_lba( uint64 lba ) { return ( lba & lba_blk_num_mask ) >> lba_blk_num_shift; }
+		uint64 _tag_num_from_lba( uint64 lba ) { return ( lba & lba_tag_num_mask ) >> lba_tag_num_shift; }
+		uint64 _lba_blk_align( uint64 lba ) { return lba & ~lba_offset_mask; }
 	};
 
 	extern BufferManager k_bufm;

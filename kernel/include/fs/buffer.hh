@@ -11,11 +11,19 @@
 #include "types.hh"
 #include "pm/sleep_lock.hh"
 #include "mm/page.hh"
+#include "klib/common.hh"
 
 namespace fs
 {
 	constexpr uint default_buffer_size = mm::PageEnum::pg_size/*bytes*/;
 	constexpr uint max_buffer_per_block = 64;
+
+	// it is simplified here, which should be read from SATA device.
+	constexpr uint default_sector_size = 512;
+	constexpr uint sector_per_buffer = default_buffer_size / default_sector_size;
+	constexpr uint sector_per_buffer_shift = [] () -> uint { uint _k = 0; for ( ; 1U << _k != sector_per_buffer; ++_k ); return _k; }( );
+	constexpr uint sector_per_buffer_mask = sector_per_buffer - 1;
+	static_assert( ( sector_per_buffer & sector_per_buffer_mask ) == 0, "sector-per-buffer should be a power of 2." );
 
 	class BufferBlock;
 	class BufferManager;
@@ -34,6 +42,11 @@ namespace fs
 		Buffer();
 		Buffer( uint64 buffer_base, uint number, uint index );
 		Buffer( void *buffer_base, uint number, uint index );
+
+		void * get_data_ptr( )
+		{
+			return _buffer_base;
+		}
 
 	// for debugging
 	public:

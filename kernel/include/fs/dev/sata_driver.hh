@@ -107,6 +107,9 @@ namespace dev
 			/// @return 逻辑扇区大小是访问硬盘的最小单位
 			uint get_sector_size() { return _logical_sector_size; }
 
+			/// @brief 询问端口是否正忙
+			bool port_is_busy( uint port ) { return _hba_port_reg[ port ]->tfd & ata::sata::HbaRegPortTfd::hba_port_tfd_sts_bsy_m; }
+
 		// 初始化前使用的函数
 		public:
 			/// @brief 设置HBA的内部寄存器基地址，应在初始化前完成设置

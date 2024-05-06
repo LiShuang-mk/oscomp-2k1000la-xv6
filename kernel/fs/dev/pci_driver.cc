@@ -9,6 +9,7 @@
 #include "fs/dev/pci_driver.hh"
 #include "fs/dev/ahci_controller.hh"
 #include "fs/dev/sata_driver.hh"
+#include "fs/buffer_manager.hh"
 #include "hal/qemu_ls2k.hh"
 #include "hal/pci/pci_cfg_header.hh"
 #include "hal/sata/hba_port.hh"
@@ -150,6 +151,12 @@ namespace dev
 					sata::k_sata_driver._logical_sector_size = 512/*bytes*/;
 				}
 				log_trace( "identify disk - 逻辑扇区大小 %d bytes", sata::k_sata_driver.get_sector_size() );
+				assert( sata::k_sata_driver._logical_sector_size == fs::default_sector_size,
+					"buffer使用了默认的扇区大小, 但是识别SATA设备信息与此不符\n"
+					">> 默认 %d Bytes 但是识别为 %d Bytes",
+					sata::k_sata_driver._logical_sector_size,
+					fs::default_sector_size
+				);
 
 				uint16 queue_depth = *( ( uint16 * ) buf + 75 );
 				uint16 sata_cap = *( ( uint16 * ) buf + 76 );

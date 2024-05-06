@@ -147,6 +147,10 @@ namespace dev
 			// 暂时直接引用 0 号命令槽
 			uint cmd_slot_num = 0;
 
+			log_warn( "[AHCI] sleep没有实现, 此处使用同步询问端口busy状态" );
+			while ( sata::k_sata_driver.port_is_busy( cmd_slot_num ) )
+				;
+
 			// 获取command table 
 			ata::sata::HbaCmdTbl *cmd_tbl = sata::k_sata_driver.get_cmd_table( port, cmd_slot_num );
 			assert( ( uint64 ) cmd_tbl != 0x0UL, "" );
@@ -244,6 +248,10 @@ namespace dev
 			// 暂时直接引用 0 号命令槽
 			uint cmd_slot_num = 0;
 
+			log_warn( "[AHCI] sleep没有实现, 此处使用同步询问端口busy状态" );
+			while ( sata::k_sata_driver.port_is_busy( cmd_slot_num ) )
+				;
+
 			// 获取command table 
 			ata::sata::HbaCmdTbl *cmd_tbl = sata::k_sata_driver.get_cmd_table( port, cmd_slot_num );
 			assert( ( uint64 ) cmd_tbl != 0x0UL, "" );
@@ -302,6 +310,7 @@ namespace dev
 				_call_back_function[ port ][ cmd_slot_num ] = callback_handler;
 			else _call_back_function[ port ][ cmd_slot_num ] = [] () ->void
 			{
+
 				log_info( "<---- AHCI -- write DMA 默认中断回调 ---->" );
 			};
 

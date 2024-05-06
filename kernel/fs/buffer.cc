@@ -8,7 +8,6 @@
 
 #include "fs/buffer.hh"
 #include "mm/physical_memory_manager.hh"
-#include "klib/common.hh"
 
 namespace fs
 {

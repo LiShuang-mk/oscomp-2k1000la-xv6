@@ -414,8 +414,8 @@ void test_sata()
 
 void test_buffer()
 {
-	fs::Buffer buf = fs::k_bufm.read_sync( 0, 0 );
-	char * p = ( char * ) buf.debug_get_buffer_base();
+	fs::Buffer buf = fs::k_bufm.read_sync( 0, 1 );
+	char * p = ( char * ) buf.get_data_ptr();
 	log_info( "打印读取到buffer的内容" );
 	printf( "\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
 	for ( uint i = 0; i < 512; ++i )
@@ -427,10 +427,10 @@ void test_buffer()
 			printf( "\n" );
 	}
 
-	fs::k_bufm._release_buffer_sync( buf );
+	fs::k_bufm.release_buffer_sync( buf );
 
 	buf = fs::k_bufm.read_sync( 0, 0 );
-	p = ( char * ) buf.debug_get_buffer_base();
+	p = ( char * ) buf.get_data_ptr();
 	log_info( "打印读取到buffer的内容" );
 	printf( "\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
 	for ( uint i = 0; i < 512; ++i )

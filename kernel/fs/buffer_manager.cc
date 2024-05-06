@@ -72,7 +72,8 @@ namespace fs
 	Buffer BufferManager::read_sync( int dev, uint lba )
 	{
 		Buffer buf = _get_buffer_sync( dev, lba );
-
+		uint offset = _offset_from_lba( lba );
+		buf._buffer_base = ( void* ) ( ( uint64 ) buf._buffer_base + default_sector_size * offset );
 		return buf;
 	}
 
@@ -141,8 +142,9 @@ namespace fs
 	{
 		_lock.acquire();
 
-		uint blk = lba % block_per_pool;
-		uint tag = lba / block_per_pool;
+		uint blk = _blk_num_from_lba( lba );
+		uint tag = _tag_num_from_lba( lba );
+		lba = _lba_blk_align( lba );
 		BufferNode *node = nullptr;
 		uint64 buf_base;
 		bool dma_finish;
