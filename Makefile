@@ -18,6 +18,7 @@ export AS  = ${TOOLPREFIX}as
 export LD  = ${TOOLPREFIX}g++
 export OBJCOPY = ${TOOLPREFIX}objcopy
 export OBJDUMP = ${TOOLPREFIX}objdump
+export AR = ${TOOLPREFIX}ar
 
 export ASFLAGS = -march=loongarch64 -mabi=lp64d
 export ASFLAGS += -I ./include
@@ -37,8 +38,6 @@ export CFLAGS += -fno-pie -no-pie
 # export CFLAGS += -static-libstdc++ -lstdc++
 export CXXFLAGS = $(CFLAGS)
 export CXXFLAGS += -std=c++23
-export CXXFLAGS += -include ./include/klib/virtual_function.hh
-export CXXFLAGS += -include ./include/klib/global_operator.hh
 export LDFLAGS = -z max-page-size=4096  
 
 export WORKPATH = $(shell pwd)
@@ -56,10 +55,13 @@ all: initdir
 	@echo "-------- 生成成功 --------"
 
 initdir:
-	cd kernel; make initdir
+	$(MAKE) initdir -C kernel;$(MAKE) initdir -C thirdparty/EASTL
 
 test:
 	$(MAKE) test -C kernel
 
 clean:
-	$(MAKE) clean -C kernel
+	$(MAKE) clean -C kernel; $(MAKE) clean -C thirdparty/EASTL
+
+EASTL:
+	$(MAKE) -C thirdparty/EASTL
