@@ -51,6 +51,10 @@ namespace fs
 
 		Buffer read_sync( int dev, uint lba );
 
+		void write( int dev, uint lba );
+
+		void write_sync( int dev, uint lba );
+
 		/// @brief 同步方法，比较费时，应当在调度开始前供内核使用
 		void release_buffer_sync( Buffer &buf )
 		{

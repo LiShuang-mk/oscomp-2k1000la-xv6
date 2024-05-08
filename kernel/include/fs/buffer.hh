@@ -43,9 +43,9 @@ namespace fs
 		Buffer( uint64 buffer_base, uint number, uint index );
 		Buffer( void *buffer_base, uint number, uint index );
 
-		void * get_data_ptr( )
+		const void * get_data_ptr()
 		{
-			return _buffer_base;
+			return ( const void * ) _buffer_base;
 		}
 
 	// for debugging

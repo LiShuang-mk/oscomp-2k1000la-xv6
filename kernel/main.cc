@@ -5,8 +5,11 @@
 #include "hal/disk/mbr.hh"
 #include "fs/dev/pci_driver.hh"
 #include "fs/dev/ahci_controller.hh"
+#include "fs/dev/sata_driver.hh"
 #include "fs/fat/fat32.hh"
 #include "fs/ext4/super_block.hh"
+#include "fs/ext4/block_group_descriptor.hh"
+#include "fs/ext4/index_node.hh"
 #include "fs/buffer_manager.hh"
 #include "tm/timer_manager.hh"
 #include "im/exception_manager.hh"
@@ -426,9 +429,11 @@ void test_buffer()
 	}
 
 	disk::Mbr * p_mbr = ( disk::Mbr * ) p;
+	uint32 part_lba[ 4 ] = { 0,0,0,0 };
 	for ( int i = 0; i < 4; ++i )
 	{
 		disk::DiskPartTableEntry *dpte = &p_mbr->partition_table[ i ];
+		part_lba[ i ] = dpte->lba_addr_start;
 		if ( dpte->part_type != 0 )
 		{
 			log_trace(
@@ -450,10 +455,12 @@ void test_buffer()
 		}
 	}
 
-	// while ( 1 );
 	fs::k_bufm.release_buffer_sync( buf );
 
-	buf = fs::k_bufm.read_sync( 0, 2050 );
+	if ( part_lba[ 0 ] == 0 )
+		while ( 1 );
+
+	buf = fs::k_bufm.read_sync( 0, part_lba[ 0 ] + 2 );
 	p = ( char * ) buf.get_data_ptr();
 	log_info( "打印读取到buffer的内容" );
 	printf( "\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
@@ -466,22 +473,34 @@ void test_buffer()
 			printf( "\n" );
 	}
 
+	[[maybe_unused]] uint32 bpg;	// blocks per group
+	[[maybe_unused]] uint32 ipg;	// inodes pre group
+	[[maybe_unused]] uint32 jni;	// journal inode number
+	[[maybe_unused]] uint64 bs;		// block size
 	fs::ext4::SuperBlock * s_b = ( fs::ext4::SuperBlock * ) p;
-	printf(
+	bpg = s_b->blocks_per_group;
+	ipg = s_b->inodes_per_group;
+	jni = s_b->journal_inum;
+	bs = math::power( 2, s_b->log_block_size + 10 );
+	log_trace(
 		"||====> EXT4 超级块:\n"
 		"  inode总数:            %d\n"
 		"  block总数:            %d\n"
 		"  block大小:            %d bytes\n"
 		"  每个块组的block数:    %d\n"
 		"  每个块组的inode数:    %d\n"
+		"  每个inode大小:        %d bytes\n"
+		"  为GDT保留的block数:   %d\n"
 		"  魔术签名:             %x\n"
 		"  版本号:               %d.%d\n"
 		"  日志inode:            %d\n",
 		s_b->inodes_count,
 		( uint64 ) s_b->blocks_count_lo + ( ( uint64 ) s_b->blocks_count_hi << 32 ),
-		math::power( 2, s_b->log_block_size + 10 ),
+		bs,
 		s_b->blocks_per_group,
 		s_b->inodes_per_group,
+		s_b->inode_size,
+		s_b->reserved_gdt_blocks,
 		s_b->magic,
 		s_b->rev_level,
 		s_b->minor_rev_level,
@@ -489,4 +508,37 @@ void test_buffer()
 	);
 
 	fs::k_bufm.release_buffer_sync( buf );
+
+	buf = fs::k_bufm.read_sync( 0, part_lba[ 0 ] + bs / dev::sata::k_sata_driver.get_sector_size() );
+	// buf = fs::k_bufm.read_sync( 0, part_lba[ 0 ] + 2 + 2 );
+	p = ( char * ) buf.get_data_ptr();
+	log_info( "打印读取到buffer的内容" );
+	printf( "\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
+	for ( uint i = 0; i < 512; ++i )
+	{
+		if ( i % 0x10 == 0 )
+			printf( "%B%B\t", i >> 8, i );
+		printf( "%B ", p[ i ] );
+		if ( i % 0x10 == 0xF )
+			printf( "\n" );
+	}
+
+	uint bg_id = 0;
+	fs::ext4::BlockGroupDesc * bgd = ( fs::ext4::BlockGroupDesc * ) p;
+	bgd += bg_id;
+	log_trace(
+		"┌──────────────────────────────────┐\n"
+		"│           块组%d描述符            │\n"
+		"├─────────────────┬────────────────┤\n"
+		"│   块位图起始块  │\t%d\t│\n"
+		"├─────────────────┼────────────────┤\n"
+		"│ iNode位图起始块 │\t%d\t│\n"
+		"├─────────────────┼────────────────┤\n"
+		"│  iNode表起始块  │\t%d\t│\n"
+		"└─────────────────┴────────────────┘\n",
+		bg_id,
+		( uint64 ) bgd->block_bitmap_lo + ( ( uint64 ) bgd->block_bitmap_hi << 32 ),
+		( uint64 ) bgd->inode_bitmap_lo + ( ( uint64 ) bgd->inode_bitmap_hi << 32 ),
+		( uint64 ) bgd->inode_table_lo + ( ( uint64 ) bgd->inode_table_hi << 32 )
+	);
 }
