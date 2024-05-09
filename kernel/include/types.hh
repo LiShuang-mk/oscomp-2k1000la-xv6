@@ -19,8 +19,11 @@ using flag_t = uint64;
 using pte_t = uint64;
 using mode_t = uint32;
 using dev_t = uint64;
+#ifndef _SIZE_T
+#define _SIZE_T
 using size_t = uint32;
-
+#endif
+using wchar = ushort;
 enum CommonSize : uint64
 {
 	_1K = 0x1UL << 10,

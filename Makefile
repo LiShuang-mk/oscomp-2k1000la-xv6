@@ -44,12 +44,13 @@ export WORKPATH = $(shell pwd)
 export BUILDPATH = $(WORKPATH)/build
 
 # .PHONY 是一个伪规则，其后面依赖的规则目标会成为一个伪目标，使得规则执行时不会实际生成这个目标文件
-.PHONY: all clean test initdir
+.PHONY: all clean test initdir EASTL EASTL_test
 
 # rules define 
 
 all: initdir
-	@echo "当前主机操作系统：$(HOST_OS)"
+	@echo "当前主机操作系统：$(HOST_OS)"	
+	$(MAKE) -C thirdparty/EASTL
 	$(MAKE) -C kernel
 	@echo "_________________________"
 	@echo "-------- 生成成功 --------"
@@ -65,3 +66,6 @@ clean:
 
 EASTL:
 	$(MAKE) -C thirdparty/EASTL
+
+EASTL_test:
+	$(MAKE) test -C thirdparty/EASTL

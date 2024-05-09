@@ -1,5 +1,9 @@
 CXXFLAGS += -include ./include/klib/virtual_function.hh
 CXXFLAGS += -include ./include/klib/global_operator.hh
+
+#CXXFLAGS += -include ../thirdparty/EASTL/include/EASTL/
+#CXXFLAGS += -L $(BUILDPATH)/thirdparty/EASTL/ -llibeastl.a
+
 # card src function
 # -> $1: directory
 # -> $2: file type 
