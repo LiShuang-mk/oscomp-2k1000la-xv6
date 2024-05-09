@@ -140,7 +140,7 @@ namespace dev
 		void SataDriver::debug_print_port_d2h_fis( uint i )
 		{
 			assert( i < 32, "SATA -> 不合法的端口号: %d", i );
-			log_trace( "port[%d].is = %x", i, _hba_port_reg[ i ]->is );
+			// log_trace( "port[%d].is = %x", i, _hba_port_reg[ i ]->is );
 			if ( ( _hba_port_reg[ i ]->is & 0x1U ) )
 			{
 				ata::sata::HbaRevFis *rev_fis = ( ata::sata::HbaRevFis* ) ( ( uint64 ) _hba_port_reg[ i ]->fb | loongarch::qemuls2k::dmwin::win_0 );

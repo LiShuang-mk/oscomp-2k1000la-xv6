@@ -43,9 +43,10 @@ namespace fs
 
 		struct ExtentLeafNode
 		{
-			uint32 logical_block_start;		// the start logical block of the extent encompassed by this leaf node
+			uint32 logical_block_start;		// the logical start block of the extent encompassed by this leaf node
 			uint16 length;					// the length of this extent, max is 32768; the highest bit set means uninitialized
-			uint64 start : 48;				// the start physical block address of this extent 
+			uint16 start_hi;				// the physical start block high address of this extent 
+			uint32 start_lo;				// similar to above but low address
 		}__attribute__( ( __packed__ ) );
 		static_assert( sizeof( ExtentLeafNode ) == 12 );
 
@@ -86,7 +87,7 @@ namespace fs
 					ExtentHeader header;
 					union _node_u_t_
 					{
-						ExtentInternalNode iternal;
+						ExtentInternalNode internal;
 						ExtentLeafNode     leaf;
 					}__attribute__( ( __packed__ ) )
 						tree_nodes[

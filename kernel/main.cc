@@ -23,6 +23,8 @@
 #include "klib/printer.hh"
 #include "klib/common.hh"
 
+#include <bit>
+
 // entry.S needs one stack per CPU.
 __attribute__( ( aligned( 16 ) ) ) char stack0[ loongarch::entry_stack_size * NUMCPU ];
 
@@ -529,7 +531,7 @@ void test_buffer()
 			printf( "\n" );
 	}
 
-	uint bg_id = 1;
+	uint bg_id = 0;
 	fs::ext4::BlockGroupDesc * bgd = ( fs::ext4::BlockGroupDesc * ) p;
 	bgd += bg_id;
 	uint64 bg0_it = ( uint64 ) bgd->inode_table_lo + ( ( uint64 ) bgd->inode_table_hi << 32 );
@@ -557,45 +559,45 @@ void test_buffer()
 
 	// while ( 1 );
 
-	buf = fs::k_bufm.read_sync( 0, part_lba[ 0 ] + spb * bg0_ibm );
-	p = ( char * ) buf.get_data_ptr();
-	log_info( "打印块组0 iNode bitmap的内容" );
-	printf( "\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
-	for ( uint i = 0; i < 512; ++i )
-	{
-		if ( i % 0x10 == 0 )
-			printf( "%B%B\t", i >> 8, i );
-		printf( "%B ", p[ i ] );
-		if ( i % 0x10 == 0xF )
-			printf( "\n" );
-	}
-	log_info( "Block-group 0 iNode bitmap : 0x%x", *( uint64 * ) p );
-	fs::k_bufm.release_buffer_sync( buf );
+	// buf = fs::k_bufm.read_sync( 0, part_lba[ 0 ] + spb * bg0_ibm );
+	// p = ( char * ) buf.get_data_ptr();
+	// log_info( "打印块组0 iNode bitmap的内容" );
+	// printf( "\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
+	// for ( uint i = 0; i < 512; ++i )
+	// {
+	// 	if ( i % 0x10 == 0 )
+	// 		printf( "%B%B\t", i >> 8, i );
+	// 	printf( "%B ", p[ i ] );
+	// 	if ( i % 0x10 == 0xF )
+	// 		printf( "\n" );
+	// }
+	// log_info( "Block-group 0 iNode bitmap : 0x%x", *( uint64 * ) p );
+	// fs::k_bufm.release_buffer_sync( buf );
 
 	uint ji_idx = ( jni - 1 ) % ipg;
 	uint ji_blk = ( ji_idx * ins ) / bs;
 	buf = fs::k_bufm.read_sync( 0, part_lba[ 0 ] + spb * ( bg0_it + ji_blk ) );
 	p = ( char * ) buf.get_data_ptr();
-	log_info( "打印inode table的内容" );
-	printf( "\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
-	for ( uint i = 0; i < 512; ++i )
-	{
-		if ( i % 0x10 == 0 )
-			printf( "%B%B\t", i >> 8, i );
-		printf( "%B ", p[ i ] );
-		if ( i % 0x10 == 0xF )
-			printf( "\n" );
-	}
+	// log_info( "打印inode table的内容" );
+	// printf( "\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
+	// for ( uint i = 0; i < 512; ++i )
+	// {
+	// 	if ( i % 0x10 == 0 )
+	// 		printf( "%B%B\t", i >> 8, i );
+	// 	printf( "%B ", p[ i ] );
+	// 	if ( i % 0x10 == 0xF )
+	// 		printf( "\n" );
+	// }
 
 	// while ( 1 );
 
 	fs::ext4::InodeRecord * ji_inr = ( fs::ext4::InodeRecord * ) p;
 
-	printf( "inode flags:\n" );
-	for ( uint i = 0; i < bs / ins; ++i )
-	{
-		printf( "[%B] 0x%x\n", i, ( ji_inr + i )->inode_data.flags );
-	}
+	// printf( "inode flags:\n" );
+	// for ( uint i = 0; i < bs / ins; ++i )
+	// {
+	// 	printf( "[%B] 0x%x\n", i, ( ji_inr + i )->inode_data.flags );
+	// }
 
 	// while ( 1 );
 
@@ -621,17 +623,63 @@ void test_buffer()
 		log_trace(
 			">> journal inode use extent\n"
 			">> present extent header below:\n"
-			"                magic : %xH\n"
-			"valid nodes following : %d\n"
-			"  max nodes following : %d\n"
-			"    depth of the tree : %d\n"
-			"   generation(unused) : %xH\n",
+			"||                 magic : %xH\n"
+			"|| valid nodes following : %d\n"
+			"||   max nodes following : %d\n"
+			"||     depth of the tree : %d\n"
+			"||    generation(unused) : %xH\n",
 			h->magic,
 			h->valid_nodes_count,
 			h->max_nodes_count,
 			h->depth,
 			h->generation
 		);
+
+		fs::ext4::ExtentLeafNode * leaf0 = &ji_inr->inode_data.block.extents.tree_nodes[ 0 ].leaf;
+		uint64 leaf0_blk0 = ( ( uint64 ) leaf0->start_hi << 32 ) + ( uint64 ) leaf0->start_lo;
+		log_trace(
+			">> present journal inode extent\n"
+			">> level 0 - node 0\n"
+			"|| covered blocks start  : %xH\n"
+			"|| covered blocks length : %d\n"
+			"|| extent start from     : %xH\n",
+			leaf0->logical_block_start,
+			leaf0->length,
+			leaf0_blk0
+		);
+
+		buf = fs::k_bufm.read_sync( 0, part_lba[ 0 ] + spb * leaf0_blk0 );
+		p = ( char * ) buf.get_data_ptr();
+		log_info( "打印journal第0块的数据" );
+		printf( "\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
+		for ( uint i = 0; i < 1024; ++i )
+		{
+			if ( i % 0x10 == 0 )
+				printf( "%B%B\t", i >> 8, i );
+			printf( "%B ", p[ i ] );
+			if ( i % 0x10 == 0xF )
+				printf( "\n" );
+		}
+
+		fs::jbd2::JournalSuperblock * jnl_sb = ( fs::jbd2::JournalSuperblock * ) p;
+		log_trace(
+			">> present journal super-block\n"
+			"|| 魔数             :  %xH\n"
+			"|| 块类型           :  %xH (3 or 4 is valid in super-block)\n"
+			"|| 当前块的事务ID   :  %xH\n"
+			"|| 日志设备的块大小 :  %d Bytes\n"
+			"|| 日志块总数       :  %d\n"
+			"|| 第一个事务ID     :  %xH\n",
+			std::byteswap( jnl_sb->header.magic ),
+			std::byteswap( jnl_sb->header.blocktype ),
+			std::byteswap( jnl_sb->header.sequence ),
+			std::byteswap( jnl_sb->blocksize ),
+			std::byteswap( jnl_sb->maxlen ),
+			std::byteswap( jnl_sb->first )
+		);
+
+		fs::k_bufm.release_buffer_sync( buf );
+		while ( 1 );
 	}
 	else
 	{

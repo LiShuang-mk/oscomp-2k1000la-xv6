@@ -66,12 +66,12 @@ namespace im
 		}
 		else if ( estat & ecfg & loongarch::csr::itr_hwi_m )
 		{
-			log_trace(
-				"read isr : %p\n"
-				"hardware itr: %p",
-				loongarch::qemuls2k::read_itr_cfg( loongarch::qemuls2k::ItrCfg::itr_isr_l ),
-				( estat & loongarch::csr::itr_hwi_m ) >> loongarch::csr::itr_hwi_s
-			);
+			// log_trace(
+			// 	"read isr : %p\n"
+			// 	"hardware itr: %p",
+			// 	loongarch::qemuls2k::read_itr_cfg( loongarch::qemuls2k::ItrCfg::itr_isr_l ),
+			// 	( estat & loongarch::csr::itr_hwi_m ) >> loongarch::csr::itr_hwi_s
+			// );
 			if ( estat & loongarch::csr::itr_hwi_m & ( ( 1 << 3 ) << loongarch::csr::itr_hwi_s ) )
 			{
 				log_info( "SATA 中断." );

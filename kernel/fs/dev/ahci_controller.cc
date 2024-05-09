@@ -326,11 +326,11 @@ namespace dev
 				tmp = sata::k_sata_driver.get_port_is( i );
 				if ( tmp )
 				{
-					log_trace(
-						"sata intr.\n"
-						"port %d - is = %p",
-						i, tmp
-					);
+					// log_trace(
+					// 	"sata intr.\n"
+					// 	"port %d - is = %p",
+					// 	i, tmp
+					// );
 					sata::k_sata_driver.debug_print_port_d2h_fis( i );
 					sata::k_sata_driver.clear_interrupt( i, ( ata::sata::HbaRegPortIs ) tmp );
 				}
