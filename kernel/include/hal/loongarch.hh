@@ -8,10 +8,16 @@
 
 #pragma once 
 
+extern "C" {
+	#include "hal/asm.h"
+}
+
 #include "types.hh"
 
 namespace loongarch
 {
+	constexpr uint entry_stack_size = LOONGARCH_STACK_SIZE;
+
 	struct Context
 	{
 		uint64 ra;

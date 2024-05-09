@@ -10,6 +10,7 @@
 #include "fs/ext4/super_block.hh"
 #include "fs/ext4/block_group_descriptor.hh"
 #include "fs/ext4/index_node.hh"
+#include "fs/jbd2/journal_super_block.hh"
 #include "fs/buffer_manager.hh"
 #include "tm/timer_manager.hh"
 #include "im/exception_manager.hh"
@@ -23,7 +24,7 @@
 #include "klib/common.hh"
 
 // entry.S needs one stack per CPU.
-__attribute__( ( aligned( 16 ) ) ) char stack0[ 4096 * NUMCPU ];
+__attribute__( ( aligned( 16 ) ) ) char stack0[ loongarch::entry_stack_size * NUMCPU ];
 
 void test_sata();
 void test_buffer();
@@ -473,15 +474,19 @@ void test_buffer()
 			printf( "\n" );
 	}
 
-	[[maybe_unused]] uint32 bpg;	// blocks per group
-	[[maybe_unused]] uint32 ipg;	// inodes pre group
-	[[maybe_unused]] uint32 jni;	// journal inode number
-	[[maybe_unused]] uint64 bs;		// block size
+	uint32 bpg;		// blocks per group
+	uint32 ipg;		// inodes pre group
+	uint32 jni;		// journal inode number
+	uint64 bs;		// block size
+	uint64 ins;		// inode size
+	uint64 spb;		// secotrs per block
 	fs::ext4::SuperBlock * s_b = ( fs::ext4::SuperBlock * ) p;
 	bpg = s_b->blocks_per_group;
 	ipg = s_b->inodes_per_group;
 	jni = s_b->journal_inum;
 	bs = math::power( 2, s_b->log_block_size + 10 );
+	ins = s_b->inode_size;
+	spb = bs / dev::sata::k_sata_driver.get_sector_size();
 	log_trace(
 		"||====> EXT4 超级块:\n"
 		"  inode总数:            %d\n"
@@ -493,24 +498,25 @@ void test_buffer()
 		"  为GDT保留的block数:   %d\n"
 		"  魔术签名:             %x\n"
 		"  版本号:               %d.%d\n"
-		"  日志inode:            %d\n",
+		"  日志inode:            %d\n"
+		"  首个未保留的inode号:  %d",
 		s_b->inodes_count,
 		( uint64 ) s_b->blocks_count_lo + ( ( uint64 ) s_b->blocks_count_hi << 32 ),
 		bs,
-		s_b->blocks_per_group,
-		s_b->inodes_per_group,
-		s_b->inode_size,
+		bpg,
+		ipg,
+		ins,
 		s_b->reserved_gdt_blocks,
 		s_b->magic,
 		s_b->rev_level,
 		s_b->minor_rev_level,
-		s_b->journal_inum
+		jni,
+		s_b->first_ino
 	);
 
 	fs::k_bufm.release_buffer_sync( buf );
 
-	buf = fs::k_bufm.read_sync( 0, part_lba[ 0 ] + bs / dev::sata::k_sata_driver.get_sector_size() );
-	// buf = fs::k_bufm.read_sync( 0, part_lba[ 0 ] + 2 + 2 );
+	buf = fs::k_bufm.read_sync( 0, part_lba[ 0 ] + spb * 1 );
 	p = ( char * ) buf.get_data_ptr();
 	log_info( "打印读取到buffer的内容" );
 	printf( "\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
@@ -523,9 +529,11 @@ void test_buffer()
 			printf( "\n" );
 	}
 
-	uint bg_id = 0;
+	uint bg_id = 1;
 	fs::ext4::BlockGroupDesc * bgd = ( fs::ext4::BlockGroupDesc * ) p;
 	bgd += bg_id;
+	uint64 bg0_it = ( uint64 ) bgd->inode_table_lo + ( ( uint64 ) bgd->inode_table_hi << 32 );
+	uint64 bg0_ibm = ( uint64 ) bgd->inode_bitmap_lo + ( ( uint64 ) bgd->inode_bitmap_hi << 32 );
 	log_trace(
 		"┌──────────────────────────────────┐\n"
 		"│           块组%d描述符            │\n"
@@ -538,7 +546,144 @@ void test_buffer()
 		"└─────────────────┴────────────────┘\n",
 		bg_id,
 		( uint64 ) bgd->block_bitmap_lo + ( ( uint64 ) bgd->block_bitmap_hi << 32 ),
-		( uint64 ) bgd->inode_bitmap_lo + ( ( uint64 ) bgd->inode_bitmap_hi << 32 ),
-		( uint64 ) bgd->inode_table_lo + ( ( uint64 ) bgd->inode_table_hi << 32 )
+		bg0_ibm,
+		bg0_it
 	);
+
+	assert( jni / ipg == 0, "journal inode(%d) not in block group %d!", jni, bg_id );
+
+
+	fs::k_bufm.release_buffer_sync( buf );
+
+	// while ( 1 );
+
+	buf = fs::k_bufm.read_sync( 0, part_lba[ 0 ] + spb * bg0_ibm );
+	p = ( char * ) buf.get_data_ptr();
+	log_info( "打印块组0 iNode bitmap的内容" );
+	printf( "\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
+	for ( uint i = 0; i < 512; ++i )
+	{
+		if ( i % 0x10 == 0 )
+			printf( "%B%B\t", i >> 8, i );
+		printf( "%B ", p[ i ] );
+		if ( i % 0x10 == 0xF )
+			printf( "\n" );
+	}
+	log_info( "Block-group 0 iNode bitmap : 0x%x", *( uint64 * ) p );
+	fs::k_bufm.release_buffer_sync( buf );
+
+	uint ji_idx = ( jni - 1 ) % ipg;
+	uint ji_blk = ( ji_idx * ins ) / bs;
+	buf = fs::k_bufm.read_sync( 0, part_lba[ 0 ] + spb * ( bg0_it + ji_blk ) );
+	p = ( char * ) buf.get_data_ptr();
+	log_info( "打印inode table的内容" );
+	printf( "\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
+	for ( uint i = 0; i < 512; ++i )
+	{
+		if ( i % 0x10 == 0 )
+			printf( "%B%B\t", i >> 8, i );
+		printf( "%B ", p[ i ] );
+		if ( i % 0x10 == 0xF )
+			printf( "\n" );
+	}
+
+	// while ( 1 );
+
+	fs::ext4::InodeRecord * ji_inr = ( fs::ext4::InodeRecord * ) p;
+
+	printf( "inode flags:\n" );
+	for ( uint i = 0; i < bs / ins; ++i )
+	{
+		printf( "[%B] 0x%x\n", i, ( ji_inr + i )->inode_data.flags );
+	}
+
+	// while ( 1 );
+
+	ji_inr += ji_idx;
+	p = ( char * ) ji_inr;
+	log_info( "打印journal inode的内容" );
+	printf( "\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
+	for ( uint i = 0; i < 256; ++i )
+	{
+		if ( i % 0x10 == 0 )
+			printf( "%B%B\t", i >> 8, i );
+		printf( "%B ", p[ i ] );
+		if ( i % 0x10 == 0xF )
+			printf( "\n" );
+	}
+	if ( ji_inr->inode_data.flags & 0x80000U )	// if use extent
+	{
+		assert( ji_inr->inode_data.block.extents.header.magic == 0xF30A,
+			"inode use extent and extent header magic should be 0xF30A, but it is 0x%x here.",
+			ji_inr->inode_data.block.extents.header.magic
+		);
+		fs::ext4::ExtentHeader * h = &ji_inr->inode_data.block.extents.header;
+		log_trace(
+			">> journal inode use extent\n"
+			">> present extent header below:\n"
+			"                magic : %xH\n"
+			"valid nodes following : %d\n"
+			"  max nodes following : %d\n"
+			"    depth of the tree : %d\n"
+			"   generation(unused) : %xH\n",
+			h->magic,
+			h->valid_nodes_count,
+			h->max_nodes_count,
+			h->depth,
+			h->generation
+		);
+	}
+	else
+	{
+		log_trace(
+			"||---- journal inode ----||\n"
+			"  size :             %d Bytes\n"
+			"  direct block:\n"
+			"                 [0] %d\n"
+			"                 [1] %d\n"
+			"                 [2] %d\n"
+			"                 [3] %d\n"
+			"                 [4] %d\n"
+			"                 [5] %d\n"
+			"                 [6] %d\n"
+			"                 [7] %d\n"
+			"                 [8] %d\n"
+			"                 [9] %d\n"
+			"                [10] %d\n"
+			"                [11] %d\n"
+			"  single indirect:   %d\n"
+			"  double indirect:   %d\n"
+			"  triple indirect:   %d\n"
+			"  flgs:              0x%x\n",
+			( uint64 ) ji_inr->inode_data.size_lo + ( ( uint64 ) ji_inr->inode_data.size_high << 32 ),
+			ji_inr->inode_data.block.blocks_ptr[ 0 ], ji_inr->inode_data.block.blocks_ptr[ 1 ], ji_inr->inode_data.block.blocks_ptr[ 2 ],
+			ji_inr->inode_data.block.blocks_ptr[ 3 ], ji_inr->inode_data.block.blocks_ptr[ 4 ], ji_inr->inode_data.block.blocks_ptr[ 5 ],
+			ji_inr->inode_data.block.blocks_ptr[ 6 ], ji_inr->inode_data.block.blocks_ptr[ 7 ], ji_inr->inode_data.block.blocks_ptr[ 8 ],
+			ji_inr->inode_data.block.blocks_ptr[ 9 ], ji_inr->inode_data.block.blocks_ptr[ 10 ], ji_inr->inode_data.block.blocks_ptr[ 11 ],
+			ji_inr->inode_data.block.blocks_ptr[ 12 ], ji_inr->inode_data.block.blocks_ptr[ 13 ], ji_inr->inode_data.block.blocks_ptr[ 14 ],
+			ji_inr->inode_data.flags
+		);
+	}
+
+	[[maybe_unused]] uint32 j_blk0 = ji_inr->inode_data.block.blocks_ptr[ 0 ];
+
+	fs::k_bufm.release_buffer_sync( buf );
+
+	buf = fs::k_bufm.read_sync( 0, part_lba[ 0 ] + spb * 358 );
+	p = ( char * ) buf.get_data_ptr();
+	log_info( "打印读取到buffer的内容" );
+	printf( "\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
+	for ( uint i = 0; i < 512; ++i )
+	{
+		if ( i % 0x10 == 0 )
+			printf( "%B%B\t", i >> 8, i );
+		printf( "%B ", p[ i ] );
+		if ( i % 0x10 == 0xF )
+			printf( "\n" );
+	}
+
+	fs::jbd2::JournalSuperblock * jsb = ( fs::jbd2::JournalSuperblock * ) p;
+	log_info( "journal super block magic is 0x%x", jsb->header.magic );
+
+	fs::k_bufm.release_buffer_sync( buf );
 }
