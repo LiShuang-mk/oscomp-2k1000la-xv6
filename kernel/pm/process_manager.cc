@@ -12,6 +12,9 @@
 #include "mm/memlayout.hh"
 #include "mm/physical_memory_manager.hh"
 #include "mm/virtual_memory_manager.hh"
+#include <EASTL/vector.h>
+#include <EASTL/string.h>
+#include "klib/common.hh"
 namespace pm
 {
 	ProcessManager k_pm;
@@ -158,4 +161,86 @@ namespace pm
 		p->_xstate = 0;
 		p->_state = ProcState::unused;
 	}
+	
+	void ProcessManager::vectortest()
+	{
+		eastl::vector<int> v;
+
+		// 测试 push_back
+		v.push_back(1);
+		v.push_back(2);
+		v.push_back(3);
+		v.push_back(4);
+
+		// 测试 size
+		log_trace("vector size: %d\n", v.size());
+
+		// 测试 capacity
+		log_trace("vector capacity: %d\n", v.capacity());
+
+		// 测试 empty
+		log_trace("vector is empty: %d\n", v.empty());
+
+		// 测试 at
+		log_trace("vector at 2: %d\n", v.at(2));
+
+		// 测试 front
+		log_trace("vector front: %d\n", v.front());
+
+		// 测试 back
+		log_trace("vector back: %d\n", v.back());
+
+		// 测试 insert
+		v.insert(v.begin() + 2, 5);
+		log_trace("vector after insert: ");
+		for(auto i = v.begin(); i != v.end(); i++)
+		{
+			log_trace("%d ", *i);
+		}
+		log_trace("\n");
+
+		// 测试 erase
+		v.erase(v.begin() + 2);
+		log_trace("vector after erase: ");
+		for(auto i = v.begin(); i != v.end(); i++)
+		{
+			log_trace("%d ", *i);
+		}
+		log_trace("\n");
+
+		// 测试 swap
+		eastl::vector<int> v2;
+		v2.push_back(6);
+		v2.push_back(7);
+		v.swap(v2);
+		log_trace("vector after swap: ");
+		for(auto i = v.begin(); i != v.end(); i++)
+		{
+			log_trace("%d ", *i);
+		}
+		log_trace("\n");
+
+		// 测试 resize
+		v.resize(5, 8);
+		log_trace("vector after resize: ");
+		for(auto i = v.begin(); i != v.end(); i++)
+		{
+			log_trace("%d ", *i);
+		}
+		log_trace("\n");
+
+		// 测试 reserve
+		v.reserve(10);
+		log_trace("vector capacity after reserve: %d\n", v.capacity());
+
+		// 测试 clear
+		v.clear();
+		log_trace("vector size after clear: %d\n", v.size());
+	}
+
+	// void ProcessManager::stringtest()
+	// {
+	// 	eastl::string s;
+		
+	// }
 }

@@ -33,7 +33,7 @@ namespace fs{
         return nullptr;
     }
 
-    int File::write(void *buf, uint32 len){
+    int File::write(void *buf, size_t len){
         int RC = -1;
         if(!ops.fields.w){
             log_error("File is not allowed to write!\n");
@@ -66,7 +66,7 @@ namespace fs{
         return RC;
     }
 
-    int File::read(void *buf, uint32 len, int off_, bool update){
+    int File::read(void *buf, size_t len, int off_, bool update){
         int RC = -1;
         if(!ops.fields.r){
             log_error("File is not allowed to read!\n");

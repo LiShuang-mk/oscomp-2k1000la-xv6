@@ -122,7 +122,8 @@ int main()
 		);
 
 		// test_noreturn();
-
+		pm::k_pm.vectortest();
+		//pm::k_pm.stringtest();
 		test_buffer();
 
 		// fs::Buffer buf = fs::k_bufm.get_buffer( 0, 0 );
