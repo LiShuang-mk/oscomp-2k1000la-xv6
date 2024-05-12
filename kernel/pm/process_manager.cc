@@ -238,9 +238,51 @@ namespace pm
 		log_trace("vector size after clear: %d\n", v.size());
 	}
 
-	// void ProcessManager::stringtest()
-	// {
-	// 	eastl::string s;
-		
-	// }
+	void ProcessManager::stringtest()
+	{
+		eastl::string s;
+
+		// 测试赋值
+		s = "hello world";
+		log_trace("string: %s\n", s.c_str());
+
+		// 测试 size 和 length
+		log_trace("string size: %d\n", s.size());
+		log_trace("string length: %d\n", s.length());
+
+		// 测试 empty
+		log_trace("string is empty: %d\n", s.empty());
+
+		// 测试 append
+		s.append(" EASTL");
+		log_trace("string after append: %s\n", s.c_str());
+
+		// 测试 insert
+		s.insert(5, ", dear");
+		log_trace("string after insert: %s\n", s.c_str());
+
+		// 测试 erase
+		s.erase(5, 6);
+		log_trace("string after erase: %s\n", s.c_str());
+
+		// 测试 replace
+		s.replace(6, 5, "EASTL");
+		log_trace("string after replace: %s\n", s.c_str());
+
+		// 测试 substr
+		eastl::string sub = s.substr(6, 5);
+		log_trace("substring: %s\n", sub.c_str());
+
+		// 测试 find
+		size_t pos = s.find("EASTL");
+		log_trace("find EASTL at: %d\n", pos);
+
+		// 测试 rfind
+		pos = s.rfind('l');
+		log_trace("rfind 'l' at: %d\n", pos);
+
+		// 测试 compare
+		int cmp = s.compare("hello EASTL");
+		log_trace("compare with 'hello EASTL': %d\n", cmp);
+	}
 }

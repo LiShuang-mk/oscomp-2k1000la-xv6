@@ -30,6 +30,7 @@ cc_obj = $(patsubst %.cc,$(BUILDPATH)/kernel/%.o,$(cc_src))
 s_obj = $(patsubst %.S,$(BUILDPATH)/kernel/%.o,$(s_src))
 eastl_obj = $(wildcard $(BUILDPATH)/THIRDPARTY/SOURCE/*.o)
 objs = $(c_obj) $(cc_obj) $(s_obj) $(eastl_obj)
+#objs = $(c_obj) $(cc_obj) $(s_obj)
 
 # the source files' dependencies, created by gcc
 depends = \

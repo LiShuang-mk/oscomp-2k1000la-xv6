@@ -4,9 +4,10 @@
 
 
 #include <EASTL/internal/config.h>
+#include "klib/string.h"
 #include <EASTL/string.h>
 #include <EABase/eabase.h>
-#include <string.h>
+
 
 
 namespace eastl
