@@ -33,6 +33,8 @@ namespace pm
 		void freeproc(Pcb *p);
 		void vectortest();
 		void stringtest();
+		void maptest();
+		void hashtest();
 	};
 
 	extern ProcessManager k_pm;

@@ -1,33 +1,36 @@
 #include "fs/fs.hh"
 #include "klib/common.hh"
+#include <EASTL/string.h>
+#include "pm/process_manager.hh"
+#include <EASTL/unordered_map.h>
 
 
 namespace fs{
-    Dentry* Dentry::EntrySearch(Dentry *self, char *name){
-        for(int i=0;i<10;i++)
-            if(children[i]->name == name)
-                return children[i];
+    eastl::unordered_map<eastl::string, FileSystem *> mnt_table;
+
+    Dentry* Dentry::EntrySearch(Dentry *self, eastl::string name){
+        if(children.find(name) != children.end())
+            return children[name];
         
         if(auto subnode = node->lookup(name))
         {
             auto subDEntry = new Dentry(self, subnode, name);
-            children[point++] = subDEntry;
+            children.insert({name, subDEntry});
             return subDEntry;
         }
         return nullptr;
     }
 
-    Dentry* Dentry::EntryCreate(Dentry *self, char *name, uint32 mode){
-        for(int i=0;i<10;i++)
-            if(children[i]->name == name){
-                log_warn("Couldn't create DeEntry %s, because there is a same one exits!\n", name);
-                return children[i];
-            }
+    Dentry* Dentry::EntryCreate(Dentry *self, eastl::string name, mode_t mode){
+        if(children.find(name) != children.end()){
+            log_error("File %s already exists!\n", name.c_str());
+            return nullptr;
+        }
 
         if(auto subnode = node->mknode(name, mode))
         {
             auto subDEntry = new Dentry(self, subnode, name);
-            children[point++] = subDEntry;
+            children.insert({name, subDEntry});
             return subDEntry;
         }
         return nullptr;
@@ -98,5 +101,39 @@ namespace fs{
                 break;
         }
         return RC;
+    }
+
+    void Path::pathbuild()
+    {
+        if(pathname.size() < 1) { base = pm::k_pm.get_cur_pcb()->get_cwd(); return; }
+        else if(pathname[0] == '/') { base = mnt_table["/"]->getSuperBlock()->getRoot(); }
+        else if(base == nullptr) { base = pm::k_pm.get_cur_pcb()->get_cwd(); }
+        
+        size_t len = pathname.size();
+        if(len > 0) {  // 保证数组长度不为0
+            auto ind = new size_t[len][2] { { 0, 0 } };
+            bool rep = true;
+            int dirnum = 0;
+            for(size_t i = 0; i < len; ++i) {  // 识别以'/'结尾的目录
+                if(pathname[i] == '/') {
+                    if(!rep) {
+                        rep = true;
+                        ++dirnum;
+                    }
+                }
+                else {
+                    ++(ind[dirnum][1]);
+                    if(rep) {
+                        rep = false;
+                        ind[dirnum][0] = i;
+                    }
+                }
+            }
+            if(!rep) { ++dirnum; }  // 补齐末尾'/'
+            dirname = eastl::vector<eastl::string>(dirnum);
+            for(size_t i = 0; i < (size_t)dirnum; ++i) { dirname[i] = pathname.substr(ind[i][0], ind[i][1]); }
+            delete[] ind;
+        }
+        return;
     }
 };

@@ -28,9 +28,9 @@ srcs = $(c_src) $(cc_src) $(s_src)
 c_obj = $(patsubst %.c,$(BUILDPATH)/kernel/%.o,$(c_src))
 cc_obj = $(patsubst %.cc,$(BUILDPATH)/kernel/%.o,$(cc_src))
 s_obj = $(patsubst %.S,$(BUILDPATH)/kernel/%.o,$(s_src))
-eastl_obj = $(wildcard $(BUILDPATH)/THIRDPARTY/SOURCE/*.o)
-objs = $(c_obj) $(cc_obj) $(s_obj) $(eastl_obj)
-#objs = $(c_obj) $(cc_obj) $(s_obj)
+#eastl_obj = $(wildcard $(BUILDPATH)/thirdparty/source/*.o)
+#objs = $(c_obj) $(cc_obj) $(s_obj) $(eastl_obj)
+objs = $(c_obj) $(cc_obj) $(s_obj)
 
 # the source files' dependencies, created by gcc
 depends = \
@@ -54,9 +54,11 @@ initdir:
 #       Whenever a.c is newer than a.o, the command in the line behind the rule will be executed
 #       In the command, '$@' means a.0 while '$<' means a.c
 
-$(BUILDPATH)/kernel.elf: $(objs) kernel.ld 
-	$(LD) $(LDFLAGS) -T kernel.ld -o $@ $(objs)
+# $(BUILDPATH)/kernel.elf: $(objs) kernel.ld 
+# 	$(LD) $(LDFLAGS) -T kernel.ld -o $@ $(objs)
 
+$(BUILDPATH)/kernel.elf: $(objs) kernel.ld 
+	$(LD) $(LDFLAGS) -T kernel.ld -o $@ $(objs) $(BUILDPATH)/thirdparty/EASTL/libeastl.a 
 # mode match example
 # $(objs) : %.o : %.c
 #       $(objs) is a list of all of the object file name

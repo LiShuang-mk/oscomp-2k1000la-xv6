@@ -14,6 +14,8 @@
 #include "mm/virtual_memory_manager.hh"
 #include <EASTL/vector.h>
 #include <EASTL/string.h>
+#include <EASTL/map.h>
+#include <EASTL/hash_map.h>
 #include "klib/common.hh"
 namespace pm
 {
@@ -284,5 +286,73 @@ namespace pm
 		// 测试 compare
 		int cmp = s.compare("hello EASTL");
 		log_trace("compare with 'hello EASTL': %d\n", cmp);
+	}
+
+	void ProcessManager::maptest()
+	{
+		eastl::map<int, int> m;
+
+		// 测试 insert
+		m.insert(eastl::make_pair(1, 2));
+		m.insert(eastl::make_pair(3, 4));
+		m.insert(eastl::make_pair(5, 6));
+
+		// 测试 size
+		log_trace("map size: %d\n", m.size());
+
+		// 测试 empty
+		log_trace("map is empty: %d\n", m.empty());
+
+		// 测试 at
+		log_trace("map at 3: %d\n", m.at(3));
+
+		// 测试 operator[]
+		log_trace("map[5]: %d\n", m[5]);
+
+		// 测试 find
+		auto it = m.find(3);
+		log_trace("find 3: %d\n", it->second);
+
+		// 测试 erase
+		m.erase(3);
+		log_trace("map size after erase: %d\n", m.size());
+
+		// 测试 clear
+		m.clear();
+		log_trace("map size after clear: %d\n", m.size());
+	}
+
+	void ProcessManager::hashtest()
+	{
+		eastl::hash_map<int, int> m;
+
+		// 测试 insert
+		m.insert(eastl::make_pair(1, 2));
+		m.insert(eastl::make_pair(3, 4));
+		m.insert(eastl::make_pair(5, 6));
+
+		// 测试 size
+		log_trace("hash_map size: %d\n", m.size());
+
+		// 测试 empty
+		log_trace("hash_map is empty: %d\n", m.empty());
+
+		// 测试 at
+		log_trace("hash_map at 3: %d\n", m.at(3));
+
+		// 测试 operator[]
+		log_trace("hash_map[5]: %d\n", m[5]);
+
+		// 测试 find
+		auto it = m.find(3);
+		log_trace("find 3: %d\n", it->second);
+
+		// 测试 erase
+		m.erase(3);
+		log_trace("hash_map size after erase: %d\n", m.size());
+
+		// 测试 clear
+		m.clear();
+		log_trace("hash_map size after clear: %d\n", m.size());
 	}
 }

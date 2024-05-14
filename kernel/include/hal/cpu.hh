@@ -59,7 +59,8 @@ namespace loongarch
 
 		static void push_intr_off();
 		static void pop_intr_off();
-
+		static void euen_float();
+		
 		static void write_csr( csr::CsrAddr r, uint64 d );
 		static uint64 read_csr( csr::CsrAddr r );
 

@@ -11,7 +11,7 @@
 #include "smp/lock.hh"
 #include "types.hh"
 
-namespace tm
+namespace tmm
 {
 	// 2^20 * 4（4M）分频，则时间片 4M/1G ~ 4ms 
 	constexpr uint div_fre = 0x1000000UL;
