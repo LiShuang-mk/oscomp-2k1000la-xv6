@@ -50,13 +50,13 @@ export BUILDPATH = $(WORKPATH)/build
 
 all: initdir
 	@echo "当前主机操作系统：$(HOST_OS)"	
-	$(MAKE) -C thirdparty/EASTL
+	$(MAKE) EASTL
 	$(MAKE) -C kernel
 	@echo "_________________________"
 	@echo "-------- 生成成功 --------"
 
-initdir:
-	$(MAKE) initdir -C kernel;$(MAKE) initdir -C thirdparty/EASTL
+.initdir:
+	$(MAKE) initdir -C kernel
 
 test:
 	$(MAKE) test -C kernel
