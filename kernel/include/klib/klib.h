@@ -41,7 +41,7 @@ int    atoi      (const char *nptr);
 #endif
 // stdio.h
 #ifdef STDIO
-#pragma message("klib.h: STDIO")
+//#pragma message("klib.h: STDIO")
 //int    printf    (const char *format, ...);
 int    sprintf   (char *str, const char *format, ...);
 int    snprintf  (char *str, size_t size, const char *format, ...);
