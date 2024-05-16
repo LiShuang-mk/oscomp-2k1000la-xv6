@@ -55,7 +55,7 @@ all: initdir
 	@echo "_________________________"
 	@echo "-------- 生成成功 --------"
 
-.initdir:
+initdir:
 	$(MAKE) initdir -C kernel
 
 test:
