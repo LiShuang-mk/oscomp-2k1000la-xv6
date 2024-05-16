@@ -56,6 +56,15 @@ namespace fs
 		}__attribute__( ( __packed__ ) );
 		static_assert( sizeof( struct Fsinfo ) == 0x200 );
 
+		class Fat32Fs
+		{
+		private:
+			Fat32Dbr _super_block;
+
+		public:
+			
+		};
+
 	} // namespace fat
 
 } // namespace fs

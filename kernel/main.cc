@@ -422,7 +422,7 @@ void test_sata()
 
 void test_buffer()
 {
-	fs::Buffer buf = fs::k_bufm.read_sync( 0, 0 );
+	fs::Buffer buf = fs::k_bufm.read_sync( 1, 0 );
 	char * p = ( char * ) buf.get_data_ptr();
 	log_info( "打印读取到buffer的内容" );
 	printf( "\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
@@ -434,6 +434,66 @@ void test_buffer()
 		if ( i % 0x10 == 0xF )
 			printf( "\n" );
 	}
+	fs::fat::Fat32Dbr* dbr = ( fs::fat::Fat32Dbr* ) p;
+	log_trace(
+		"扇区大小:              %d bytes\n"
+		"簇大小:                %d sectors\n"
+		"保留扇区数:            %d\n"
+		"FAT 数量:              %d\n"
+		"根目录条目数量:        %d\n"
+		"硬盘介质类型:          %x\n"
+		"一个磁道的扇区数:      %d\n"
+		"磁头的数量:            %d\n"
+		"隐藏扇区数量:          %d\n"
+		"逻辑分区中的扇区数量:  %d\n"
+		"FAT大小:               %d sectors\n",
+		dbr->bpb.bytes_per_sector,
+		dbr->bpb.sectors_per_cluster,
+		dbr->bpb.reserved_sector_count,
+		dbr->bpb.table_count,
+		dbr->bpb.root_entry_count,
+		dbr->bpb.media_type,
+		dbr->bpb.sectors_per_track,
+		dbr->bpb.head_side_count,
+		dbr->bpb.hidden_sector_count,
+		dbr->bpb.total_sectors_32,
+		dbr->ebpb.table_size
+	);
+
+	uint32 rsv_sec = dbr->bpb.reserved_sector_count;
+	uint32 tbl_siz = dbr->ebpb.table_size;
+	uint32 cls_siz = dbr->bpb.sectors_per_cluster;
+
+	buf = fs::k_bufm.read_sync( 1, dbr->bpb.reserved_sector_count );
+	p = ( char * ) buf.get_data_ptr();
+	log_info( "打印读取到buffer的内容" );
+	printf( "\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
+	for ( uint i = 0; i < 512; ++i )
+	{
+		if ( i % 0x10 == 0 )
+			printf( "%B%B\t", i >> 8, i );
+		printf( "%B ", p[ i ] );
+		if ( i % 0x10 == 0xF )
+			printf( "\n" );
+	}
+
+	buf = fs::k_bufm.read_sync( 1, rsv_sec + tbl_siz * 2 + cls_siz * 0 );
+	p = ( char * ) buf.get_data_ptr();
+	log_info( "打印读取到buffer的内容" );
+	printf( "\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
+	for ( uint i = 0; i < 512; ++i )
+	{
+		if ( i % 0x10 == 0 )
+			printf( "%B%B\t", i >> 8, i );
+		printf( "%B ", p[ i ] );
+		if ( i % 0x10 == 0xF )
+			printf( "\n" );
+	}
+
+
+
+	while ( 1 );
+
 
 	disk::Mbr * p_mbr = ( disk::Mbr * ) p;
 	uint32 part_lba[ 4 ] = { 0,0,0,0 };
@@ -683,6 +743,20 @@ void test_buffer()
 		);
 
 		fs::k_bufm.release_buffer_sync( buf );
+
+		buf = fs::k_bufm.read_sync( 0, part_lba[ 0 ] + spb * ( leaf0_blk0 + 1 ) );
+		p = ( char * ) buf.get_data_ptr();
+		log_info( "打印journal第1块的数据" );
+		printf( "\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
+		for ( uint i = 0; i < 1024; ++i )
+		{
+			if ( i % 0x10 == 0 )
+				printf( "%B%B\t", i >> 8, i );
+			printf( "%B ", p[ i ] );
+			if ( i % 0x10 == 0xF )
+				printf( "\n" );
+		}
+
 		while ( 1 );
 	}
 	else

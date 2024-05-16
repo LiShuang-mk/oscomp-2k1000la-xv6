@@ -333,10 +333,10 @@ namespace dev
 					// );
 					sata::k_sata_driver.debug_print_port_d2h_fis( i );
 					sata::k_sata_driver.clear_interrupt( i, ( ata::sata::HbaRegPortIs ) tmp );
+					_call_back_function[ i ][ 0 ]();
 				}
 			}
 
-			_call_back_function[ 0 ][ 0 ]();
 		}
 
 		// void AhciController::simple_intr_handle()
