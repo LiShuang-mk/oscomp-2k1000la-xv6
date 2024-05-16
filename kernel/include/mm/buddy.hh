@@ -10,6 +10,7 @@
 
 #include "smp/lock.hh"
 #include "mm/page.hh"
+#include "mm/memlayout.hh"
 
 namespace mm
 {
@@ -36,12 +37,18 @@ namespace mm
 		BuddyUsedPageRecord *prev;
 	};
 
-	constexpr uint64 buddy_max_heap_size_shift = 22;
-	constexpr uint64 buddy_max_heap_size = 1UL << buddy_max_heap_size_shift;			// 4 MiB 
+	constexpr uint64 buddy_max_heap_size = mm::vml::vm_kernel_heap_size;
+	constexpr uint64 buddy_max_heap_size_shift = [] () -> uint64
+	{
+		uint64 k = 0;
+		for ( uint64 i = 1UL; ( i & buddy_max_heap_size ) == 0; i <<= 1 )
+			k++;
+		return k;
+	}( );
 	constexpr uint64 buddy_max_heap_pages_cnt = buddy_max_heap_size / mm::pg_size;
 
 	static_assert( buddy_max_heap_size >= _1M, "buddy max heap size set too small" );
-	static_assert( ( buddy_max_heap_size&( buddy_max_heap_size_shift - 1 ) ) == 0, "buddy max heap size shall be 1MiB aligned" );
+	static_assert( ( buddy_max_heap_size&( buddy_max_heap_size - 1 ) ) == 0, "buddy max heap size shall be 1MiB aligned" );
 
 	class BuddyNodeManager
 	{
