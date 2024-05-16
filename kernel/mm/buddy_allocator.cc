@@ -148,12 +148,13 @@ namespace mm
 		while ( _get_node_state( bindex ) == bnode_available )
 		{
 			_remove_node_in_map( bindex );				// unmap buddy area
-			_node_manager.free_node( bnode );	// remove the bnode in list
 
 			// combine buddy nodes
 			node->_area_start = node->_area_start > bnode->_area_start ?
 				bnode->_area_start : node->_area_start;
 			node->_area_size <<= 1;
+			
+			_node_manager.free_node( bnode );	// remove the bnode in list
 
 			// get maximum area, no area to combine, break
 			if ( node->_area_size == _heap_size )
