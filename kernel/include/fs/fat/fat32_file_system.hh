@@ -15,14 +15,19 @@ namespace fs
 {
 	namespace fat
 	{
-		class Fat32Fs
+		class Fat32FileSystem
 		{
 		private:
+			uint _device;
+			uint64 _start_lba;
 			Fat32Dbr _super_block;
 			Fat32DirEntry _root;
 
 		public:
-			
+			void init( uint device, uint64 part_start_lba );
+			uint owned_device() { return _device; }
+			uint64 start_lba() { return _start_lba; }
+			Fat32Dbr * get_super_block() { return &_super_block; }
 		};
 
 	} // namespace fat

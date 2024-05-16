@@ -56,6 +56,9 @@ namespace fs
 		}__attribute__( ( __packed__ ) );
 		static_assert( sizeof( struct Fat32Fsinfo ) == 0x200 );
 
+		constexpr uint32 Fat32_fat_end_value = 0x0FFFFFF8U;
+		constexpr bool fat_is_end( uint32 fat ) { return fat >= Fat32_fat_end_value; };
+
 
 		enum Fat32DirectryAttribute : uint8
 		{
@@ -75,6 +78,7 @@ namespace fs
 			uint16 second : 5;
 		}__attribute__( ( __packed__ ) );
 		static_assert( sizeof( Fat32DirectryTimeFormat ) == 2 );
+		// hour: 15-11 bit | minute: 10-5 bit | second/2: 4-0 bit
 		union Fat32DirectryTime { uint16 stamp; Fat32DirectryTimeFormat time; };
 
 		struct Fat32DirectryDateFormat
@@ -84,6 +88,7 @@ namespace fs
 			uint16 day : 5;
 		}__attribute__( ( __packed__ ) );
 		static_assert( sizeof( Fat32DirectryDateFormat ) == 2 );
+		// year-1980: 15-8 bit | month: 7-4 bit | day: 4-0 bit
 		union Fat32DirectryDate { uint16 stamp; Fat32DirectryDateFormat time; };
 
 		struct Fat32DirectryShort
@@ -98,8 +103,8 @@ namespace fs
 			char _reserved;
 			uint8 create_time_10ms;						// value from 0 to 199
 
-			Fat32DirectryTime create_time;				// hour: 15-11 bit | minute: 10-5 bit | second/2: 4-0 bit
-			Fat32DirectryDate create_date;				// year-1980: 15-8 bit | month: 7-4 bit | day: 4-0 bit
+			Fat32DirectryTime create_time;
+			Fat32DirectryDate create_date;
 			Fat32DirectryDate last_access_date;
 
 			uint16 first_cluster_high;
@@ -112,6 +117,33 @@ namespace fs
 			uint32 file_size_bytes;
 		};
 		static_assert( sizeof( Fat32DirectryShort ) == 32 );
+
+		struct Fat32DirectryLong
+		{
+			using unicode_t = uint16;
+			struct
+			{
+				uint8 seq : 5;
+				uint8 _resv0 : 1;
+				uint8 is_last : 1;
+				uint8 _resv1 : 1;
+			}__attribute__( ( __packed__ ) )
+				entry_seq;
+
+			unicode_t file_name_1[ 5 ];
+
+			Fat32DirectryAttribute attribute;			// 0x0F
+
+			char _reserve;
+			uint8 checksum;
+
+			unicode_t file_name_2[ 6 ];
+
+			uint16 file_start_cluster;
+
+			unicode_t file_name_3[ 2 ];
+		}__attribute__( ( __packed__ ) ); 
+		static_assert( sizeof( Fat32DirectryLong ) == 32 );
 
 	} // namespace fat
 

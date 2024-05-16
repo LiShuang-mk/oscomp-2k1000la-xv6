@@ -7,7 +7,7 @@
 #include "fs/dev/ahci_controller.hh"
 #include "fs/dev/sata_driver.hh"
 #include "fs/fat/fat32.hh"
-#include "fs/fat/fat32fs.hh"
+#include "fs/fat/fat32_file_system.hh"
 #include "fs/ext4/super_block.hh"
 #include "fs/ext4/block_group_descriptor.hh"
 #include "fs/ext4/index_node.hh"
@@ -122,6 +122,10 @@ int main()
 			"bufm 初始化后跟踪空闲物理页 : %d",
 			mm::k_pmm.trace_free_pages_count()
 		);
+
+		fs::fat::Fat32FileSystem fat32fs;
+		fat32fs.init( 1, 0 );
+		while ( 1 );
 
 		// test_noreturn();
 		//pm::k_pm.vectortest();
