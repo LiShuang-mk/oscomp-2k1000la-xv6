@@ -12,8 +12,13 @@
 #include "mm/page_table.hh"
 #include "pm/context.hh"
 #include "pm/sharemem.hh"
+
 struct TrapFrame;
 
+namespace fs
+{
+	class Dentry;
+}
 namespace pm
 {
 	constexpr uint num_process = 32;
@@ -38,6 +43,7 @@ namespace pm
 		smp::Lock _lock;
 		int _gid = num_process;					// global ID in pool 
 
+		fs::Dentry *_cwd;				// current working directory
 		// p->lock must be held when using these:
 		enum ProcState _state;        // Process state
 		void *_chan;                  // If non-zero, sleeping on chan
@@ -80,7 +86,7 @@ namespace pm
 		int get_priority();
 		Context &get_context() { return _context; }
 		smp::Lock &get_lock() { return _lock; }
-
+		fs::Dentry *get_cwd() { return _cwd; }
 	public:
 		uint get_pid() { return _pid; }
 	};

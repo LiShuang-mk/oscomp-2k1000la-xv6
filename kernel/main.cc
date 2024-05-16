@@ -45,6 +45,7 @@ int main()
 
 		uint64 tmp = loongarch::Cpu::read_csr( loongarch::csr::crmd );
 		log_trace( "crmd: %p", tmp );
+		loongarch::Cpu::euen_float();
 
 		// physical memory init 
 		mm::k_pmm.init( "physical memory manager",
@@ -61,7 +62,7 @@ int main()
 		log_info( "vm init" );
 
 		// timer init 
-		tm::k_tm.init( "timer manager" );
+		tmm::k_tm.init( "timer manager" );
 		log_info( "tm init" );
 
 		// interrupt init 
@@ -122,7 +123,10 @@ int main()
 		);
 
 		// test_noreturn();
-
+		//pm::k_pm.vectortest();
+		//pm::k_pm.stringtest();
+		//pm::k_pm.maptest();
+		//pm::k_pm.hashtest();   //  < -------------  threr are some problem in heap dealloc
 		test_buffer();
 
 		// fs::Buffer buf = fs::k_bufm.get_buffer( 0, 0 );

@@ -1,7 +1,11 @@
+#pragma once
 #include "types.hh"
 #include "smp/lock.hh"
+#include <EASTL/string.h>
+#include <EASTL/vector.h>
+#include <EASTL/unordered_map.h>
 
-#define NDIRECT 12
+#define NDIRECT 12  //direct block number
 
 namespace fs
 {
@@ -10,7 +14,7 @@ namespace fs
         class Inode;
         class File;
         class DStat;
-
+        class ProcessorManager;
         class SuperBlock{  
             public:
                 SuperBlock() = default;
@@ -56,9 +60,9 @@ namespace fs
                 
                 //virtual void link(const char *name,InodeRef nod) = 0;
                 virtual int nodeHardUnlink() = 0;
-                virtual Inode* lookup(const char *dirname, uint32 off_ = 0) = 0;;
-                virtual Inode* mknode(const char *name, uint32 mode) = 0;
-                virtual int entSymLink(const char *target) = 0;
+                virtual Inode* lookup(const eastl::string dirname, off_t off_ = 0) = 0;;
+                virtual Inode* mknode(const eastl::string name, mode_t mode) = 0;
+                virtual int entSymLink(const eastl::string arget) = 0;
 
                 virtual void nodeRemove() = 0;
                 virtual int chMod(uint32 mode) = 0;
@@ -80,31 +84,31 @@ namespace fs
                 // Ctime, Mtime, Atime temporarily not implemented
                 virtual bool Empty() const = 0; // check if inode is empty
                 virtual SuperBlock *getSb() const = 0; // get super block
-                virtual int create(Inode *dir, Dentry *dentry, char *name, uint32 mode) = 0;
-                virtual int mkdir(Inode *dir, Dentry *dentry, char *name, uint32 mode) = 0;
+                virtual int create(Inode *dir, Dentry *dentry, eastl::string name, uint32 mode) = 0;
+                virtual int mkdir(Inode *dir, Dentry *dentry, eastl::string name, uint32 mode) = 0;
         };  
         
         Dentry * DentryRef;
         class Dentry{               // Directory Entry， 目录项，存在于缓存，不用交由下层FS实现
                 Dentry *parent;
                 Inode *node;
-                char *name;
+                eastl::string name;
                 bool isMountPoint;
-                int point;
-                Dentry *children[]; //the num of size is just for test
+                eastl::unordered_map<eastl::string, Dentry *> children;
+                //Dentry *children[]; //the num of size is just for test
                 //unordered_map<string, Dentry *> children;
             public:
                 Dentry() = delete;
                 Dentry(const Dentry& dentry) = delete;
                 Dentry & operator=(const Dentry& dentry) = delete;
-                Dentry(Dentry *parent_, Inode *node_, char *name_) : parent(parent_), node(node_), name(name_), isMountPoint(false), point(0) {};
-                Dentry * EntrySearch(Dentry * self, char *name);
-                Dentry * EntryCreate(Dentry * self, char *name, uint32 mode);
+                Dentry(Dentry *parent_, Inode *node_, eastl::string name_) : parent(parent_), node(node_), name(name_), isMountPoint(false){};
+                Dentry * EntrySearch(Dentry * self, eastl::string name);
+                Dentry * EntryCreate(Dentry * self, eastl::string name, uint32 mode);
                 inline void setMountPoint() {isMountPoint = true;}
                 inline void cleanMountPoint() {isMountPoint = false;}
                 inline bool isMount() const {return isMountPoint;}
                 //inline int readDir(DStat *buf, uint32 len, uint64 off_) {return node->readDir(buf, len, off_);}
-                inline char *getName() const {return name;}
+                inline eastl::string getName() const {return name;}
                 inline Dentry * getParent() const {return parent;}
                 inline Inode * getNode() const {return node;}
                 inline bool isRoot() const {return parent == nullptr;}
@@ -216,16 +220,43 @@ namespace fs
 
        };
 
-    // class string;
-    //    class Path {
-    //         private:
-    //             Dentry *base;
-    //             string pathname;
-    //             //vector<string> dirname;
+        class DStat{
+            public:
+                uint64 d_ino;   //index of inode
+                int64 d_off;    //offset
+                uint16 d_reclen;    //current direntry length
+                uint8 d_type;   //file type
+                char d_name[256];  //file name
 
-    //         public:
-    //             Path() = default;
-    //             Path(const Path& path) = default;
-    //             Path(const string& path_, File *base_) : base(base == nullptr ? nullptr : base_->data.get_Entry()) ,pathname(path_),{}
-    //    };
+                DStat() = default;
+                DStat(const DStat& ds) : d_ino(ds.d_ino), d_off(ds.d_off), d_reclen(ds.d_reclen), d_type(ds.d_type) { strcpy(d_name, ds.d_name); };
+                DStat(uint64 ino, int64 off, uint16 reclen, uint8 type, char *name) : d_ino(ino), d_off(off), d_reclen(reclen), d_type(type){ strcpy(d_name, name); };
+                ~DStat() = default;
+        };
+        
+        class Path {
+            private:
+                Dentry *base;
+                eastl::string pathname;
+                eastl::vector<eastl::string> dirname;
+
+             public:
+                Path() = default;
+                Path(const Path& path) = default;
+                Path(const eastl::string& path_, File *base_) : base(base_ == nullptr ? nullptr : base_->data.get_Entry()) ,pathname(path_), dirname(){ pathbuild(); }
+                Path(const eastl::string& path_, Dentry *base_) : base(base_ ), pathname(path_), dirname(){ pathbuild(); }
+                Path(const eastl::string& path_) : base(nullptr), pathname(path_), dirname(){ pathbuild(); }
+                Path(const char *str_, File *base_) : base(base_ == nullptr ? nullptr : base_->data.get_Entry()), pathname(str_), dirname(){ pathbuild(); }
+                Path(const char *str_, Dentry *base_) : base(base_), pathname(str_), dirname(){ pathbuild(); }
+                Path(const char *str_) : base(nullptr), pathname(str_), dirname(){ pathbuild(); }
+                Path(File *base_) :base(base_->data.get_Entry()), pathname(), dirname(){ pathbuild(); }
+                Path(Dentry *base_) :base(base_), pathname(), dirname(){ pathbuild(); }
+                ~Path() = default;
+                Path& operator=(const Path& path) = default;
+                void pathbuild();
+                eastl::string AbsolutePath() const;
+                Dentry *pathHitTable();
+                Dentry *pathSearch(bool parent = false);
+                Dentry *pathCreate(uint32 mode);
+        };
 }

@@ -10,7 +10,7 @@
 #include "hal/cpu.hh"
 #include "hal/csr.hh"
 
-namespace tm
+namespace tmm
 {
 	TimerManager k_tm;
 

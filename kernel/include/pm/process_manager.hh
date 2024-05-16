@@ -31,6 +31,10 @@ namespace pm
 		void set_vma(Pcb *p);
 		int set_trapframe(Pcb *p);
 		void freeproc(Pcb *p);
+		void vectortest();
+		void stringtest();
+		void maptest();
+		void hashtest();
 	};
 
 	extern ProcessManager k_pm;

@@ -12,6 +12,11 @@
 #include "mm/memlayout.hh"
 #include "mm/physical_memory_manager.hh"
 #include "mm/virtual_memory_manager.hh"
+#include <EASTL/vector.h>
+#include <EASTL/string.h>
+#include <EASTL/map.h>
+#include <EASTL/hash_map.h>
+#include "klib/common.hh"
 namespace pm
 {
 	ProcessManager k_pm;
@@ -157,5 +162,197 @@ namespace pm
 		p->_killed = 0;
 		p->_xstate = 0;
 		p->_state = ProcState::unused;
+	}
+	
+	void ProcessManager::vectortest()
+	{
+		eastl::vector<int> v;
+
+		// 测试 push_back
+		v.push_back(1);
+		v.push_back(2);
+		v.push_back(3);
+		v.push_back(4);
+
+		// 测试 size
+		log_trace("vector size: %d\n", v.size());
+
+		// 测试 capacity
+		log_trace("vector capacity: %d\n", v.capacity());
+
+		// 测试 empty
+		log_trace("vector is empty: %d\n", v.empty());
+
+		// 测试 at
+		log_trace("vector at 2: %d\n", v.at(2));
+
+		// 测试 front
+		log_trace("vector front: %d\n", v.front());
+
+		// 测试 back
+		log_trace("vector back: %d\n", v.back());
+
+		// 测试 insert
+		v.insert(v.begin() + 2, 5);
+		log_trace("vector after insert: ");
+		for(auto i = v.begin(); i != v.end(); i++)
+		{
+			log_trace("%d ", *i);
+		}
+		log_trace("\n");
+
+		// 测试 erase
+		v.erase(v.begin() + 2);
+		log_trace("vector after erase: ");
+		for(auto i = v.begin(); i != v.end(); i++)
+		{
+			log_trace("%d ", *i);
+		}
+		log_trace("\n");
+
+		// 测试 swap
+		eastl::vector<int> v2;
+		v2.push_back(6);
+		v2.push_back(7);
+		v.swap(v2);
+		log_trace("vector after swap: ");
+		for(auto i = v.begin(); i != v.end(); i++)
+		{
+			log_trace("%d ", *i);
+		}
+		log_trace("\n");
+
+		// 测试 resize
+		v.resize(5, 8);
+		log_trace("vector after resize: ");
+		for(auto i = v.begin(); i != v.end(); i++)
+		{
+			log_trace("%d ", *i);
+		}
+		log_trace("\n");
+
+		// 测试 reserve
+		v.reserve(10);
+		log_trace("vector capacity after reserve: %d\n", v.capacity());
+
+		// 测试 clear
+		v.clear();
+		log_trace("vector size after clear: %d\n", v.size());
+	}
+
+	void ProcessManager::stringtest()
+	{
+		eastl::string s;
+
+		// 测试赋值
+		s = "hello world";
+		log_trace("string: %s\n", s.c_str());
+
+		// 测试 size 和 length
+		log_trace("string size: %d\n", s.size());
+		log_trace("string length: %d\n", s.length());
+
+		// 测试 empty
+		log_trace("string is empty: %d\n", s.empty());
+
+		// 测试 append
+		s.append(" EASTL");
+		log_trace("string after append: %s\n", s.c_str());
+
+		// 测试 insert
+		s.insert(5, ", dear");
+		log_trace("string after insert: %s\n", s.c_str());
+
+		// 测试 erase
+		s.erase(5, 6);
+		log_trace("string after erase: %s\n", s.c_str());
+
+		// 测试 replace
+		s.replace(6, 5, "EASTL");
+		log_trace("string after replace: %s\n", s.c_str());
+
+		// 测试 substr
+		eastl::string sub = s.substr(6, 5);
+		log_trace("substring: %s\n", sub.c_str());
+
+		// 测试 find
+		size_t pos = s.find("EASTL");
+		log_trace("find EASTL at: %d\n", pos);
+
+		// 测试 rfind
+		pos = s.rfind('l');
+		log_trace("rfind 'l' at: %d\n", pos);
+
+		// 测试 compare
+		int cmp = s.compare("hello EASTL");
+		log_trace("compare with 'hello EASTL': %d\n", cmp);
+	}
+
+	void ProcessManager::maptest()
+	{
+		eastl::map<int, int> m;
+
+		// 测试 insert
+		m.insert(eastl::make_pair(1, 2));
+		m.insert(eastl::make_pair(3, 4));
+		m.insert(eastl::make_pair(5, 6));
+
+		// 测试 size
+		log_trace("map size: %d\n", m.size());
+
+		// 测试 empty
+		log_trace("map is empty: %d\n", m.empty());
+
+		// 测试 at
+		log_trace("map at 3: %d\n", m.at(3));
+
+		// 测试 operator[]
+		log_trace("map[5]: %d\n", m[5]);
+
+		// 测试 find
+		auto it = m.find(3);
+		log_trace("find 3: %d\n", it->second);
+
+		// 测试 erase
+		m.erase(3);
+		log_trace("map size after erase: %d\n", m.size());
+
+		// 测试 clear
+		m.clear();
+		log_trace("map size after clear: %d\n", m.size());
+	}
+
+	void ProcessManager::hashtest()
+	{
+		eastl::hash_map<int, int> m;
+
+		// 测试 insert
+		m.insert(eastl::make_pair(1, 2));
+		m.insert(eastl::make_pair(3, 4));
+		m.insert(eastl::make_pair(5, 6));
+
+		// 测试 size
+		log_trace("hash_map size: %d\n", m.size());
+
+		// 测试 empty
+		log_trace("hash_map is empty: %d\n", m.empty());
+
+		// 测试 at
+		log_trace("hash_map at 3: %d\n", m.at(3));
+
+		// 测试 operator[]
+		log_trace("hash_map[5]: %d\n", m[5]);
+
+		// 测试 find
+		auto it = m.find(3);
+		log_trace("find 3: %d\n", it->second);
+
+		// 测试 erase
+		m.erase(3);
+		log_trace("hash_map size after erase: %d\n", m.size());
+
+		// 测试 clear
+		m.clear();
+		log_trace("hash_map size after clear: %d\n", m.size());
 	}
 }

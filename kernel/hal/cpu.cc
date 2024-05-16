@@ -50,6 +50,12 @@ namespace loongarch
 			_intr_on();
 	}
 
+	void Cpu::euen_float()
+	{
+		uint64 tmp = read_csr( csr::CsrAddr::euen );
+		write_csr( csr::CsrAddr::euen, tmp | 1 );
+	}
+
 // ---- private:
 
 	uint64 Cpu::read_csr( csr::CsrAddr r )

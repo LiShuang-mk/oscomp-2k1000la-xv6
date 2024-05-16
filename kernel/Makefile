@@ -1,7 +1,11 @@
-
+#CXXFLAGS += -include $(BUILDPATH)/thirdparty/EASTL/libeastl.a
 # card src function
 # -> $1: directory
 # -> $2: file type 
+CXXFLAGS += -I ../thirdparty/EASTL/include
+CXXFLAGS += -I ../kernel/include/klib
+CXXFLAGS += -Wno-deprecated-declarations
+CXXFLAGS += -I ../thirdparty/EASTL/test/packages/EABase/include/Common
 card_src = $(foreach d,$(wildcard $1*),$(call card_src,$d/,$2)$(filter $2,$d))
 
 # card all sub-directory, but ignore 'include'
@@ -24,7 +28,8 @@ srcs = $(c_src) $(cc_src) $(s_src)
 c_obj = $(patsubst %.c,$(BUILDPATH)/kernel/%.o,$(c_src))
 cc_obj = $(patsubst %.cc,$(BUILDPATH)/kernel/%.o,$(cc_src))
 s_obj = $(patsubst %.S,$(BUILDPATH)/kernel/%.o,$(s_src))
-
+#eastl_obj = $(wildcard $(BUILDPATH)/thirdparty/source/*.o)
+#objs = $(c_obj) $(cc_obj) $(s_obj) $(eastl_obj)
 objs = $(c_obj) $(cc_obj) $(s_obj)
 
 # the source files' dependencies, created by gcc
@@ -49,9 +54,11 @@ initdir:
 #       Whenever a.c is newer than a.o, the command in the line behind the rule will be executed
 #       In the command, '$@' means a.0 while '$<' means a.c
 
-$(BUILDPATH)/kernel.elf: $(objs) kernel.ld 
-	$(LD) $(LDFLAGS) -T kernel.ld -o $@ $(objs)
+# $(BUILDPATH)/kernel.elf: $(objs) kernel.ld 
+# 	$(LD) $(LDFLAGS) -T kernel.ld -o $@ $(objs)
 
+$(BUILDPATH)/kernel.elf: $(objs) kernel.ld 
+	$(LD) $(LDFLAGS) -T kernel.ld -o $@ $(objs) $(BUILDPATH)/thirdparty/EASTL/libeastl.a 
 # mode match example
 # $(objs) : %.o : %.c
 #       $(objs) is a list of all of the object file name

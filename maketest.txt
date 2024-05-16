@@ -1,0 +1,13 @@
+make initdir -C kernel;make initdir -C thirdparty/EASTL
+make[1]: 进入目录“/home/sun/eastl/OSKernel2024-2k1000la-xv6/kernel”
+mkdir -p /home/sun/eastl/OSKernel2024-2k1000la-xv6/build
+cd /home/sun/eastl/OSKernel2024-2k1000la-xv6/build; for dir in    fs/dev/ fs/    hal/sata/ hal/   im/   klib/   mm/   pm/   scheduler/   smp/   tm/ ; do mkdir -p "/home/sun/eastl/OSKernel2024-2k1000la-xv6/build/kernel/$dir"; done
+make[1]: 离开目录“/home/sun/eastl/OSKernel2024-2k1000la-xv6/kernel”
+make[1]: 进入目录“/home/sun/eastl/OSKernel2024-2k1000la-xv6/thirdparty/EASTL”
+mkdir -p /home/sun/eastl/OSKernel2024-2k1000la-xv6/build/thirdparty/EASTL
+mkdir -p /home/sun/eastl/OSKernel2024-2k1000la-xv6/build/thirdparty/EASTL/source
+make[1]: 离开目录“/home/sun/eastl/OSKernel2024-2k1000la-xv6/thirdparty/EASTL”
+当前主机操作系统：Linux
+make -C kernel
+make[1]: 进入目录“/home/sun/eastl/OSKernel2024-2k1000la-xv6/kernel”
+loongarch64-linux-gnu-g++ -c -Wall -Werror -O0 -fno-omit-frame-pointer -ggdb -MD  -DNUMCPU=1 -DARCH=loongarch  -DPLATFORM=ls2k -DLINUX_BUILD=1 -march=loongarch64 -mabi=lp64d -ffreestanding -fno-common -nostdlib -I ./include -fno-stack-protector  -fno-pie -no-pie  -std=c++23 -include /home/sun/eastl/OSKernel2024-2k1000la-xv6/build/thirdparty/EASTL/libeastl.a -MF /home/sun/eastl/OSKernel2024-2k1000la-xv6/build/kernel/pm/process_manager.d -o /home/sun/eastl/OSKernel2024-2k1000la-xv6/build/kernel/pm/process_manager.o pm/process_manager.cc

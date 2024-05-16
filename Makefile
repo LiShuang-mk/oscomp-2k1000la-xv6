@@ -18,6 +18,7 @@ export AS  = ${TOOLPREFIX}as
 export LD  = ${TOOLPREFIX}g++
 export OBJCOPY = ${TOOLPREFIX}objcopy
 export OBJDUMP = ${TOOLPREFIX}objdump
+export AR  = ${TOOLPREFIX}ar
 
 export ASFLAGS = -march=loongarch64 -mabi=lp64d
 export ASFLAGS += -I ./include
@@ -37,29 +38,35 @@ export CFLAGS += -fno-pie -no-pie
 # export CFLAGS += -static-libstdc++ -lstdc++
 export CXXFLAGS = $(CFLAGS)
 export CXXFLAGS += -std=c++23
-export CXXFLAGS += -include ./include/klib/virtual_function.hh
-export CXXFLAGS += -include ./include/klib/global_operator.hh
 export LDFLAGS = -z max-page-size=4096  
 
 export WORKPATH = $(shell pwd)
 export BUILDPATH = $(WORKPATH)/build
 
 # .PHONY 是一个伪规则，其后面依赖的规则目标会成为一个伪目标，使得规则执行时不会实际生成这个目标文件
-.PHONY: all clean test initdir
+.PHONY: all clean test initdir EASTL EASTL_test
 
 # rules define 
 
 all: initdir
-	@echo "当前主机操作系统：$(HOST_OS)"
+	@echo "当前主机操作系统：$(HOST_OS)"	
+	$(MAKE) EASTL
 	$(MAKE) -C kernel
 	@echo "_________________________"
 	@echo "-------- 生成成功 --------"
 
-initdir:
-	cd kernel; make initdir
+.initdir:
+	$(MAKE) initdir -C kernel
 
 test:
 	$(MAKE) test -C kernel
 
 clean:
-	$(MAKE) clean -C kernel
+	$(MAKE) clean -C kernel; $(MAKE) clean -C thirdparty/EASTL
+
+EASTL:
+	$(MAKE) initdir -C thirdparty/EASTL
+	$(MAKE) -C thirdparty/EASTL
+
+EASTL_test:
+	$(MAKE) test -C thirdparty/EASTL
