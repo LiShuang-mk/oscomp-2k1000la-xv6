@@ -44,7 +44,7 @@ namespace fs
 		}__attribute__( ( __packed__ ) );
 		static_assert( sizeof( struct Fat32Dbr ) == 0x200 );
 
-		struct Fsinfo
+		struct Fat32Fsinfo
 		{
 			dword lead_signature;				// 开头签名必须是 0x41615252
 			byte  reserved0[ 480 ];				//
@@ -54,16 +54,64 @@ namespace fs
 			byte  reserved1[ 12 ];				//
 			dword trail_signature;				// 尾部签名必须是0xAA550000
 		}__attribute__( ( __packed__ ) );
-		static_assert( sizeof( struct Fsinfo ) == 0x200 );
+		static_assert( sizeof( struct Fat32Fsinfo ) == 0x200 );
 
-		class Fat32Fs
+
+		enum Fat32DirectryAttribute : uint8
 		{
-		private:
-			Fat32Dbr _super_block;
-
-		public:
-			
+			fat32_readonly = 0x01,
+			fat32_hidden = 0x02,
+			fat32_system = 0x04,
+			fat32_volumeid = 0x08,
+			fat32_directry = 0x10,
+			fat32_archive = 0x20,
+			fat32_longfilename = fat32_readonly | fat32_hidden | fat32_system | fat32_volumeid,
 		};
+
+		struct Fat32DirectryTimeFormat
+		{
+			uint16 hour : 5;
+			uint16 minute : 6;
+			uint16 second : 5;
+		}__attribute__( ( __packed__ ) );
+		static_assert( sizeof( Fat32DirectryTimeFormat ) == 2 );
+		union Fat32DirectryTime { uint16 stamp; Fat32DirectryTimeFormat time; };
+
+		struct Fat32DirectryDateFormat
+		{
+			uint16 year : 7;
+			uint16 month : 4;
+			uint16 day : 5;
+		}__attribute__( ( __packed__ ) );
+		static_assert( sizeof( Fat32DirectryDateFormat ) == 2 );
+		union Fat32DirectryDate { uint16 stamp; Fat32DirectryDateFormat time; };
+
+		struct Fat32DirectryShort
+		{
+			struct
+			{
+				char file_name[ 8 ];
+				char extension[ 3 ];
+			}__attribute__( ( __packed__ ) ) file_ext;
+
+			Fat32DirectryAttribute attribute;
+			char _reserved;
+			uint8 create_time_10ms;						// value from 0 to 199
+
+			Fat32DirectryTime create_time;				// hour: 15-11 bit | minute: 10-5 bit | second/2: 4-0 bit
+			Fat32DirectryDate create_date;				// year-1980: 15-8 bit | month: 7-4 bit | day: 4-0 bit
+			Fat32DirectryDate last_access_date;
+
+			uint16 first_cluster_high;
+
+			Fat32DirectryTime last_modify_time;
+			Fat32DirectryDate last_modify_date;
+
+			uint16 first_cluster_low;
+
+			uint32 file_size_bytes;
+		};
+		static_assert( sizeof( Fat32DirectryShort ) == 32 );
 
 	} // namespace fat
 

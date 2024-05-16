@@ -7,6 +7,7 @@
 #include "fs/dev/ahci_controller.hh"
 #include "fs/dev/sata_driver.hh"
 #include "fs/fat/fat32.hh"
+#include "fs/fat/fat32fs.hh"
 #include "fs/ext4/super_block.hh"
 #include "fs/ext4/block_group_descriptor.hh"
 #include "fs/ext4/index_node.hh"
