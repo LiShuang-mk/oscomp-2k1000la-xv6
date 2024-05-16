@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "types.hh"
+#include "fs/jbd2/journal_header.hh"
 
 namespace fs
 {
@@ -18,12 +18,7 @@ namespace fs
 		{
 		/* 0x0000 */
 
-			struct
-			{
-				uint32 magic;
-				uint32 blocktype;
-				uint32 sequence;
-			} header;
+			JournalHeader header;
 
 		/* 0x000C */
 			/* Static information describing the journal */
