@@ -49,7 +49,7 @@ namespace fs
 			_start_lba = part_start_lba;
 
 			_root._belong_fs = this;
-			_root.init( 2 );
+			_root.init( 2, Fat32DirType::fat32de_folder );
 		}
 	} // namespace fat
 

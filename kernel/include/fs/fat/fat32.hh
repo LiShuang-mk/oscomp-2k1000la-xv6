@@ -59,6 +59,8 @@ namespace fs
 		constexpr uint32 Fat32_fat_end_value = 0x0FFFFFF8U;
 		constexpr bool fat_is_end( uint32 fat ) { return fat >= Fat32_fat_end_value; };
 
+		constexpr uint32 Fat32_first_data_cluster = 2;
+
 
 		enum Fat32DirectryAttribute : uint8
 		{
@@ -115,8 +117,9 @@ namespace fs
 			uint16 first_cluster_low;
 
 			uint32 file_size_bytes;
-		};
+		}__attribute__( ( __packed__ ) );
 		static_assert( sizeof( Fat32DirectryShort ) == 32 );
+		using Fat32DirInfo = Fat32DirectryShort;
 
 		struct Fat32DirectryLong
 		{
@@ -142,8 +145,21 @@ namespace fs
 			uint16 file_start_cluster;
 
 			unicode_t file_name_3[ 2 ];
-		}__attribute__( ( __packed__ ) ); 
+		}__attribute__( ( __packed__ ) );
 		static_assert( sizeof( Fat32DirectryLong ) == 32 );
+
+		inline uchar Fat32DirShortChkSum( uchar * short_file_name )
+		{
+			int fname_len;
+			uchar Sum;
+			Sum = 0;
+			for ( fname_len = 11; fname_len != 0; fname_len-- )
+			{
+				// NOTE: The operation is an unsigned char rotate right
+				Sum = ( ( Sum & 1 ) ? 0x80U : 0 ) + ( Sum >> 1 ) + *short_file_name++;
+			}
+			return ( Sum );
+		}
 
 	} // namespace fat
 

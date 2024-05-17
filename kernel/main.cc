@@ -26,11 +26,15 @@
 
 #include <bit>
 
+#include <EASTL/string.h>
+
 // entry.S needs one stack per CPU.
 __attribute__( ( aligned( 16 ) ) ) char stack0[ loongarch::entry_stack_size * NUMCPU ];
 
 void test_sata();
 void test_buffer();
+
+char tmp_buf[ 4096 ];
 
 int main()
 {
@@ -125,6 +129,22 @@ int main()
 
 		fs::fat::Fat32FileSystem fat32fs;
 		fat32fs.init( 1, 0 );
+		fs::fat::Fat32DirEntry *fat32_root = fat32fs.get_root_dir();
+		fs::fat::Fat32DirInfo test_file_finfo;
+		eastl::string file_name = "run-all.sh";
+		fat32_root->find_sub_dir( file_name, test_file_finfo );
+		fs::fat::Fat32DirEntry test_file_entry;
+		test_file_entry.debug_set_belong_fs( &fat32fs );
+		uint32 cls_num =
+			( uint32 ) test_file_finfo.first_cluster_low +
+			(( uint32 ) test_file_finfo.first_cluster_high << 16);
+		test_file_entry.init( cls_num, fs::fat::Fat32DirType::fat32de_file );
+		
+		test_file_entry.read_content( ( void* ) tmp_buf, sizeof( tmp_buf ), 0 );
+		tmp_buf[ sizeof( tmp_buf ) - 1 ] = 0;
+		log_trace( "print content of file <%s>", file_name.c_str() );
+		printf( "%s", tmp_buf );
+
 		while ( 1 );
 
 		// test_noreturn();

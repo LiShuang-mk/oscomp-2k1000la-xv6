@@ -25,9 +25,19 @@ namespace fs
 
 		public:
 			void init( uint device, uint64 part_start_lba );
+
+		public:
 			uint owned_device() { return _device; }
 			uint64 start_lba() { return _start_lba; }
+
 			Fat32Dbr * get_super_block() { return &_super_block; }
+			uint64 get_reserved_sectors() { return _super_block.bpb.reserved_sector_count; }
+			uint64 get_fat_counts() { return _super_block.bpb.table_count; }
+			uint64 get_sectors_per_fat() { return _super_block.ebpb.table_size; }
+			uint64 get_sectors_per_cluster() { return _super_block.bpb.sectors_per_cluster; }
+			uint64 get_bytes_per_sector() { return _super_block.bpb.bytes_per_sector; }
+
+			Fat32DirEntry * get_root_dir() { return &_root; }
 		};
 
 	} // namespace fat

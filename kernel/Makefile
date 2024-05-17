@@ -1,11 +1,11 @@
-#CXXFLAGS += -include $(BUILDPATH)/thirdparty/EASTL/libeastl.a
-# card src function
-# -> $1: directory
-# -> $2: file type 
 CXXFLAGS += -I ../thirdparty/EASTL/include
 CXXFLAGS += -I ../kernel/include/klib
 CXXFLAGS += -Wno-deprecated-declarations
 CXXFLAGS += -I ../thirdparty/EASTL/test/packages/EABase/include/Common
+
+# card src function
+# -> $1: directory
+# -> $2: file type 
 card_src = $(foreach d,$(wildcard $1*),$(call card_src,$d/,$2)$(filter $2,$d))
 
 # card all sub-directory, but ignore 'include'
