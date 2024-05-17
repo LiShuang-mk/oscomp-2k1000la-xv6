@@ -101,7 +101,7 @@ namespace mm
 			if ( _node_manager.list_has_availble_area( index ) )
 				break;
 		}
-		
+
 
 		BuddyNode *node;
 		node = _node_manager.pop_available_node( index );
@@ -153,7 +153,7 @@ namespace mm
 			node->_area_start = node->_area_start > bnode->_area_start ?
 				bnode->_area_start : node->_area_start;
 			node->_area_size <<= 1;
-			
+
 			_node_manager.free_node( bnode );	// remove the bnode in list
 
 			// get maximum area, no area to combine, break
@@ -161,7 +161,7 @@ namespace mm
 				break;
 
 			// refind buddy area
-			bindex = _page_index_in_heap( ( void* ) ( node->_area_start ^ node->_area_size ) );
+			bindex = _page_index_in_heap( _get_buddy_start_addr( node->_area_start, node->_area_size ) );
 			bnode = _bnodes_map[ bindex ];
 			assert( bnode != nullptr,
 				"buddy-alloc : free an area with a not-exist buddy area\n"
@@ -170,10 +170,10 @@ namespace mm
 		}
 
 		// buddy area is busy, so insert current node into availble list
-		_node_manager.insert_available_list( node, _size_to_order( node->_area_size) );
+		_node_manager.insert_available_list( node, _size_to_order( node->_area_size ) );
 
 		// remap node
-		_record_node_in_map( node, bnode_available );
+		_record_node_in_map( node, false );
 	}
 
 // -------- private helper function --------
