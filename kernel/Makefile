@@ -41,7 +41,7 @@ depends = \
 
 .PHONY: all clean test initdir
 
-all: $(BUILDPATH)/kernel.elf
+all: $(BUILDPATH)/kernel.a
 
 initdir:
 	mkdir -p $(BUILDPATH)
@@ -57,8 +57,12 @@ initdir:
 # $(BUILDPATH)/kernel.elf: $(objs) kernel.ld 
 # 	$(LD) $(LDFLAGS) -T kernel.ld -o $@ $(objs)
 
-$(BUILDPATH)/kernel.elf: $(objs) kernel.ld 
-	$(LD) $(LDFLAGS) -T kernel.ld -o $@ $(objs) $(BUILDPATH)/thirdparty/EASTL/libeastl.a 
+$(BUILDPATH)/kernel.a: $(objs)
+	$(AR) rcs $@ $^
+
+# $(BUILDPATH)/kernel.elf: $(objs) kernel.ld 
+# 	$(LD) $(LDFLAGS) -T kernel.ld -o $@ $(objs) $(BUILDPATH)/thirdparty/EASTL/libeastl.a 
+
 # mode match example
 # $(objs) : %.o : %.c
 #       $(objs) is a list of all of the object file name
