@@ -48,6 +48,11 @@ namespace fs
 			return ( const void * ) _buffer_base;
 		}
 
+		const void * get_end_ptr()
+		{
+			return ( const void * ) ( ( uint64 ) _buffer_base + default_buffer_size );
+		}
+
 	// for debugging
 	public:
 		uint64 debug_get_buffer_base() { return ( uint64 ) _buffer_base; }

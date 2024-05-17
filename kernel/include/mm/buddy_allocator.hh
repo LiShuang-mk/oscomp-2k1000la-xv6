@@ -92,6 +92,12 @@ namespace mm
 		{
 			return lowest_bit( size ) - pg_size_shift;
 		}
+
+		inline void * _get_buddy_start_addr( uint64 ptr, uint64 area_size )
+		{
+			assert( ptr >= ( uint64 ) _heap_addr, "[Buddy] not valid heap ptr. ptr: %x", ptr );
+			return ( void * ) ( ( ( ptr - ( uint64 ) _heap_addr ) ^ area_size ) + ( uint64 ) _heap_addr );
+		}
 	};
 
 } // namespace mm
