@@ -224,6 +224,7 @@ namespace fs
 			_buffer_pool[ blk ]._device[ node->_buf_index ] = dev;
 			_buffer_pool[ blk ]._tag_number[ node->_buf_index ] = tag;
 			_buffer_pool[ blk ]._ref_cnt[ node->_buf_index ] = 1;
+			_buf_reset_valid( blk, node->_buf_index );
 
 		} // >> end if ( node == nullptr )
 
