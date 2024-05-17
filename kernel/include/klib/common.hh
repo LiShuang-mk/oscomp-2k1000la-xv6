@@ -48,6 +48,11 @@ int lowest_bit( uint64 x );
 /// @return 如果x为0，则返回-1
 int highest_bit( uint64 x );
 
+inline char unicode_to_ascii( uint16 uc )
+{
+	return ( char ) ( uc & 0xFFU );
+}
+
 namespace math
 {
 	/// @brief 求幂
