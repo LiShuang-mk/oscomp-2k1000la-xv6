@@ -43,7 +43,7 @@ namespace fs
 			Fat32FileSystem *_belong_fs;
 			Fat32DirType _dir_type;
 			eastl::vector<uint32> _clusters_number;
-			eastl::unordered_map<eastl::string, Fat32DirectryShort> _children;
+			eastl::unordered_map<eastl::string, Fat32DirectryShort> *_children = nullptr;
 
 		public:
 			/**************************************************

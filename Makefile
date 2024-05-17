@@ -48,7 +48,7 @@ export BUILDPATH = $(WORKPATH)/build
 
 # rules define 
 
-all: initdir probe_host compile_all
+all: initdir probe_host compile_all load_kernel
 	@echo "__________________________"
 	@echo "-------- 生成成功 --------"
 
@@ -67,8 +67,8 @@ compile_all:
 
 load_kernel: $(BUILDPATH)/kernel.elf
 
-$(BUILDPATH)/kernel.elf: $(BUILDPATH)/kernel.a kernel.ld 
-	$(LD) $(LDFLAGS) -T kernel.ld -o $@ $(BUILDPATH)/kernel.a $(BUILDPATH)/thirdparty/EASTL/libeastl.a 
+$(BUILDPATH)/kernel.elf: $(BUILDPATH)/kernel.a kernel/kernel.ld 
+	$(LD) $(LDFLAGS) -T kernel/kernel.ld -o $@ $(BUILDPATH)/kernel.a $(BUILDPATH)/thirdparty/EASTL/libeastl.a 
 
 test:
 	$(MAKE) test -C kernel

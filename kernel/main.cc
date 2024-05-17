@@ -37,6 +37,10 @@ void test_fat32();
 
 char tmp_buf[ 4096 ];
 
+extern uint64 _start_u_init;
+extern uint64 stext;
+extern uint64 etext;
+
 int main()
 {
 	if ( loongarch::Cpu::read_tp() == 0 )
@@ -130,9 +134,14 @@ int main()
 
 		fs::fat::k_testcase_fs.init( 1, 0 );
 		log_info( "testcase fs init" );
-		test_fat32();
+		// test_fat32();
+
+		// log_info( "text start %p\n", &stext );
+		// log_info( "text end   %p\n", &etext );
+		log_info( "user code start %p\n", &_start_u_init );
 
 		while ( 1 );
+
 
 		// test_noreturn();
 		//pm::k_pm.vectortest();

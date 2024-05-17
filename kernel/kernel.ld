@@ -6,6 +6,7 @@ SECTIONS
   . = 0x9000000080000000;
 
   .text : {
+	PROVIDE(stext = .);
     *(.text .text.*)
     . = ALIGN(0x1000);
     _keentry = .;
@@ -21,6 +22,9 @@ SECTIONS
     *(merrentry)
     . = ALIGN(0x1000);
     PROVIDE(etext = .);
+	PROVIDE(_start_u_init = .);
+	*(.user.init);
+	PROVIDE(_end_u_init = .);
   }
 
   .rodata : {

@@ -23,7 +23,9 @@ namespace fs
 			assert( dbr->bootable_signature = 0xAA55, "Fat32DirEntry: get invalid DBR while init." );
 
 			_clusters_number.clear();
-			_children.clear();
+			delete _children;
+			_children = new eastl::unordered_map<eastl::string, Fat32DirectryShort>;
+
 
 			// read File Allocation table
 
@@ -118,8 +120,8 @@ namespace fs
 
 		Fat32DirEntryStatus Fat32DirEntry::find_sub_dir( eastl::string &dir_name, Fat32DirInfo &dir_info )
 		{
-			auto it = _children.find( dir_name );
-			if ( it == _children.end() )
+			auto it = _children->find( dir_name );
+			if ( it == _children->end() )
 				return fat32de_find_subdir_fail;
 
 			dir_info = it->second;
@@ -155,6 +157,9 @@ namespace fs
 					memcpy( ( void * ) writ_head, disk_buf.get_data_ptr(), rest_size );
 					break;
 				}
+
+				if ( async_read ) k_bufm.release_buffer( disk_buf );
+				else k_bufm.release_buffer_sync( disk_buf );
 			}
 		}
 
@@ -238,7 +243,8 @@ namespace fs
 			}
 
 			// record children dir
-			_children[ dir_name ] = *dirshort;
+			// _children.insert_or_assign( dir_name, *dirshort );
+			( *_children )[ dir_name ] = *dirshort;
 
 			// move to next file-desc
 			dirshort++;
