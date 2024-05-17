@@ -7,6 +7,7 @@
 
 .section .text
 .global _entry
+.global __init_atexit_func_entry
 _entry:
         la.global   $t0, 0f
         jirl        $zero, $t0, 0
@@ -34,6 +35,10 @@ _entry:
         addi.d      $a1, $a1, 1
         mul.d       $a0, $a0, $a1
         add.d       $sp, $sp, $a0
+
+_test_init_atexit:
+		bl			__init_atexit_func_entry
+
 	# jump to start() in start.c
         bl          main
 spin:
