@@ -33,6 +33,7 @@ __attribute__( ( aligned( 16 ) ) ) char stack0[ loongarch::entry_stack_size * NU
 
 void test_sata();
 void test_buffer();
+void test_fat32();
 
 char tmp_buf[ 4096 ];
 
@@ -127,23 +128,9 @@ int main()
 			mm::k_pmm.trace_free_pages_count()
 		);
 
-		fs::fat::Fat32FileSystem fat32fs;
-		fat32fs.init( 1, 0 );
-		fs::fat::Fat32DirEntry *fat32_root = fat32fs.get_root_dir();
-		fs::fat::Fat32DirInfo test_file_finfo;
-		eastl::string file_name = "run-all.sh";
-		fat32_root->find_sub_dir( file_name, test_file_finfo );
-		fs::fat::Fat32DirEntry test_file_entry;
-		test_file_entry.debug_set_belong_fs( &fat32fs );
-		uint32 cls_num =
-			( uint32 ) test_file_finfo.first_cluster_low +
-			(( uint32 ) test_file_finfo.first_cluster_high << 16);
-		test_file_entry.init( cls_num, fs::fat::Fat32DirType::fat32de_file );
-		
-		test_file_entry.read_content( ( void* ) tmp_buf, sizeof( tmp_buf ), 0 );
-		tmp_buf[ sizeof( tmp_buf ) - 1 ] = 0;
-		log_trace( "print content of file <%s>", file_name.c_str() );
-		printf( "%s", tmp_buf );
+		fs::fat::k_testcase_fs.init( 1, 0 );
+		log_info( "testcase fs init" );
+		test_fat32();
 
 		while ( 1 );
 
@@ -837,4 +824,32 @@ void test_buffer()
 	log_info( "journal super block magic is 0x%x", jsb->header.magic );
 
 	fs::k_bufm.release_buffer_sync( buf );
+}
+
+void test_fat32()
+{
+	// concept 说明：
+	// entry 指的是一个目录在内存中的实体，它包含一系列相关的操作函数
+	// dir-info 只是一段目录的信息的拷贝
+
+	// 获取根目录entry
+	fs::fat::Fat32DirEntry *fat32_root = fs::fat::k_testcase_fs.get_root_dir();
+	// 本地使用一个dir-info来保存文件的信息
+	fs::fat::Fat32DirInfo test_file_finfo;
+
+	eastl::string file_name = "run-all.sh";
+
+	// 通过文件名（目录名）在一个entry中查找子entry，会保存在dir-info中
+	fat32_root->find_sub_dir( file_name, test_file_finfo );
+
+	// 可以将dir-info交由fs来代理获取对应的entry
+	fs::fat::Fat32DirEntry *test_file_entry = fs::fat::k_testcase_fs.get_dir_entry( test_file_finfo );
+
+	// entry可以直接读出其中的内容，如果是文件夹会发生警告，因为读出的内容是文件系统的内部数据结构
+	test_file_entry->read_content( ( void* ) tmp_buf, sizeof( tmp_buf ), 0 );
+
+	// 读出来后打印一下内容，这里因为读取的是一个txt，所以可以直接打印
+	tmp_buf[ sizeof( tmp_buf ) - 1 ] = 0;
+	log_trace( "print content of file <%s>", file_name.c_str() );
+	printf( "%s", tmp_buf );
 }

@@ -23,8 +23,12 @@ namespace fs
 			Fat32Dbr _super_block;
 			Fat32DirEntry _root;
 
+			Fat32DirEntry _cache_entry;
+
 		public:
 			void init( uint device, uint64 part_start_lba );
+
+			Fat32DirEntry * get_dir_entry( Fat32DirInfo &dir_info );
 
 		public:
 			uint owned_device() { return _device; }
@@ -39,6 +43,8 @@ namespace fs
 
 			Fat32DirEntry * get_root_dir() { return &_root; }
 		};
+
+		extern Fat32FileSystem k_testcase_fs;
 
 	} // namespace fat
 

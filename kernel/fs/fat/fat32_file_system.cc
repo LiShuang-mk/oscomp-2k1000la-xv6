@@ -14,6 +14,8 @@ namespace fs
 {
 	namespace fat
 	{
+		Fat32FileSystem k_testcase_fs;
+
 		void Fat32FileSystem::init( uint device, uint64 part_start_lba )
 		{
 			Buffer buf = k_bufm.read_sync( device, part_start_lba );
@@ -50,7 +52,29 @@ namespace fs
 
 			_root._belong_fs = this;
 			_root.init( 2, Fat32DirType::fat32de_folder );
+
+			_cache_entry._belong_fs = this;
 		}
+
+		Fat32DirEntry * Fat32FileSystem::get_dir_entry( Fat32DirInfo &dir_info )
+		{
+			uint32 cls_num =
+				( uint32 ) dir_info.first_cluster_low +
+				( ( uint32 ) dir_info.first_cluster_high << 16 );
+			Fat32DirEntryStatus rc =
+				_cache_entry.init(
+					cls_num,
+					( dir_info.attribute & Fat32DirectryAttribute::fat32_directry ) ?
+					Fat32DirType::fat32de_folder : Fat32DirType::fat32de_file
+				);
+			if ( rc == fat32de_init_fail )
+			{
+				log_error( "FAT32: init dir fail!." );
+				return nullptr;
+			}
+			return &_cache_entry;
+		}
+
 	} // namespace fat
 
 } // namespace fs

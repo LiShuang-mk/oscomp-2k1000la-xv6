@@ -22,10 +22,18 @@ namespace fs
 			Fat32Dbr * dbr = _belong_fs->get_super_block();
 			assert( dbr->bootable_signature = 0xAA55, "Fat32DirEntry: get invalid DBR while init." );
 
+			_clusters_number.clear();
+			_children.clear();
+
+			// read File Allocation table
+
 			Buffer buf = k_bufm.read_sync(
 				dev,
 				_cluster_to_lba( cluster_number )
 			);
+
+			// record all clusters covered
+
 			using fat32_t = uint32;
 			fat32_t * fat32_p = ( fat32_t * ) buf.get_data_ptr();
 			fat32_t * buf_end = ( fat32_t * ) buf.get_end_ptr();
@@ -50,6 +58,8 @@ namespace fs
 			// while ( 1 );
 
 			_dir_type = dir_type;
+
+			// if this is a folder, then read all sub-dir into memory
 
 			if ( dir_type == fat32de_folder )
 			{
@@ -85,21 +95,21 @@ namespace fs
 				// 		printf( "\n" );
 				// }
 
-				log_trace( "debug print files start cluster." );
-				char padding[] = "                    ";
-				uint width = sizeof( padding ) - 1;
-				printf( "\033[91mfile-name           start-cluster ---- file-size\033[0m\n" );
-				for ( auto it = _children.begin(); it != _children.end(); ++it )
-				{
-					uint rest = width - it->first.size();
-					padding[ rest ] = 0;
-					printf( "%s", it->first.c_str() );
-					printf( "%s", padding );
-					padding[ rest ] = ' ';
-					uint64 cls_num = ( uint64 ) it->second.first_cluster_low + ( it->second.first_cluster_high << 16 );
-					uint64 fil_siz = ( uint64 ) it->second.file_size_bytes;
-					printf( "%d  (0x%x) ---- %d Bytes\n", cls_num, cls_num, fil_siz );
-				}
+				// log_trace( "debug print files start cluster." );
+				// char padding[] = "                    ";
+				// uint width = sizeof( padding ) - 1;
+				// printf( "\033[91mfile-name           start-cluster ---- file-size\033[0m\n" );
+				// for ( auto it = _children.begin(); it != _children.end(); ++it )
+				// {
+				// 	uint rest = width - it->first.size();
+				// 	padding[ rest ] = 0;
+				// 	printf( "%s", it->first.c_str() );
+				// 	printf( "%s", padding );
+				// 	padding[ rest ] = ' ';
+				// 	uint64 cls_num = ( uint64 ) it->second.first_cluster_low + ( it->second.first_cluster_high << 16 );
+				// 	uint64 fil_siz = ( uint64 ) it->second.file_size_bytes;
+				// 	printf( "%d  (0x%x) ---- %d Bytes\n", cls_num, cls_num, fil_siz );
+				// }
 			}
 
 			return Fat32DirEntryStatus::fat32de_init_ok;
