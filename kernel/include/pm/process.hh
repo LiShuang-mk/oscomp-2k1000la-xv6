@@ -22,6 +22,9 @@ namespace pm
 	struct TrapFrame;
 
 	constexpr uint num_process = 32;
+	constexpr int default_proc_prio = 10;
+	constexpr int lowest_proc_prio = 19;
+	constexpr int highest_proc_prio = 0;
 
 	enum ProcState
 	{
@@ -79,7 +82,7 @@ namespace pm
 		uint _mqmask;
 
 		// vm
-		struct vma *vm[10];  // virtual memory area
+		struct vma *vm[10];  // virtual memory area <<<<<<<<<<<<<<<<<< what??? Could ONE process has several vm space?
 		
 	public:
 		Pcb() {};

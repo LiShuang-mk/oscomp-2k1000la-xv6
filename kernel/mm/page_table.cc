@@ -16,6 +16,12 @@ namespace mm
 {
 	PageTable k_pagetable;
 
+	PageTable::PageTable()
+		: _base_addr( 0 )
+	{
+		
+	}
+
 	Pte PageTable::walk( uint64 va, bool alloc )
 	{
 		if ( !_is_global )

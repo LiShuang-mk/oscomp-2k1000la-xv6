@@ -181,6 +181,20 @@ namespace mm
 		}
 	}
 
+	PageTable VirtualMemoryManager::vm_create()
+	{
+		PageTable pt;
+		pt.set_global();
+
+		uint64 addr = ( uint64 ) k_pmm.alloc_page();
+		if ( addr == 0 )
+			log_panic( "vmm: no mem to crate vm space." );
+		k_pmm.clear_page( ( void* ) addr );
+		pt.set_base( addr );
+
+		return pt;
+	}
+
 	void VirtualMemoryManager::vmfree( PageTable &pt, uint64 sz )
 	{
 		if ( sz > 0 )

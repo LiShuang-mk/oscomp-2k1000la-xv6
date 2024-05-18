@@ -37,6 +37,9 @@ namespace pm
 		void hashtest();
 
 		void exit( int );
+
+	private:
+		void _proc_create_vm( Pcb * p );
 	};
 
 	extern ProcessManager k_pm;
