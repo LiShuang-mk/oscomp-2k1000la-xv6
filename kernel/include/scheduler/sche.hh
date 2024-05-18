@@ -2,7 +2,7 @@
 #include "smp/lock.hh"
 #include "pm/process.hh"
 
-namespace sche
+namespace pm
 {
 
     class Scheduler{

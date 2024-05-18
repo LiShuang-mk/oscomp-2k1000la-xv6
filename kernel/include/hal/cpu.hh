@@ -10,7 +10,13 @@
 
 #include "hal/loongarch.hh"
 #include "hal/csr.hh"
-#include "pm/process.hh"
+
+namespace pm
+{
+	class Pcb;
+} // namespace pm
+
+
 namespace loongarch
 {
 	class Cpu

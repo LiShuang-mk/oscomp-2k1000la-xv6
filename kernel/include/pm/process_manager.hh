@@ -35,6 +35,8 @@ namespace pm
 		void stringtest();
 		void maptest();
 		void hashtest();
+
+		void exit( int );
 	};
 
 	extern ProcessManager k_pm;

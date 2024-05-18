@@ -3,7 +3,7 @@
 #include "pm/process_manager.hh"
 #include "hal/cpu.hh"
 
-namespace sche{
+namespace pm{
     
     Scheduler k_scheduler;
 
@@ -13,7 +13,7 @@ namespace sche{
 
     void Scheduler::switch_to_proc(pm::Pcb *p){
         loongarch::Cpu *c = loongarch::Cpu::get_cpu();
-        p->get_lock().acquire();
+        p->_lock.acquire();
         if(p->get_state() == pm::ProcState::runnable)
         {
             pm::k_pm.change_state(p, pm::ProcState::running);
@@ -23,7 +23,7 @@ namespace sche{
             swtch(c->get_context(), &loongarch_context_ref);
             loongarch::k_cpus->set_cur_proc(&pm::k_proc_pool[0]);
         }
-        p->get_lock().release();
+        p->_lock.release();
     }
 
     int Scheduler::get_highest_proirity(){

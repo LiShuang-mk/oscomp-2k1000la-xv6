@@ -163,7 +163,12 @@ namespace pm
 		p->_xstate = 0;
 		p->_state = ProcState::unused;
 	}
-	
+
+	void ProcessManager::exit( int )
+	{
+		
+	}
+
 	void ProcessManager::vectortest()
 	{
 		eastl::vector<int> v;

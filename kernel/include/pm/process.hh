@@ -13,14 +13,14 @@
 #include "pm/context.hh"
 #include "pm/sharemem.hh"
 
-struct TrapFrame;
-
 namespace fs
 {
 	class Dentry;
 }
 namespace pm
 {
+	struct TrapFrame;
+
 	constexpr uint num_process = 32;
 
 	enum ProcState
@@ -35,10 +35,13 @@ namespace pm
 
 	class ProcessManager;
 	class ShmManager;
+	class Scheduler;
+
 	class Pcb
 	{
 		friend ProcessManager;
 		friend ShmManager;
+		friend Scheduler;
 	private:
 		smp::Lock _lock;
 		int _gid = num_process;					// global ID in pool 
@@ -84,11 +87,22 @@ namespace pm
 		void map_kstack( mm::PageTable &pt );
 		ProcState get_state();
 		int get_priority();
-		Context &get_context() { return _context; }
-		smp::Lock &get_lock() { return _lock; }
-		fs::Dentry *get_cwd() { return _cwd; }
+
 	public:
+		Context &get_context() { return _context; }
+		// smp::Lock &get_lock() { return _lock; }		<<<<<<<<<<<<<<<<<< 注意任何时候都不要尝试把任何的类的私有lock返回出去，
+																		// lock不正当的使用会带来问题，
+																		// 外部需要申请这个类的资源时应当在类中实现一个返回资源的接口,
+																		// 而lock的使用应当在接口中由类内部来决定
+		fs::Dentry *get_cwd() { return _cwd; }
 		uint get_pid() { return _pid; }
+		TrapFrame* get_trapframe() { return _trapframe; }
+		uint64 get_kstack() { return _kstack; }
+		mm::PageTable get_pagetable() { return _pt; }
+
+		void set_trapframe( TrapFrame * tf ) { _trapframe = tf; }
+
+		bool is_killed() { return _killed != 0; }
 	};
 
 	extern Pcb k_proc_pool[ num_process ];

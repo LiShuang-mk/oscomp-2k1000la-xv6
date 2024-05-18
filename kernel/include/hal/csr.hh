@@ -102,6 +102,18 @@ namespace loongarch
 			we_m = 0x1 << we_s,
 		};
 
+#define _build_prmd_bit_( name, mask, shift ) \
+	prmd_##name##_s = shift, \
+	prmd_##name##_m = mask << prmd_##name##_s,
+		enum Prmd : uint32
+		{
+			_build_prmd_bit_( pplv, 0x3U, 0 )
+			_build_prmd_bit_( pie,  0x1U, 2 )
+			_build_prmd_bit_( pwe,  0x1U, 3 )
+			_build_prmd_bit_( resv, 0xFFFFFFFU, 4 )	// reserved
+		};
+#undef _build_prmd_bit_
+
 		/// @brief s: shift;
 		///		   m: mask;	
 		enum Tcfg : uint64
