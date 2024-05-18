@@ -26,6 +26,8 @@ namespace fs
 			Fat32DirEntry _cache_entry;
 
 		public:
+			// Fat32FileSystem() {};
+			Fat32FileSystem() = default;
 			void init( uint device, uint64 part_start_lba );
 
 			Fat32DirEntry * get_dir_entry( Fat32DirInfo &dir_info );

@@ -15,6 +15,14 @@ namespace fs
 {
 	namespace fat
 	{
+		Fat32DirEntry::Fat32DirEntry()
+			: _belong_fs( nullptr )
+			, _dir_type( fat32de_unkown )
+			, _children( eastl::unordered_map<eastl::string, Fat32DirectryShort>() )
+		{
+			log_info( "Fat32DirEntry constructor invoked." );
+		}
+
 		Fat32DirEntryStatus Fat32DirEntry::init( uint cluster_number, Fat32DirType dir_type )
 		{
 			assert( _belong_fs != nullptr, "Fat32DirEntry: no belonging fs deteted while init. cluster number: %d", cluster_number );
@@ -23,8 +31,9 @@ namespace fs
 			assert( dbr->bootable_signature = 0xAA55, "Fat32DirEntry: get invalid DBR while init." );
 
 			_clusters_number.clear();
-			delete _children;
-			_children = new eastl::unordered_map<eastl::string, Fat32DirectryShort>;
+			// delete _children;
+			// _children = new eastl::unordered_map<eastl::string, Fat32DirectryShort>;
+			_children.clear();
 
 
 			// read File Allocation table
@@ -120,8 +129,8 @@ namespace fs
 
 		Fat32DirEntryStatus Fat32DirEntry::find_sub_dir( eastl::string &dir_name, Fat32DirInfo &dir_info )
 		{
-			auto it = _children->find( dir_name );
-			if ( it == _children->end() )
+			auto it = _children.find( dir_name );
+			if ( it == _children.end() )
 				return fat32de_find_subdir_fail;
 
 			dir_info = it->second;
@@ -244,7 +253,7 @@ namespace fs
 
 			// record children dir
 			// _children.insert_or_assign( dir_name, *dirshort );
-			( *_children )[ dir_name ] = *dirshort;
+			_children[ dir_name ] = *dirshort;
 
 			// move to next file-desc
 			dirshort++;
