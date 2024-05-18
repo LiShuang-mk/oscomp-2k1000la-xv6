@@ -19,4 +19,9 @@ extern "C" {
 	{
 		im::k_em.machine_trap();
 	}
+
+	void usertrap( void )
+	{
+		im::k_em.user_trap();
+	}
 }

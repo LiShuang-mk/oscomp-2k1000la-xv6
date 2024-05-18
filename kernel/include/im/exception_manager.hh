@@ -24,6 +24,8 @@ namespace im
 		ExceptionManager() = default;
 		void init( const char *lock_name );
 		void kernel_trap();
+		void user_trap();
+		void user_trap_ret();
 		void machine_trap();
 
 	public:

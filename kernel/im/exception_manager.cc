@@ -13,6 +13,11 @@
 #include "hal/loongarch.hh"
 #include "fs/dev/ahci_controller.hh"
 #include "klib/common.hh"
+#include "pm/process.hh"
+#include "pm/trap_frame.hh"
+#include "mm/memlayout.hh"
+#include "im/trap_wrapper.hh"
+#include "pm/process_manager.hh"
 
 extern "C" {
 #include "hal/laestat.h"
@@ -20,6 +25,8 @@ extern "C" {
 	extern void kernelvec();
 	extern void handle_tlbr();
 	extern void handle_merr();
+	extern void uservec();
+	extern void userret(uint64, uint64);
 }
 
 namespace im
@@ -90,6 +97,86 @@ namespace im
 		log_info( _la_ecode_spec_[ ecode ] );
 		_exception_handlers[ ecode ]( estat );
 		// log_panic( "not implement" );
+	}
+	
+	void ExceptionManager::user_trap()
+	{	
+		loongarch::Cpu cpu = loongarch::k_cpus[0];
+		int which_dev = 0;
+		if((cpu.read_csr(loongarch::csr::CsrAddr::prmd) & 0x03 ) != 0)
+			log_panic("Usertrap: not from user mode");
+		
+		//
+		cpu.write_csr(loongarch::csr::CsrAddr::eentry, (uint64)kernelvec);
+		
+		pm::Pcb *proc = cpu.get_cur_proc();
+
+		pm::TrapFrame* trapframe ;
+		trapframe =  proc->getTrapframe();
+		trapframe->era = cpu.read_csr(loongarch::csr::CsrAddr::era);
+		proc->setTrapframe(trapframe);
+
+		if( ((cpu.read_csr(loongarch::csr::CsrAddr::estat)) 
+				& loongarch::csr::Estat::estat_ecode_m >> loongarch::csr::Estat::estat_ecode_s) == 0xb){
+			//syscall
+
+			if(proc->iskilled())
+				pm::k_pm.exit(-1); 
+			
+			//update pc
+			trapframe = proc->getTrapframe();
+			trapframe->era +=4;
+			proc->setTrapframe(trapframe);
+
+			cpu.interrupt_on();
+
+			/// @todo syscall()
+			//syscall();
+
+		}
+		else if( !which_dev ) {
+			// device trap
+		}
+		else {
+			log_error("unexcepted usertrapcause %x pid=%d\n, era=%p",
+						cpu.read_csr(loongarch::csr::CsrAddr::estat), 
+						proc->get_pid(),
+						cpu.read_csr(loongarch::csr::CsrAddr::era));
+			proc->kill();
+
+		}
+
+		if(proc->iskilled())
+			pm::k_pm.exit(-1);
+
+		user_trap_ret();
+	}
+
+	void ExceptionManager::user_trap_ret()
+	{
+		loongarch::Cpu cpu = loongarch::k_cpus[0];
+		
+		pm::Pcb *cur_proc = cpu.get_cur_proc();
+
+		//turn off interrupts until back to user space
+		cpu.interrupt_off();
+
+		cpu.write_csr(loongarch::csr::CsrAddr::eentry, (uint64)uservec);
+
+		pm::TrapFrame* trapframe = cur_proc->getTrapframe();
+		trapframe->kernel_pgdl = cpu.read_csr(loongarch::csr::CsrAddr::pgdl);
+		trapframe->kernel_sp = cur_proc->get_kstack() + mm::pg_size;
+		trapframe->kernel_trap = (uint64)(usertrap);
+		trapframe->kernel_hartid = cpu.read_tp();
+
+		uint32 x = cpu.read_csr(loongarch::csr::CsrAddr::prmd);
+		x |= loongarch::csr::prmd::pplv_m;  // set priv to 3, user mode
+		x |= loongarch::csr::prmd::pie_m;	// enable interrupts in user mode
+		cpu.write_csr(loongarch::csr::CsrAddr::prmd, x);
+
+		volatile uint64 pgdl = (uint64)(cur_proc->get_page().get_base());
+
+		userret(mm::vml::vm_trap_frame - (uint64)mm::pg_size, pgdl);
 	}
 
 	void ExceptionManager::machine_trap()

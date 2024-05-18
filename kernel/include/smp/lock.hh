@@ -9,11 +9,7 @@
 #pragma once 
 
 #include "types.hh"
-
-namespace loongarch
-{
-	class Cpu;
-}
+#include "hal/cpu.hh"
 
 namespace smp
 {
@@ -37,8 +33,13 @@ namespace smp
 		/// @brief release spinlock
 		void release();
 
+		int held();
 	private:
-		inline int is_held();
+		inline int is_held(){
+			int r;
+			r = ( locked && cpu == loongarch::Cpu::get_cpu() );
+			return r;
+		}
 	};
 } // namespace smp
 

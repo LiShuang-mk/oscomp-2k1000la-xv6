@@ -11,4 +11,5 @@
 extern "C" {
 	extern void kerneltrap( void );
 	extern void machine_trap( void );
+	extern void usertrap( void );
 }
