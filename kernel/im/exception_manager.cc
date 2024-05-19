@@ -12,6 +12,7 @@
 
 #include "im/exception_manager.hh"
 #include "im/interrupt_manager.hh"
+#include "im/trap_wrapper.hh"
 
 #include "pm/process.hh"
 #include "pm/trap_frame.hh"
@@ -108,23 +109,25 @@ namespace im
 
 	void ExceptionManager::user_trap()
 	{
-		loongarch::Cpu cpu = loongarch::k_cpus[ 0 ];
+		loongarch::Cpu *cpu = loongarch::Cpu::get_cpu();
+		[[maybe_unused]] uint64 dbg_estat = cpu->read_csr( loongarch::csr::CsrAddr::estat );
 		int which_dev = 0;
-		if ( ( cpu.read_csr( loongarch::csr::CsrAddr::prmd ) & 0x03 ) != 0 )
+		uint64 dbg_prmd = cpu->read_csr( loongarch::csr::CsrAddr::prmd );
+		if ( ( dbg_prmd & 0x03 ) == 0 )
 			log_panic( "Usertrap: not from user mode" );
 
 		//
-		cpu.write_csr( loongarch::csr::CsrAddr::eentry, ( uint64 ) kernelvec );
+		cpu->write_csr( loongarch::csr::CsrAddr::eentry, ( uint64 ) kernelvec );
 
-		pm::Pcb *proc = cpu.get_cur_proc();
+		pm::Pcb *proc = cpu->get_cur_proc();
 
 		pm::TrapFrame* trapframe;
 		trapframe = proc->get_trapframe();
-		trapframe->era = cpu.read_csr( loongarch::csr::CsrAddr::era );
-		proc->set_trapframe( trapframe );
+		trapframe->era = cpu->read_csr( loongarch::csr::CsrAddr::era );
 
-		if ( ( ( cpu.read_csr( loongarch::csr::CsrAddr::estat ) )
-			& loongarch::csr::Estat::estat_ecode_m >> loongarch::csr::Estat::estat_ecode_s ) == 0xb )
+		if ( ( cpu->read_csr( loongarch::csr::CsrAddr::estat )
+			& ( loongarch::csr::Estat::estat_ecode_m >> loongarch::csr::Estat::estat_ecode_s ) )
+			== 0xb )
 		{
 //syscall
 
@@ -136,7 +139,7 @@ namespace im
 			trapframe->era += 4;
 			proc->set_trapframe( trapframe );
 
-			cpu.interrupt_on();
+			cpu->interrupt_on();
 
 			/// @todo syscall()
 			//syscall();
@@ -148,16 +151,20 @@ namespace im
 		}
 		else
 		{
-			log_error( "unexcepted usertrapcause %x pid=%d\n, era=%p",
-				cpu.read_csr( loongarch::csr::CsrAddr::estat ),
+			log_error( "unexcepted usertrapcause estat=%x pid=%d\n, era=%p",
+				cpu->read_csr( loongarch::csr::CsrAddr::estat ),
 				proc->get_pid(),
-				cpu.read_csr( loongarch::csr::CsrAddr::era ) );
-			proc->is_killed();
-
+				cpu->read_csr( loongarch::csr::CsrAddr::era ) );
+			pm::k_pm.kill_proc( proc );
 		}
 
 		if ( proc->is_killed() )
 			pm::k_pm.exit( -1 );
+
+		if ( proc && proc->get_state() == pm::ProcState::running )
+		{
+			pm::k_pm.sche_proc( proc );
+		}
 
 		user_trap_ret();
 	}
@@ -176,7 +183,7 @@ namespace im
 		pm::TrapFrame* trapframe = cur_proc->get_trapframe();
 		trapframe->kernel_pgdl = cur_cpu->read_csr( loongarch::csr::CsrAddr::pgdl );
 		trapframe->kernel_sp = cur_proc->get_kstack() + mm::pg_size;
-		trapframe->kernel_trap = ( uint64 ) ( usertrap );
+		trapframe->kernel_trap = ( uint64 ) &_wrp_user_trap;
 		trapframe->kernel_hartid = cur_cpu->read_tp();
 
 		uint32 x = ( uint32 ) cur_cpu->read_csr( loongarch::csr::CsrAddr::prmd );

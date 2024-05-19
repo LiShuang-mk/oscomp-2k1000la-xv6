@@ -86,7 +86,9 @@ test:
 	$(MAKE) test -C kernel
 
 clean:
-	$(MAKE) clean -C kernel; $(MAKE) clean -C thirdparty/EASTL
+	$(MAKE) clean -C kernel
+	$(MAKE) clean -C user
+	$(MAKE) clean -C thirdparty/EASTL
 
 EASTL:
 	$(MAKE) -C thirdparty/EASTL

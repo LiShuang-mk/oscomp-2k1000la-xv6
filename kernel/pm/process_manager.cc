@@ -6,18 +6,37 @@
 // --------------------------------------------------------------
 //
 
+#include "hal/cpu.hh"
 #include "pm/process_manager.hh"
 #include "pm/process.hh"
 #include "pm/trap_frame.hh"
-#include "hal/cpu.hh"
+#include "pm/scheduler.hh"
 #include "mm/memlayout.hh"
 #include "mm/physical_memory_manager.hh"
 #include "mm/virtual_memory_manager.hh"
+#include "im/trap_wrapper.hh"
+#include "im/exception_manager.hh"
 #include <EASTL/vector.h>
 #include <EASTL/string.h>
 #include <EASTL/map.h>
 #include <EASTL/hash_map.h>
 #include "klib/common.hh"
+
+extern "C" {
+	extern uint64 _start_u_init;
+	extern uint64 _end_u_init;
+	extern uint64 _u_init_stks;
+	extern uint64 _u_init_stke;
+	extern int init_main( void );
+
+	void _wrp_fork_ret( void )
+	{
+		pm::k_pm.fork_ret();
+	}
+}
+
+
+
 namespace pm
 {
 	ProcessManager k_pm;
@@ -75,7 +94,7 @@ namespace pm
 			{
 				pm::k_pm.alloc_pid( p );
 				p->_state = ProcState::used;
-				p->_slot = 1;
+				p->_slot = default_proc_slot;
 				p->_priority = default_proc_prio;
 
 				p->_shm = mm::vml::vm_trap_frame - 64 * 2 * mm::PageEnum::pg_size;
@@ -101,8 +120,7 @@ namespace pm
 
 				memset( &p->_context, 0, sizeof( p->_context ) );
 
-				/// TODO:
-				/// set p->_context.ra = fork return function
+				p->_context.ra = ( uint64 ) _wrp_fork_ret;
 
 				p->_context.sp = p->_kstack + mm::pg_size;
 
@@ -196,16 +214,12 @@ namespace pm
 
 	}
 
-	extern "C" {
-		extern uint64 _start_u_init;
-		extern uint64 _u_init_stks;
-		extern uint64 _u_init_stke;
-		extern int init_main( void );
-	}
+
 
 	void ProcessManager::user_init()
 	{
 		static int inited = 0;
+		static char user_init_proc_name[] = "user init";
 		if ( inited != 0 )
 		{
 			log_warn( "re-init user." );
@@ -218,8 +232,24 @@ namespace pm
 		_init_proc = p;
 		p->_lock.acquire();
 
-		// there is no mem mapped for a new proc
-		p->_sz = 0;
+		for ( uint i = 0; i < sizeof( user_init_proc_name ); ++i )
+		{
+			p->_name[ i ] = user_init_proc_name[ i ];
+		}
+
+		// map user init function
+		p->_sz = ( uint64 ) &_end_u_init -( uint64 ) &_start_u_init;
+		mm::k_vmm.map_pages(
+			p->_pt,
+			0,
+			p->_sz,
+			( uint64 ) &_start_u_init,
+			loongarch::PteEnum::presence_m |
+			loongarch::PteEnum::writable_m |
+			( 0x3 << loongarch::PteEnum::plv_s ) |
+			( loongarch::mat_cc << loongarch::PteEnum::mat_s )
+		);
+
 
 		p->_trapframe->era = ( uint64 ) &init_main - ( uint64 ) &_start_u_init;
 		log_info( "user init: era = %p", p->_trapframe->era );
@@ -234,6 +264,24 @@ namespace pm
 		p->_lock.release();
 
 		inited = 1;
+	}
+
+	void ProcessManager::sche_proc( Pcb *p )
+	{
+		p->_slot--;
+		if ( p->_slot == 0 )
+		{
+			p->_slot = default_proc_slot;
+			k_scheduler.yield();
+		}
+	}
+
+	void ProcessManager::fork_ret()
+	{
+		// Still holding p->lock from scheduler.
+		loongarch::Cpu::get_cpu()->get_cur_proc()->_lock.release();
+
+		im::k_em.user_trap_ret();
 	}
 
 // ---------------- private helper functions ----------------

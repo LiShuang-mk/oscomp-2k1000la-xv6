@@ -15,11 +15,6 @@ namespace loongarch
 
 // ---- public: 
 
-	inline int Cpu::get_intr_stat()
-	{
-		uint32 x = read_csr( csr::CsrAddr::crmd );
-		return ( x & csr::Crmd::ie_m ) != 0;
-	}
 
 	Cpu *Cpu::get_cpu()
 	{

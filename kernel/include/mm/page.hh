@@ -64,6 +64,10 @@ namespace mm
 		return ( addr & ~( pg_size - 1 ) );
 	}
 
+	constexpr bool is_page_align( uint64 addr )
+	{
+		return ( addr & ( pg_size - 1 ) ) == 0;
+	}
 
 
 	// enum PageStatus

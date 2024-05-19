@@ -21,6 +21,7 @@
 #include "mm/heap_memory_manager.hh"
 #include "pm/process_manager.hh"
 #include "pm/shmmanager.hh"
+#include "pm/scheduler.hh"
 #include "klib/printer.hh"
 #include "klib/common.hh"
 
@@ -154,7 +155,9 @@ int main()
 
 		pm::k_pm.user_init();
 		log_info( "user init" );
-		
+
+		pm::k_scheduler.schedule();
+
 		while ( 1 );
 
 

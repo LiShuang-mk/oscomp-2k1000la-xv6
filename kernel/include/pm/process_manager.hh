@@ -12,6 +12,8 @@
 
 namespace pm
 {
+	constexpr int default_proc_slot = 1;
+
 	class ProcessManager
 	{
 	private:
@@ -41,6 +43,11 @@ namespace pm
 		void exit( int );
 
 		void user_init();
+		void sche_proc( Pcb *p );
+		void fork_ret();
+
+	public:
+		void kill_proc( Pcb * p ) { p->_killed = 1; }
 
 	private:
 		void _proc_create_vm( Pcb * p );

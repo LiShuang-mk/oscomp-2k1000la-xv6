@@ -34,9 +34,9 @@ namespace smp
 		void release();
 
 		int held();
-	private:
-		inline int is_held(){
-			int r;
+
+		inline bool is_held(){
+			bool r;
 			r = ( locked && cpu == loongarch::Cpu::get_cpu() );
 			return r;
 		}

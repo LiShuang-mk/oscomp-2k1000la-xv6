@@ -11,7 +11,7 @@
 # push all registers, call kerneltrap(), restore, return.
 #
 .section k_eentry
-.globl kerneltrap
+.globl _wrp_kernel_trap
 .globl kernelvec
 .align 4
 kernelvec:
@@ -55,7 +55,7 @@ kernelvec:
 	st.d $s8, $sp, 240
 
 	// call the C trap handler in trap.c
-	bl kerneltrap
+	bl _wrp_kernel_trap
 
 	// restore register
 	ld.d $ra, $sp, 0

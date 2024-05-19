@@ -9,7 +9,8 @@
 #pragma once 
 
 extern "C" {
-	extern void kerneltrap( void );
-	extern void machine_trap( void );
-	extern void usertrap( void );
+	extern void _wrp_kernel_trap( void );
+	extern void _wrp_machine_trap( void );
+	extern void _wrp_user_trap( void );
+	extern void _wrp_user_trap_ret( void );
 }
