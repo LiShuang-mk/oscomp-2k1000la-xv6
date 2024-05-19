@@ -98,6 +98,53 @@ namespace mm
 		return true;
 	}
 
+	uint64 VirtualMemoryManager::vmalloc( PageTable &pt, uint64 old_sz, uint64 new_sz )
+	{
+		void *mem;
+
+		if ( new_sz < old_sz )
+			return old_sz;
+
+		old_sz = page_round_up( old_sz );
+		for ( uint64 a = old_sz; a < new_sz; a += pg_size )
+		{
+			mem = k_pmm.alloc_page();
+			if ( mem == nullptr )
+			{
+				vmdealloc( pt, a, old_sz );
+				return 0;
+			}
+			k_pmm.clear_page( mem );
+			if ( map_pages( pt, a, pg_size, ( uint64 ) mem,
+				loongarch::PteEnum::presence_m |
+				loongarch::PteEnum::writable_m |
+				loongarch::PteEnum::dirty_m |
+				( loongarch::mat_cc << loongarch::PteEnum::mat_s ) |
+				( 0x3 << loongarch::PteEnum::plv_s )
+			) == false )
+			{
+				k_pmm.free_page( mem );
+				vmdealloc( pt, a, old_sz );
+				return 0;
+			}
+		}
+		return new_sz;
+	}
+
+	uint64 VirtualMemoryManager::vmdealloc( PageTable &pt, uint64 old_sz, uint64 new_sz )
+	{
+		if ( new_sz >= old_sz )
+			return old_sz;
+
+		if ( page_round_up( new_sz ) < page_round_up( old_sz ) )
+		{
+			int npages = ( page_round_up( old_sz ) - page_round_up( new_sz ) ) / pg_size;
+			vmunmap( pt, page_round_up( new_sz ), npages, true );
+		}
+
+		return new_sz;
+	}
+
 	uint64 VirtualMemoryManager::allocshm( PageTable &pt, uint64 oldshm, uint64 newshm, uint64 sz, void *phyaddr[ pm::MAX_SHM_PGNUM ] )
 	{
 		void *mem;
