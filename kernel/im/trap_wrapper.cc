@@ -20,9 +20,9 @@ extern "C" {
 		im::k_em.machine_trap();
 	}
 
-	void _wrp_user_trap( void )
+	void _wrp_user_trap( uint64 estat )
 	{
-		im::k_em.user_trap();
+		im::k_em.user_trap( estat );
 	}
 
 	void _wrp_user_trap_ret( void )

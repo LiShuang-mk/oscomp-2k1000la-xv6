@@ -14,14 +14,14 @@
 #include "im/interrupt_manager.hh"
 #include "im/trap_wrapper.hh"
 
+#include "tm/timer_manager.hh"
+
 #include "pm/process.hh"
 #include "pm/trap_frame.hh"
 #include "pm/process_manager.hh"
 
 #include "mm/memlayout.hh"
 #include "mm/page_table.hh"
-
-#include "im/trap_wrapper.hh"
 
 #include "fs/dev/ahci_controller.hh"
 
@@ -107,10 +107,16 @@ namespace im
 		// log_panic( "not implement" );
 	}
 
-	void ExceptionManager::user_trap()
+	void ExceptionManager::user_trap( uint64 estat )
 	{
 		loongarch::Cpu *cpu = loongarch::Cpu::get_cpu();
-		[[maybe_unused]] uint64 dbg_estat = cpu->read_csr( loongarch::csr::CsrAddr::estat );
+		// [[maybe_unused]] uint64 estat = cpu->read_csr( loongarch::csr::CsrAddr::estat );
+		// estat = [] ()->uint64
+		// {
+		// 	uint32 x;
+		// 	asm volatile( "csrrd %0, 0x5" : "=r" ( x ) );
+		// 	return x;
+		// }( );
 		int which_dev = 0;
 		uint64 dbg_prmd = cpu->read_csr( loongarch::csr::CsrAddr::prmd );
 		if ( ( dbg_prmd & 0x03 ) == 0 )
@@ -125,12 +131,12 @@ namespace im
 		trapframe = proc->get_trapframe();
 		trapframe->era = cpu->read_csr( loongarch::csr::CsrAddr::era );
 
-		if ( ( cpu->read_csr( loongarch::csr::CsrAddr::estat )
-			& ( loongarch::csr::Estat::estat_ecode_m >> loongarch::csr::Estat::estat_ecode_s ) )
+		if ( ( ( estat & loongarch::csr::Estat::estat_ecode_m ) >> loongarch::csr::Estat::estat_ecode_s )
 			== 0xb )
 		{
 //syscall
-
+			log_info( "syscall: %d", proc->get_trapframe()->a7 );
+			log_panic( "syscall not implement" );
 			if ( proc->is_killed() )
 				pm::k_pm.exit( -1 );
 
@@ -145,9 +151,10 @@ namespace im
 			//syscall();
 
 		}
-		else if ( !which_dev )
+		else if ( ( which_dev = dev_intr() ) > 0 )
 		{
 // device trap
+			// ok
 		}
 		else
 		{
@@ -155,6 +162,10 @@ namespace im
 				cpu->read_csr( loongarch::csr::CsrAddr::estat ),
 				proc->get_pid(),
 				cpu->read_csr( loongarch::csr::CsrAddr::era ) );
+			uint ecode = ( estat & loongarch::csr::Estat::estat_ecode_m ) >> loongarch::csr::Estat::estat_ecode_s;
+			assert( ecode < _LA_ECODE_MAX_NUM_, "" );
+			log_info( _la_ecode_spec_[ ecode ] );
+			_exception_handlers[ ecode ]( estat );
 			pm::k_pm.kill_proc( proc );
 		}
 
@@ -198,6 +209,47 @@ namespace im
 		userret( mm::vml::vm_trap_frame, pgdl );
 	}
 
+	int ExceptionManager::dev_intr()
+	{
+		loongarch::Cpu * cpu = loongarch::Cpu::get_cpu();
+		uint64 estat = cpu->read_csr(
+			loongarch::csr::estat
+		);
+		uint64 ecfg = cpu->read_csr(
+			loongarch::csr::ecfg
+		);
+
+		int rc;
+		if ( estat & ecfg & loongarch::csr::itr_hwi_m )
+		{
+			rc = k_im.handle_dev_intr();
+			if ( rc < 0 )
+				log_error( "im handle dev intr fail" );
+			return rc;
+		}
+		else if ( estat & ecfg & loongarch::csr::itr_ti_m )
+		{
+			rc = tmm::k_tm.handle_clock_intr();
+			if ( rc < 0 )
+				log_error( "tm handle dev intr fail" );
+			return rc;
+		}
+		// else
+		// {
+		// 	log_error(
+		// 		"unkown exception.\n"
+		// 		"estat: %x\n"
+		// 		"badv: %x\n"
+		// 		"badi: %x\n",
+		// 		estat,
+		// 		cpu->read_csr( loongarch::csr::badv ),
+		// 		cpu->read_csr( loongarch::csr::badi )
+		// 	);
+		// 	return -101;
+		// }
+		return 0;
+	}
+
 	void ExceptionManager::machine_trap()
 	{
 		log_panic( "not implement" );
@@ -227,6 +279,21 @@ namespace im
 
 	void ExceptionManager::_init_exception_handler()
 	{
+		_exception_handlers[ loongarch::csr::ecode_pis ] = [] ( uint32 estat ) ->void
+		{
+			uint64 badv = loongarch::Cpu::read_csr( loongarch::csr::badv );
+			mm::Pte pte = loongarch::Cpu::get_cpu()->get_cur_proc()->get_pagetable().walk( badv, 0 );
+			log_panic(
+				"handle exception PIS :\n"
+				"    badv : %x\n"
+				"    badi : %x\n"
+				"    pte  : %x",
+				badv,
+				loongarch::Cpu::read_csr( loongarch::csr::badi ),
+				pte.get_data()
+			);
+		};
+
 		_exception_handlers[ loongarch::csr::ecode_pif ] = [] ( uint32 ) -> void
 		{
 			log_panic(
@@ -235,6 +302,21 @@ namespace im
 				"    badi : %x",
 				loongarch::Cpu::read_csr( loongarch::csr::badv ),
 				loongarch::Cpu::read_csr( loongarch::csr::badi )
+			);
+		};
+
+		_exception_handlers[ loongarch::csr::ecode_pme ] = [] ( uint32 estat ) ->void
+		{
+			uint64 badv = loongarch::Cpu::read_csr( loongarch::csr::badv );
+			mm::Pte pte = loongarch::Cpu::get_cpu()->get_cur_proc()->get_pagetable().walk( badv, 0 );
+			log_panic(
+				"handle exception PME :\n"
+				"    badv : %x\n"
+				"    badi : %x\n"
+				"    pte  : %x",
+				badv,
+				loongarch::Cpu::read_csr( loongarch::csr::badi ),
+				pte.get_data()
 			);
 		};
 

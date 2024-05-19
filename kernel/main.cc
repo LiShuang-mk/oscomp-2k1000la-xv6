@@ -149,9 +149,9 @@ int main()
 
 		// log_info( "text start %p\n", &stext );
 		// log_info( "text end   %p\n", &etext ); 
-		// log_info( "user code start %p\n", &_start_u_init );
 
-		// log_info( "user init_main address %p\n", ( uint64 ) &init_main );
+		log_info( "user code start %p\n", &_start_u_init );
+		log_info( "user init_main address %p\n", ( uint64 ) &init_main );
 
 		pm::k_pm.user_init();
 		log_info( "user init" );

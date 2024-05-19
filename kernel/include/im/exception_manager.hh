@@ -24,9 +24,10 @@ namespace im
 		ExceptionManager() = default;
 		void init( const char *lock_name );
 		void kernel_trap();
-		void user_trap();
+		void user_trap( uint64 estat );
 		void user_trap_ret();
 		void machine_trap();
+		int dev_intr();
 
 	public:
 		void ahci_read_handle();

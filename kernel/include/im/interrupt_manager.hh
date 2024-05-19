@@ -21,6 +21,8 @@ namespace im
 		InterruptManager() = default;
 		void init( const char *lock_name );
 
+		int handle_dev_intr();
+
 		void clear_uart0_intr();
 	};
 

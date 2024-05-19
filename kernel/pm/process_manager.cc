@@ -27,6 +27,8 @@ extern "C" {
 	extern uint64 _end_u_init;
 	extern uint64 _u_init_stks;
 	extern uint64 _u_init_stke;
+	extern uint64 _u_init_txts;
+	extern uint64 _u_init_txte;
 	extern int init_main( void );
 
 	void _wrp_fork_ret( void )
@@ -237,13 +239,27 @@ namespace pm
 			p->_name[ i ] = user_init_proc_name[ i ];
 		}
 
-		// map user init function
-		p->_sz = ( uint64 ) &_end_u_init -( uint64 ) &_start_u_init;
+		p->_sz = ( uint64 ) &_end_u_init - ( uint64 ) &_start_u_init;
+
+		// map user init stack
 		mm::k_vmm.map_pages(
 			p->_pt,
 			0,
-			p->_sz,
-			( uint64 ) &_start_u_init,
+			( uint64 ) &_u_init_stke - ( uint64 ) &_u_init_stks,
+			( uint64 ) &_u_init_stks,
+			loongarch::PteEnum::presence_m |
+			loongarch::PteEnum::writable_m |
+			loongarch::PteEnum::dirty_m |
+			( 0x3 << loongarch::PteEnum::plv_s ) |
+			( loongarch::mat_cc << loongarch::PteEnum::mat_s )
+		);
+
+		// map user init function
+		mm::k_vmm.map_pages(
+			p->_pt,
+			( uint64 ) &_u_init_txts - ( uint64 ) &_start_u_init,
+			( uint64 ) &_u_init_txte - ( uint64 ) &_u_init_txts,
+			( uint64 ) &_u_init_txts,
 			loongarch::PteEnum::presence_m |
 			loongarch::PteEnum::writable_m |
 			( 0x3 << loongarch::PteEnum::plv_s ) |
