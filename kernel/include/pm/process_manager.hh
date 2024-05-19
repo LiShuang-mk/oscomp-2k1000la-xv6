@@ -18,6 +18,8 @@ namespace pm
 		smp::Lock _pid_lock;
 		smp::Lock _wait_lock;
 		int _cur_pid;
+		Pcb * _init_proc;		// user init proc
+
 	public:
 		ProcessManager() = default;
 		void init( const char *pid_lock_name, const char *wait_lock_name );
@@ -37,6 +39,8 @@ namespace pm
 		void hashtest();
 
 		void exit( int );
+
+		void user_init();
 
 	private:
 		void _proc_create_vm( Pcb * p );

@@ -22,9 +22,20 @@ SECTIONS
     *(merrentry)
     . = ALIGN(0x1000);
     PROVIDE(etext = .);
-	PROVIDE(_start_u_init = .);
+
+	. = ALIGN(0x1000);
+	_start_u_init = .;
+
+	_u_init_stks = .;
+	*(.user.init.stack);
+	_u_init_stke = .;
+
+	. = ALIGN(0x1000);
+	_u_init_txts = .;
 	*(.user.init);
-	PROVIDE(_end_u_init = .);
+	_u_init_txte = .;
+
+	_end_u_init = .;
   }
 
   .rodata : {

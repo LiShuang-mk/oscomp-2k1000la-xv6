@@ -8,6 +8,7 @@
 
 #include "pm/process_manager.hh"
 #include "pm/process.hh"
+#include "pm/trap_frame.hh"
 #include "hal/cpu.hh"
 #include "mm/memlayout.hh"
 #include "mm/physical_memory_manager.hh"
@@ -44,7 +45,6 @@ namespace pm
 
 	bool ProcessManager::change_state( Pcb *p, ProcState state )
 	{
-		_pid_lock.acquire();
 		p->_lock.acquire();
 		if ( p->_state == ProcState::unused )
 		{
@@ -54,17 +54,14 @@ namespace pm
 		}
 		p->_state = state;
 		p->_lock.release();
-		_pid_lock.release();
 		return true;
 	}
 
 	void ProcessManager::alloc_pid( Pcb *p )
 	{
 		_pid_lock.acquire();
-		p->_lock.acquire();
 		p->_pid = _cur_pid;
 		_cur_pid++;
-		p->_lock.release();
 		_pid_lock.release();
 	}
 
@@ -108,6 +105,8 @@ namespace pm
 				/// set p->_context.ra = fork return function
 
 				p->_context.sp = p->_kstack + mm::pg_size;
+
+				p->_lock.release();
 
 				return p;
 			}
@@ -195,6 +194,46 @@ namespace pm
 	void ProcessManager::exit( int )
 	{
 
+	}
+
+	extern "C" {
+		extern uint64 _start_u_init;
+		extern uint64 _u_init_stks;
+		extern uint64 _u_init_stke;
+		extern int init_main( void );
+	}
+
+	void ProcessManager::user_init()
+	{
+		static int inited = 0;
+		if ( inited != 0 )
+		{
+			log_warn( "re-init user." );
+			return;
+		}
+
+		Pcb * p = alloc_proc();
+		assert( p != nullptr, "pm: alloc proc fail while user init." );
+
+		_init_proc = p;
+		p->_lock.acquire();
+
+		// there is no mem mapped for a new proc
+		p->_sz = 0;
+
+		p->_trapframe->era = ( uint64 ) &init_main - ( uint64 ) &_start_u_init;
+		log_info( "user init: era = %p", p->_trapframe->era );
+		p->_trapframe->sp = ( uint64 ) &_u_init_stke - ( uint64 ) &_start_u_init;
+		log_info( "user init: sp  = %p", p->_trapframe->sp );
+
+		/// TODO:
+		/// set p->cwd = "/"
+
+		p->_state = ProcState::runnable;
+
+		p->_lock.release();
+
+		inited = 1;
 	}
 
 // ---------------- private helper functions ----------------

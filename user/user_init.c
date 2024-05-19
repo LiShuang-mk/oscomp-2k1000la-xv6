@@ -6,6 +6,8 @@
 // --------------------------------------------------------------
 //
 
+char u_init_stack[ 2048 ] __attribute__( ( section( ".user.init.stack" ) ) );
+
 int init_main( void ) __attribute__( ( section( ".user.init" ) ) );
 
 int init_main( void )
