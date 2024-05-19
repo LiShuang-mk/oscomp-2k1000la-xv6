@@ -1,5 +1,5 @@
 CXXFLAGS += -I ../thirdparty/EASTL/include
-CXXFLAGS += -I ../kernel/include/klib
+# CXXFLAGS += -I ../kernel/include/klib
 CXXFLAGS += -Wno-deprecated-declarations
 CXXFLAGS += -I ../thirdparty/EASTL/test/packages/EABase/include/Common
 

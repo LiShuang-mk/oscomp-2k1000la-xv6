@@ -136,19 +136,18 @@ namespace im
 		{
 //syscall
 			log_info( "syscall: %d", proc->get_trapframe()->a7 );
-			log_panic( "syscall not implement" );
+			// log_panic( "syscall not implement" );
+
 			if ( proc->is_killed() )
 				pm::k_pm.exit( -1 );
 
 			//update pc
-			trapframe = proc->get_trapframe();
-			trapframe->era += 4;
-			proc->set_trapframe( trapframe );
+			proc->get_trapframe()->era += 4;
 
 			cpu->interrupt_on();
 
 			/// @todo syscall()
-			//syscall();
+			// syscall();
 
 		}
 		else if ( ( which_dev = dev_intr() ) > 0 )
@@ -264,7 +263,7 @@ namespace im
 		dev::ahci::k_ahci_ctl.intr_handle();
 	}
 
-// -------- private --------
+// ---------------- private helper functions ----------------
 
 	// void ExceptionManager::handle_pif()
 	// {
@@ -347,5 +346,25 @@ namespace im
 			);
 		};
 	}
+
+	void ExceptionManager::_syscall()
+	{
+		// uint64 num;
+		// pm::Pcb * p = loongarch::Cpu::get_cpu()->get_cur_proc();
+
+		// num = p->get_trapframe()->a7;
+		// if ( num > 0 && num < NELEM( syscalls ) && syscalls[ num ] )
+		// {
+		// 	// printf( "syscall num: %d\n", num );
+		// 	p->trapframe->a0 = syscalls[ num ]();
+		// }
+		// else
+		// {
+		// 	printf( "%d %s: unknown sys call %d\n",
+		// 		p->pid, p->name, num );
+		// 	p->trapframe->a0 = -1;
+		// }
+	}
+
 }// namespace im
 

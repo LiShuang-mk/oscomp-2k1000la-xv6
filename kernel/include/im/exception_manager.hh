@@ -19,6 +19,7 @@ namespace im
 	private:
 		smp::Lock _lock;
 		std::function<void( uint32 )> _exception_handlers[ max_ecode_num ];
+		
 
 	public:
 		ExceptionManager() = default;
@@ -36,6 +37,8 @@ namespace im
 	private:
 		// static void handle_pif();
 		void _init_exception_handler();
+
+		void _syscall();
 	};
 
 	extern ExceptionManager k_em;
