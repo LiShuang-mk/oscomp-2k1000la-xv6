@@ -16,50 +16,50 @@ void printf( const char *fmt, ... )
 	va_end( ap );
 }
 
-void *memset( void *dst, int c, uint n )
-{
-	char *cdst = ( char * ) dst;
-	uint i;
-	for ( i = 0; i < n; i++ )
-	{
-		cdst[ i ] = c;
-	}
-	return dst;
-}
+// void *memset( void *dst, int c, uint n )
+// {
+// 	char *cdst = ( char * ) dst;
+// 	uint i;
+// 	for ( i = 0; i < n; i++ )
+// 	{
+// 		cdst[ i ] = c;
+// 	}
+// 	return dst;
+// }
 
-void *memcpy( void *dst, const void *src, int len )
-{
-	if ( 0 == dst || 0 == src )
-	{
-		return 0;
-	}
+// void *memcpy( void *dst, const void *src, int len )
+// {
+// 	if ( 0 == dst || 0 == src )
+// 	{
+// 		return 0;
+// 	}
 
-	void *ret = dst;
+// 	void *ret = dst;
 
-	if ( dst <= src || ( char * ) dst >= ( char * ) src + len )
-	{
-//没有内存重叠，从低地址开始复制
-		while ( len-- )
-		{
-			*( char * ) dst = *( char * ) src;
-			dst = ( char * ) dst + 1;
-			src = ( char * ) src + 1;
-		}
-	}
-	else
-	{
-		//有内存重叠，从高地址开始复制
-		src = ( char * ) src + len - 1;
-		dst = ( char * ) dst + len - 1;
-		while ( len-- )
-		{
-			*( char * ) dst = *( char * ) src;
-			dst = ( char * ) dst - 1;
-			src = ( char * ) src - 1;
-		}
-	}
-	return ret;
-}
+// 	if ( dst <= src || ( char * ) dst >= ( char * ) src + len )
+// 	{
+// //没有内存重叠，从低地址开始复制
+// 		while ( len-- )
+// 		{
+// 			*( char * ) dst = *( char * ) src;
+// 			dst = ( char * ) dst + 1;
+// 			src = ( char * ) src + 1;
+// 		}
+// 	}
+// 	else
+// 	{
+// 		//有内存重叠，从高地址开始复制
+// 		src = ( char * ) src + len - 1;
+// 		dst = ( char * ) dst + len - 1;
+// 		while ( len-- )
+// 		{
+// 			*( char * ) dst = *( char * ) src;
+// 			dst = ( char * ) dst - 1;
+// 			src = ( char * ) src - 1;
+// 		}
+// 	}
+// 	return ret;
+// }
 
 void bit_set( void *_data, uint _kbit )
 {

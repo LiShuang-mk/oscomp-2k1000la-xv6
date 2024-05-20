@@ -179,6 +179,7 @@ namespace fs
 			if ( async_read ) k_bufm.release_buffer( disk_buf );
 			else k_bufm.release_buffer_sync( disk_buf );
 
+			// read rest cluster
 			cls_start++;
 			for ( uint64 i = cls_start; i < _clusters_number.size(); ++i )
 			{

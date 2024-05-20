@@ -77,6 +77,17 @@ int main()
 		mm::k_vmm.init( "virtual memory manager " );
 		log_info( "vm init" );
 
+		// log_trace(
+		// 	"hmm初始化前跟踪空闲物理页 : %d",
+		// 	mm::k_pmm.trace_free_pages_count()
+		// );
+		mm::k_hmm.init( "k_heap manager" );
+		log_info( "hmm init" );
+		// log_trace(
+		// 	"hmm初始化后跟踪空闲物理页 : %d",
+		// 	mm::k_pmm.trace_free_pages_count()
+		// );
+
 		// timer init 
 		tmm::k_tm.init( "timer manager" );
 		log_info( "tm init" );
@@ -94,16 +105,6 @@ int main()
 		pm::k_shmManager.init( "shm lock" );
 		log_info( "shm init" );
 
-		// log_trace(
-		// 	"hmm初始化前跟踪空闲物理页 : %d",
-		// 	mm::k_pmm.trace_free_pages_count()
-		// );
-		mm::k_hmm.init( "k_heap manager" );
-		log_info( "hmm init" );
-		// log_trace(
-		// 	"hmm初始化后跟踪空闲物理页 : %d",
-		// 	mm::k_pmm.trace_free_pages_count()
-		// );
 
 		// uint32 apbh[ 64 ];
 		// uint64 addr = ( ( 0xFE0UL << 28 ) | ( 0x0UL << 16 ) | ( 0x2UL << 11 ) | ( 0x0UL << 8 ) );
@@ -868,7 +869,7 @@ void test_fat32()
 	fs::fat::Fat32DirEntry *test_file_entry = fs::fat::k_testcase_fs.get_dir_entry( test_file_finfo );
 
 	// entry可以直接读出其中的内容，如果是文件夹会发生警告，因为读出的内容是文件系统的内部数据结构
-	test_file_entry->read_content( ( void* ) tmp_buf, sizeof( tmp_buf ), 0 );
+	test_file_entry->read_content( ( void* ) tmp_buf, sizeof( tmp_buf ), 16 );
 
 	// 读出来后打印一下内容，这里因为读取的是一个txt，所以可以直接打印
 	tmp_buf[ sizeof( tmp_buf ) - 1 ] = 0;
