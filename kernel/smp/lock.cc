@@ -42,9 +42,7 @@ void Lock::release()
 	loongarch::Cpu::pop_intr_off();
 }
 
-inline int Lock::is_held()
+int Lock::held()
 {
-	int r;
-	r = ( locked && cpu == loongarch::Cpu::get_cpu() );
-	return r;
+	return is_held();
 }

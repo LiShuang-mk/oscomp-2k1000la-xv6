@@ -8,18 +8,13 @@
 
 #include "hal/cpu.hh"
 #include "klib/common.hh"
-
+#include "pm/process.hh"
+#include "pm/trap_frame.hh"
 namespace loongarch
 {
 	Cpu k_cpus[ NUMCPU ];
 
 // ---- public: 
-
-	inline int Cpu::get_intr_stat()
-	{
-		uint32 x = read_csr( csr::CsrAddr::crmd );
-		return ( x & csr::Crmd::ie_m ) != 0;
-	}
 
 	Cpu *Cpu::get_cpu()
 	{

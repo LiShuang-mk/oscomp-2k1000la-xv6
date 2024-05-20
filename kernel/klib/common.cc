@@ -27,7 +27,7 @@ void *memset( void *dst, int c, uint n )
 	return dst;
 }
 
-void *memcpy( void *dst, const void *src, int len )
+void *memcpy( void *dst, const void *src, int len, int offset )
 {
 	if ( 0 == dst || 0 == src )
 	{
@@ -35,10 +35,11 @@ void *memcpy( void *dst, const void *src, int len )
 	}
 
 	void *ret = dst;
+	src = (char*)src + offset;
 
 	if ( dst <= src || ( char * ) dst >= ( char * ) src + len )
 	{
-//没有内存重叠，从低地址开始复制
+		//没有内存重叠，从低地址开始复制
 		while ( len-- )
 		{
 			*( char * ) dst = *( char * ) src;

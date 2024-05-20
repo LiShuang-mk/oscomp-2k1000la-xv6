@@ -135,7 +135,8 @@ int main()
 		fs::fat::k_testcase_fs.init( 1, 0 );
 		log_info( "testcase fs init" );
 		// test_fat32();
-
+		eastl::vector<eastl::string> args;
+		pm::k_pm.exec("test_echo",args);
 		// log_info( "text start %p\n", &stext );
 		// log_info( "text end   %p\n", &etext );
 		log_info( "user code start %p\n", &_start_u_init );
@@ -147,7 +148,8 @@ int main()
 		//pm::k_pm.vectortest();
 		//pm::k_pm.stringtest();
 		//pm::k_pm.maptest();
-		//pm::k_pm.hashtest();   //  < -------------  threr are some problem in heap dealloc
+		//pm::k_pm.hashtest();   
+	
 		test_buffer();
 
 		// fs::Buffer buf = fs::k_bufm.get_buffer( 0, 0 );

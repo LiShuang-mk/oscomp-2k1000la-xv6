@@ -152,6 +152,18 @@ namespace loongarch
 			itr_swi_m = 0x3 << itr_swi_s,
 		};
 
+		/// @brief 例外前模式信息
+		enum prmd : uint64
+		{
+			pplv_s = 0,
+			pie_s = 2,
+			pwe_s = 3,
+
+			pplv_m = 0x3 << pplv_s, 
+			pie_m = 0x1 << pie_s,   
+			pwe_m = 0x1 << pwe_s,   
+		};
+
 		/// @brief s: shift;
 		///		   m: mask;
 		enum ecfg : uint64

@@ -12,8 +12,9 @@
 #include "mm/page_table.hh"
 #include "pm/context.hh"
 #include "pm/sharemem.hh"
+#include "pm/trap_frame.hh"
 
-struct TrapFrame;
+//struct TrapFrame;
 
 namespace fs
 {
@@ -84,9 +85,20 @@ namespace pm
 		void map_kstack( mm::PageTable &pt );
 		ProcState get_state();
 		int get_priority();
-		Context &get_context() { return _context; }
+		Context *get_context() { return &_context; }
 		smp::Lock &get_lock() { return _lock; }
 		fs::Dentry *get_cwd() { return _cwd; }
+		void setTrapframe(TrapFrame *trapframe_) { _trapframe = trapframe_; }	
+		TrapFrame *getTrapframe() { return _trapframe; }
+		int iskilled() {return _killed; }
+		void kill() { _killed = 1; }
+		uint64 get_kstack() { return _kstack; }
+		mm::PageTable get_page() { return _pt; }
+		Pcb * get_parent() { return parent; }
+		void set_state( ProcState state ) { _state = state; }
+		void set_xstate( int xstate ) { _xstate = xstate; }
+		size_t get_sz() { return _sz; }
+		//void set_chan(void *chan) { _chan = chan; }
 	public:
 		uint get_pid() { return _pid; }
 	};

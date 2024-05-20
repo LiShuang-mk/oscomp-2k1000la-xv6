@@ -10,21 +10,31 @@
 
 #include "hal/loongarch.hh"
 #include "hal/csr.hh"
-#include "pm/process.hh"
+//#include "pm/process.hh"
+#include "pm/context.hh"
+
+namespace pm
+{
+	class Pcb;
+	struct Context;
+} // namespace pm
+
+
 namespace loongarch
 {
 	class Cpu
 	{
 	private:
 		pm::Pcb *_cur_proc;			// 当前进程
-		struct Context _context;	// 进程上下文
+		struct pm::Context _context;	// 进程上下文
 		int _num_off;				// 关闭中断层数
 		int _int_ena;				// 关中断前中断开关状态
 
 	public:
-		struct Context *get_context() { return &_context; }
+		struct pm::Context *get_context() { return &_context; }
 		int get_num_off() { return _num_off; }
 		int get_int_ena() { return _int_ena; }
+		void set_int_ena( int x ) { _int_ena = x; }
 		void set_cur_proc( pm::Pcb *p ) { _cur_proc = p; }
 
 		// read stack pointer
@@ -55,7 +65,10 @@ namespace loongarch
 		/// @return cpu info 
 		static Cpu *get_cpu();
 
-		static inline int get_intr_stat();
+		static inline int get_intr_stat(){
+			uint32 x = read_csr( csr::CsrAddr::crmd );
+			return ( x & csr::Crmd::ie_m ) != 0;
+		};
 
 		static void push_intr_off();
 		static void pop_intr_off();
@@ -75,6 +88,6 @@ namespace loongarch
 	extern Cpu k_cpus[ NUMCPU ];
 	
 	extern "C"{
-		void swtch(Context *old_, Context *new_);
+		void swtch(pm::Context *old_, pm::Context *new_);
 	}
 } // namespace loongarch 

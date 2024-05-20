@@ -16,6 +16,7 @@
 #include "mm/memlayout.hh"
 #include "mm/tlb_manager.hh"
 #include "pm/process.hh"
+#include "klib/klib.h"
 namespace mm
 {
 	VirtualMemoryManager k_vmm;
@@ -157,6 +158,29 @@ namespace mm
 		return oldshm;
 	}
 
+	int VirtualMemoryManager::copyout(PageTable &pt, uint64 va, const void *p, uint64 len)
+	{
+		uint64 n, a, pa;
+
+		while(len > 0)
+		{
+			a = page_round_down(va);
+			Pte pte = pt.walk(a, 0);
+			pa = reinterpret_cast<uint64>(pte.pa());
+			if(pa == 0)
+				return -1;
+			n = pg_size - (va - a);
+			if(n > len)
+				n = len;
+			memmove((void *)((pa + (va - a)) | loongarch::qemuls2k::dmwin::win_0), p, n);
+
+			len -= n;
+			p = (char*)p + n;
+			va = a + pg_size;
+		}
+		return 0;
+	}
+
 	void VirtualMemoryManager::vmunmap( PageTable &pt, uint64 va, uint64 npages, int do_free )
 	{
 		uint64 a;
@@ -187,4 +211,56 @@ namespace mm
 			vmunmap( pt, 0, page_round_up( sz ) / PageEnum::pg_size, 1 );
 		pt.freewalk();
 	}
+
+	void VirtualMemoryManager::uvmclear( PageTable &pt, uint64 va )
+	{
+		Pte pte = pt.walk( va, 0 );
+		if ( pte.is_valid() )
+			pte.unset_plv();
+	}
+
+	uint64 VirtualMemoryManager::uvmalloc(PageTable &pt, uint64 oldsz, uint64 newsz)
+	{
+		uint64 a;
+		uint64 pa;
+
+		if(newsz < oldsz)  // shrink, not here
+			return oldsz;
+		a = page_round_up(oldsz); // start from the next page
+
+		for(a = oldsz; a < newsz; a += pg_size)
+		{
+			pa = ( uint64 )mm::k_pmm.alloc_page();
+			if(pa == 0){
+				vmfree(pt, oldsz);
+				return 0;
+			}
+			if(!map_pages(pt, a, pg_size, pa, 
+						(loongarch::PteEnum::presence_m) |
+						(loongarch::PteEnum::writable_m) | 
+						(loongarch::PteEnum::plv_m) | 
+						(loongarch::PteEnum::mat_m) | 
+						(loongarch::PteEnum::dirty_m)))
+			{
+				k_pmm.free_page((void *)pa);
+				uvmdealloc(pt, a, oldsz);
+				return 0;
+			}
+		}
+		return newsz;
+	}
+
+	uint64 VirtualMemoryManager::uvmdealloc(PageTable &pt, uint64 oldsz, uint64 newsz)
+	{
+		if(newsz >= oldsz)
+			return oldsz;
+		if(page_round_up(newsz) < page_round_up(oldsz))
+			vmunmap(pt, 
+					page_round_up(newsz), 
+					(page_round_up(oldsz) - page_round_up(newsz)) / mm::pg_size,
+					1);
+		return newsz;
+	}
+
+
 }
