@@ -90,6 +90,7 @@ uservec:
 
 	invtlb 0x0,$zero,$zero
 
+DBG_BREAK_READ_ESTAT:
 	csrrd  $a0, 0x5		# read estat 
 
 	# jump to usertrap(), which does not return

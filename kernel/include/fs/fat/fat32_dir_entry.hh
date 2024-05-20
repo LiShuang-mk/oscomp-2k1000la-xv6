@@ -31,6 +31,7 @@ namespace fs
 
 		enum Fat32DirType
 		{
+			fat32de_unkown,
 			fat32de_file,
 			fat32de_folder
 		};
@@ -43,9 +44,11 @@ namespace fs
 			Fat32FileSystem *_belong_fs;
 			Fat32DirType _dir_type;
 			eastl::vector<uint32> _clusters_number;
-			eastl::unordered_map<eastl::string, Fat32DirectryShort> *_children = nullptr;
+			eastl::unordered_map<eastl::string, Fat32DirectryShort> _children;
 
 		public:
+			Fat32DirEntry();
+			
 			/**************************************************
 			 * TODO:
 			 * [1] 此处对于目录类型是文件夹而言是有隐含的bug的，

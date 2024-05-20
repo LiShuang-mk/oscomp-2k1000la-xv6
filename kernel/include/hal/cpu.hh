@@ -10,13 +10,12 @@
 
 #include "hal/loongarch.hh"
 #include "hal/csr.hh"
-//#include "pm/process.hh"
+
 #include "pm/context.hh"
 
 namespace pm
 {
 	class Pcb;
-	struct Context;
 } // namespace pm
 
 
@@ -26,12 +25,12 @@ namespace loongarch
 	{
 	private:
 		pm::Pcb *_cur_proc;			// 当前进程
-		struct pm::Context _context;	// 进程上下文
+		pm::Context _context;			// 进程上下文
 		int _num_off;				// 关闭中断层数
 		int _int_ena;				// 关中断前中断开关状态
 
 	public:
-		struct pm::Context *get_context() { return &_context; }
+		pm::Context *get_context() { return &_context; }
 		int get_num_off() { return _num_off; }
 		int get_int_ena() { return _int_ena; }
 		void set_int_ena( int x ) { _int_ena = x; }
@@ -73,7 +72,7 @@ namespace loongarch
 		static void push_intr_off();
 		static void pop_intr_off();
 		static void euen_float();
-		
+
 		static void write_csr( csr::CsrAddr r, uint64 d );
 		static uint64 read_csr( csr::CsrAddr r );
 
@@ -86,8 +85,8 @@ namespace loongarch
 	};
 
 	extern Cpu k_cpus[ NUMCPU ];
-	
-	extern "C"{
-		void swtch(pm::Context *old_, pm::Context *new_);
-	}
+
+	// extern "C"{
+	// 	void swtch(Context *old_, Context *new_);
+	// }
 } // namespace loongarch 

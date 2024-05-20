@@ -12,9 +12,6 @@
 #include "mm/page_table.hh"
 #include "pm/context.hh"
 #include "pm/sharemem.hh"
-#include "pm/trap_frame.hh"
-
-//struct TrapFrame;
 
 namespace fs
 {
@@ -22,7 +19,12 @@ namespace fs
 }
 namespace pm
 {
+	struct TrapFrame;
+
 	constexpr uint num_process = 32;
+	constexpr int default_proc_prio = 10;
+	constexpr int lowest_proc_prio = 19;
+	constexpr int highest_proc_prio = 0;
 
 	enum ProcState
 	{
@@ -36,10 +38,13 @@ namespace pm
 
 	class ProcessManager;
 	class ShmManager;
+	class Scheduler;
+
 	class Pcb
 	{
 		friend ProcessManager;
 		friend ShmManager;
+		friend Scheduler;
 	private:
 		smp::Lock _lock;
 		int _gid = num_process;					// global ID in pool 
@@ -59,8 +64,8 @@ namespace pm
 		uint64 _kstack = 0;               // Virtual address of kernel stack
 		uint64 _sz;                   // Size of process memory (bytes)
 		mm::PageTable _pt;    // User lower half address page table
-		struct TrapFrame *_trapframe; // data page for uservec.S, use DMW address
-		struct Context _context;      // swtch() here to run process
+		TrapFrame *_trapframe; // data page for uservec.S, use DMW address
+		Context _context;      // swtch() here to run process
 		// struct file *ofile[ NOFILE ];  // Open files
 		// struct inode *cwd;           // Current directory
 		char _name[ 16 ];               // Process name (debugging)
@@ -70,23 +75,28 @@ namespace pm
 
 		// about share memory 
 		uint _shm;					// The low-boundary address of share memory 
-		void *_shmva[SHM_NUM];				// The sharemem of process
+		void *_shmva[ SHM_NUM ];				// The sharemem of process
 		uint _shmkeymask;			// The mask of using shared physical memory page 
 
 		//about msg queue 
 		uint _mqmask;
 
 		// vm
-		struct vma *vm[10];  // virtual memory area
-		
+		struct vma *vm[ 10 ];  // virtual memory area <<<<<<<<<<<<<<<<<< what??? Could ONE process has several vm space?
+
 	public:
 		Pcb() {};
 		void init( const char *lock_name, uint gid );
 		void map_kstack( mm::PageTable &pt );
-		ProcState get_state();
+
 		int get_priority();
+
+	public:
 		Context *get_context() { return &_context; }
-		smp::Lock &get_lock() { return _lock; }
+		// smp::Lock &get_lock() { return _lock; }		<<<<<<<<<<<<<<<<<< 注意任何时候都不要尝试把任何的类的私有lock返回出去，
+																		// lock不正当的使用会带来问题，
+																		// 外部需要申请这个类的资源时应当在类中实现一个返回资源的接口,
+																		// 而lock的使用应当在接口中由类内部来决定
 		fs::Dentry *get_cwd() { return _cwd; }
 		void setTrapframe(TrapFrame *trapframe_) { _trapframe = trapframe_; }	
 		TrapFrame *getTrapframe() { return _trapframe; }
@@ -101,6 +111,14 @@ namespace pm
 		//void set_chan(void *chan) { _chan = chan; }
 	public:
 		uint get_pid() { return _pid; }
+		TrapFrame* get_trapframe() { return _trapframe; }
+		uint64 get_kstack() { return _kstack; }
+		mm::PageTable get_pagetable() { return _pt; }
+		ProcState get_state() { return _state; }
+
+		void set_trapframe( TrapFrame * tf ) { _trapframe = tf; }
+
+		bool is_killed() { return _killed != 0; }
 	};
 
 	extern Pcb k_proc_pool[ num_process ];

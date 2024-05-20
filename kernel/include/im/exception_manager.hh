@@ -19,14 +19,16 @@ namespace im
 	private:
 		smp::Lock _lock;
 		std::function<void( uint32 )> _exception_handlers[ max_ecode_num ];
+		
 
 	public:
 		ExceptionManager() = default;
 		void init( const char *lock_name );
 		void kernel_trap();
-		void user_trap();
+		void user_trap( uint64 estat );
 		void user_trap_ret();
 		void machine_trap();
+		int dev_intr();
 
 	public:
 		void ahci_read_handle();
@@ -35,6 +37,8 @@ namespace im
 	private:
 		// static void handle_pif();
 		void _init_exception_handler();
+
+		void _syscall();
 	};
 
 	extern ExceptionManager k_em;

@@ -10,18 +10,23 @@
 #include "im/exception_manager.hh"
 
 extern "C" {
-	void kerneltrap( void )
+	void _wrp_kernel_trap( void )
 	{
 		im::k_em.kernel_trap();
 	}
 
-	void machine_trap( void )
+	void _wrp_machine_trap( void )
 	{
 		im::k_em.machine_trap();
 	}
 
-	void usertrap( void )
+	void _wrp_user_trap( uint64 estat )
 	{
-		im::k_em.user_trap();
+		im::k_em.user_trap( estat );
+	}
+
+	void _wrp_user_trap_ret( void )
+	{
+		im::k_em.user_trap_ret();
 	}
 }

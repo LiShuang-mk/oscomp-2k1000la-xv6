@@ -44,14 +44,6 @@ namespace pm
 		printf( "map kstack : %p => %p (gid=%d)\n", _kstack, pt.walk( _kstack, 0 ).pa(), _gid );
 	}
 
-	ProcState Pcb::get_state()
-	{
-		_lock.acquire();
-		ProcState state = _state;
-		_lock.release();
-		return state;
-	}
-
 	int Pcb::get_priority()
 	{
 		_lock.acquire();

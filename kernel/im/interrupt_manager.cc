@@ -35,7 +35,7 @@ namespace im
 		loongarch::qemuls2k::write_itr_cfg(
 			loongarch::qemuls2k::ItrCfg::itr_enr_l,
 			loongarch::qemuls2k::ItrCfg::itr_bit_uart0_m |
-			loongarch::qemuls2k::ItrCfg::itr_bit_sata_m 
+			loongarch::qemuls2k::ItrCfg::itr_bit_sata_m
 		);
 		loongarch::qemuls2k::write_itr_cfg(
 			loongarch::qemuls2k::ItrCfg::itr_route_uart0,
@@ -60,7 +60,7 @@ namespace im
 		);
 
 		k_console.handle_uart_intr();
-		
+
 		log_trace(
 			"after clear uart0 intrn\n"
 			"itr status : %p\n"
@@ -70,5 +70,26 @@ namespace im
 			loongarch::qemuls2k::read_itr_cfg(
 				loongarch::qemuls2k::ItrCfg::itr_esr_l )
 		);
+	}
+
+	int InterruptManager::handle_dev_intr()
+	{
+
+		uint32 irq = *( volatile uint32 * ) ( loongarch::qemuls2k::itr_isr_l );
+
+		if ( irq & ( loongarch::qemuls2k::ItrCfg::itr_bit_uart0_m ) )
+		{
+			// uartintr();
+			log_warn( "uart intr not implement" );
+		}
+		else if ( irq )
+		{
+			printf( "unexpected interrupt irq=%d\n", irq );
+
+			// apic_complete( irq );
+			// extioi_complete( irq );
+		}
+
+		return 1;
 	}
 } // namespace im

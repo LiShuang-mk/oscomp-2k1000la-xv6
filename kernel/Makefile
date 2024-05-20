@@ -1,5 +1,5 @@
 CXXFLAGS += -I ../thirdparty/EASTL/include
-CXXFLAGS += -I ../kernel/include/klib
+# CXXFLAGS += -I ../kernel/include/klib
 CXXFLAGS += -Wno-deprecated-declarations
 CXXFLAGS += -I ../thirdparty/EASTL/test/packages/EABase/include/Common
 
@@ -102,8 +102,7 @@ clean:
 		cd "$(WORKPATH)/kernel/$$mod" ; \
 		rm -f *.o *.d; \
 	done
-	cd $(BUILDPATH); rm -f kernel.elf kernel/*.o kernel/*.d
-	cd $(WORKPATH); rm -f kernel.elf kernel/*.o kernel/*.d
+	cd $(BUILDPATH); rm -f kernel.elf kernel/*.o kernel/*.d kernel.a kernel.dis
 
 #-rm -f *.tex *.dvi *.idx *.aux *.log *.ind *.ilg \
 #	*.o *.d *.asm *.sym *.out

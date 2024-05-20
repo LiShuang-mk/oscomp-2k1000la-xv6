@@ -38,10 +38,19 @@ export CFLAGS += -fno-pie -no-pie
 # export CFLAGS += -static-libstdc++ -lstdc++
 export CXXFLAGS = $(CFLAGS)
 export CXXFLAGS += -std=c++23
+export CXXFLAGS += -include $(WORKPATH)/kernel/include/klib/virtual_function.hh
+export CXXFLAGS += -include $(WORKPATH)/kernel/include/klib/global_operator.hh
 export LDFLAGS = -z max-page-size=4096  
 
 export WORKPATH = $(shell pwd)
 export BUILDPATH = $(WORKPATH)/build
+
+
+STATIC_MODULE = \
+	$(BUILDPATH)/kernel.a \
+	$(BUILDPATH)/user/user.a \
+	$(BUILDPATH)/thirdparty/EASTL/libeastl.a
+
 
 # .PHONY 是一个伪规则，其后面依赖的规则目标会成为一个伪目标，使得规则执行时不会实际生成这个目标文件
 .PHONY: all clean test initdir probe_host compile_all load_kernel EASTL EASTL_test
@@ -54,6 +63,8 @@ all: initdir probe_host compile_all load_kernel
 
 initdir:
 	$(MAKE) initdir -C kernel
+	$(MAKE) initdir -C user
+	$(MAKE) initdir -C thirdparty/EASTL
 
 probe_host:
 	@echo "********************************"
@@ -63,21 +74,23 @@ probe_host:
 
 compile_all:
 	$(MAKE) EASTL
-	$(MAKE) -C kernel
+	$(MAKE) all -C user
+	$(MAKE) all -C kernel
 
 load_kernel: $(BUILDPATH)/kernel.elf
 
-$(BUILDPATH)/kernel.elf: $(BUILDPATH)/kernel.a kernel/kernel.ld 
-	$(LD) $(LDFLAGS) -T kernel/kernel.ld -o $@ $(BUILDPATH)/kernel.a $(BUILDPATH)/thirdparty/EASTL/libeastl.a 
+$(BUILDPATH)/kernel.elf: $(STATIC_MODULE) kernel/kernel.ld 
+	$(LD) $(LDFLAGS) -T kernel/kernel.ld -o $@ $(STATIC_MODULE)
 
 test:
 	$(MAKE) test -C kernel
 
 clean:
-	$(MAKE) clean -C kernel; $(MAKE) clean -C thirdparty/EASTL
+	$(MAKE) clean -C kernel
+	$(MAKE) clean -C user
+	$(MAKE) clean -C thirdparty/EASTL
 
 EASTL:
-	$(MAKE) initdir -C thirdparty/EASTL
 	$(MAKE) -C thirdparty/EASTL
 
 EASTL_test:

@@ -22,6 +22,8 @@ namespace fs
 
 namespace pm
 {
+	constexpr int default_proc_slot = 1;
+
 	#define MAXARG 32
 	class ProcessManager
 	{
@@ -29,6 +31,8 @@ namespace pm
 		smp::Lock _pid_lock;
 		smp::Lock _wait_lock;
 		int _cur_pid;
+		Pcb * _init_proc;		// user init proc
+
 	public:
 		ProcessManager() = default;
 		void init( const char *pid_lock_name, const char *wait_lock_name );
@@ -55,6 +59,18 @@ namespace pm
 		void stringtest();
 		void maptest();
 		void hashtest();
+
+		void exit( int );
+
+		void user_init();
+		void sche_proc( Pcb *p );
+		void fork_ret();
+
+	public:
+		void kill_proc( Pcb * p ) { p->_killed = 1; }
+
+	private:
+		void _proc_create_vm( Pcb * p );
 	};
 
 	extern ProcessManager k_pm;

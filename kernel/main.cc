@@ -21,12 +21,14 @@
 #include "mm/heap_memory_manager.hh"
 #include "pm/process_manager.hh"
 #include "pm/shmmanager.hh"
+#include "pm/scheduler.hh"
 #include "klib/printer.hh"
 #include "klib/common.hh"
 
 #include <bit>
 
 #include <EASTL/string.h>
+#include <EASTL/unordered_map.h>
 
 // entry.S needs one stack per CPU.
 __attribute__( ( aligned( 16 ) ) ) char stack0[ loongarch::entry_stack_size * NUMCPU ];
@@ -40,6 +42,10 @@ char tmp_buf[ 4096 ];
 extern uint64 _start_u_init;
 extern uint64 stext;
 extern uint64 etext;
+
+extern "C" {
+	extern int init_main( void );
+}
 
 int main()
 {
@@ -117,6 +123,8 @@ int main()
 
 		dev::pci::k_pci_driver.init( "pci driver" );
 
+
+
 		// 这个测试里面包含修改硬盘数据的敏感操作
 		// 使用前先备份2kfs.img或sdcard.img
 		// test_sata();
@@ -132,14 +140,22 @@ int main()
 			mm::k_pmm.trace_free_pages_count()
 		);
 
+		new ( &fs::fat::k_testcase_fs ) fs::fat::Fat32FileSystem;
 		fs::fat::k_testcase_fs.init( 1, 0 );
 		log_info( "testcase fs init" );
 		// test_fat32();
 		eastl::vector<eastl::string> args;
 		pm::k_pm.exec("test_echo",args);
 		// log_info( "text start %p\n", &stext );
-		// log_info( "text end   %p\n", &etext );
+		// log_info( "text end   %p\n", &etext ); 
+
 		log_info( "user code start %p\n", &_start_u_init );
+		log_info( "user init_main address %p\n", ( uint64 ) &init_main );
+
+		pm::k_pm.user_init();
+		log_info( "user init" );
+
+		pm::k_scheduler.schedule();
 
 		while ( 1 );
 
@@ -148,9 +164,8 @@ int main()
 		//pm::k_pm.vectortest();
 		//pm::k_pm.stringtest();
 		//pm::k_pm.maptest();
-		//pm::k_pm.hashtest();   
-	
-		test_buffer();
+		//pm::k_pm.hashtest();   //  < -------------  threr are some problem in heap dealloc
+		// test_buffer();
 
 		// fs::Buffer buf = fs::k_bufm.get_buffer( 0, 0 );
 		// log_trace( "测试 buffer : %p", buf.debug_get_buffer_base() );
@@ -158,11 +173,6 @@ int main()
 		// buf = fs::k_bufm.get_buffer( 0, 1024 );
 		// log_trace( "测试 buffer : %p", buf.debug_get_buffer_base() );
 		// // fs::k_bufm.release_buffer( buf );
-
-		int tm, tn;
-		tm = 0;
-		tn = 1;
-		assert( tm == tn, "测试assert, 需求 %d, 而输入 %d", tn, tm );
 
 		while ( 1 );
 
@@ -178,7 +188,7 @@ int main()
 		log_info( "Kernel not complete. About to enter loop. " );
 		while ( 1 ); // stop here
 	}
-	else
+	else	// smp not implement
 		while ( 1 );
 
 	return 0;
@@ -848,7 +858,7 @@ void test_fat32()
 	// 本地使用一个dir-info来保存文件的信息
 	fs::fat::Fat32DirInfo test_file_finfo;
 
-	eastl::string file_name = "run-all.sh";
+	eastl::string file_name = "test_echo";
 
 	// 通过文件名（目录名）在一个entry中查找子entry，会保存在dir-info中
 	fat32_root->find_sub_dir( file_name, test_file_finfo );
@@ -862,5 +872,14 @@ void test_fat32()
 	// 读出来后打印一下内容，这里因为读取的是一个txt，所以可以直接打印
 	tmp_buf[ sizeof( tmp_buf ) - 1 ] = 0;
 	log_trace( "print content of file <%s>", file_name.c_str() );
-	printf( "%s", tmp_buf );
+	printf( "\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
+	for ( uint i = 0; i < 512; ++i )
+	{
+		if ( i % 0x10 == 0 )
+			printf( "%B%B\t", i >> 8, i );
+		printf( "%B ", tmp_buf[ i ] );
+		if ( i % 0x10 == 0xF )
+			printf( "\n" );
+	}
+	// printf( "%s", tmp_buf );
 }

@@ -1,5 +1,4 @@
-#include "klib/klib.h"
-#include "klib/global_operator.hh"
+#include "klib/klib.hh"
 // void *memset(void *s, int c, size_t n) {
 //   for(char *b=(char*)s;b-(char*)s<n;b++)*b=c;
 //   return s;

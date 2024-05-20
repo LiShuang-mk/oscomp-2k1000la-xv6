@@ -20,10 +20,12 @@ namespace tmm
 	{
 	private:
 		smp::Lock _lock;
+		uint64 _ticks;
 
 	public:
 		TimerManager() = default;
 		void init( const char *lock_name );
+		int handle_clock_intr();
 	};
 
 	extern TimerManager k_tm;

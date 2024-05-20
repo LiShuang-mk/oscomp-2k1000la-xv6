@@ -6,22 +6,38 @@
 // --------------------------------------------------------------
 //
 
+#include "hal/cpu.hh"
 #include "pm/process_manager.hh"
 #include "pm/process.hh"
-#include "fs/elf.hh"
-#include "hal/cpu.hh"
+#include "pm/trap_frame.hh"
+#include "pm/scheduler.hh"
 #include "mm/memlayout.hh"
 #include "mm/physical_memory_manager.hh"
 #include "mm/virtual_memory_manager.hh"
-#include "mm/page_table.hh"
+#include "im/trap_wrapper.hh"
+#include "im/exception_manager.hh"
 #include <EASTL/vector.h>
 #include <EASTL/string.h>
 #include <EASTL/map.h>
 #include <EASTL/hash_map.h>
 #include "klib/common.hh"
-#include "scheduler/sche.hh"
-#include "hal/cpu.hh"
-#include "fs/fat/fat32_file_system.hh"
+
+extern "C" {
+	extern uint64 _start_u_init;
+	extern uint64 _end_u_init;
+	extern uint64 _u_init_stks;
+	extern uint64 _u_init_stke;
+	extern uint64 _u_init_txts;
+	extern uint64 _u_init_txte;
+	extern int init_main( void );
+
+	void _wrp_fork_ret( void )
+	{
+		pm::k_pm.fork_ret();
+	}
+}
+
+
 
 namespace pm
 {
@@ -50,7 +66,6 @@ namespace pm
 
 	bool ProcessManager::change_state( Pcb *p, ProcState state )
 	{
-		_pid_lock.acquire();
 		p->_lock.acquire();
 		if ( p->_state == ProcState::unused )
 		{
@@ -60,59 +75,70 @@ namespace pm
 		}
 		p->_state = state;
 		p->_lock.release();
-		_pid_lock.release();
 		return true;
 	}
 
-	void ProcessManager::alloc_pid(Pcb *p)
+	void ProcessManager::alloc_pid( Pcb *p )
 	{
 		_pid_lock.acquire();
-		p->_lock.acquire();
-		p->_pid = _cur_pid++;
-		p->_lock.release();
+		p->_pid = _cur_pid;
+		_cur_pid++;
 		_pid_lock.release();
 	}
 
 	Pcb *ProcessManager::alloc_proc()
 	{
 		Pcb *p;
-		for(p = k_proc_pool;p<&k_proc_pool[ num_process ];p++)
+		for ( p = k_proc_pool; p < &k_proc_pool[ num_process ]; p++ )
 		{
 			p->_lock.acquire();
-			if(p->get_state() == ProcState::unused)
+			if ( p->_state == ProcState::unused )
 			{
-				alloc_pid( p );
-				p->_state = used;
-				
-				// allocate trapframe page
-				if((p->_trapframe = (TrapFrame *)mm::k_pmm.alloc_page()) == 0)
+				pm::k_pm.alloc_pid( p );
+				p->_state = ProcState::used;
+				p->_slot = default_proc_slot;
+				p->_priority = default_proc_prio;
+
+				p->_shm = mm::vml::vm_trap_frame - 64 * 2 * mm::PageEnum::pg_size;
+				p->_shmkeymask = 0;
+				pm::k_pm.set_vma( p );
+
+				if ( ( p->_trapframe = ( TrapFrame* ) mm::k_pmm.alloc_page() ) == nullptr )
 				{
 					freeproc( p );
 					p->_lock.release();
-					return 0;
+					return nullptr;
 				}
 
-				p->_pt = proc_pagetable( p );
-				if(p->_pt.is_null()){
-					freeproc(p);
+				_proc_create_vm( p );
+				if ( p->_pt.get_base() == 0 )
+				{
+					freeproc( p );
 					p->_lock.release();
-					return 0;
+					return nullptr;
 				}
 
-				memset(&p->_context, 0 ,sizeof(p->_context));
-				/// @todo forkret to fulfill
-				//p->_context.ra = (uint64)forkret;
+				p->_mqmask = 0;
+
+				memset( &p->_context, 0, sizeof( p->_context ) );
+
+				p->_context.ra = ( uint64 ) _wrp_fork_ret;
+
 				p->_context.sp = p->_kstack + mm::pg_size;
+
 				p->_lock.release();
+
 				return p;
 			}
-			else 
+			else
+			{
 				p->_lock.release();
+			}
 		}
-		return 0;
+		return nullptr;
 	}
 
-	void ProcessManager::set_priority(Pcb *p, int priority)
+	void ProcessManager::set_priority( Pcb * p, int priority )
 	{
 		k_pm._pid_lock.acquire();
 		p->_lock.acquire();
@@ -120,8 +146,8 @@ namespace pm
 		p->_lock.release();
 		k_pm._pid_lock.release();
 	}
-	
-	void ProcessManager::set_slot(Pcb *p, int slot)
+
+	void ProcessManager::set_slot( Pcb * p, int slot )
 	{
 		k_pm._pid_lock.acquire();
 		p->_lock.acquire();
@@ -130,7 +156,7 @@ namespace pm
 		k_pm._pid_lock.release();
 	}
 
-	void ProcessManager::set_shm(Pcb *p)
+	void ProcessManager::set_shm( Pcb * p )
 	{
 		k_pm._pid_lock.acquire();
 		p->_lock.acquire();
@@ -140,25 +166,21 @@ namespace pm
 		k_pm._pid_lock.release();
 	}
 
-	void ProcessManager::set_vma(Pcb *p)
+	void ProcessManager::set_vma( Pcb * p )
 	{
-		k_pm._pid_lock.acquire();
-		p->_lock.acquire();
-		for(int i=1;i<10;i++)
+		for ( int i = 1; i < 10; i++ )
 		{
-			p->vm[i]->next = -1;
-			p->vm[i]->length = 0;
+			p->vm[ i ]->next = -1;
+			p->vm[ i ]->length = 0;
 		}
-		p->vm[0]->next = 1;
-		p->_lock.release();
-		k_pm._pid_lock.release();
+		p->vm[ 0 ]->next = 1;
 	}
 
-	int ProcessManager::set_trapframe(Pcb *p)
+	int ProcessManager::set_trapframe( Pcb * p )
 	{
 		k_pm._pid_lock.acquire();
 		p->_lock.acquire();
-		if((p->_trapframe = (struct TrapFrame *)mm::k_pmm.alloc_page()) == nullptr)
+		if ( ( p->_trapframe = ( struct TrapFrame * ) mm::k_pmm.alloc_page() ) == nullptr )
 		{
 			//k_pm.freeproc(p);
 			p->_lock.release();
@@ -168,22 +190,22 @@ namespace pm
 		return 0;
 	}
 
-	void ProcessManager::freeproc(Pcb *p)
+	void ProcessManager::freeproc( Pcb * p )
 	{
-		if(p->_trapframe)
-			mm::k_pmm.free_page((void *)p->_trapframe);	
+		if ( p->_trapframe )
+			mm::k_pmm.free_page( ( void * ) p->_trapframe );
 		p->_trapframe = 0;
-		if(!p->_pt.is_null())
+		if ( !p->_pt.is_null() )
 		{
-			mm::k_vmm.vmunmap(p->_pt,mm::PageEnum::pg_size,1,0);
-			mm::k_vmm.vmfree(p->_pt,p->_sz);
+			mm::k_vmm.vmunmap( p->_pt, mm::PageEnum::pg_size, 1, 0 );
+			mm::k_vmm.vmfree( p->_pt, p->_sz );
 		}
-		p->_pt.set_base(0);
+		p->_pt.set_base( 0 );
 		p->_sz = 0;
 		p->_pid = 0;
-		p-> parent = 0;
+		p->parent = 0;
 		p->_chan = 0;
-		p->_name[0] = 0;
+		p->_name[ 0 ] = 0;
 		p->_killed = 0;
 		p->_xstate = 0;
 		p->_state = ProcState::unused;
@@ -533,75 +555,75 @@ namespace pm
 		eastl::vector<int> v;
 
 		// 测试 push_back
-		v.push_back(1);
-		v.push_back(2);
-		v.push_back(3);
-		v.push_back(4);
+		v.push_back( 1 );
+		v.push_back( 2 );
+		v.push_back( 3 );
+		v.push_back( 4 );
 
 		// 测试 size
-		log_trace("vector size: %d\n", v.size());
+		log_trace( "vector size: %d\n", v.size() );
 
 		// 测试 capacity
-		log_trace("vector capacity: %d\n", v.capacity());
+		log_trace( "vector capacity: %d\n", v.capacity() );
 
 		// 测试 empty
-		log_trace("vector is empty: %d\n", v.empty());
+		log_trace( "vector is empty: %d\n", v.empty() );
 
 		// 测试 at
-		log_trace("vector at 2: %d\n", v.at(2));
+		log_trace( "vector at 2: %d\n", v.at( 2 ) );
 
 		// 测试 front
-		log_trace("vector front: %d\n", v.front());
+		log_trace( "vector front: %d\n", v.front() );
 
 		// 测试 back
-		log_trace("vector back: %d\n", v.back());
+		log_trace( "vector back: %d\n", v.back() );
 
 		// 测试 insert
-		v.insert(v.begin() + 2, 5);
-		log_trace("vector after insert: ");
-		for(auto i = v.begin(); i != v.end(); i++)
+		v.insert( v.begin() + 2, 5 );
+		log_trace( "vector after insert: " );
+		for ( auto i = v.begin(); i != v.end(); i++ )
 		{
-			log_trace("%d ", *i);
+			log_trace( "%d ", *i );
 		}
-		log_trace("\n");
+		log_trace( "\n" );
 
 		// 测试 erase
-		v.erase(v.begin() + 2);
-		log_trace("vector after erase: ");
-		for(auto i = v.begin(); i != v.end(); i++)
+		v.erase( v.begin() + 2 );
+		log_trace( "vector after erase: " );
+		for ( auto i = v.begin(); i != v.end(); i++ )
 		{
-			log_trace("%d ", *i);
+			log_trace( "%d ", *i );
 		}
-		log_trace("\n");
+		log_trace( "\n" );
 
 		// 测试 swap
 		eastl::vector<int> v2;
-		v2.push_back(6);
-		v2.push_back(7);
-		v.swap(v2);
-		log_trace("vector after swap: ");
-		for(auto i = v.begin(); i != v.end(); i++)
+		v2.push_back( 6 );
+		v2.push_back( 7 );
+		v.swap( v2 );
+		log_trace( "vector after swap: " );
+		for ( auto i = v.begin(); i != v.end(); i++ )
 		{
-			log_trace("%d ", *i);
+			log_trace( "%d ", *i );
 		}
-		log_trace("\n");
+		log_trace( "\n" );
 
 		// 测试 resize
-		v.resize(5, 8);
-		log_trace("vector after resize: ");
-		for(auto i = v.begin(); i != v.end(); i++)
+		v.resize( 5, 8 );
+		log_trace( "vector after resize: " );
+		for ( auto i = v.begin(); i != v.end(); i++ )
 		{
-			log_trace("%d ", *i);
+			log_trace( "%d ", *i );
 		}
-		log_trace("\n");
+		log_trace( "\n" );
 
 		// 测试 reserve
-		v.reserve(10);
-		log_trace("vector capacity after reserve: %d\n", v.capacity());
+		v.reserve( 10 );
+		log_trace( "vector capacity after reserve: %d\n", v.capacity() );
 
 		// 测试 clear
 		v.clear();
-		log_trace("vector size after clear: %d\n", v.size());
+		log_trace( "vector size after clear: %d\n", v.size() );
 	}
 
 	void ProcessManager::stringtest()
@@ -610,46 +632,46 @@ namespace pm
 
 		// 测试赋值
 		s = "hello world";
-		log_trace("string: %s\n", s.c_str());
+		log_trace( "string: %s\n", s.c_str() );
 
 		// 测试 size 和 length
-		log_trace("string size: %d\n", s.size());
-		log_trace("string length: %d\n", s.length());
+		log_trace( "string size: %d\n", s.size() );
+		log_trace( "string length: %d\n", s.length() );
 
 		// 测试 empty
-		log_trace("string is empty: %d\n", s.empty());
+		log_trace( "string is empty: %d\n", s.empty() );
 
 		// 测试 append
-		s.append(" EASTL");
-		log_trace("string after append: %s\n", s.c_str());
+		s.append( " EASTL" );
+		log_trace( "string after append: %s\n", s.c_str() );
 
 		// 测试 insert
-		s.insert(5, ", dear");
-		log_trace("string after insert: %s\n", s.c_str());
+		s.insert( 5, ", dear" );
+		log_trace( "string after insert: %s\n", s.c_str() );
 
 		// 测试 erase
-		s.erase(5, 6);
-		log_trace("string after erase: %s\n", s.c_str());
+		s.erase( 5, 6 );
+		log_trace( "string after erase: %s\n", s.c_str() );
 
 		// 测试 replace
-		s.replace(6, 5, "EASTL");
-		log_trace("string after replace: %s\n", s.c_str());
+		s.replace( 6, 5, "EASTL" );
+		log_trace( "string after replace: %s\n", s.c_str() );
 
 		// 测试 substr
-		eastl::string sub = s.substr(6, 5);
-		log_trace("substring: %s\n", sub.c_str());
+		eastl::string sub = s.substr( 6, 5 );
+		log_trace( "substring: %s\n", sub.c_str() );
 
 		// 测试 find
-		size_t pos = s.find("EASTL");
-		log_trace("find EASTL at: %d\n", pos);
+		size_t pos = s.find( "EASTL" );
+		log_trace( "find EASTL at: %d\n", pos );
 
 		// 测试 rfind
-		pos = s.rfind('l');
-		log_trace("rfind 'l' at: %d\n", pos);
+		pos = s.rfind( 'l' );
+		log_trace( "rfind 'l' at: %d\n", pos );
 
 		// 测试 compare
-		int cmp = s.compare("hello EASTL");
-		log_trace("compare with 'hello EASTL': %d\n", cmp);
+		int cmp = s.compare( "hello EASTL" );
+		log_trace( "compare with 'hello EASTL': %d\n", cmp );
 	}
 
 	void ProcessManager::maptest()
@@ -657,33 +679,33 @@ namespace pm
 		eastl::map<int, int> m;
 
 		// 测试 insert
-		m.insert(eastl::make_pair(1, 2));
-		m.insert(eastl::make_pair(3, 4));
-		m.insert(eastl::make_pair(5, 6));
+		m.insert( eastl::make_pair( 1, 2 ) );
+		m.insert( eastl::make_pair( 3, 4 ) );
+		m.insert( eastl::make_pair( 5, 6 ) );
 
 		// 测试 size
-		log_trace("map size: %d\n", m.size());
+		log_trace( "map size: %d\n", m.size() );
 
 		// 测试 empty
-		log_trace("map is empty: %d\n", m.empty());
+		log_trace( "map is empty: %d\n", m.empty() );
 
 		// 测试 at
-		log_trace("map at 3: %d\n", m.at(3));
+		log_trace( "map at 3: %d\n", m.at( 3 ) );
 
 		// 测试 operator[]
-		log_trace("map[5]: %d\n", m[5]);
+		log_trace( "map[5]: %d\n", m[ 5 ] );
 
 		// 测试 find
-		auto it = m.find(3);
-		log_trace("find 3: %d\n", it->second);
+		auto it = m.find( 3 );
+		log_trace( "find 3: %d\n", it->second );
 
 		// 测试 erase
-		m.erase(3);
-		log_trace("map size after erase: %d\n", m.size());
+		m.erase( 3 );
+		log_trace( "map size after erase: %d\n", m.size() );
 
 		// 测试 clear
 		m.clear();
-		log_trace("map size after clear: %d\n", m.size());
+		log_trace( "map size after clear: %d\n", m.size() );
 	}
 
 	void ProcessManager::hashtest()
@@ -691,32 +713,32 @@ namespace pm
 		eastl::hash_map<int, int> m;
 
 		// 测试 insert
-		m.insert(eastl::make_pair(1, 2));
-		m.insert(eastl::make_pair(3, 4));
-		m.insert(eastl::make_pair(5, 6));
+		m.insert( eastl::make_pair( 1, 2 ) );
+		m.insert( eastl::make_pair( 3, 4 ) );
+		m.insert( eastl::make_pair( 5, 6 ) );
 
 		// 测试 size
-		log_trace("hash_map size: %d\n", m.size());
+		log_trace( "hash_map size: %d\n", m.size() );
 
 		// 测试 empty
-		log_trace("hash_map is empty: %d\n", m.empty());
+		log_trace( "hash_map is empty: %d\n", m.empty() );
 
 		// 测试 at
-		log_trace("hash_map at 3: %d\n", m.at(3));
+		log_trace( "hash_map at 3: %d\n", m.at( 3 ) );
 
 		// 测试 operator[]
-		log_trace("hash_map[5]: %d\n", m[5]);
+		log_trace( "hash_map[5]: %d\n", m[ 5 ] );
 
 		// 测试 find
-		auto it = m.find(3);
-		log_trace("find 3: %d\n", it->second);
+		auto it = m.find( 3 );
+		log_trace( "find 3: %d\n", it->second );
 
 		// 测试 erase
-		m.erase(3);
-		log_trace("hash_map size after erase: %d\n", m.size());
+		m.erase( 3 );
+		log_trace( "hash_map size after erase: %d\n", m.size() );
 
 		// 测试 clear
 		m.clear();
-		log_trace("hash_map size after clear: %d\n", m.size());
+		log_trace( "hash_map size after clear: %d\n", m.size() );
 	}
 }

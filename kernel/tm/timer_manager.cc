@@ -23,5 +23,16 @@ namespace tmm
 			( loongarch::csr::Tcfg::tcfg_periodic_m );
 		loongarch::Cpu::write_csr( loongarch::csr::CsrAddr::tcfg, tcfg_data );
 		// asm volatile( "csrwr %0, 0x41" : : "r" ( tcfg_data ) );
+
+		_ticks = 0;
+	}
+
+	int TimerManager::handle_clock_intr()
+	{
+		_lock.acquire();
+		_ticks++;
+		/// TODO: wakeup(&ticks)
+		_lock.release();
+		return 2;
 	}
 } // namespace tm
