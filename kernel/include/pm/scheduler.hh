@@ -14,6 +14,7 @@ namespace pm
 		void init( const char *name );
 		void add_thread();
 		void remove_thread();
+		void switch_to_proc(pm::Pcb *p);
 		int  get_highest_proirity();
 		void schedule();
 		// void switch_to_proc( pm::Pcb *p );

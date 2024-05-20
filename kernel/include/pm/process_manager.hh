@@ -48,10 +48,8 @@ namespace pm
 		mm::PageTable proc_pagetable(Pcb *p);
 		void proc_freepagetable(mm::PageTable pt, uint64 sz);
 		void freeproc(Pcb *p);
-		void sched();
 		int exec(eastl::string path, eastl::vector<eastl::string> args);
 		int wait(uint64 addr);
-		void exit(int state);
 		int load_seg(mm::PageTable &pt, uint64 va, fs::fat::Fat32DirEntry *de, uint offset, uint size);
 		void sleep(void *chan, smp::Lock *lock);
 		void wakeup(void *chan);

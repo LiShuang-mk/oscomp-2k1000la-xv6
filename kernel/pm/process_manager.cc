@@ -15,12 +15,15 @@
 #include "mm/physical_memory_manager.hh"
 #include "mm/virtual_memory_manager.hh"
 #include "im/trap_wrapper.hh"
+#include "fs/fat/fat32_dir_entry.hh"
 #include "im/exception_manager.hh"
 #include <EASTL/vector.h>
 #include <EASTL/string.h>
 #include <EASTL/map.h>
 #include <EASTL/hash_map.h>
 #include "klib/common.hh"
+#include "fs/elf.hh"
+#include "fs/fat/fat32_file_system.hh"
 
 extern "C" {
 	extern uint64 _start_u_init;
@@ -31,10 +34,10 @@ extern "C" {
 	extern uint64 _u_init_txte;
 	extern int init_main( void );
 
-	void _wrp_fork_ret( void )
-	{
-		pm::k_pm.fork_ret();
-	}
+	// void _wrp_fork_ret( void )
+	// {
+	// 	pm::k_pm.fork_ret();
+	// }
 }
 
 
@@ -110,7 +113,7 @@ namespace pm
 					return nullptr;
 				}
 
-				_proc_create_vm( p );
+				//_proc_create_vm( p );
 				if ( p->_pt.get_base() == 0 )
 				{
 					freeproc( p );
@@ -121,8 +124,8 @@ namespace pm
 				p->_mqmask = 0;
 
 				memset( &p->_context, 0, sizeof( p->_context ) );
-
-				p->_context.ra = ( uint64 ) _wrp_fork_ret;
+				/// @todo fork_ret
+				//p->_context.ra = ( uint64 ) _wrp_fork_ret;
 
 				p->_context.sp = p->_kstack + mm::pg_size;
 
@@ -239,27 +242,6 @@ namespace pm
 		mm::k_vmm.vmfree(pt, sz);
 	}
 
-	void ProcessManager::sched()
-	{
-		int int_enabled = 0;
-		Pcb *p = k_pm.get_cur_pcb();
-		loongarch::Cpu *cpu = loongarch::Cpu::get_cpu();
-
-		if(!p->_lock.held())
-			log_panic("sched p->lock");
-		if(cpu->get_num_off() != 1)
-			log_panic("sched lock");
-		if(p->_state == ProcState::running)
-			log_panic("sched running");
-		if(cpu->get_intr_stat())
-			log_panic("sched interruptible");
-
-		int_enabled = cpu->get_int_ena();
-		loongarch::swtch(&p->_context, cpu->get_context());
-		cpu->set_int_ena(int_enabled);
-
-	}
-
 	int ProcessManager::exec(eastl::string path, eastl::vector<eastl::string> argv)
 	{
 		Pcb *proc = get_cur_pcb();
@@ -285,7 +267,6 @@ namespace pm
 			return -1; 	 // 拿到文件信息
 		}
 
-		de->read_content(&ph,sizeof(ph),64);
 		/// @todo check ELF header
 		de->read_content(&elf,sizeof(elf),0);
 
@@ -311,14 +292,14 @@ namespace pm
 				log_error("exec: memsz < filesz");
 				proc_freepagetable(proc->_pt, sz);
 				return -1;
-			}pt_old
+			}
 			if(ph.vaddr + ph.memsz < ph.vaddr){
 				log_error("exec: vaddr + memsz < vaddr");
 				proc_freepagetable(proc->_pt, sz);
 				return -1;
 			}
 			uint64 sz1;
-			if((sz1 = mm::k_vmm.uvmalloc(proc->_pt,sz,ph.vaddr + ph.memsz)) == 0)
+			if((sz1 = mm::k_vmm.vmalloc(proc->_pt,sz,ph.vaddr + ph.memsz)) == 0)
 			{
 				log_error("exec: uvmalloc");
 				proc_freepagetable(proc->_pt, sz);
@@ -510,7 +491,7 @@ namespace pm
 
 		_wait_lock.release();
 
-		sched(); // jump to schedular, never return
+		k_scheduler.schedule(); // jump to schedular, never return
 		log_panic("zombie exit");
 
 	}
@@ -543,7 +524,7 @@ namespace pm
 		proc->_chan = chan;
 		proc->_state = ProcState::sleeping;
 
-		sched();
+		k_scheduler.schedule();
 		proc->_chan = 0;
 
 		proc->_lock.release();

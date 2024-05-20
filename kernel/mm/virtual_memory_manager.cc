@@ -16,7 +16,7 @@
 #include "mm/memlayout.hh"
 #include "mm/tlb_manager.hh"
 #include "pm/process.hh"
-#include "klib/klib.h"
+#include "klib/klib.hh"
 namespace mm
 {
 	VirtualMemoryManager k_vmm;

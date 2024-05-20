@@ -102,7 +102,6 @@ namespace pm
 		TrapFrame *getTrapframe() { return _trapframe; }
 		int iskilled() {return _killed; }
 		void kill() { _killed = 1; }
-		uint64 get_kstack() { return _kstack; }
 		mm::PageTable get_page() { return _pt; }
 		Pcb * get_parent() { return parent; }
 		void set_state( ProcState state ) { _state = state; }
