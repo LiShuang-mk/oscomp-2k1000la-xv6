@@ -1,8 +1,9 @@
-#include "console.hh"
 #include "hal/loongarch.hh"
 #include "hal/qemu_ls2k.hh"
 #include "hal/cpu.hh"
 #include "hal/disk/mbr.hh"
+
+#include "fs/dev/console.hh"
 #include "fs/dev/pci_driver.hh"
 #include "fs/dev/ahci_controller.hh"
 #include "fs/dev/sata_driver.hh"
@@ -13,15 +14,20 @@
 #include "fs/ext4/index_node.hh"
 #include "fs/jbd2/journal_super_block.hh"
 #include "fs/buffer_manager.hh"
+
 #include "tm/timer_manager.hh"
+
 #include "im/exception_manager.hh"
 #include "im/interrupt_manager.hh"
+
 #include "mm/physical_memory_manager.hh"
 #include "mm/virtual_memory_manager.hh"
 #include "mm/heap_memory_manager.hh"
+
 #include "pm/process_manager.hh"
 #include "pm/shmmanager.hh"
 #include "pm/scheduler.hh"
+
 #include "klib/printer.hh"
 #include "klib/common.hh"
 
@@ -52,10 +58,10 @@ int main()
 	if ( loongarch::Cpu::read_tp() == 0 )
 	{
 		// console init 
-		k_console.init( "console" );
+		dev::k_console.init( "console" );
 
 		// printf init 
-		kernellib::k_printer.init( &k_console, "printer" );
+		kernellib::k_printer.init( &dev::k_console, "printer" );
 		log_info( "Hello World!\n" );
 
 

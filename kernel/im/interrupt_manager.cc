@@ -6,7 +6,7 @@
 // --------------------------------------------------------------
 //
 
-#include "console.hh"
+#include "fs/dev/console.hh"
 #include "hal/qemu_ls2k.hh"
 #include "im/interrupt_manager.hh"
 #include "klib/common.hh"
@@ -59,7 +59,7 @@ namespace im
 				loongarch::qemuls2k::ItrCfg::itr_esr_l )
 		);
 
-		k_console.handle_uart_intr();
+		dev::k_console.handle_uart_intr();
 
 		log_trace(
 			"after clear uart0 intrn\n"

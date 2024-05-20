@@ -11,8 +11,10 @@
 #include <stdarg.h>
 
 #include "smp/lock.hh"
-
-class Console;
+namespace dev
+{
+	class Console;
+} // namespace dev
 
 namespace kernellib
 {
@@ -23,9 +25,9 @@ namespace kernellib
 		{
 			console,
 			file,
-			device, 
+			device,
 		} _type;
-		Console *_console = nullptr;
+		dev::Console *_console = nullptr;
 		smp::Lock _lock;
 		int _locking = 1;
 		int _panicked = 0;
@@ -34,9 +36,9 @@ namespace kernellib
 
 	public:
 		inline int is_panic() { return _panicked; }
-		
+
 		Printer() {};
-		void init( Console *console, const char *name );
+		void init( dev::Console *console, const char *name );
 		void vprintf( const char *fmt, va_list ap );
 		void printf( const char *fmt, ... );
 		void printint( int xx, int base, int sign );

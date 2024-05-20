@@ -11,18 +11,22 @@
 #include "smp/lock.hh"
 #include "hal/uart.hh"
 
-class Console
+namespace dev
 {
-private:
-	smp::Lock _lock;
-	UartManager _uart_m;
-	const int _backspace = 0x100;
-public:
-	Console();
-	void init( const char *name );
-	void putc( char c );
+	class Console
+	{
+	private:
+		smp::Lock _lock;
+		UartManager _uart_m;
+		const int _backspace = 0x100;
+	public:
+		Console();
+		void init( const char *name );
+		void putc( char c );
 
-	void handle_uart_intr();
-};
+		void handle_uart_intr();
+	};
 
-extern Console k_console;
+	extern Console k_console;
+
+} // namespace dev

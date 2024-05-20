@@ -8,7 +8,7 @@
 
 #include "klib/printer.hh"
 #include "klib/common.hh"
-#include "console.hh"
+#include "fs/dev/console.hh"
 
 namespace kernellib
 {
@@ -17,7 +17,7 @@ namespace kernellib
 	int Printer::_trace_flag = 0;
 	char Printer::_digits[] = "0123456789abcdef";
 
-	void Printer::init( Console *console, const char *name )
+	void Printer::init( dev::Console *console, const char *name )
 	{
 		_type = out_type::console;
 		_console = console;
