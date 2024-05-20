@@ -25,12 +25,19 @@ namespace mm
 		uint64 get_base() { return _base_addr; }
 		void set_global() { _is_global = true; }
 		void unset_global() { _is_global = false; }
-		bool is_null() { return _base_addr == 0; }	
+		bool is_null() { return _base_addr == 0; }
+		
 		/// @brief 软件遍历页表，通常，只能由全局页目录调用
 		/// @param va virtual address 
 		/// @param alloc either alloc physical page or not 
 		/// @return PTE in the last level page table 
 		Pte walk( uint64 va, bool alloc );
+
+		/// @brief 软件遍历页表，通常只能由用户的全局页目录调用
+		/// @param va virtual address
+		/// @return physical address mapped from va
+		void * walk_addr( uint64 va );
+
 		/// @brief 递归地释放页表中的所有页面
 		void freewalk();
 

@@ -8,6 +8,7 @@
 
 #include "mm/physical_memory_manager.hh"
 #include "mm/page_table.hh"
+#include "mm/pte.hh"
 #include "mm/memlayout.hh"
 #include "mm/page.hh"
 #include "klib/common.hh"
@@ -19,7 +20,7 @@ namespace mm
 	PageTable::PageTable()
 		: _base_addr( 0 )
 	{
-		
+
 	}
 
 	Pte PageTable::walk( uint64 va, bool alloc )
@@ -62,6 +63,70 @@ namespace mm
 		return pte;
 	}
 
+	void * PageTable::walk_addr( uint64 va )
+	{
+		uint64 pa;
+
+		if ( va >= MAXVA )
+			return 0;
+
+		Pte pte = walk( va, false/* alloc */ );
+		if ( pte._data_addr == nullptr )
+			return nullptr;
+		if ( !pte.is_valid() )
+			return nullptr;
+		if ( pte.plv() == 0 )
+		{
+			log_warn( "try to walk-addr( k-pt, %p ). nullptr will be return.", va );
+			return nullptr;
+		}
+		pa = pte.pa();
+		return pa;
+	}
+
+
+	void PageTable::freewalk()
+	{ // pte num is 4096 / 8 = 512 in pgtable
+		for ( uint i = 0; i < 512; i++ )
+		{
+			uint64 pte_data = get_pte_data( i );
+			Pte _pte( ( pte_t * ) pte_data );
+			if ( _pte.is_valid() && !_pte.is_leaf() )      // PGT -> PTE -> _pte
+			{																							//  get_pte_addr
+				// this PTE is points to a lower-level page table
+				PageTable child;
+				child.set_base( ( uint64 ) _pte.pa() );
+				child.freewalk();
+				reset_pte_data( i );
+			}
+			else if ( _pte.is_valid() )
+			{
+				log_panic( "freewalk: leaf" );
+			}
+		}
+		k_pmm.free_page( ( void * ) _base_addr );
+	}
+
+	uint64 PageTable::dir3_num( uint64 va )
+	{
+		return ( va & PageEnum::dir3_vpn_mask ) >> PageEnum::dir3_vpn_shift;
+	}
+	uint64 PageTable::dir2_num( uint64 va )
+	{
+		return ( va & PageEnum::dir2_vpn_mask ) >> PageEnum::dir2_vpn_shift;
+	}
+	uint64 PageTable::dir1_num( uint64 va )
+	{
+		return ( va & PageEnum::dir1_vpn_mask ) >> PageEnum::dir1_vpn_shift;
+	}
+	uint64 PageTable::pt_num( uint64 va )
+	{
+		return ( va & PageEnum::pt_vpn_mask ) >> PageEnum::pt_vpn_shift;
+	}
+
+
+// ---------------- private helper functions ----------------
+
 	bool PageTable::_walk_to_next_level( Pte pte, bool alloc, PageTable &pt )
 	{
 		if ( pte.is_valid() )
@@ -86,44 +151,5 @@ namespace mm
 			pte.set_data( page_round_down( ( uint64 ) page_addr ) | loongarch::PteEnum::valid_m );
 		}
 		return true;
-	}
-
-	void PageTable::freewalk()
-	{ // pte num is 4096 / 8 = 512 in pgtable
-		for(uint i=0; i< 512;i++)
-		{
-			uint64 pte_data = get_pte_data(i);
-			Pte _pte((pte_t *)pte_data);
-			if(_pte.is_valid() && ! _pte.is_leaf())      // PGT -> PTE -> _pte
-			{																							//  get_pte_addr
-				// this PTE is points to a lower-level page table
-				PageTable child;
-				child.set_base( ( uint64 ) _pte.pa());
-				child.freewalk();
-				reset_pte_data(i);
-			}
-			else if( _pte.is_valid() )
-			{
-				log_panic("freewalk: leaf");
-			}
-		}
-		k_pmm.free_page((void *)_base_addr);
-	}
-
-	uint64 PageTable::dir3_num( uint64 va )
-	{
-		return ( va & PageEnum::dir3_vpn_mask ) >> PageEnum::dir3_vpn_shift;
-	}
-	uint64 PageTable::dir2_num( uint64 va )
-	{
-		return ( va & PageEnum::dir2_vpn_mask ) >> PageEnum::dir2_vpn_shift;
-	}
-	uint64 PageTable::dir1_num( uint64 va )
-	{
-		return ( va & PageEnum::dir1_vpn_mask ) >> PageEnum::dir1_vpn_shift;
-	}
-	uint64 PageTable::pt_num( uint64 va )
-	{
-		return ( va & PageEnum::pt_vpn_mask ) >> PageEnum::pt_vpn_shift;
 	}
 }

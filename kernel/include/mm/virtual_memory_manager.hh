@@ -61,7 +61,11 @@ namespace mm
 		/// @param pt 
 		/// @param sz 
 		void vmfree( PageTable &pt, uint64 sz );
-		
+
+		int copy_in( PageTable &pt, void *dst, uint64 src_va, uint64 len );
+
+		int copy_str_in( PageTable &pt, void *dst, uint64 src_va, uint64 max );
+
 		/// @brief map shm pages to physical pages, it is similar with map_pages
 		/// @param pt pagetable to use
 		/// @param oldshm oldshm lower address

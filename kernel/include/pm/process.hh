@@ -16,6 +16,7 @@
 namespace fs
 {
 	class Dentry;
+	struct xv6_file;
 }
 namespace pm
 {
@@ -25,6 +26,7 @@ namespace pm
 	constexpr int default_proc_prio = 10;
 	constexpr int lowest_proc_prio = 19;
 	constexpr int highest_proc_prio = 0;
+	constexpr uint max_open_files = 16;
 
 	enum ProcState
 	{
@@ -66,7 +68,7 @@ namespace pm
 		mm::PageTable _pt;    // User lower half address page table
 		TrapFrame *_trapframe; // data page for uservec.S, use DMW address
 		Context _context;      // swtch() here to run process
-		// struct file *ofile[ NOFILE ];  // Open files
+		fs::xv6_file *_ofile[ max_open_files ];  // Open files
 		// struct inode *cwd;           // Current directory
 		char _name[ 16 ];               // Process name (debugging)
 
@@ -85,7 +87,7 @@ namespace pm
 		struct vma *vm[ 10 ];  // virtual memory area <<<<<<<<<<<<<<<<<< what??? Could ONE process has several vm space?
 
 	public:
-		Pcb() {};
+		Pcb();
 		void init( const char *lock_name, uint gid );
 		void map_kstack( mm::PageTable &pt );
 
@@ -104,6 +106,12 @@ namespace pm
 		mm::PageTable get_pagetable() { return _pt; }
 		ProcState get_state() { return _state; }
 		char * get_name() { return _name; }
+		uint64 get_size() { return _sz; }
+		xv6_file * get_open_file( int fd )
+		{
+			if ( fd < 0 || fd >= max_open_files ) return nullptr;
+			return _ofile[ fd ];
+		}
 
 		void set_trapframe( TrapFrame * tf ) { _trapframe = tf; }
 

@@ -8,7 +8,7 @@
 
 #include "hal/loongarch.hh"
 #include "hal/cpu.hh"
-#include "klib/common.hh"
+#include "klib/klib.hh"
 #include "mm/virtual_memory_manager.hh"
 #include "mm/physical_memory_manager.hh"
 #include "mm/page.hh"
@@ -143,6 +143,74 @@ namespace mm
 		}
 
 		return new_sz;
+	}
+
+	int VirtualMemoryManager::copy_in( PageTable &pt, void *dst, uint64 src_va, uint64 len )
+	{
+		uint64 n, va, pa;
+
+		while ( len > 0 )
+		{
+			va = page_round_down( src_va );
+			pa = ( uint64 ) pt.walk_addr( va );
+			if ( pa == 0 )
+				return -1;
+			n = pg_size - ( src_va - va );
+			if ( n > len )
+				n = len;
+			memmove( dst, ( const void * ) ( pa + ( src_va - va ) ), n );
+
+			len -= n;
+			dst += n;
+			src_va = va + pg_size;
+		}
+		return 0;
+	}
+
+	int VirtualMemoryManager::copy_str_in( PageTable &pt, void *dst, uint64 src_va, uint64 max )
+	{
+		uint64 n, va, pa;
+		int got_null = 0;
+
+		while ( got_null == 0 && max > 0 )
+		{
+			va = page_round_down( src_va );
+			pa = ( uint64 ) pt.walk_addr( va );
+			if ( pa == 0 )
+				return -1;
+			n = pg_size - ( src_va - va );
+			if ( n > max )
+				n = max;
+
+			char *p = ( char * ) ( pa + ( src_va - va ) );
+			while ( n > 0 )
+			{
+				if ( *p == '\0' )
+				{
+					*dst = '\0';
+					got_null = 1;
+					break;
+				}
+				else
+				{
+					*dst = *p;
+				}
+				--n;
+				--max;
+				p++;
+				dst++;
+			}
+
+			src_va = va + pg_size;
+		}
+		if ( got_null )
+		{
+			return 0;
+		}
+		else
+		{
+			return -1;
+		}
 	}
 
 	uint64 VirtualMemoryManager::allocshm( PageTable &pt, uint64 oldshm, uint64 newshm, uint64 sz, void *phyaddr[ pm::MAX_SHM_PGNUM ] )

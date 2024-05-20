@@ -17,6 +17,12 @@ namespace pm
 {
 	Pcb k_proc_pool[ num_process ];
 
+	Pcb::Pcb()
+	{
+		for ( auto &of : _ofile )
+			of = nullptr;
+	}
+
 	void Pcb::init( const char *lock_name, uint gid )
 	{
 		_lock.init( lock_name );
