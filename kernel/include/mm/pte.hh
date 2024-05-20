@@ -34,8 +34,6 @@ namespace mm
 		bool is_dirty() { return ( ( *_data_addr & loongarch::PteEnum::dirty_m ) != 0 ); }
 		uint64 plv() { return ( ( *_data_addr & loongarch::PteEnum::plv_m ) >> loongarch::PteEnum::plv_s ); }
 		uint64 mat() { return ( ( *_data_addr & loongarch::PteEnum::mat_m ) >> loongarch::PteEnum::mat_s ); }
-		uint64 plv() { return ( ( *_data_addr & loongarch::PteEnum::plv_m ) ); }
-		uint64 mat() { return ( ( *_data_addr & loongarch::PteEnum::mat_m ) ); }
 		void set_plv() { *_data_addr |= loongarch::PteEnum::plv_m; }
 		void unset_plv() { *_data_addr &= ~loongarch::PteEnum::plv_m; }
 		bool is_global() { return ( ( *_data_addr & loongarch::PteEnum::b_global_m ) != 0 ); }

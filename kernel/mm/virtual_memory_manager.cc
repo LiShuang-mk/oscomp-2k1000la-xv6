@@ -149,6 +149,7 @@ namespace mm
 	int VirtualMemoryManager::copy_in( PageTable &pt, void *dst, uint64 src_va, uint64 len )
 	{
 		uint64 n, va, pa;
+		char *p_dst = ( char * ) dst;
 
 		while ( len > 0 )
 		{
@@ -159,10 +160,10 @@ namespace mm
 			n = pg_size - ( src_va - va );
 			if ( n > len )
 				n = len;
-			memmove( dst, ( const void * ) ( pa + ( src_va - va ) ), n );
+			memmove( ( void * ) p_dst, ( const void * ) ( pa + ( src_va - va ) ), n );
 
 			len -= n;
-			dst += n;
+			p_dst += n;
 			src_va = va + pg_size;
 		}
 		return 0;
@@ -172,6 +173,7 @@ namespace mm
 	{
 		uint64 n, va, pa;
 		int got_null = 0;
+		char *p_dst = ( char * ) dst;
 
 		while ( got_null == 0 && max > 0 )
 		{
@@ -188,18 +190,18 @@ namespace mm
 			{
 				if ( *p == '\0' )
 				{
-					*dst = '\0';
+					*p_dst = '\0';
 					got_null = 1;
 					break;
 				}
 				else
 				{
-					*dst = *p;
+					*p_dst = *p;
 				}
 				--n;
 				--max;
 				p++;
-				dst++;
+				p_dst++;
 			}
 
 			src_va = va + pg_size;
@@ -273,24 +275,24 @@ namespace mm
 		return oldshm;
 	}
 
-	int VirtualMemoryManager::copyout(PageTable &pt, uint64 va, const void *p, uint64 len)
+	int VirtualMemoryManager::copyout( PageTable &pt, uint64 va, const void *p, uint64 len )
 	{
 		uint64 n, a, pa;
 
-		while(len > 0)
+		while ( len > 0 )
 		{
-			a = page_round_down(va);
-			Pte pte = pt.walk(a, 0);
-			pa = reinterpret_cast<uint64>(pte.pa());
-			if(pa == 0)
+			a = page_round_down( va );
+			Pte pte = pt.walk( a, 0 );
+			pa = reinterpret_cast< uint64 >( pte.pa() );
+			if ( pa == 0 )
 				return -1;
-			n = pg_size - (va - a);
-			if(n > len)
+			n = pg_size - ( va - a );
+			if ( n > len )
 				n = len;
-			memmove((void *)((pa + (va - a)) | loongarch::qemuls2k::dmwin::win_0), p, n);
+			memmove( ( void * ) ( ( pa + ( va - a ) ) | loongarch::qemuls2k::dmwin::win_0 ), p, n );
 
 			len -= n;
-			p = (char*)p + n;
+			p = ( char* ) p + n;
 			va = a + pg_size;
 		}
 		return 0;
@@ -348,46 +350,47 @@ namespace mm
 			pte.unset_plv();
 	}
 
-	uint64 VirtualMemoryManager::uvmalloc(PageTable &pt, uint64 oldsz, uint64 newsz)
+	uint64 VirtualMemoryManager::uvmalloc( PageTable &pt, uint64 oldsz, uint64 newsz )
 	{
 		uint64 a;
 		uint64 pa;
 
-		if(newsz < oldsz)  // shrink, not here
+		if ( newsz < oldsz )  // shrink, not here
 			return oldsz;
-		a = page_round_up(oldsz); // start from the next page
+		a = page_round_up( oldsz ); // start from the next page
 
-		for(a = oldsz; a < newsz; a += pg_size)
+		for ( a = oldsz; a < newsz; a += pg_size )
 		{
-			pa = ( uint64 )mm::k_pmm.alloc_page();
-			if(pa == 0){
-				vmfree(pt, oldsz);
+			pa = ( uint64 ) mm::k_pmm.alloc_page();
+			if ( pa == 0 )
+			{
+				vmfree( pt, oldsz );
 				return 0;
 			}
-			if(!map_pages(pt, a, pg_size, pa, 
-						(loongarch::PteEnum::presence_m) |
-						(loongarch::PteEnum::writable_m) | 
-						(loongarch::PteEnum::plv_m) | 
-						(loongarch::PteEnum::mat_m) | 
-						(loongarch::PteEnum::dirty_m)))
+			if ( !map_pages( pt, a, pg_size, pa,
+				( loongarch::PteEnum::presence_m ) |
+				( loongarch::PteEnum::writable_m ) |
+				( loongarch::PteEnum::plv_m ) |
+				( loongarch::PteEnum::mat_m ) |
+				( loongarch::PteEnum::dirty_m ) ) )
 			{
-				k_pmm.free_page((void *)pa);
-				uvmdealloc(pt, a, oldsz);
+				k_pmm.free_page( ( void * ) pa );
+				uvmdealloc( pt, a, oldsz );
 				return 0;
 			}
 		}
 		return newsz;
 	}
 
-	uint64 VirtualMemoryManager::uvmdealloc(PageTable &pt, uint64 oldsz, uint64 newsz)
+	uint64 VirtualMemoryManager::uvmdealloc( PageTable &pt, uint64 oldsz, uint64 newsz )
 	{
-		if(newsz >= oldsz)
+		if ( newsz >= oldsz )
 			return oldsz;
-		if(page_round_up(newsz) < page_round_up(oldsz))
-			vmunmap(pt, 
-					page_round_up(newsz), 
-					(page_round_up(oldsz) - page_round_up(newsz)) / mm::pg_size,
-					1);
+		if ( page_round_up( newsz ) < page_round_up( oldsz ) )
+			vmunmap( pt,
+				page_round_up( newsz ),
+				( page_round_up( oldsz ) - page_round_up( newsz ) ) / mm::pg_size,
+				1 );
 		return newsz;
 	}
 

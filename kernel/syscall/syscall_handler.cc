@@ -43,7 +43,8 @@ namespace syscall
 		pm::Pcb *p = loongarch::Cpu::get_cpu()->get_cur_proc();
 		if ( addr >= p->get_size() || addr + sizeof( uint64 ) > p->get_size() )
 			return -1;
-		if ( mm::k_vmm.copy_in( p->get_pagetable(), &out_data, addr, sizeof( out_data ) ) < 0 )
+		mm::PageTable pt = p->get_pagetable();
+		if ( mm::k_vmm.copy_in( pt, &out_data, addr, sizeof( out_data ) ) < 0 )
 			return -1;
 		return 0;
 	}
@@ -51,16 +52,17 @@ namespace syscall
 	int SyscallHandler::_fetch_str( uint64 addr, void *buf, uint64 max )
 	{
 		pm::Pcb *p = loongarch::Cpu::get_cpu()->get_cur_proc();
-		int err = mm::k_vmm.copy_str_in( p->get_pagetable(), buf, addr, max );
+		mm::PageTable pt = p->get_pagetable();
+		int err = mm::k_vmm.copy_str_in( pt, buf, addr, max );
 		if ( err < 0 )
 			return err;
-		return strlen( buf );
+		return strlen( ( const char * ) buf );
 	}
 
 	uint64 SyscallHandler::_arg_raw( int arg_n )
 	{
 		pm::Pcb *p = loongarch::Cpu::get_cpu()->get_cur_proc();
-		switch ( n )
+		switch ( arg_n )
 		{
 			case 0:
 				return p->get_trapframe()->a0;
@@ -84,7 +86,7 @@ namespace syscall
 		int fd;
 		fs::xv6_file *f;
 
-		if ( _arg_int( n, &fd ) < 0 )
+		if ( _arg_int( arg_n, fd ) < 0 )
 			return -1;
 		pm::Pcb *p = loongarch::Cpu::get_cpu()->get_cur_proc();
 		f = p->get_open_file( fd );
@@ -93,7 +95,9 @@ namespace syscall
 		if ( out_fd )
 			*out_fd = fd;
 		if ( out_f )
-			*outf = f;
+			*out_f = f;
+
+		return 0;
 	}
 
 

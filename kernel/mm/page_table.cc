@@ -67,7 +67,7 @@ namespace mm
 	{
 		uint64 pa;
 
-		if ( va >= MAXVA )
+		if ( va >= vml::vm_end )
 			return 0;
 
 		Pte pte = walk( va, false/* alloc */ );
@@ -80,8 +80,8 @@ namespace mm
 			log_warn( "try to walk-addr( k-pt, %p ). nullptr will be return.", va );
 			return nullptr;
 		}
-		pa = pte.pa();
-		return pa;
+		pa = ( uint64 ) pte.pa();
+		return ( void * ) pa;
 	}
 
 
