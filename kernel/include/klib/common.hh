@@ -12,8 +12,8 @@
 #include "klib/printer.hh"
 
 void printf( const char *fmt, ... );
-void *memset( void *dst, int c, uint n );
-void *memcpy( void *dst, const void *src, int len, int offset = 0);
+// void *memset( void *dst, int c, uint n );
+// void *memcpy( void *dst, const void *src, int len );
 
 /// @brief 给 _data 地址指向的数据的第 _kbit 位置位
 /// @param _data 

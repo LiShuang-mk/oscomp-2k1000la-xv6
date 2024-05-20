@@ -115,6 +115,7 @@ namespace pm
 		uint64 get_kstack() { return _kstack; }
 		mm::PageTable get_pagetable() { return _pt; }
 		ProcState get_state() { return _state; }
+		char * get_name() { return _name; }
 
 		void set_trapframe( TrapFrame * tf ) { _trapframe = tf; }
 

@@ -12,9 +12,9 @@ int init_main( void ) __attribute__( ( section( ".user.init" ) ) );
 
 int init_main( void )
 {
-	while ( 1 );
 	asm volatile(
 		"li.d $a7, 99\n"
 		"syscall 0"
 	);
+	while ( 1 );
 }

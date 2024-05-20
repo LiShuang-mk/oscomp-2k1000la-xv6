@@ -25,6 +25,8 @@
 
 #include "fs/dev/ahci_controller.hh"
 
+#include "syscall/syscall_handler.hh"
+
 #include "klib/common.hh"
 
 extern "C" {
@@ -63,6 +65,8 @@ namespace im
 		loongarch::Cpu::write_csr( loongarch::csr::merrentry, ( uint64 ) handle_merr );
 
 		_init_exception_handler();
+
+		syscall::k_syscall_handler.init();
 
 		loongarch::Cpu::interrupt_on();
 	}
@@ -147,7 +151,7 @@ namespace im
 			cpu->interrupt_on();
 
 			/// @todo syscall()
-			// syscall();
+			_syscall();
 
 		}
 		else if ( ( which_dev = dev_intr() ) > 0 )
@@ -349,21 +353,21 @@ namespace im
 
 	void ExceptionManager::_syscall()
 	{
-		// uint64 num;
-		// pm::Pcb * p = loongarch::Cpu::get_cpu()->get_cur_proc();
+		uint64 num;
+		pm::Pcb * p = loongarch::Cpu::get_cpu()->get_cur_proc();
 
-		// num = p->get_trapframe()->a7;
-		// if ( num > 0 && num < NELEM( syscalls ) && syscalls[ num ] )
-		// {
-		// 	// printf( "syscall num: %d\n", num );
-		// 	p->trapframe->a0 = syscalls[ num ]();
-		// }
-		// else
-		// {
-		// 	printf( "%d %s: unknown sys call %d\n",
-		// 		p->pid, p->name, num );
-		// 	p->trapframe->a0 = -1;
-		// }
+		num = p->get_trapframe()->a7;
+		if ( num > 0 && num < syscall::max_syscall_funcs_num )
+		{
+			// printf( "syscall num: %d\n", num );
+			p->get_trapframe()->a0 = syscall::k_syscall_handler.invoke_syscaller( num );
+		}
+		else
+		{
+			printf( "%d %s: unknown sys call %d\n",
+				p->get_pid(), p->get_name(), num );
+			p->get_trapframe()->a0 = -1;
+		}
 	}
 
 }// namespace im

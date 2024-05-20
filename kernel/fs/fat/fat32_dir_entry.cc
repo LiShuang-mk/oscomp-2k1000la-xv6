@@ -145,15 +145,49 @@ namespace fs
 
 			uint64 len;
 			uint64 cover_size = _cover_size_bytes();
-			len = cover_size > read_len ? read_len : cover_size;
+			len = ( cover_size - offset > read_len ) ? read_len : cover_size;
+
+			uint64 cls_start = offset /
+				( _belong_fs->get_sectors_per_cluster() * _belong_fs->get_bytes_per_sector() );
+			if ( cls_start >= _clusters_number.size() )
+			{
+				log_warn( "read offset beyond file size. no data will be read." );
+				return;
+			}
 
 			Buffer disk_buf;
 			uint64 rest_size = len;
 			uint64 writ_head = ( uint64 ) buf;
-			for ( uint32 cls_num : _clusters_number )
+
+			// read first cluster
+			if ( async_read ) disk_buf = k_bufm.read( _belong_fs->owned_device(), _cluster_to_lba( _clusters_number[ cls_start ] ) );
+			else disk_buf = k_bufm.read_sync( _belong_fs->owned_device(), _cluster_to_lba( _clusters_number[ cls_start ] ) );
+
+			if ( rest_size > default_buffer_size )
 			{
-				if ( async_read ) disk_buf = k_bufm.read( _belong_fs->owned_device(), _cluster_to_lba( cls_num ) );
-				else disk_buf = k_bufm.read_sync( _belong_fs->owned_device(), _cluster_to_lba( cls_num ) );
+				memcpy( ( void * ) writ_head, ( void* ) ( ( uint64 ) disk_buf.get_data_ptr() + offset ), default_buffer_size );
+				rest_size -= default_buffer_size;
+				writ_head += default_buffer_size;
+			}
+			else
+			{
+				memcpy( ( void * ) writ_head, ( void* ) ( ( uint64 ) disk_buf.get_data_ptr() + offset ), rest_size );
+				rest_size = 0;
+				writ_head += rest_size;
+			}
+
+			if ( async_read ) k_bufm.release_buffer( disk_buf );
+			else k_bufm.release_buffer_sync( disk_buf );
+
+			// read rest cluster
+			cls_start++;
+			for ( uint64 i = cls_start; i < _clusters_number.size(); ++i )
+			{
+				if ( rest_size == 0 )
+					break;
+
+				if ( async_read ) disk_buf = k_bufm.read( _belong_fs->owned_device(), _cluster_to_lba( _clusters_number[ i ] ) );
+				else disk_buf = k_bufm.read_sync( _belong_fs->owned_device(), _cluster_to_lba( _clusters_number[ i ] ) );
 
 				if ( rest_size > default_buffer_size )
 				{
@@ -163,8 +197,9 @@ namespace fs
 				}
 				else
 				{
-					memcpy( ( void * ) writ_head, disk_buf.get_data_ptr(), rest_size, offset);
-					break;
+					memcpy( ( void * ) writ_head, disk_buf.get_data_ptr(), rest_size );
+					rest_size = 0;
+					writ_head += rest_size;
 				}
 
 				if ( async_read ) k_bufm.release_buffer( disk_buf );
