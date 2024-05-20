@@ -65,6 +65,8 @@ namespace mm
 
 		int copy_str_in( PageTable &pt, void *dst, uint64 src_va, uint64 max );
 
+		int either_copy_in( void *dst, bool user_src, uint64 src, uint64 len );
+
 		/// @brief map shm pages to physical pages, it is similar with map_pages
 		/// @param pt pagetable to use
 		/// @param oldshm oldshm lower address

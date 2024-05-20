@@ -40,6 +40,6 @@ namespace fs
 		virtual long rNameLen() const = 0; // get max name length
 	};
 
-	Dentry * DentryRef;
+	// Dentry * DentryRef;
 
 }

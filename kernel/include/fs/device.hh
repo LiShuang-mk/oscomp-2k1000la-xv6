@@ -14,6 +14,7 @@
 namespace dev
 {
 	constexpr uint max_major_dev_num = 128;
+	constexpr uint dev_console_num = 1;
 
 	using DeviceOperator = std::function<int( int, uint64, uint64 )>;
 
@@ -30,11 +31,16 @@ namespace dev
 		DevOps _dev_ops[ max_major_dev_num ];
 
 	public:
+		void init();
+		
 		int register_device(
 			uint dev_num,
 			DeviceOperator dev_read,
 			DeviceOperator dev_write
 		);
+
+		int read_device( uint dev_num, int mode, uint64 addr, uint64 n );
+		int write_device( uint dev_num, int mode, uint64 addr, uint64 n );
 
 	};
 

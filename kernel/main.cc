@@ -3,6 +3,8 @@
 #include "hal/cpu.hh"
 #include "hal/disk/mbr.hh"
 
+#include "fs/device.hh"
+#include "fs/file.hh"
 #include "fs/dev/console.hh"
 #include "fs/dev/pci_driver.hh"
 #include "fs/dev/ahci_controller.hh"
@@ -150,6 +152,10 @@ int main()
 		new ( &fs::fat::k_testcase_fs ) fs::fat::Fat32FileSystem;
 		fs::fat::k_testcase_fs.init( 1, 0 );
 		log_info( "testcase fs init" );
+
+		dev::k_dm.init();
+		log_info( "k_dm init" );
+
 		// test_fat32();
 		// eastl::vector<eastl::string> args;
 		// pm::k_pm.exec("test_echo",args);
@@ -162,7 +168,7 @@ int main()
 		pm::k_pm.user_init();
 		log_info( "user init" );
 
-		pm::k_scheduler.schedule();
+		pm::k_scheduler.start_schedule();
 
 		while ( 1 );
 

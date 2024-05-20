@@ -30,7 +30,7 @@ namespace syscall
 			};
 		}
 
-		_syscall_funcs[ SYS_write ] = _sys_write;
+		_syscall_funcs[ SYS_write ] = std::bind( &SyscallHandler::_sys_write, this );
 		_syscall_funcs[ 1 ] = std::bind( &SyscallHandler::test_bind, this );
 	}
 
@@ -112,14 +112,20 @@ namespace syscall
 		return 0;
 	}
 
-	uint64 _sys_write()
+	uint64 SyscallHandler::_sys_write()
 	{
-		// fs::xv6_file *f;
-		// int n;
-		// uint64 p;
+		fs::xv6_file *f;
+		int n;
+		uint64 p;
 
-		// if( )
-		return 0;
+		if ( _arg_fd( 0, nullptr, &f ) < 0
+			|| _arg_addr( 1, p ) < 0
+			|| _arg_int( 2, n ) < 0 )
+		{
+			return -1;
+		}
+
+		return f->write( p, n );
 	}
 
 

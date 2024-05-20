@@ -57,25 +57,38 @@ namespace fs
 
 	};
 
-	
 
+	class xv6_file_pool;
+	
 	/// TODO: 这是搬运自xv6的file，在将来使用vfs后将弃用
 	class xv6_file
 	{
+		friend xv6_file_pool;
 	public:
 		enum { FD_NONE, FD_PIPE, FD_INODE, FD_DEVICE } type;
 		int ref; // reference count
 		char readable;
 		char writable;
-		struct pipe *pipe; // FD_PIPE
-		struct inode *ip;  // FD_INODE and FD_DEVICE
-		uint off;          // FD_INODE
+		// struct pipe *pipe; // FD_PIPE
+		// struct inode *ip;  // FD_INODE and FD_DEVICE
+		// uint off;          // FD_INODE
 		short major;       // FD_DEVICE
 
 		int write( uint64 addr, int n );
 	};
 
+	constexpr uint file_pool_max_size = 100;
+	class xv6_file_pool
+	{
+	private:
+		smp::Lock _lock;
+		xv6_file _files[ file_pool_max_size ];
+	public:
+		void init();
+		xv6_file * alloc_file();
+	};
 
+	extern xv6_file_pool k_file_table;
 
 
 } // namespace fs

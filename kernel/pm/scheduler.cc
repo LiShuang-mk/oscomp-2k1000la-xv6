@@ -33,7 +33,7 @@ namespace pm
 		return prio;
 	}
 
-	void Scheduler::schedule()
+	void Scheduler::start_schedule()
 	{
 		pm::Pcb *p;
 		loongarch::Cpu *cpu = loongarch::Cpu::get_cpu();

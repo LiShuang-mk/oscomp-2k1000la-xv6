@@ -44,12 +44,14 @@ namespace syscall
 		int _arg_fd( int arg_n, int *out_fd, fs::xv6_file **out_f );
 
 		uint64 test_bind();
+
+	private:	// ================ syscall functions ================
+		uint64 _sys_write();
 	};
 
 	extern SyscallHandler k_syscall_handler;
 
-// ================ syscall functions definition ================
 	
-	extern uint64 _sys_write();
+	
 
 } // namespace syscall

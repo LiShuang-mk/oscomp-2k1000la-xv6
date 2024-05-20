@@ -216,6 +216,21 @@ namespace mm
 		}
 	}
 
+	int VirtualMemoryManager::either_copy_in( void *dst, bool user_src, uint64 src, uint64 len )
+	{
+		if ( user_src )
+		{
+			pm::Pcb *p = loongarch::Cpu::get_cpu()->get_cur_proc();
+			mm::PageTable pt = p->get_pagetable();
+			return copy_in( pt, dst, src, len );
+		}
+		else
+		{
+			memmove( dst, ( const char * ) src, len );
+			return 0;
+		}
+	}
+
 	uint64 VirtualMemoryManager::allocshm( PageTable &pt, uint64 oldshm, uint64 newshm, uint64 sz, void *phyaddr[ pm::MAX_SHM_PGNUM ] )
 	{
 		void *mem;

@@ -15,13 +15,15 @@
 #include "mm/physical_memory_manager.hh"
 #include "mm/virtual_memory_manager.hh"
 #include "im/trap_wrapper.hh"
-#include "fs/fat/fat32_dir_entry.hh"
 #include "im/exception_manager.hh"
 #include <EASTL/vector.h>
 #include <EASTL/string.h>
 #include <EASTL/map.h>
 #include <EASTL/hash_map.h>
 #include "klib/common.hh"
+#include "fs/fat/fat32_dir_entry.hh"
+#include "fs/file.hh"
+#include "fs/device.hh"
 #include "fs/elf.hh"
 #include "fs/fat/fat32_file_system.hh"
 
@@ -268,6 +270,14 @@ namespace pm
 		log_info( "user init: era = %p", p->_trapframe->era );
 		p->_trapframe->sp = ( uint64 ) &_u_init_stke - ( uint64 ) &_start_u_init;
 		log_info( "user init: sp  = %p", p->_trapframe->sp );
+
+		fs::xv6_file * f = fs::k_file_table.alloc_file();
+		assert( f != nullptr, "user init: no file to alloc." );
+		f->writable = 1;
+		f->readable = 0;
+		f->major = dev::dev_console_num;
+		f->type = fs::xv6_file::FD_DEVICE;
+		p->_ofile[ 1 ] = f;
 
 		/// TODO:
 		/// set p->cwd = "/"
@@ -583,7 +593,7 @@ namespace pm
 
 		_wait_lock.release();
 
-		k_scheduler.schedule(); // jump to schedular, never return
+		k_scheduler.call_sched(); // jump to schedular, never return
 		log_panic( "zombie exit" );
 
 	}
@@ -616,7 +626,7 @@ namespace pm
 		proc->_chan = chan;
 		proc->_state = ProcState::sleeping;
 
-		k_scheduler.schedule();
+		k_scheduler.call_sched();
 		proc->_chan = 0;
 
 		proc->_lock.release();

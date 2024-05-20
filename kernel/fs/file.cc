@@ -6,6 +6,7 @@
 // --------------------------------------------------------------
 //
 
+#include "fs/device.hh"
 #include "fs/file.hh"
 #include "fs/dentry.hh"
 #include "fs/inode.hh"
@@ -89,6 +90,7 @@ namespace fs
 
 	int xv6_file::write( uint64 addr, int n )
 	{
+		int ret;
 		switch ( type )
 		{
 
@@ -99,7 +101,13 @@ namespace fs
 
 			case FD_DEVICE:
 			{
-				log_panic( "file device not implement" );
+				if ( major < 0 || major >( short )dev::max_major_dev_num )
+				{
+					log_error( "file write: invalid device major number" );
+					return -1;
+				}
+				ret = dev::k_dm.write_device( major, 1, addr, n );
+
 			} break;
 
 			case FD_INODE:
@@ -111,6 +119,37 @@ namespace fs
 				break;
 		}
 
-		return 0;
+		return ret == n ? 0 : -1;
 	}
+
+// ================ xv6 file pool ================	
+
+	xv6_file_pool k_file_table;
+
+	void xv6_file_pool::init()
+	{
+		_lock.init( "file pool" );
+		for ( auto &f : _files )
+		{
+			f.ref = 0;
+			f.type = xv6_file::FD_NONE;
+		}
+	}
+
+	xv6_file * xv6_file_pool::alloc_file()
+	{
+		_lock.acquire();
+		for ( auto &f : _files )
+		{
+			if ( f.ref == 0 && f.type == xv6_file::FD_NONE )
+			{
+				f.ref = 1;
+				_lock.release();
+				return &f;
+			}
+		}
+		_lock.release();
+		return nullptr;
+	}
+
 } // namespace fs
