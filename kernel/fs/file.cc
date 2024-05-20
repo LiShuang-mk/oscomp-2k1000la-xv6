@@ -12,8 +12,8 @@
 
 namespace fs
 {
-	int File::write( void *buf, size_t len )	
-{
+	int File::write( void *buf, size_t len )
+	{
 		int RC = -1;
 		if ( !ops.fields.w )
 		{
@@ -83,5 +83,34 @@ namespace fs
 				break;
 		}
 		return RC;
+	}
+
+// ================ xv6 file ================
+
+	int xv6_file::write( uint64 addr, int n )
+	{
+		switch ( type )
+		{
+
+			case FD_PIPE:
+			{
+				log_panic( "file pipe not implement" );
+			} break;
+
+			case FD_DEVICE:
+			{
+				log_panic( "file device not implement" );
+			} break;
+
+			case FD_INODE:
+			{
+				log_panic( "file inode not implement" );
+			} break;
+
+			default:
+				break;
+		}
+
+		return 0;
 	}
 } // namespace fs

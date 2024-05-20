@@ -145,8 +145,8 @@ int main()
 		fs::fat::k_testcase_fs.init( 1, 0 );
 		log_info( "testcase fs init" );
 		// test_fat32();
-		eastl::vector<eastl::string> args;
-		pm::k_pm.exec("test_echo",args);
+		// eastl::vector<eastl::string> args;
+		// pm::k_pm.exec("test_echo",args);
 		// log_info( "text start %p\n", &stext );
 		// log_info( "text end   %p\n", &etext ); 
 

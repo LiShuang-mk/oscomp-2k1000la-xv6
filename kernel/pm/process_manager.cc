@@ -113,7 +113,7 @@ namespace pm
 					return nullptr;
 				}
 
-				//_proc_create_vm( p );
+				_proc_create_vm( p );
 				if ( p->_pt.get_base() == 0 )
 				{
 					freeproc( p );
@@ -622,6 +622,39 @@ namespace pm
 		proc->_lock.release();
 		lock->acquire();
 	}
+
+// ---------------- private helper functions ----------------
+
+	void ProcessManager::_proc_create_vm( Pcb * p )
+	{
+		mm::PageTable pt;
+
+		pt = mm::k_vmm.vm_create();
+		if ( pt.get_base() == 0 )
+		{
+			return;
+		}
+
+		if ( mm::k_vmm.map_pages(
+			pt,
+			mm::vml::vm_trap_frame,
+			mm::pg_size,
+			( uint64 ) ( p->_trapframe ),
+			loongarch::PteEnum::nx_m |
+			loongarch::PteEnum::presence_m |
+			loongarch::PteEnum::writable_m |
+			loongarch::PteEnum::dirty_m |
+			( loongarch::mat_cc << loongarch::PteEnum::mat_s )
+		) == false )
+		{
+			mm::k_vmm.vmfree( pt, 0 );
+			return;
+		}
+
+		p->_pt = pt;
+	}
+
+// ---------------- test function ----------------
 
 	void ProcessManager::vectortest()
 	{

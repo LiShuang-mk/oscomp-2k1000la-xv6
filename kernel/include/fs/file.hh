@@ -60,8 +60,9 @@ namespace fs
 	
 
 	/// TODO: 这是搬运自xv6的file，在将来使用vfs后将弃用
-	struct xv6_file
+	class xv6_file
 	{
+	public:
 		enum { FD_NONE, FD_PIPE, FD_INODE, FD_DEVICE } type;
 		int ref; // reference count
 		char readable;
@@ -70,9 +71,11 @@ namespace fs
 		struct inode *ip;  // FD_INODE and FD_DEVICE
 		uint off;          // FD_INODE
 		short major;       // FD_DEVICE
+
+		int write( uint64 addr, int n );
 	};
 
-	
+
 
 
 } // namespace fs

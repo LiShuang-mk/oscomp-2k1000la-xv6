@@ -7,6 +7,7 @@
 //
 
 #include "syscall/syscall_handler.hh"
+#include "syscall/syscall_defs.hh"
 #include "hal/cpu.hh"
 #include "pm/process.hh"
 #include "pm/trap_frame.hh"
@@ -28,6 +29,9 @@ namespace syscall
 				return 0;
 			};
 		}
+
+		_syscall_funcs[ SYS_write ] = _sys_write;
+		_syscall_funcs[ 1 ] = std::bind( &SyscallHandler::test_bind, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -97,6 +101,24 @@ namespace syscall
 		if ( out_f )
 			*out_f = f;
 
+		return 0;
+	}
+
+// ---------------- syscall functions ----------------
+
+	uint64 SyscallHandler::test_bind()
+	{
+		log_info( "test bind" );
+		return 0;
+	}
+
+	uint64 _sys_write()
+	{
+		// fs::xv6_file *f;
+		// int n;
+		// uint64 p;
+
+		// if( )
 		return 0;
 	}
 
