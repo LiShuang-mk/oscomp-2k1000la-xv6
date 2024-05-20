@@ -100,6 +100,17 @@ namespace pm
 																		// 外部需要申请这个类的资源时应当在类中实现一个返回资源的接口,
 																		// 而lock的使用应当在接口中由类内部来决定
 		fs::Dentry *get_cwd() { return _cwd; }
+		void setTrapframe(TrapFrame *trapframe_) { _trapframe = trapframe_; }	
+		TrapFrame *getTrapframe() { return _trapframe; }
+		int iskilled() {return _killed; }
+		void kill() { _killed = 1; }
+		mm::PageTable get_page() { return _pt; }
+		Pcb * get_parent() { return parent; }
+		void set_state( ProcState state ) { _state = state; }
+		void set_xstate( int xstate ) { _xstate = xstate; }
+		size_t get_sz() { return _sz; }
+		//void set_chan(void *chan) { _chan = chan; }
+	public:
 		uint get_pid() { return _pid; }
 		TrapFrame* get_trapframe() { return _trapframe; }
 		uint64 get_kstack() { return _kstack; }

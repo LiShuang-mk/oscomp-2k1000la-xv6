@@ -8,13 +8,13 @@
 
 #include "hal/cpu.hh"
 #include "klib/common.hh"
-
+#include "pm/process.hh"
+#include "pm/trap_frame.hh"
 namespace loongarch
 {
 	Cpu k_cpus[ NUMCPU ];
 
 // ---- public: 
-
 
 	Cpu *Cpu::get_cpu()
 	{

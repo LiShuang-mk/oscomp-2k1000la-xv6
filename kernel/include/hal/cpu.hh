@@ -33,7 +33,7 @@ namespace loongarch
 		pm::Context *get_context() { return &_context; }
 		int get_num_off() { return _num_off; }
 		int get_int_ena() { return _int_ena; }
-		void set_int_ena( int intena ) { _int_ena = intena; }
+		void set_int_ena( int x ) { _int_ena = x; }
 		void set_cur_proc( pm::Pcb *p ) { _cur_proc = p; }
 
 		// read stack pointer
@@ -64,11 +64,10 @@ namespace loongarch
 		/// @return cpu info 
 		static Cpu *get_cpu();
 
-		static inline bool get_intr_stat()
-		{
+		static inline int get_intr_stat(){
 			uint32 x = read_csr( csr::CsrAddr::crmd );
 			return ( x & csr::Crmd::ie_m ) != 0;
-		}
+		};
 
 		static void push_intr_off();
 		static void pop_intr_off();

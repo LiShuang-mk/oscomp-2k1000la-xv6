@@ -41,3 +41,8 @@ void Lock::release()
 	__sync_lock_release( &locked );
 	loongarch::Cpu::pop_intr_off();
 }
+
+int Lock::held()
+{
+	return is_held();
+}

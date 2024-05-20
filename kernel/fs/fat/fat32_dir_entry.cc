@@ -191,7 +191,7 @@ namespace fs
 
 				if ( rest_size > default_buffer_size )
 				{
-					memcpy( ( void * ) writ_head, disk_buf.get_data_ptr(), ( int ) default_buffer_size );
+					memcpy( ( void * ) writ_head, disk_buf.get_data_ptr(), ( int ) default_buffer_size);
 					rest_size -= default_buffer_size;
 					writ_head += default_buffer_size;
 				}

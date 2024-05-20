@@ -25,7 +25,6 @@ namespace mm
 	public:
 		VirtualMemoryManager() {};
 		void init( const char *lock_name );
-
 		/// @brief map va to pa through pt 
 		/// @param pt pagetable to use 
 		/// @param va virtual address 
@@ -81,6 +80,29 @@ namespace mm
 		/// @param newshm newshm lower address 
 		/// @return oldshm if success
 		uint64 deallocshm(PageTable &pt, uint64 oldshm, uint64 newshm );
+		/// @brief copy from kernel to user
+		/// @param pt pagetable to use
+		/// @param va dest virtual address 
+		/// @param p source address
+		/// @param len length
+		/// @return 0 if success, -1 if failed
+		int copyout( PageTable &pt, uint64 va, const void *p, uint64 len );
+		/// @brief mark a PTE invalid for user access
+		/// @param pt 
+		/// @param va 
+		void uvmclear( PageTable &pt, uint64 va );
+		/// @brief allocate memory to grow process from oldsz to newsz
+		/// @param pt pagetable to use 
+		/// @param oldsz old size
+		/// @param newsz new size
+		/// @return 
+		uint64 uvmalloc( PageTable &pt, uint64 oldsz, uint64 newsz );
+		/// @brief deallocate memory to shrink process from oldsz to newsz
+		/// @param pt pagetable to use
+		/// @param oldsz old size
+		/// @param newsz new size
+		/// @return 
+		uint64 uvmdealloc( PageTable &pt, uint64 oldsz, uint64 newsz );
 	private:
 
 	};

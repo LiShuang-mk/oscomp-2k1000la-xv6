@@ -14,7 +14,7 @@ namespace pm
 	Scheduler k_scheduler;
 
 	void Scheduler::init( const char *name )
-	{  //在考虑这个🔓要不要丢了算了，没想到作用是什么
+	{ 
 		_sche_lock.init( name );
 	}
 

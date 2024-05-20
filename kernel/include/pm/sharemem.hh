@@ -1,6 +1,7 @@
 
 #pragma once
 #include "smp/lock.hh"
+
 namespace pm
 {
     class ShmManager;
