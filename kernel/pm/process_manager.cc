@@ -15,17 +15,16 @@
 #include "mm/physical_memory_manager.hh"
 #include "mm/virtual_memory_manager.hh"
 #include "im/trap_wrapper.hh"
+#include "fs/fat/fat32_dir_entry.hh"
 #include "im/exception_manager.hh"
 #include <EASTL/vector.h>
 #include <EASTL/string.h>
 #include <EASTL/map.h>
 #include <EASTL/hash_map.h>
 #include "klib/common.hh"
-#include "fs/fat/fat32_dir_entry.hh"
-#include "fs/file.hh"
-#include "fs/device.hh"
 #include "fs/elf.hh"
 #include "fs/fat/fat32_file_system.hh"
+#include "hal/qemu_ls2k.hh"
 
 extern "C" {
 	extern uint64 _start_u_init;
@@ -69,20 +68,6 @@ namespace pm
 		return pcb;
 	}
 
-	bool ProcessManager::change_state( Pcb *p, ProcState state )
-	{
-		p->_lock.acquire();
-		if ( p->_state == ProcState::unused )
-		{
-			p->_lock.release();
-			_pid_lock.release();
-			return false;
-		}
-		p->_state = state;
-		p->_lock.release();
-		return true;
-	}
-
 	void ProcessManager::alloc_pid( Pcb *p )
 	{
 		_pid_lock.acquire();
@@ -104,9 +89,9 @@ namespace pm
 				p->_slot = default_proc_slot;
 				p->_priority = default_proc_prio;
 
-				p->_shm = mm::vml::vm_trap_frame - 64 * 2 * mm::PageEnum::pg_size;
-				p->_shmkeymask = 0;
-				pm::k_pm.set_vma( p );
+				//p->_shm = mm::vml::vm_trap_frame - 64 * 2 * mm::PageEnum::pg_size;
+				//p->_shmkeymask = 0;
+				//pm::k_pm.set_vma( p );
 
 				if ( ( p->_trapframe = ( TrapFrame* ) mm::k_pmm.alloc_page() ) == nullptr )
 				{
@@ -143,23 +128,6 @@ namespace pm
 		return nullptr;
 	}
 
-	void ProcessManager::set_priority( Pcb * p, int priority )
-	{
-		k_pm._pid_lock.acquire();
-		p->_lock.acquire();
-		p->_priority = priority;
-		p->_lock.release();
-		k_pm._pid_lock.release();
-	}
-
-	void ProcessManager::set_slot( Pcb * p, int slot )
-	{
-		k_pm._pid_lock.acquire();
-		p->_lock.acquire();
-		p->_slot = slot;
-		p->_lock.release();
-		k_pm._pid_lock.release();
-	}
 
 	void ProcessManager::set_shm( Pcb * p )
 	{
@@ -179,20 +147,6 @@ namespace pm
 			p->vm[ i ]->length = 0;
 		}
 		p->vm[ 0 ]->next = 1;
-	}
-
-	int ProcessManager::set_trapframe( Pcb * p )
-	{
-		k_pm._pid_lock.acquire();
-		p->_lock.acquire();
-		if ( ( p->_trapframe = ( struct TrapFrame * ) mm::k_pmm.alloc_page() ) == nullptr )
-		{
-			//k_pm.freeproc(p);
-			p->_lock.release();
-			k_pm._pid_lock.release();
-			return -1;
-		}
-		return 0;
 	}
 
 	void ProcessManager::freeproc( Pcb * p )
@@ -239,7 +193,8 @@ namespace pm
 		}
 
 		p->_sz = ( uint64 ) &_end_u_init - ( uint64 ) &_start_u_init;
-
+		//p->_sz = 0;
+		
 		// map user init stack
 		mm::k_vmm.map_pages(
 			p->_pt,
@@ -258,7 +213,7 @@ namespace pm
 			p->_pt,
 			( uint64 ) &_u_init_txts - ( uint64 ) &_start_u_init,
 			( uint64 ) &_u_init_txte - ( uint64 ) &_u_init_txts,
-			( uint64 ) &_u_init_txts,
+			( uint64 ) &_u_init_txts ,
 			loongarch::PteEnum::presence_m |
 			loongarch::PteEnum::writable_m |
 			( 0x3 << loongarch::PteEnum::plv_s ) |
@@ -271,14 +226,6 @@ namespace pm
 		p->_trapframe->sp = ( uint64 ) &_u_init_stke - ( uint64 ) &_start_u_init;
 		log_info( "user init: sp  = %p", p->_trapframe->sp );
 
-		fs::xv6_file * f = fs::k_file_table.alloc_file();
-		assert( f != nullptr, "user init: no file to alloc." );
-		f->writable = 1;
-		f->readable = 0;
-		f->major = dev::dev_console_num;
-		f->type = fs::xv6_file::FD_DEVICE;
-		p->_ofile[ 1 ] = f;
-
 		/// TODO:
 		/// set p->cwd = "/"
 
@@ -287,6 +234,9 @@ namespace pm
 		p->_lock.release();
 
 		inited = 1;
+
+		loongarch::Cpu::get_cpu()->set_cur_proc( p );
+
 	}
 
 	void ProcessManager::sche_proc( Pcb *p )
@@ -377,7 +327,7 @@ namespace pm
 		// 	log_error("exec: cannot create pagetable");
 		// 	return -1;
 		// }
-
+		
 		for ( i = 0, off = elf.phoff; i < elf.phnum; i++, off += sizeof( ph ) )
 		{
 			de->read_content( &ph, sizeof( ph ), off );
@@ -403,7 +353,7 @@ namespace pm
 				proc_freepagetable( proc->_pt, sz );
 				return -1;
 			}
-
+			sz = sz1;
 			if ( ( ph.vaddr % mm::pg_size ) != 0 )
 			{
 				log_error( "exec: vaddr not aligned" );
@@ -502,7 +452,7 @@ namespace pm
 		proc->_sz = sz;
 		proc->_trapframe->era = elf.entry;
 		proc->_trapframe->sp = sp;
-
+		proc->_state = ProcState::runnable;
 		return argc;
 	}
 
@@ -515,12 +465,12 @@ namespace pm
 		{
 			pa = ( uint64 ) pt.walk( va + i, 0 ).pa();
 			if ( pa == 0 )
-				log_panic( "load_icode: walk" );
+				log_panic( "load_seg: walk" );
 			if ( size - i < mm::PageEnum::pg_size )
 				n = size - i;
 			else
 				n = mm::PageEnum::pg_size;
-			de->read_content( ( void * ) pa, n, offset + i );
+			de->read_content( ( void * ) ( pa | loongarch::qemuls2k::dmwin::win_0), n, offset + i );
 		}
 		return 0;
 	}
