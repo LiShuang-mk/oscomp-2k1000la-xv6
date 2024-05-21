@@ -6,9 +6,10 @@
 // --------------------------------------------------------------
 //
 
-#ifndef _SYSCALL_H_
-#define _SYSCALL_H_
+#ifndef _USYSCALL_H_
+#define _USYSCALL_H_
 
-extern int write( int fd, const void *buf, int len);
+extern int write( int fd, const void *buf, int len );
+extern int fork( void );
 
 #endif

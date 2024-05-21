@@ -139,7 +139,7 @@ namespace im
 			== 0xb )
 		{
 //syscall
-			log_info( "syscall: %d", proc->get_trapframe()->a7 );
+			// log_info( "syscall: %d", proc->get_trapframe()->a7 );
 			// log_panic( "syscall not implement" );
 
 			if ( proc->is_killed() )

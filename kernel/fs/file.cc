@@ -152,4 +152,12 @@ namespace fs
 		return nullptr;
 	}
 
+	void xv6_file_pool::dup( xv6_file *f )
+	{
+		_lock.acquire();
+		assert( f->ref >= 1, "file: try to dup no reference file." );
+		f->ref++;
+		_lock.release();
+	}
+
 } // namespace fs

@@ -35,6 +35,11 @@ SECTIONS
 	*(.user.init);
 	_u_init_txte = .;
 
+	. = ALIGN(0x1000);
+	_u_init_dats = .;
+	*(.user.init.data);
+	_u_init_date = .;
+
 	_end_u_init = .;
   }
 

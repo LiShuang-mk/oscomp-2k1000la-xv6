@@ -34,6 +34,8 @@ extern "C" {
 	extern uint64 _u_init_stke;
 	extern uint64 _u_init_txts;
 	extern uint64 _u_init_txte;
+	extern uint64 _u_init_dats;
+	extern uint64 _u_init_date;
 	extern int init_main( void );
 
 	void _wrp_fork_ret( void )
@@ -126,7 +128,7 @@ namespace pm
 				p->_mqmask = 0;
 
 				memset( &p->_context, 0, sizeof( p->_context ) );
-				
+
 				p->_context.ra = ( uint64 ) _wrp_fork_ret;
 
 				p->_context.sp = p->_kstack + mm::pg_size;
@@ -265,6 +267,19 @@ namespace pm
 			( loongarch::mat_cc << loongarch::PteEnum::mat_s )
 		);
 
+		// map user init data
+		mm::k_vmm.map_pages(
+			p->_pt,
+			( uint64 ) &_u_init_dats - ( uint64 ) &_start_u_init,
+			( uint64 ) &_u_init_date - ( uint64 ) &_u_init_dats,
+			( uint64 ) &_u_init_dats,
+			loongarch::PteEnum::presence_m |
+			loongarch::PteEnum::writable_m |
+			loongarch::PteEnum::dirty_m |
+			( 0x3 << loongarch::PteEnum::plv_s ) |
+			( loongarch::mat_cc << loongarch::PteEnum::mat_s )
+		);
+
 
 		p->_trapframe->era = ( uint64 ) &init_main - ( uint64 ) &_start_u_init;
 		log_info( "user init: era = %p", p->_trapframe->era );
@@ -297,6 +312,82 @@ namespace pm
 			p->_slot = default_proc_slot;
 			k_scheduler.yield();
 		}
+	}
+
+	int ProcessManager::fork()
+	{
+		int i, pid;
+		Pcb *np;					// new proc
+		Pcb *p = get_cur_pcb();		// current proc
+
+		// Allocate process.
+		if ( ( np = alloc_proc() ) == nullptr )
+		{
+			return -1;
+		}
+
+		np->_lock.acquire();
+
+		// Copy user memory from parent to child.
+		mm::PageTable curpt, newpt;
+		curpt = p->get_pagetable();
+		newpt = np->get_pagetable();
+		if ( mm::k_vmm.vm_copy( curpt, newpt, p->_sz ) < 0 )
+		{
+			freeproc( np );
+			np->_lock.release();
+			return -1;
+		}
+		np->_sz = p->_sz;
+
+		/// TODO: >> Share Memory Copy
+		// shmaddcount( p->shmkeymask );
+		// np->shm = p->shm;
+		// np->shmkeymask = p->shmkeymask;
+		// for ( i = 0; i < MAX_SHM_NUM; ++i )
+		// {
+		// 	if ( shmkeyused( i, np->shmkeymask ) )
+		// 	{
+		// 		np->shmva[ i ] = p->shmva[ i ];
+		// 	}
+		// }
+
+		// copy saved user registers.
+		*( np->get_trapframe() ) = *( p->get_trapframe() );
+
+		// Cause fork to return 0 in the child.
+		np->get_trapframe()->a0 = 0;
+
+		/// TODO: >> Message Queue Copy
+		// addmqcount( p->mqmask );
+		// np->mqmask = p->mqmask;
+
+		// increment reference counts on open file descriptors.
+		for ( i = 0; i < ( int ) max_open_files; i++ )
+			if ( p->_ofile[ i ] )
+			{
+				fs::k_file_table.dup( p->_ofile[ i ] );
+				np->_ofile[ i ] = p->_ofile[ i ];
+			}
+
+		/// TODO: >> cwd inode ref-up
+		// np->cwd = idup( p->cwd );
+
+		strncpy( np->_name, p->_name, sizeof( p->_name ) );
+
+		pid = np->_pid;
+
+		np->_lock.release();
+
+		_wait_lock.acquire();
+		np->parent = p;
+		_wait_lock.release();
+
+		np->_lock.acquire();
+		np->_state = ProcState::runnable;
+		np->_lock.release();
+
+		return pid;
 	}
 
 	void ProcessManager::fork_ret()
