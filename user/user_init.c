@@ -29,25 +29,37 @@ int init_main( void )
 	// 	:: "r"( str ),
 	// 	"i"( sizeof( str ) )
 	// 	);
-	// write( 1, str, sizeof( str ) );
-
-	// int pid = fork();
-	// if ( pid < 0 )
-	// {
-	// 	write( 1, errstr, sizeof( errstr ) );
-	// }
-	// else if ( pid == 0 )
-	// {
-	// 	write( 1, child_str, sizeof( child_str ) );
-	// }
-	// else
-	// {
-	// 	write( 1, parent_str, sizeof( parent_str ) );
-	// 	char ch = ( char ) pid + '0';
-	// 	write( 1, &ch, sizeof( ch ) );
-	// 	ch = '\n';
-	// 	write( 1, &ch, sizeof( ch ) );
-	// }
+	write( 1, str, sizeof( str ) );
+	
+	int pid = fork();
+	if ( pid < 0 )
+	{
+		write( 1, errstr, sizeof( errstr ) );
+	}
+	else if ( pid == 0 )
+	{
+		write( 1, child_str, sizeof( child_str ) );
+		int ppid_ = getppid();
+		char ppid = ( char ) ppid_ + '0';
+		write( 1, &ppid, sizeof( ppid ) );
+		int pid_  = getpid();
+		char pid = ( char ) pid_ + '0';
+		write( 1, &pid, sizeof( pid ) );
+	}
+	else
+	{
+		int ppid_ = getppid();
+		char ppid = ( char ) ppid_ + '0';
+		write( 1, &ppid, sizeof( ppid ) );
+		int pid_  = getpid();
+		char pid = ( char ) pid_ + '0';
+		write( 1, &pid, sizeof( pid ) );
+		write( 1, parent_str, sizeof( parent_str ) );
+		char ch = ( char ) pid + '0';
+		write( 1, &ch, sizeof( ch ) );
+		ch = '\n';
+		write( 1, &ch, sizeof( ch ) );
+	}
 
 	while ( 1 );
 }

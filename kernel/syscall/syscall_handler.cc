@@ -34,6 +34,8 @@ namespace syscall
 		_syscall_funcs[ SYS_write ] = std::bind( &SyscallHandler::_sys_write, this );
 		_syscall_funcs[ SYS_exit ] = std::bind( &SyscallHandler::_sys_exit, this );
 		_syscall_funcs[ SYS_fork ] = std::bind( &SyscallHandler::_sys_fork, this );
+		_syscall_funcs[ SYS_getpid ] = std::bind( &SyscallHandler::_sys_getpid, this );
+		_syscall_funcs[ SYS_getppid ] = std::bind( &SyscallHandler::_sys_getppid, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -138,4 +140,13 @@ namespace syscall
 		return pm::k_pm.fork();
 	}
 
+	uint64 SyscallHandler::_sys_getpid()
+	{
+		return pm::k_pm.get_cur_pcb()->get_pid();
+	}
+
+	uint64 SyscallHandler::_sys_getppid()
+	{
+		return pm::k_pm.get_cur_pcb()->get_ppid();
+	}	
 } // namespace syscall
