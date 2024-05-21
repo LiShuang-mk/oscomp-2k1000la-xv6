@@ -159,6 +159,7 @@ int main()
 		log_info( "k_dm init" );
 
 		// test_fat32();
+		// while ( 1 );
 		// eastl::vector<eastl::string> args;
 		// pm::k_pm.exec("test_echo",args);
 		// log_info( "text start %p\n", &stext );
@@ -883,7 +884,7 @@ void test_fat32()
 	fs::fat::Fat32DirEntry *test_file_entry = fs::fat::k_testcase_fs.get_dir_entry( test_file_finfo );
 
 	// entry可以直接读出其中的内容，如果是文件夹会发生警告，因为读出的内容是文件系统的内部数据结构
-	test_file_entry->read_content( ( void* ) tmp_buf, sizeof( tmp_buf ), 16 );
+	test_file_entry->read_content( ( void* ) tmp_buf, sizeof( tmp_buf ), 4096 );
 
 	// 读出来后打印一下内容，这里因为读取的是一个txt，所以可以直接打印
 	tmp_buf[ sizeof( tmp_buf ) - 1 ] = 0;

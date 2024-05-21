@@ -20,6 +20,7 @@ namespace fs
 		private:
 			uint _device;
 			uint64 _start_lba;
+			uint64 _fat_lba;
 			Fat32Dbr _super_block;
 			Fat32DirEntry _root;
 
@@ -38,6 +39,7 @@ namespace fs
 
 			Fat32Dbr * get_super_block() { return &_super_block; }
 			uint64 get_reserved_sectors() { return _super_block.bpb.reserved_sector_count; }
+			uint64 get_fat_lba() { return _fat_lba; }
 			uint64 get_fat_counts() { return _super_block.bpb.table_count; }
 			uint64 get_sectors_per_fat() { return _super_block.ebpb.table_size; }
 			uint64 get_sectors_per_cluster() { return _super_block.bpb.sectors_per_cluster; }

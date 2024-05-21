@@ -21,6 +21,8 @@ namespace pm
 	{
 		for ( auto &of : _ofile )
 			of = nullptr;
+
+		
 	}
 
 	void Pcb::init( const char *lock_name, uint gid )

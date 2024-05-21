@@ -38,15 +38,18 @@ namespace fs
 
 			// read File Allocation table
 
+			uint64 cls_num_in_sector = cluster_number / ( _belong_fs->get_bytes_per_sector() / sizeof( cluster_num_t ) );
+			uint32 cls_num_offset = cluster_number % ( _belong_fs->get_bytes_per_sector() / sizeof( cluster_num_t ) );
 			Buffer buf = k_bufm.read_sync(
 				dev,
-				_cluster_to_lba( cluster_number )
+				_belong_fs->get_fat_lba() + cls_num_in_sector
 			);
 
 			// record all clusters covered
 
 			using fat32_t = uint32;
 			fat32_t * fat32_p = ( fat32_t * ) buf.get_data_ptr();
+			fat32_p += cls_num_offset;
 			fat32_t * buf_end = ( fat32_t * ) buf.get_end_ptr();
 			for ( fat32_t i = cluster_number; fat32_p < buf_end; fat32_p++ )
 			{
@@ -158,6 +161,7 @@ namespace fs
 			Buffer disk_buf;
 			uint64 rest_size = len;
 			uint64 writ_head = ( uint64 ) buf;
+			offset %= _belong_fs->get_bytes_per_sector() * _belong_fs->get_sectors_per_cluster();
 
 			// read first cluster
 			if ( async_read ) disk_buf = k_bufm.read( _belong_fs->owned_device(), _cluster_to_lba( _clusters_number[ cls_start ] ) );
@@ -191,7 +195,7 @@ namespace fs
 
 				if ( rest_size > default_buffer_size )
 				{
-					memcpy( ( void * ) writ_head, disk_buf.get_data_ptr(), ( int ) default_buffer_size);
+					memcpy( ( void * ) writ_head, disk_buf.get_data_ptr(), ( int ) default_buffer_size );
 					rest_size -= default_buffer_size;
 					writ_head += default_buffer_size;
 				}

@@ -49,6 +49,7 @@ namespace fs
 
 			_device = device;
 			_start_lba = part_start_lba;
+			_fat_lba = _start_lba + _super_block.bpb.reserved_sector_count;
 
 			_root._belong_fs = this;
 			_root.init( 2, Fat32DirType::fat32de_folder );
