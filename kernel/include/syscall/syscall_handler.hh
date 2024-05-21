@@ -43,11 +43,11 @@ namespace syscall
 		int _arg_addr( int arg_n, uint64 &out_addr ) { out_addr = _arg_raw( arg_n ); return 0; }
 		int _arg_fd( int arg_n, int *out_fd, fs::xv6_file **out_f );
 
-		uint64 test_bind();
 
 	private:	// ================ syscall functions ================
 		uint64 _sys_write();
 		uint64 _sys_fork();
+		uint64 _sys_exit();
 	};
 
 	extern SyscallHandler k_syscall_handler;

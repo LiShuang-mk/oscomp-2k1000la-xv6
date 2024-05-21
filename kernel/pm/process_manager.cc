@@ -196,6 +196,8 @@ namespace pm
 			p->_name[ i ] = user_init_proc_name[ i ];
 		}
 
+		// p->_priority = 19;
+
 		p->_sz = ( uint64 ) &_end_u_init - ( uint64 ) &_start_u_init;
 		//p->_sz = 0;
 		
@@ -628,7 +630,9 @@ namespace pm
 
 	void ProcessManager::exit( int state )
 	{
+
 		Pcb *p = get_cur_pcb();
+		log_info( "exit proc %d", p->_pid );
 
 		/// @todo close opened file, set proc's pwd
 

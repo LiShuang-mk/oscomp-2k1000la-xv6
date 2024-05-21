@@ -29,25 +29,25 @@ int init_main( void )
 	// 	:: "r"( str ),
 	// 	"i"( sizeof( str ) )
 	// 	);
-	write( 1, str, sizeof( str ) );
+	// write( 1, str, sizeof( str ) );
 
-	int pid = fork();
-	if ( pid < 0 )
-	{
-		write( 1, errstr, sizeof( errstr ) );
-	}
-	else if ( pid == 0 )
-	{
-		write( 1, child_str, sizeof( child_str ) );
-	}
-	else
-	{
-		write( 1, parent_str, sizeof( parent_str ) );
-		char ch = ( char ) pid + '0';
-		write( 1, &ch, sizeof( ch ) );
-		ch = '\n';
-		write( 1, &ch, sizeof( ch ) );
-	}
+	// int pid = fork();
+	// if ( pid < 0 )
+	// {
+	// 	write( 1, errstr, sizeof( errstr ) );
+	// }
+	// else if ( pid == 0 )
+	// {
+	// 	write( 1, child_str, sizeof( child_str ) );
+	// }
+	// else
+	// {
+	// 	write( 1, parent_str, sizeof( parent_str ) );
+	// 	char ch = ( char ) pid + '0';
+	// 	write( 1, &ch, sizeof( ch ) );
+	// 	ch = '\n';
+	// 	write( 1, &ch, sizeof( ch ) );
+	// }
 
 	while ( 1 );
 }

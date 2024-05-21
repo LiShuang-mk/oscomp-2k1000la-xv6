@@ -63,6 +63,7 @@ namespace pm
 				if ( p->get_state() == pm::ProcState::runnable )
 				{
 					p->_state = pm::ProcState::running;
+					// printf( "sche proc %d\n", p->_gid );
 					cpu->set_cur_proc( p );
 					swtch( cpu->get_context(), &p->_context );
 					cpu->set_cur_proc( nullptr );

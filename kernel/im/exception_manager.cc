@@ -175,7 +175,7 @@ namespace im
 		if ( proc->is_killed() )
 			pm::k_pm.exit( -1 );
 
-		if ( proc && proc->get_state() == pm::ProcState::running )
+		if ( which_dev == 2 && proc && proc->get_state() == pm::ProcState::running )
 		{
 			pm::k_pm.sche_proc( proc );
 		}
@@ -232,25 +232,34 @@ namespace im
 		}
 		else if ( estat & ecfg & loongarch::csr::itr_ti_m )
 		{
-			rc = tmm::k_tm.handle_clock_intr();
-			if ( rc < 0 )
-				log_error( "tm handle dev intr fail" );
+			rc = 0;
+			if ( loongarch::Cpu::read_tp() == 0 )
+			{
+				rc = tmm::k_tm.handle_clock_intr();
+				if ( rc < 0 )
+					log_error( "tm handle dev intr fail" );
+			}
+
+			loongarch::Cpu::get_cpu()->write_csr(
+				loongarch::csr::ticlr,
+				loongarch::Cpu::get_cpu()->read_csr( loongarch::csr::ticlr ) | 1
+			);
 			return rc;
 		}
-		// else
-		// {
-		// 	log_error(
-		// 		"unkown exception.\n"
-		// 		"estat: %x\n"
-		// 		"badv: %x\n"
-		// 		"badi: %x\n",
-		// 		estat,
-		// 		cpu->read_csr( loongarch::csr::badv ),
-		// 		cpu->read_csr( loongarch::csr::badi )
-		// 	);
-		// 	return -101;
-		// }
-		return 0;
+		else
+		{
+			log_error(
+				"unkown exception.\n"
+				"estat: %x\n"
+				"badv: %x\n"
+				"badi: %x\n",
+				estat,
+				cpu->read_csr( loongarch::csr::badv ),
+				cpu->read_csr( loongarch::csr::badi )
+			);
+			return -101;
+		}
+		return -1;
 	}
 
 	void ExceptionManager::machine_trap()

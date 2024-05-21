@@ -7,3 +7,4 @@ ls2k_debug.sh
 build/**
 .vscode/
 .vscode/*
+*.bin

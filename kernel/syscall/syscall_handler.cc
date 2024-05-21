@@ -32,8 +32,8 @@ namespace syscall
 		}
 
 		_syscall_funcs[ SYS_write ] = std::bind( &SyscallHandler::_sys_write, this );
+		_syscall_funcs[ SYS_exit ] = std::bind( &SyscallHandler::_sys_exit, this );
 		_syscall_funcs[ SYS_fork ] = std::bind( &SyscallHandler::_sys_fork, this );
-		_syscall_funcs[ 1 ] = std::bind( &SyscallHandler::test_bind, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -108,12 +108,6 @@ namespace syscall
 
 // ---------------- syscall functions ----------------
 
-	uint64 SyscallHandler::test_bind()
-	{
-		log_info( "test bind" );
-		return 0;
-	}
-
 	uint64 SyscallHandler::_sys_write()
 	{
 		fs::xv6_file *f;
@@ -128,6 +122,15 @@ namespace syscall
 		}
 
 		return f->write( p, n );
+	}
+
+	uint64 SyscallHandler::_sys_exit()
+	{
+		int n;
+		if ( _arg_int( 0, n ) < 0 )
+			return -1;
+		pm::k_pm.exit( n );
+		return 0;  // not reached
 	}
 
 	uint64 SyscallHandler::_sys_fork()

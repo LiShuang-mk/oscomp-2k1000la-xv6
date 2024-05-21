@@ -11,4 +11,5 @@
 .section .user.init
 
 GEN_USER_SYSCALL write 64
+GEN_USER_SYSCALL exit 93
 GEN_USER_SYSCALL fork 220

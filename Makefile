@@ -58,6 +58,7 @@ STATIC_MODULE = \
 # rules define 
 
 all: initdir probe_host compile_all load_kernel
+	$(OBJCOPY) -O binary ./build/kernel.elf ./kernel.bin
 	@echo "__________________________"
 	@echo "-------- 生成成功 --------"
 
