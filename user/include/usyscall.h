@@ -12,5 +12,6 @@
 extern int write( int fd, const void *buf, int len );
 extern int exit( int n );
 extern int fork( void );
-
+extern int getpid( void );
+extern int getppid( void );
 #endif

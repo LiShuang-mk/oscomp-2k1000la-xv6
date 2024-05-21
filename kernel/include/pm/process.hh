@@ -110,6 +110,7 @@ namespace pm
 		//void set_chan(void *chan) { _chan = chan; }
 	public:
 		uint get_pid() { return _pid; }
+		uint get_ppid() { return parent ? parent->_pid : 0; }
 		TrapFrame* get_trapframe() { return _trapframe; }
 		uint64 get_kstack() { return _kstack; }
 		mm::PageTable get_pagetable() { return _pt; }
