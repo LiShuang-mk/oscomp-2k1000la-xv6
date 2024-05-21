@@ -38,7 +38,7 @@ namespace loongarch
 
 		enum memory : uint64
 		{
-			mem_start = 0x90000000UL | dmwin::win_0,
+			mem_start = ( 0x90000000UL + _1M * 256 ) | dmwin::win_0,
 			mem_size = CommonSize::_1M << 7, 			// 128M 
 			// mem_size = _1M * 512, 							// 512M 
 			mem_end = mem_start + mem_size
