@@ -1,18 +1,14 @@
 //
-// Created by Li Shuang ( pseudonym ) on 2024-05-19 
+// Created by Li shuang ( pseudonym ) on 2024-05-21 
 // --------------------------------------------------------------
 // | Note: This code file just for study, not for commercial use 
 // | Contact Author: lishuang.mk@whu.edu.cn 
 // --------------------------------------------------------------
 //
 
-#ifndef _SYSCALL_H_
-#define _SYSCALL_H_
+#include "usys_macro.inc"
 
-#define _MAX_SYSCALL_NUM_ 512
+.section .user.init
 
-typedef unsigned long uint64_t;
-
-extern uint64_t( *syscall_funcs[ _MAX_SYSCALL_NUM_ ] )( void );
-
-#endif // syscall.h
+GEN_USER_SYSCALL write 64
+GEN_USER_SYSCALL fork 220

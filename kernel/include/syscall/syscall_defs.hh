@@ -17,6 +17,7 @@ namespace syscall
 	enum SyscallNumber
 	{
 		_build_sysnum_enum_( write, 64 )
+		_build_sysnum_enum_( fork, 220 )
 	};
 #undef _build_sysnum_enum_
 

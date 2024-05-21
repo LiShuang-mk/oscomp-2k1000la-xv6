@@ -47,6 +47,7 @@ namespace syscall
 
 	private:	// ================ syscall functions ================
 		uint64 _sys_write();
+		uint64 _sys_fork();
 	};
 
 	extern SyscallHandler k_syscall_handler;

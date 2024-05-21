@@ -75,6 +75,7 @@ namespace fs
 		short major;       // FD_DEVICE
 
 		int write( uint64 addr, int n );
+
 	};
 
 	constexpr uint file_pool_max_size = 100;
@@ -86,6 +87,7 @@ namespace fs
 	public:
 		void init();
 		xv6_file * alloc_file();
+		void dup( xv6_file * f );
 	};
 
 	extern xv6_file_pool k_file_table;

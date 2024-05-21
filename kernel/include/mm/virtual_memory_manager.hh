@@ -47,6 +47,8 @@ namespace mm
 
 		PageTable vm_create();
 
+		int vm_copy( PageTable &old_pt, PageTable &new_pt, uint64 size );
+
 		/// @brief allocate shm
 		/// @param pt pagetable to use
 		/// @param oldshm oldshm lower address

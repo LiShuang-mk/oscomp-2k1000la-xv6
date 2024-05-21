@@ -1,8 +1,12 @@
+CXXFLAGS += -Iinclude
+CFLAGS += -Iinclude
+ASFLAGS += -Iinclude
+
 .PHONY: all initdir
 
-c_src = user_init.c
+c_src = $(wildcard *.c)
 cc_src =
-s_src =
+s_src = $(wildcard *.S)
 
 srcs = $(c_src) $(cc_src) $(s_src)
 

@@ -351,6 +351,37 @@ namespace mm
 		return pt;
 	}
 
+	int VirtualMemoryManager::vm_copy( PageTable &old_pt, PageTable &new_pt, uint64 size )
+	{
+		Pte pte;
+		uint64 pa, va;
+		uint64 flags;
+		void *mem;
+
+		for ( va = 0; va < size; va += pg_size )
+		{
+			if ( ( pte = old_pt.walk( va, 0 ) ).is_null() )
+				log_panic( "uvmcopy: pte should exist" );
+			if ( !pte.is_present() )
+				log_panic( "uvmcopy: page not present" );
+			pa = ( uint64 ) pte.pa();
+			flags = pte.flags();
+			if ( ( mem = mm::k_pmm.alloc_page() ) == nullptr )
+			{
+				vmunmap( new_pt, 0, va / pg_size, 1 );
+				return -1;
+			}
+			memmove( mem, ( const char * ) pa, pg_size );
+			if ( map_pages( new_pt, va, pg_size, ( uint64 ) mem, flags ) == false )
+			{
+				mm::k_pmm.free_page( mem );
+				vmunmap( new_pt, 0, va / pg_size, 1 );
+				return -1;
+			}
+		}
+		return 0;
+	}
+
 	void VirtualMemoryManager::vmfree( PageTable &pt, uint64 sz )
 	{
 		if ( sz > 0 )

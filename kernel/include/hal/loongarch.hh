@@ -49,7 +49,11 @@ namespace loongarch
 		nr_m = 0x1UL << nr_s,
 		nx_m = 0x1UL << nx_s,
 		rplv_m = 0x1UL << rplv_s,
+
+		b_flags_m = valid_m | dirty_m | plv_m | mat_m | b_global_m | presence_m
+			| writable_m | nr_m | nx_m | rplv_m, 
 	};
+	static_assert( PteEnum::b_flags_m == 0xE0000000000001FFUL );
 
 	enum MatEnum : uint
 	{

@@ -11,6 +11,7 @@
 #include "hal/cpu.hh"
 #include "pm/process.hh"
 #include "pm/trap_frame.hh"
+#include "pm/process_manager.hh"
 #include "mm/virtual_memory_manager.hh"
 #include "fs/file.hh"
 #include "klib/klib.hh"
@@ -31,6 +32,7 @@ namespace syscall
 		}
 
 		_syscall_funcs[ SYS_write ] = std::bind( &SyscallHandler::_sys_write, this );
+		_syscall_funcs[ SYS_fork ] = std::bind( &SyscallHandler::_sys_fork, this );
 		_syscall_funcs[ 1 ] = std::bind( &SyscallHandler::test_bind, this );
 	}
 
@@ -128,5 +130,9 @@ namespace syscall
 		return f->write( p, n );
 	}
 
+	uint64 SyscallHandler::_sys_fork()
+	{
+		return pm::k_pm.fork();
+	}
 
 } // namespace syscall

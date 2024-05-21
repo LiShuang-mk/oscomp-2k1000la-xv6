@@ -52,6 +52,8 @@ extern uint64 stext;
 extern uint64 etext;
 
 extern "C" {
+	extern uint64 _u_init_txts;
+	extern uint64 _u_init_txte;
 	extern int init_main( void );
 }
 
@@ -162,8 +164,9 @@ int main()
 		// log_info( "text start %p\n", &stext );
 		// log_info( "text end   %p\n", &etext ); 
 
-		log_info( "user code start %p\n", &_start_u_init );
-		log_info( "user init_main address %p\n", ( uint64 ) &init_main );
+		log_info( "user code start %p", &_start_u_init );
+		log_info( "user init_main address %p", ( uint64 ) &init_main );
+		log_info( "user code size %d Bytes", ( uint64 ) &_u_init_txte - ( uint64 ) &_u_init_txts );
 
 		pm::k_pm.user_init();
 		log_info( "user init" );
