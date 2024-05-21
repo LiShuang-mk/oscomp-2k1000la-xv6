@@ -25,7 +25,9 @@
 #include "fs/elf.hh"
 #include "fs/fat/fat32_file_system.hh"
 #include "hal/qemu_ls2k.hh"
-
+#include "fs/file.hh"
+#include "fs/dev/console.hh"
+#include "fs/device.hh"
 extern "C" {
 	extern uint64 _start_u_init;
 	extern uint64 _end_u_init;
@@ -240,6 +242,15 @@ namespace pm
 		log_info( "user init: era = %p", p->_trapframe->era );
 		p->_trapframe->sp = ( uint64 ) &_u_init_stke - ( uint64 ) &_start_u_init;
 		log_info( "user init: sp  = %p", p->_trapframe->sp );
+
+		fs::xv6_file *f = fs::k_file_table.alloc_file();
+		assert( f != nullptr, "pm: alloc file fail while user init." );
+		f->writable = 1;
+		f->readable = 1;
+		f->major = dev::dev_console_num;
+		f->type = fs::xv6_file::FD_DEVICE;
+		p->_ofile[ 1 ] = f;
+
 
 		/// TODO:
 		/// set p->cwd = "/"

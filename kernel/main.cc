@@ -172,6 +172,12 @@ int main()
 		pm::k_pm.user_init();
 		log_info( "user init" );
 
+		pm::Pcb * np = pm::k_pm.alloc_proc();
+		np->_ofile[1] = pm::k_proc_pool[0]._ofile[1];
+		loongarch::Cpu::get_cpu()->set_cur_proc(np);
+
+		eastl::vector<eastl::string> args;
+		pm::k_pm.exec( "test_echo", args );
 		pm::k_scheduler.start_schedule();
 
 		while ( 1 );

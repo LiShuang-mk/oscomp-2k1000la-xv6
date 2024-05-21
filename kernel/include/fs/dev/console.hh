@@ -14,7 +14,7 @@
 namespace dev
 {
 	constexpr uint console_input_buf_size = 128;
-
+	
 	class Console
 	{
 	private:

@@ -47,7 +47,7 @@ namespace pm
 		friend ProcessManager;
 		friend ShmManager;
 		friend Scheduler;
-	private:
+	public:
 		smp::Lock _lock;
 		int _gid = num_process;					// global ID in pool 
 
