@@ -358,6 +358,17 @@ namespace im
 				loongarch::Cpu::read_csr( loongarch::csr::badi )
 			);
 		};
+
+		_exception_handlers[ loongarch::csr::ecode_ine ] = [] ( uint32 ) -> void
+		{
+			log_panic(
+				"handle exception INE :\n"
+				"    badv : %x\n"
+				"    badi : %x",
+				loongarch::Cpu::read_csr( loongarch::csr::badv ),
+				loongarch::Cpu::read_csr( loongarch::csr::badi )
+			);
+		};
 	}
 
 	void ExceptionManager::_syscall()

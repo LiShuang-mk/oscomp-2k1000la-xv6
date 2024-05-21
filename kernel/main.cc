@@ -68,6 +68,8 @@ int main()
 		kernellib::k_printer.init( &dev::k_console, "printer" );
 		log_info( "Hello World!\n" );
 
+		log_info( "main addr: %p", &main );
+
 
 		uint64 tmp = loongarch::Cpu::read_csr( loongarch::csr::crmd );
 		log_trace( "crmd: %p", tmp );

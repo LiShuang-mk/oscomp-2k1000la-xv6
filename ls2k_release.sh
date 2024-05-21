@@ -1,6 +1,7 @@
 #!/bin/bash 
 
 RUNENV_PREFIX="/home/lishuang/qemu-loongarch/qemu0401"
+# RUNENV_PREFIX="/home/lishuang/qemu-test"
 KERNEL_PREFIX=`pwd`
 
 cd $RUNENV_PREFIX
@@ -9,7 +10,7 @@ cd $RUNENV_PREFIX
 	-M ls2k \
 	-serial stdio \
 	-k ./share/qemu/keymaps/en-us \
-	-drive if=pflash,file=./u-boot-with-spl.bin \
+	-drive if=pflash,file=./2k1000/u-boot-with-spl.bin \
 	-serial vc \
 	-m 1024 \
 	-device usb-kbd,bus=usb-bus.0 \

@@ -40,14 +40,18 @@ namespace mm
 		k_pmm.clear_page( ( void* ) addr );
 		k_pagetable.set_base( addr );
 
+		loongarch::Cpu::write_csr( loongarch::csr::pgdl, addr );
+		loongarch::Cpu::write_csr( loongarch::csr::pgdh, addr );
+		k_tlbm.init( "tlb manager" );
+
+		log_info( "pgdl : %p", loongarch::Cpu::read_csr( loongarch::csr::pgdl ) );
+		log_info( "pgdh : %p", loongarch::Cpu::read_csr( loongarch::csr::pgdh ) );
+
 		for ( pm::Pcb &pcb : pm::k_proc_pool )
 		{
 			pcb.map_kstack( mm::k_pagetable );
 		}
 
-		loongarch::Cpu::write_csr( loongarch::csr::pgdl, addr );
-		loongarch::Cpu::write_csr( loongarch::csr::pgdh, addr );
-		k_tlbm.init( "tlb manager" );
 
 		loongarch::Cpu::write_csr(
 			loongarch::csr::pwcl,

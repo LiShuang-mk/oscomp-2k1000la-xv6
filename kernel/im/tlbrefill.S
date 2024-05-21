@@ -17,7 +17,7 @@ handle_tlbr:
 //	lddir	$t0, $t0, 4
 //	addi.d  $t0, $t0, -1
 //	lu52i.d	$t0, $t0, -1792
-	lu52i.d	$t0, $t0, 0x0
+	# lu52i.d	$t0, $t0, 0x0
 	lddir	$t0, $t0, 3
 	srli.d	$t0, $t0, 12 
 	slli.d	$t0, $t0, 12
