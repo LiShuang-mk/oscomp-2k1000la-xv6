@@ -7,6 +7,12 @@ SECTIONS
 
   .text : {
 	PROVIDE(stext = .);
+
+	PROVIDE(_startup_text_s = .);
+	*(.text.osstartup)
+	PROVIDE(_startup_text_e = .);
+
+	PROVIDE(_common_text_s = .);
     *(.text .text.*)
     . = ALIGN(0x1000);
     _keentry = .;
@@ -21,6 +27,8 @@ SECTIONS
     _merrentry = .;
     *(merrentry)
     . = ALIGN(0x1000);
+	PROVIDE(_common_text_e = .);
+
     PROVIDE(etext = .);
 
 	. = ALIGN(0x1000);

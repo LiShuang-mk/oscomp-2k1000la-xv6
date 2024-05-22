@@ -130,53 +130,56 @@ namespace dev
 
 			sata::k_sata_driver.init( "sata" );
 
-			uchar buf[ 1024 ];
-			bool flag = false;
-			ahci::k_ahci_ctl.isu_cmd_identify( 0, ( void * ) buf, sizeof( buf ), [ & ] () -> void
-			{
-				log_info( "<<<<<<<< identify 回调 >>>>>>>>" );
+			sata::k_sata_driver._logical_sector_size = 512/*Bytes*/;
+			log_warn( "使用固定扇区大小: %d Bytes", sata::k_sata_driver._logical_sector_size );
+			
+			// uchar buf[ 1024 ];
+			// bool flag = false;
+			// ahci::k_ahci_ctl.isu_cmd_identify( 0, ( void * ) buf, sizeof( buf ), [ & ] () -> void
+			// {
+			// 	log_info( "<<<<<<<< identify 回调 >>>>>>>>" );
 
-				uint16 sec_size_word = *( ( uint16 * ) buf + 106 );
-				log_trace( "106 word : %x", sec_size_word );
-				if ( ( sec_size_word >> 14 ) != 1U )
-					log_panic( "identify disk - 无效的返回数据" );
-				if ( sec_size_word & ( 1U << 12 ) )
-				{
-					uint32 logical_sec_size = *( ( uint16* ) buf + 117 );
-					logical_sec_size += *( ( uint16* ) buf + 118 ) << 16;
-					sata::k_sata_driver._logical_sector_size = logical_sec_size;
-				}
-				else
-				{
-					sata::k_sata_driver._logical_sector_size = 512/*bytes*/;
-				}
-				log_trace( "identify disk - 逻辑扇区大小 %d bytes", sata::k_sata_driver.get_sector_size() );
-				assert( sata::k_sata_driver._logical_sector_size == fs::default_sector_size,
-					"buffer使用了默认的扇区大小, 但是识别SATA设备信息与此不符\n"
-					">> 默认 %d Bytes 但是识别为 %d Bytes",
-					sata::k_sata_driver._logical_sector_size,
-					fs::default_sector_size
-				);
+			// 	uint16 sec_size_word = *( ( uint16 * ) buf + 106 );
+			// 	log_trace( "106 word : %x", sec_size_word );
+			// 	if ( ( sec_size_word >> 14 ) != 1U )
+			// 		log_panic( "identify disk - 无效的返回数据" );
+			// 	if ( sec_size_word & ( 1U << 12 ) )
+			// 	{
+			// 		uint32 logical_sec_size = *( ( uint16* ) buf + 117 );
+			// 		logical_sec_size += *( ( uint16* ) buf + 118 ) << 16;
+			// 		sata::k_sata_driver._logical_sector_size = logical_sec_size;
+			// 	}
+			// 	else
+			// 	{
+			// 		sata::k_sata_driver._logical_sector_size = 512/*bytes*/;
+			// 	}
+			// 	log_trace( "identify disk - 逻辑扇区大小 %d bytes", sata::k_sata_driver.get_sector_size() );
+			// 	assert( sata::k_sata_driver._logical_sector_size == fs::default_sector_size,
+			// 		"buffer使用了默认的扇区大小, 但是识别SATA设备信息与此不符\n"
+			// 		">> 默认 %d Bytes 但是识别为 %d Bytes",
+			// 		sata::k_sata_driver._logical_sector_size,
+			// 		fs::default_sector_size
+			// 	);
 
-				uint16 queue_depth = *( ( uint16 * ) buf + 75 );
-				uint16 sata_cap = *( ( uint16 * ) buf + 76 );
-				uint16 feature = *( ( uint16 * ) buf + 83 );
-				log_trace(
-					"word 76 : %x\n"
-					"word 83 : %x\n"
-					"command support : %s %s\n"
-					"queue depth : %d",
-					sata_cap,
-					feature,
-					( feature & ( 0x1U << 1 ) ) ? "DMA-QEUEUD" : "",
-					( sata_cap & ( 0x1U << 8 ) ) ? "FPDMA" : "",
-					queue_depth
-				);
+			// 	uint16 queue_depth = *( ( uint16 * ) buf + 75 );
+			// 	uint16 sata_cap = *( ( uint16 * ) buf + 76 );
+			// 	uint16 feature = *( ( uint16 * ) buf + 83 );
+			// 	log_trace(
+			// 		"word 76 : %x\n"
+			// 		"word 83 : %x\n"
+			// 		"command support : %s %s\n"
+			// 		"queue depth : %d",
+			// 		sata_cap,
+			// 		feature,
+			// 		( feature & ( 0x1U << 1 ) ) ? "DMA-QEUEUD" : "",
+			// 		( sata_cap & ( 0x1U << 8 ) ) ? "FPDMA" : "",
+			// 		queue_depth
+			// 	);
 
-				flag = true;
-			} );
-			while ( !flag );
-			log_info( ">>>>>>>> flag change <<<<<<<<" );
+			// 	flag = true;
+			// } );
+			// while ( !flag );
+			// log_info( ">>>>>>>> flag change <<<<<<<<" );
 		}
 
 

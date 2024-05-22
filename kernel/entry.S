@@ -5,7 +5,7 @@
 
 #include "hal/asm.h"
 
-.section .text
+.section .text.osstartup
 .global _entry
 .global __init_atexit_func_entry
 _entry:

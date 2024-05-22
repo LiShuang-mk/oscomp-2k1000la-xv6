@@ -8,24 +8,25 @@ cd $RUNENV_PREFIX
 
 ./bin/qemu-system-loongarch64 \
 	-M ls2k \
-	-serial stdio \
 	-k ./share/qemu/keymaps/en-us \
-	-drive if=pflash,file=./2k1000/u-boot-with-spl.bin \
+	-serial stdio \
 	-serial vc \
+	-drive if=pflash,file=./2k1000/u-boot-with-spl.bin \
 	-m 1024 \
 	-device usb-kbd,bus=usb-bus.0 \
 	-device usb-tablet,bus=usb-bus.0 \
-	-device usb-storage,drive=udisk \
-	-drive if=none,id=udisk,file=./tmp/disk \
 	-net nic \
 	-net user,net=10.0.2.0/24,tftp=/srv/tftp \
 	-vnc :0 \
-	-s \
+	-s -S\
 	-hda ./2kfs.img \
 	-hdb ./sdcard-loongarch.img
 
+	# -nographic \
 	# -hda ./sdcard.img
 	
+	# "$@" 2>&1 \
+	# -net tap,ifname=tap0,script=no,downscript=no \
 	# -D ./tmp/qemu.log \
 	# -D /dev/null \
 

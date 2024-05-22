@@ -4,4 +4,4 @@ docker container run -it docker.educg.net/cg/os-contest:2024p6 /bin/bash
 
 setenv ipaddr 10.0.0.2
 setenv serverip 10.0.0.1
-tftpboot 0x9000000008000000 10.0.0.1:kernel.bin
+tftpboot 0x9000000090000000 10.0.0.1:kernel.bin
