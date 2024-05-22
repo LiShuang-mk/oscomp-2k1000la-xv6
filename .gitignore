@@ -4,6 +4,7 @@
 **/kernel.dis
 **/kernel.elf
 ls2k_debug.sh
+ls2k_release.sh
 build/**
 .vscode/
 .vscode/*
