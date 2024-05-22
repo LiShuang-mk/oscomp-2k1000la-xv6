@@ -14,4 +14,5 @@ extern int exit( int n );
 extern int fork( void );
 extern int getpid( void );
 extern int getppid( void );
+extern int brk( int n );
 #endif

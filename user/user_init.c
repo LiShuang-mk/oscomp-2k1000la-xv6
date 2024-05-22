@@ -48,12 +48,15 @@ int init_main( void )
 	}
 	else
 	{
-		int ppid_ = getppid();
-		char ppid = ( char ) ppid_ + '0';
-		write( 1, &ppid, sizeof( ppid ) );
-		int pid_  = getpid();
-		char pid = ( char ) pid_ + '0';
-		write( 1, &pid, sizeof( pid ) );
+		//int ppid_ = getppid();
+		int brk_ = brk( 10000 );
+		char brk = ( char ) brk_ + '0';
+		write( 1, &brk, sizeof( brk ) );
+		//char ppid = ( char ) ppid_ + '0';
+		//write( 1, &ppid, sizeof( ppid ) );
+		//int pid_  = getpid();
+		//char pid = ( char ) pid_ + '0';
+		//write( 1, &pid, sizeof( pid ) );
 		write( 1, parent_str, sizeof( parent_str ) );
 		char ch = ( char ) pid + '0';
 		write( 1, &ch, sizeof( ch ) );
