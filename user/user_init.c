@@ -49,9 +49,9 @@ int init_main( void )
 	// else
 	// {
 	// 	//int ppid_ = getppid();
-	 	int brk_ = brk( 10000 );
-		char brk = ( char ) brk_ + '0';
-		write( 1, &brk, sizeof( brk ) );
+	 	// int brk_ = brk( 10000 );
+		// char brk = ( char ) brk_ + '0';
+		// write( 1, &brk, sizeof( brk ) );
 		//char ppid = ( char ) ppid_ + '0';
 	// 	//write( 1, &ppid, sizeof( ppid ) );
 	// 	//int pid_  = getpid();

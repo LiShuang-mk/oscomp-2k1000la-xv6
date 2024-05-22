@@ -1,5 +1,5 @@
 how to docker:
-docker container run -it docker.educg.net/cg/os-contest:2024p6 /bin/bash
+docker container run -it docker.educg.net/cg/os-contest:2024p7 /bin/bash
 
 
 setenv ipaddr 10.0.0.2
