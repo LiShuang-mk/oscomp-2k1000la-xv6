@@ -50,6 +50,7 @@ namespace syscall
 		uint64 _sys_exit();
 		uint64 _sys_getpid();
 		uint64 _sys_getppid();
+		uint64 _sys_brk();
 	};
 
 	extern SyscallHandler k_syscall_handler;

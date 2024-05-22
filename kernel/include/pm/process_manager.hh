@@ -62,7 +62,7 @@ namespace pm
 		void exit( int state );
 		int fork();
 		void fork_ret();
-
+		int brk( int n );
 		void user_init();
 
 	public:

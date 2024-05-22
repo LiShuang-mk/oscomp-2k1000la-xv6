@@ -14,6 +14,7 @@
 #include "mm/memlayout.hh"
 #include "mm/physical_memory_manager.hh"
 #include "mm/virtual_memory_manager.hh"
+#include "mm/memlayout.hh"
 #include "im/trap_wrapper.hh"
 #include "fs/fat/fat32_dir_entry.hh"
 #include "im/exception_manager.hh"
@@ -689,6 +690,33 @@ namespace pm
 		lock->acquire();
 	}
 
+	int ProcessManager::brk( int n )
+	{
+		Pcb *p = get_cur_pcb();
+		uint64 sz = p->_sz;
+		uint64 newsz = sz + n;
+		mm::PageTable pt = p->_pt;
+
+		if ( n < 0 )
+		{
+			if ( mm::k_vmm.uvmdealloc( pt, sz, sz + n ) < 0 )
+			{
+				return -1;
+			}
+		}
+		else if ( n > 0 )
+		{
+			if ( (n + p->_sz) > ( static_cast<uint64>(mm::vml::vm_end) - static_cast<uint64>(mm::PageEnum::pg_size) ) )
+				return -1;
+
+			if ( mm::k_vmm.vmalloc( pt, sz, newsz ) == 0 )
+				return -1;
+		}
+		
+		p->_sz = newsz;
+		log_info( "brk: newsize%d, oldsize%d", newsz, sz );
+		return 0;
+	}
 // ---------------- private helper functions ----------------
 
 	void ProcessManager::_proc_create_vm( Pcb * p )
