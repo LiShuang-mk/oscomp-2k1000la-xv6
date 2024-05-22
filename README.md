@@ -46,3 +46,5 @@
 #### 6. [=> 动态内存](./doc/dyn_mem.md)
 
 #### 7. [=> 空间地址划分](./doc/memlayout.md)
+
+#### 8. [=> uboot启动与调试](./doc/how_to_uboot.md)
