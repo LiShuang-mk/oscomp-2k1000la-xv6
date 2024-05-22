@@ -35,11 +35,19 @@ namespace dev
 			// debug_print_hba_mem();
 
 			// 清中断
-			// _hba_port_reg[ 0 ]->is = ( uint32 ) ~0x0U;
-			// _hba_mem_reg->is = ( uint32 ) ~0x0U;
+			_hba_mem_reg->is = ( uint32 ) ~0x0U;
 
 			for ( uint i = 0; i < _port_num; ++i )
 			{
+				// 先关闭设备以初始化
+
+				_hba_port_reg[ i ]->cmd &= ~ata::sata::HbaRegPortCmd::hba_port_cmd_fre_m;
+				while ( _hba_port_reg[ i ]->cmd & ata::sata::HbaRegPortCmd::hba_port_cmd_fr_m )
+					;
+				_hba_port_reg[ i ]->cmd &= ~ata::sata::HbaRegPortCmd::hba_port_cmd_st_m;
+				while ( _hba_port_reg[ i ]->cmd & ata::sata::HbaRegPortCmd::hba_port_cmd_cr_m )
+					;
+
 				// 配置 command list 地址
 				log_trace( "set port %d clb : %p", i, _port_cmd_lst_base[ i ] );
 				_hba_port_reg[ i ]->clb = ( ( uint32 ) ( uint64 ) _port_cmd_lst_base[ i ] );
@@ -62,6 +70,9 @@ namespace dev
 				_hba_port_reg[ i ]->fb = ( ( uint32 ) ( uint64 ) _port_rec_fis_base[ i ] );
 				_hba_port_reg[ i ]->fbu = ( uint32 ) ( ( uint64 ) _port_rec_fis_base[ i ] >> 32 );
 
+				// 清除中断
+				_hba_port_reg[ i ]->is = ( uint32 ) ~0x0U;
+
 				// 使能中断
 				_hba_mem_reg->ghc |= ata::sata::HbaRegGhc::hba_ghc_ie_m;
 				_hba_port_reg[ i ]->ie |=
@@ -73,7 +84,11 @@ namespace dev
 
 				// 启动设备 
 				_hba_port_reg[ i ]->cmd |= ata::sata::HbaRegPortCmd::hba_port_cmd_fre_m;
+				while ( ( _hba_port_reg[ i ]->cmd & ata::sata::HbaRegPortCmd::hba_port_cmd_fr_m ) == 0 )
+					;
 				_hba_port_reg[ i ]->cmd |= ata::sata::HbaRegPortCmd::hba_port_cmd_st_m;
+				while ( ( _hba_port_reg[ i ]->cmd & ata::sata::HbaRegPortCmd::hba_port_cmd_cr_m ) == 0 )
+					;
 			}
 		}
 
@@ -126,11 +141,14 @@ namespace dev
 			{
 				port_reg = &_hba_mem_reg->ports[ i ];
 				log_trace(
-					"[探测] port %d(%p), ssts %p\n"
-					"signature : %p",
+					"[探测] port %d (%p)\n"
+					"       ssts %p (det=%xh,ipm=%xh)\n"
+					"       signature : %xh",
 					i,
 					port_reg,
 					port_reg->ssts,
+					port_reg->ssts & 0xf,
+					( port_reg->ssts & 0xf00 ) >> 8,
 					port_reg->sig
 				);
 			}

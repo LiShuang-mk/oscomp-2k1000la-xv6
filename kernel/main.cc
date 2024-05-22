@@ -153,6 +153,10 @@ int main()
 			mm::k_pmm.trace_free_pages_count()
 		);
 
+		// test_buffer();
+		// while ( 1 );
+
+
 		new ( &fs::fat::k_testcase_fs ) fs::fat::Fat32FileSystem;
 		fs::fat::k_testcase_fs.init( 1, 0 );
 		log_info( "testcase fs init" );
@@ -190,7 +194,6 @@ int main()
 		//pm::k_pm.stringtest();
 		//pm::k_pm.maptest();
 		//pm::k_pm.hashtest();   //  < -------------  threr are some problem in heap dealloc
-		// test_buffer();
 
 		// fs::Buffer buf = fs::k_bufm.get_buffer( 0, 0 );
 		// log_trace( "测试 buffer : %p", buf.debug_get_buffer_base() );
