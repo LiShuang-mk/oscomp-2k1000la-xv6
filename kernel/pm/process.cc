@@ -22,7 +22,7 @@ namespace pm
 		for ( auto &of : _ofile )
 			of = nullptr;
 
-		
+
 	}
 
 	void Pcb::init( const char *lock_name, uint gid )
@@ -50,6 +50,8 @@ namespace pm
 			log_panic( "kernel vm map failed" );
 
 		printf( "map kstack : %p => %p (gid=%d)\n", _kstack, pt.walk( _kstack, 0 ).pa(), _gid );
+		// uint64 tmp = *( uint64* ) _kstack;
+		// printf( "read kstack %p : %d", _kstack, tmp );
 	}
 
 	int Pcb::get_priority()
