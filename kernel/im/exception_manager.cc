@@ -114,7 +114,7 @@ namespace im
 	void ExceptionManager::user_trap( uint64 estat )
 	{
 		loongarch::Cpu *cpu = loongarch::Cpu::get_cpu();
-		// [[maybe_unused]] uint64 estat = cpu->read_csr( loongarch::csr::CsrAddr::estat );
+		[[maybe_unused]] uint64 test_estat = cpu->read_csr( loongarch::csr::CsrAddr::estat );
 		// estat = [] ()->uint64
 		// {
 		// 	uint32 x;
@@ -169,7 +169,7 @@ namespace im
 			assert( ecode < _LA_ECODE_MAX_NUM_, "" );
 			log_info( _la_ecode_spec_[ ecode ] );
 			_exception_handlers[ ecode ]( estat );
-			pm::k_pm.kill_proc( proc );
+			// pm::k_pm.kill_proc( proc );
 		}
 
 		if ( proc->is_killed() )
@@ -248,15 +248,15 @@ namespace im
 		}
 		else
 		{
-			log_error(
-				"unkown exception.\n"
-				"estat: %x\n"
-				"badv: %x\n"
-				"badi: %x\n",
-				estat,
-				cpu->read_csr( loongarch::csr::badv ),
-				cpu->read_csr( loongarch::csr::badi )
-			);
+			// log_error(
+			// 	"unkown exception.\n"
+			// 	"estat: %x\n"
+			// 	"badv: %x\n"
+			// 	"badi: %x\n",
+			// 	estat,
+			// 	cpu->read_csr( loongarch::csr::badv ),
+			// 	cpu->read_csr( loongarch::csr::badi )
+			// );
 			return -101;
 		}
 		return -1;
@@ -291,11 +291,28 @@ namespace im
 
 	void ExceptionManager::_init_exception_handler()
 	{
+		_exception_handlers[ loongarch::csr::ecode_pil ] = [] ( uint32 estat ) ->void
+		{
+			uint64 badv = loongarch::Cpu::read_csr( loongarch::csr::badv );
+			[[maybe_unused]] mm::Pte pte = loongarch::Cpu::get_cpu()->get_cur_proc()->get_pagetable().walk( badv, 0 );
+			// log_warn( "出现PIS异常很可能是一个诡异的bug, 此处继续运行" );
+			log_panic(
+				"handle exception PIL :\n"
+				"    badv : %x\n"
+				"    badi : %x\n"
+				"    pte  : %x",
+				badv,
+				loongarch::Cpu::read_csr( loongarch::csr::badi ),
+				pte.get_data()
+			);
+		};
+
 		_exception_handlers[ loongarch::csr::ecode_pis ] = [] ( uint32 estat ) ->void
 		{
 			uint64 badv = loongarch::Cpu::read_csr( loongarch::csr::badv );
 			[[maybe_unused]] mm::Pte pte = loongarch::Cpu::get_cpu()->get_cur_proc()->get_pagetable().walk( badv, 0 );
-			log_panic(
+			log_warn( "出现PIS异常很可能是一个诡异的bug, 此处继续运行" );
+			log_error(
 				"handle exception PIS :\n"
 				"    badv : %x\n"
 				"    badi : %x\n"

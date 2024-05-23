@@ -9,6 +9,8 @@
 #include "im/trap_wrapper.hh"
 #include "im/exception_manager.hh"
 
+#include "hal/laregs.h"
+
 extern "C" {
 	void _wrp_kernel_trap( void )
 	{
@@ -22,6 +24,8 @@ extern "C" {
 
 	void _wrp_user_trap( uint64 estat )
 	{
+		[[maybe_unused]] uint64 test_estat;
+		asm volatile( "csrrd %0, 0x5" : "=r" ( test_estat ) : );
 		im::k_em.user_trap( estat );
 	}
 

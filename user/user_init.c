@@ -17,38 +17,33 @@ __attribute__( ( section( ".user.init.data" ) ) ) const char errstr[] = "fork fa
 __attribute__( ( section( ".user.init.data" ) ) ) const char parent_str[] = "parent write. fork pid is ";
 __attribute__( ( section( ".user.init.data" ) ) ) const char child_str[] = "child write\n";
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_fail_str[] = "exec fail\n";
+__attribute__( ( section( ".user.init.data" ) ) ) const char wait_success[] = "wait success\n";
+__attribute__( ( section( ".user.init.data" ) ) ) const char wait_fail[] = "wait fail\n";
+
+
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_echo[] = "write";
+__attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_fork[] = "fork";
+__attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_exit[] = "exit";
+__attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_wait[] = "wait";
+__attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_getpid[] = "getpid";
+__attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_getppid[] = "getppid";
 
 
 int init_main( void )
 {
-	// asm volatile(
-	// 	"li.d $a0, 1\n"
-	// 	"add.d $a1, $zero, %0\n"
-	// 	"li.d $a2, %1\n"
-	// 	"li.d $a7, 64\n"
-	// 	"syscall 0"
-	// 	:: "r"( str ),
-	// 	"i"( sizeof( str ) )
-	// 	);
 	write( 1, str, sizeof( str ) );
-	
-	int pid = fork();
+
+	int pid;
+
+	// ======== test echo ========
+	pid = fork();
 	if ( pid < 0 )
 	{
 		write( 1, errstr, sizeof( errstr ) );
 	}
 	else if ( pid == 0 )
 	{
-		// write( 1, child_str, sizeof( child_str ) );
-		// int ppid_ = getppid();
-		// char ppid = ( char ) ppid_ + '0';
-		// write( 1, &ppid, sizeof( ppid ) );
-		// int pid_  = getpid();
-		// char pid = ( char ) pid_ + '0';
-		// write( 1, &pid, sizeof( pid ) );
-
-		if ( execv( exec_test_echo, 0 ) )
+		if ( execv( exec_test_echo, 0 ) < 0 )
 		{
 			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
 		}
@@ -56,20 +51,126 @@ int init_main( void )
 	}
 	else
 	{
-		//int ppid_ = getppid();
-	 	// int brk_ = brk( 10000 );
-		// char brk = ( char ) brk_ + '0';
-		// write( 1, &brk, sizeof( brk ) );
-		// char ppid = ( char ) ppid_ + '0';
-		//write( 1, &ppid, sizeof( ppid ) );
-		//int pid_  = getpid();
-		//char pid = ( char ) pid_ + '0';
-		//write( 1, &pid, sizeof( pid ) );
-		// write( 1, parent_str, sizeof( parent_str ) );
-		// char ch = ( char ) pid + '0';
-		// write( 1, &ch, sizeof( ch ) );
-		// ch = '\n';
-		// write( 1, &ch, sizeof( ch ) );
+		int child_exit_state = -100;
+		if ( wait( -1, &child_exit_state ) < 0 )
+			write( 1, wait_fail, sizeof( wait_fail ) );
+		// else
+		// 	write( 1, wait_success, sizeof( wait_success ) );
+	}
+
+	// ======== test fork ========
+	pid = fork();
+	if ( pid < 0 )
+	{
+		write( 1, errstr, sizeof( errstr ) );
+	}
+	else if ( pid == 0 )
+	{
+		if ( execv( exec_test_fork, 0 ) < 0 )
+		{
+			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
+		}
+		exit( 0 );
+	}
+	else
+	{
+		int child_exit_state = -100;
+		if ( wait( -1, &child_exit_state ) < 0 )
+			write( 1, wait_fail, sizeof( wait_fail ) );
+		else
+			write( 1, wait_success, sizeof( wait_success ) );
+	}
+
+	// ======== test exit ========
+	pid = fork();
+	if ( pid < 0 )
+	{
+		write( 1, errstr, sizeof( errstr ) );
+	}
+	else if ( pid == 0 )
+	{
+		if ( execv( exec_test_exit, 0 ) < 0 )
+		{
+			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
+		}
+		exit( 0 );
+	}
+	else
+	{
+		int child_exit_state = -100;
+		if ( wait( -1, &child_exit_state ) < 0 )
+			write( 1, wait_fail, sizeof( wait_fail ) );
+		// else
+		// 	write( 1, wait_success, sizeof( wait_success ) );
+	}
+
+	// ======== test wait ========
+	pid = fork();
+	if ( pid < 0 )
+	{
+		write( 1, errstr, sizeof( errstr ) );
+	}
+	else if ( pid == 0 )
+	{
+		if ( execv( exec_test_wait, 0 ) < 0 )
+		{
+			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
+		}
+		exit( 0 );
+	}
+	else
+	{
+		int child_exit_state = -100;
+		if ( wait( -1, &child_exit_state ) < 0 )
+			write( 1, wait_fail, sizeof( wait_fail ) );
+		// else
+		// 	write( 1, wait_success, sizeof( wait_success ) );
+	}
+
+	// ======== test getpid ========
+	pid = fork();
+	if ( pid < 0 )
+	{
+		write( 1, errstr, sizeof( errstr ) );
+	}
+	else if ( pid == 0 )
+	{
+		if ( execv( exec_test_getpid, 0 ) < 0 )
+		{
+			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
+		}
+		exit( 0 );
+	}
+	else
+	{
+		int child_exit_state = -100;
+		if ( wait( -1, &child_exit_state ) < 0 )
+			write( 1, wait_fail, sizeof( wait_fail ) );
+		// else
+		// 	write( 1, wait_success, sizeof( wait_success ) );
+	}
+
+	// ======== test getppid ========
+	pid = fork();
+	if ( pid < 0 )
+	{
+		write( 1, errstr, sizeof( errstr ) );
+	}
+	else if ( pid == 0 )
+	{
+		if ( execv( exec_test_getppid, 0 ) < 0 )
+		{
+			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
+		}
+		exit( 0 );
+	}
+	else
+	{
+		int child_exit_state = -100;
+		if ( wait( -1, &child_exit_state ) < 0 )
+			write( 1, wait_fail, sizeof( wait_fail ) );
+		// else
+		// 	write( 1, wait_success, sizeof( wait_success ) );
 	}
 
 	while ( 1 );

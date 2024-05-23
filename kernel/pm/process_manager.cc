@@ -61,7 +61,7 @@ namespace pm
 			Pcb &p = k_proc_pool[ i ];
 			p.init( "pcb", i );
 		}
-		_cur_pid = 0;
+		_cur_pid = 1;
 	}
 
 	Pcb *ProcessManager::get_cur_pcb()
@@ -161,7 +161,7 @@ namespace pm
 		p->_trapframe = 0;
 		if ( !p->_pt.is_null() )
 		{
-			mm::k_vmm.vmunmap( p->_pt, mm::PageEnum::pg_size, 1, 0 );
+			// mm::k_vmm.vmunmap( p->_pt, mm::PageEnum::pg_size, 1, 0 );
 			mm::k_vmm.vmfree( p->_pt, p->_sz );
 		}
 		p->_pt.set_base( 0 );
@@ -201,7 +201,7 @@ namespace pm
 
 		p->_sz = ( uint64 ) &_end_u_init - ( uint64 ) &_start_u_init;
 		//p->_sz = 0;
-		
+
 		// map user init stack
 		mm::k_vmm.map_pages(
 			p->_pt,
@@ -220,7 +220,7 @@ namespace pm
 			p->_pt,
 			( uint64 ) &_u_init_txts - ( uint64 ) &_start_u_init,
 			( uint64 ) &_u_init_txte - ( uint64 ) &_u_init_txts,
-			( uint64 ) &_u_init_txts ,
+			( uint64 ) &_u_init_txts,
 			loongarch::PteEnum::presence_m |
 			loongarch::PteEnum::writable_m |
 			( 0x3 << loongarch::PteEnum::plv_s ) |
@@ -438,7 +438,7 @@ namespace pm
 		// 	log_error("exec: cannot create pagetable");
 		// 	return -1;
 		// }
-		
+
 		for ( i = 0, off = elf.phoff; i < elf.phnum; i++, off += sizeof( ph ) )
 		{
 			de->read_content( &ph, sizeof( ph ), off );
@@ -581,7 +581,7 @@ namespace pm
 				n = size - i;
 			else
 				n = mm::PageEnum::pg_size;
-			de->read_content( ( void * ) ( pa | loongarch::qemuls2k::dmwin::win_0), n, offset + i );
+			de->read_content( ( void * ) ( pa | loongarch::qemuls2k::dmwin::win_0 ), n, offset + i );
 		}
 		return 0;
 	}
@@ -607,7 +607,7 @@ namespace pm
 					if ( np->get_state() == ProcState::zombie )
 					{
 						pid = np->_pid;
-						if ( addr != 0 && mm::k_vmm.copyout( p->_pt, addr, ( char * ) &pid, sizeof( pid ) ) < 0 )
+						if ( addr != 0 && mm::k_vmm.copyout( p->_pt, addr, ( const char * ) &np->_state, sizeof( np->_state ) ) < 0 )
 						{
 							np->_lock.release();
 							_wait_lock.release();
@@ -712,13 +712,13 @@ namespace pm
 		}
 		else if ( n > 0 )
 		{
-			if ( (n + p->_sz) > ( static_cast<uint64>(mm::vml::vm_end) - static_cast<uint64>(mm::PageEnum::pg_size) ) )
+			if ( ( n + p->_sz ) > ( static_cast< uint64 >( mm::vml::vm_end ) - static_cast< uint64 >( mm::PageEnum::pg_size ) ) )
 				return -1;
 
 			if ( mm::k_vmm.vmalloc( pt, sz, newsz ) == 0 )
 				return -1;
 		}
-		
+
 		p->_sz = newsz;
 		log_info( "brk: newsize%d, oldsize%d", newsz, sz );
 		return 0;
@@ -748,8 +748,33 @@ namespace pm
 		) == false )
 		{
 			mm::k_vmm.vmfree( pt, 0 );
+			log_panic( "proc create vm but no mem." );
 			return;
 		}
+
+		// uint64 pa = ( uint64 ) mm::k_pmm.alloc_page();
+		// if ( pa == 0 )
+		// {
+		// 	mm::k_vmm.vmfree( pt, 0 );
+		// 	log_panic( "proc create vm but no mem." );
+		// 	return;
+		// }
+		// if ( mm::k_vmm.map_pages(
+		// 	pt,
+		// 	( uint64 ) mm::vml::vm_trap_frame - mm::pg_size,
+		// 	mm::pg_size,
+		// 	pa,
+		// 	loongarch::PteEnum::nx_m |
+		// 	loongarch::PteEnum::presence_m |
+		// 	loongarch::PteEnum::writable_m |
+		// 	loongarch::PteEnum::dirty_m |
+		// 	( loongarch::mat_cc << loongarch::PteEnum::mat_s )
+		// ) == false )
+		// {
+		// 	mm::k_vmm.vmfree( pt, 0 );
+		// 	log_panic( "proc create vm but no mem." );
+		// 	return;
+		// }
 
 		p->_pt = pt;
 	}

@@ -74,6 +74,7 @@ namespace syscall
 		uint64 _sys_getppid();
 		uint64 _sys_brk();
 		uint64 _sys_exec();
+		uint64 _sys_wait();
 	};
 
 	extern SyscallHandler k_syscall_handler;

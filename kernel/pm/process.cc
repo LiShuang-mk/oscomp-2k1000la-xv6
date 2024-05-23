@@ -37,17 +37,30 @@ namespace pm
 	{
 		if ( _kstack == 0 )
 			log_panic( "pcb was not init" );
-		char *pa = ( char * ) mm::k_pmm.alloc_page();
-		if ( pa == 0 )
-			log_panic( "pcb map kstack: no memory" );
-		mm::k_pmm.clear_page( ( void* ) pa );
+
 		flag_t pg_flag = loongarch::PteEnum::nx_m
 			| loongarch::PteEnum::presence_m
 			| loongarch::PteEnum::writable_m
 			| ( loongarch::MatEnum::mat_cc << loongarch::PteEnum::mat_s )
 			| loongarch::PteEnum::dirty_m;
+
+		char *pa;
+
+		// map the first page
+		pa = ( char * ) mm::k_pmm.alloc_page();
+		if ( pa == 0 )
+			log_panic( "pcb map kstack: no memory" );
+		mm::k_pmm.clear_page( ( void* ) pa );
 		if ( !mm::k_vmm.map_pages( pt, _kstack, mm::pg_size, ( uint64 ) pa, pg_flag ) )
 			log_panic( "kernel vm map failed" );
+
+		// // map the second page
+		// pa = ( char * ) mm::k_pmm.alloc_page();
+		// if ( pa == 0 )
+		// 	log_panic( "pcb map kstack: no memory" );
+		// mm::k_pmm.clear_page( ( void* ) pa );
+		// if ( !mm::k_vmm.map_pages( pt, _kstack + mm::pg_size, mm::pg_size, ( uint64 ) pa, pg_flag ) )
+		// 	log_panic( "kernel vm map failed" );
 
 		printf( "map kstack : %p => %p (gid=%d)\n", _kstack, pt.walk( _kstack, 0 ).pa(), _gid );
 		// uint64 tmp = *( uint64* ) _kstack;

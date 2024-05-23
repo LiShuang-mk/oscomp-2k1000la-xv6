@@ -157,6 +157,7 @@ namespace dev
 
 		void SataDriver::debug_print_port_d2h_fis( uint i )
 		{
+#ifdef OS_DEBUG
 			assert( i < 32, "SATA -> 不合法的端口号: %d", i );
 			// log_trace( "port[%d].is = %x", i, _hba_port_reg[ i ]->is );
 			if ( ( _hba_port_reg[ i ]->is & 0x1U ) )
@@ -168,6 +169,7 @@ namespace dev
 				printf( "\n" );
 				printf( "debug print SACT : %p\n", _hba_port_reg[ i ]->sact );
 			}
+#endif
 		}
 	} // namespace sata
 

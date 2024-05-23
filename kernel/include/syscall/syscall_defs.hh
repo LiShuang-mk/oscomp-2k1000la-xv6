@@ -18,11 +18,12 @@ namespace syscall
 	{
 		_build_sysnum_enum_( write, 64 )
 		_build_sysnum_enum_( exit, 93 )
-		_build_sysnum_enum_( fork, 220 )
 		_build_sysnum_enum_( getpid, 172 )
 		_build_sysnum_enum_( getppid, 173 )
 		_build_sysnum_enum_( brk, 214 )
+		_build_sysnum_enum_( fork, 220 )
 		_build_sysnum_enum_( exec, 221 )
+		_build_sysnum_enum_( wait, 260 )
 	};
 #undef _build_sysnum_enum_
 

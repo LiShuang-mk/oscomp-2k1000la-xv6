@@ -25,7 +25,7 @@ namespace mm
 	{
 		if ( gid >= pm::num_process )
 			log_panic( "vmm: invalid gid" );
-		return ( vml::vm_trap_frame - ( ( ( gid + 1 ) << 1 ) << pg_size_shift ) );
+		return ( vml::vm_trap_frame - ( ( ( gid + 1 ) * 2 ) << pg_size_shift ) );
 	}
 
 	void VirtualMemoryManager::init( const char *lock_name )
@@ -40,8 +40,8 @@ namespace mm
 		k_pmm.clear_page( ( void* ) addr );
 		k_pagetable.set_base( addr );
 
-		loongarch::Cpu::write_csr( loongarch::csr::pgdl, addr );
-		loongarch::Cpu::write_csr( loongarch::csr::pgdh, addr );
+		loongarch::Cpu::write_csr( loongarch::csr::pgdl, loongarch::qemuls2k::virt_to_phy_address( addr ) );
+		loongarch::Cpu::write_csr( loongarch::csr::pgdh, loongarch::qemuls2k::virt_to_phy_address( addr ) );
 		k_tlbm.init( "tlb manager" );
 
 		log_info( "pgdl : %p", loongarch::Cpu::read_csr( loongarch::csr::pgdl ) );

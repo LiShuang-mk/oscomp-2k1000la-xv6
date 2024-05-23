@@ -41,6 +41,7 @@ namespace syscall
 		_syscall_funcs[ SYS_getppid ] = std::bind( &SyscallHandler::_sys_getppid, this );
 		_syscall_funcs[ SYS_brk ] = std::bind( &SyscallHandler::_sys_brk, this );
 		_syscall_funcs[ SYS_exec ] = std::bind( &SyscallHandler::_sys_exec, this );
+		_syscall_funcs[ SYS_wait ] = std::bind( &SyscallHandler::_sys_wait, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -178,6 +179,7 @@ namespace syscall
 		uint i;
 		uint64 uargv, uarg;
 
+		_path.clear();
 		if ( _arg_str( 0, _path, mm::pg_size ) < 0 || _arg_addr( 1, uargv ) < 0 )
 		{
 			return -1;
@@ -223,4 +225,13 @@ namespace syscall
 		_argv.clear();
 		return ret;
 	}
+
+	uint64 SyscallHandler::_sys_wait()
+	{
+		uint64 p;
+		if ( _arg_addr( 1, p ) < 0 )
+			return -1;
+		return pm::k_pm.wait( p );
+	}
+
 } // namespace syscall

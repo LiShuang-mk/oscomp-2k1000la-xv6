@@ -108,6 +108,7 @@ namespace fs
 				// 	if ( cnt % 4 == 3 )
 				// 		printf( "\n" );
 				// }
+				// while ( 1 );
 
 				// log_trace( "debug print files start cluster." );
 				// char padding[] = "                    ";
@@ -124,6 +125,7 @@ namespace fs
 				// 	uint64 fil_siz = ( uint64 ) it->second.file_size_bytes;
 				// 	printf( "%d  (0x%x) ---- %d Bytes\n", cls_num, cls_num, fil_siz );
 				// }
+				// while ( 1 );
 			}
 
 			return Fat32DirEntryStatus::fat32de_init_ok;
