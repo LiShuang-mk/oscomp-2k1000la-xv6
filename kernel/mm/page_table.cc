@@ -89,9 +89,12 @@ namespace mm
 	{ // pte num is 4096 / 8 = 512 in pgtable
 		for ( uint i = 0; i < 512; i++ )
 		{
-			uint64 pte_data = get_pte_data( i );
-			Pte _pte( ( pte_t * ) pte_data );
-			if ( _pte.is_valid() && !_pte.is_leaf() )      // PGT -> PTE -> _pte
+			Pte next_level = get_pte( i );
+			Pte _pte( ( pte_t * ) next_level.pa() );
+			bool pte_valid = _pte.is_valid();
+			bool pte_leaf = _pte.is_leaf();
+			// if ( _pte.is_valid() && !_pte.is_leaf() )      // PGT -> PTE -> _pte
+			if ( pte_valid && !pte_leaf )
 			{																							//  get_pte_addr
 				// this PTE is points to a lower-level page table
 				PageTable child;
@@ -99,7 +102,7 @@ namespace mm
 				child.freewalk();
 				reset_pte_data( i );
 			}
-			else if ( _pte.is_valid() )
+			else if ( pte_valid )
 			{
 				log_panic( "freewalk: leaf" );
 			}
@@ -148,7 +151,9 @@ namespace mm
 			}
 			k_pmm.clear_page( page_addr );
 			pt.set_base( ( uint64 ) page_addr );
-			pte.set_data( page_round_down( ( uint64 ) page_addr ) | loongarch::PteEnum::valid_m );
+			pte.set_data( page_round_down(
+				loongarch::qemuls2k::virt_to_phy_address( ( uint64 ) page_addr ) )
+				| loongarch::PteEnum::valid_m );
 		}
 		return true;
 	}

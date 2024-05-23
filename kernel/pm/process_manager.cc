@@ -407,7 +407,8 @@ namespace pm
 		fs::fat::Fat32DirEntry *de;
 		int i, off;
 
-		proc->_pt.freewalk();
+		// proc->_pt.freewalk();
+		mm::k_vmm.vmfree( proc->_pt, proc->_sz );
 		_proc_create_vm( proc );
 
 

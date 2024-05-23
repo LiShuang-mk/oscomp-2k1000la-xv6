@@ -47,6 +47,9 @@ namespace mm
 		bool is_leaf() { return ( ( *_data_addr & loongarch::qemuls2k::ls2kPgEnum::pg_flags_mask ) != 1 ); }
 
 		void set_data( uint64 data ) { *_data_addr |= data; }
+
+		// 慎用！！！这个函数会使PTE的值清零！
+		void clear_data() { *_data_addr = 0; }
 		uint64 get_data() { return *_data_addr; }
 
 	};

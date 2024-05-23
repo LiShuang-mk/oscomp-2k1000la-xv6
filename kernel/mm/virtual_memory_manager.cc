@@ -94,7 +94,11 @@ namespace mm
 			if ( pte.is_valid() )
 				log_panic( "mappages: remap" );
 			// pte = PA2PTE( pa ) | perm | loongarch::PteEnum::valid_m;
-			pte.set_data( page_round_down( pa ) | flags | loongarch::PteEnum::valid_m );
+			pte.set_data( page_round_down(
+				loongarch::qemuls2k::virt_to_phy_address( pa ) ) |
+				flags |
+				loongarch::PteEnum::valid_m
+			);
 			if ( a == last )
 				break;
 			a += pg_size;
@@ -381,7 +385,7 @@ namespace mm
 			{
 				k_pmm.free_page( pte.pa() );
 			}
-			pte = 0;
+			pte.clear_data();
 		}
 	}
 

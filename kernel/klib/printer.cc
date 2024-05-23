@@ -183,7 +183,7 @@ namespace kernellib
 		va_end( ap );
 		_trace_flag = 0;
 #ifdef LINUX_BUILD
-		k_printer.printf( "\n\033[0m" );
+		k_printer.printf( "\033[0m\n" );
 #else 
 		k_printer.printf( "\n" );
 #endif 
@@ -210,7 +210,7 @@ namespace kernellib
 		va_end( ap );
 		_trace_flag = 0;
 #ifdef LINUX_BUILD
-		k_printer.printf( "\n\033[0m" );
+		k_printer.printf( "\033[0m\n" );
 #else 
 		k_printer.printf( "\n" );
 #endif 
@@ -236,7 +236,7 @@ namespace kernellib
 		va_end( ap );
 		_trace_flag = 0;
 #ifdef LINUX_BUILD
-		k_printer.printf( "\n\033[0m" );
+		k_printer.printf( "\033[0m\n" );
 #else 
 		k_printer.printf( "\n" );
 #endif 
@@ -262,7 +262,7 @@ namespace kernellib
 		va_end( ap );
 		_trace_flag = 0;
 #ifdef LINUX_BUILD
-		k_printer.printf( "\n\033[0m" );
+		k_printer.printf( "\033[0m\n" );
 #else 
 		k_printer.printf( "\n" );
 #endif 
@@ -288,7 +288,7 @@ namespace kernellib
 		va_end( ap );
 		_trace_flag = 0;
 #ifdef LINUX_BUILD
-		k_printer.printf( "\n\033[0m" );
+		k_printer.printf( "\033[0m\n" );
 #else 
 		k_printer.printf( "\n" );
 #endif 
@@ -317,7 +317,7 @@ namespace kernellib
 		va_end( ap );
 		_trace_flag = 0;
 #ifdef LINUX_BUILD
-		k_printer.printf( "\n\033[0m" );
+		k_printer.printf( "\033[0m\n" );
 #else 
 		k_printer.printf( "\n" );
 #endif 
