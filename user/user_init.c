@@ -16,6 +16,8 @@ __attribute__( ( section( ".user.init.data" ) ) ) const char str[] = "Hello Worl
 __attribute__( ( section( ".user.init.data" ) ) ) const char errstr[] = "fork fail\n";
 __attribute__( ( section( ".user.init.data" ) ) ) const char parent_str[] = "parent write. fork pid is ";
 __attribute__( ( section( ".user.init.data" ) ) ) const char child_str[] = "child write\n";
+__attribute__( ( section( ".user.init.data" ) ) ) const char exec_fail_str[] = "exec fail\n";
+__attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_echo[] = "write";
 
 
 int init_main( void )
@@ -29,40 +31,46 @@ int init_main( void )
 	// 	:: "r"( str ),
 	// 	"i"( sizeof( str ) )
 	// 	);
-	// write( 1, str, sizeof( str ) );
+	write( 1, str, sizeof( str ) );
 	
-	// int pid = fork();
-	// if ( pid < 0 )
-	// {
-	// 	write( 1, errstr, sizeof( errstr ) );
-	// }
-	// else if ( pid == 0 )
-	// {
-	// 	write( 1, child_str, sizeof( child_str ) );
-	// 	int ppid_ = getppid();
-	// 	char ppid = ( char ) ppid_ + '0';
-	// 	write( 1, &ppid, sizeof( ppid ) );
-	// 	int pid_  = getpid();
-	// 	char pid = ( char ) pid_ + '0';
-	// 	write( 1, &pid, sizeof( pid ) );
-	// }
-	// else
-	// {
-	// 	//int ppid_ = getppid();
+	int pid = fork();
+	if ( pid < 0 )
+	{
+		write( 1, errstr, sizeof( errstr ) );
+	}
+	else if ( pid == 0 )
+	{
+		// write( 1, child_str, sizeof( child_str ) );
+		// int ppid_ = getppid();
+		// char ppid = ( char ) ppid_ + '0';
+		// write( 1, &ppid, sizeof( ppid ) );
+		// int pid_  = getpid();
+		// char pid = ( char ) pid_ + '0';
+		// write( 1, &pid, sizeof( pid ) );
+
+		if ( execv( exec_test_echo, 0 ) )
+		{
+			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
+		}
+		exit( 0 );
+	}
+	else
+	{
+		//int ppid_ = getppid();
 	 	// int brk_ = brk( 10000 );
 		// char brk = ( char ) brk_ + '0';
 		// write( 1, &brk, sizeof( brk ) );
-		//char ppid = ( char ) ppid_ + '0';
-	// 	//write( 1, &ppid, sizeof( ppid ) );
-	// 	//int pid_  = getpid();
-	// 	//char pid = ( char ) pid_ + '0';
-	// 	//write( 1, &pid, sizeof( pid ) );
-	// 	write( 1, parent_str, sizeof( parent_str ) );
-	// 	char ch = ( char ) pid + '0';
-	// 	write( 1, &ch, sizeof( ch ) );
-	// 	ch = '\n';
-	// 	write( 1, &ch, sizeof( ch ) );
-	// }
+		// char ppid = ( char ) ppid_ + '0';
+		//write( 1, &ppid, sizeof( ppid ) );
+		//int pid_  = getpid();
+		//char pid = ( char ) pid_ + '0';
+		//write( 1, &pid, sizeof( pid ) );
+		// write( 1, parent_str, sizeof( parent_str ) );
+		// char ch = ( char ) pid + '0';
+		// write( 1, &ch, sizeof( ch ) );
+		// ch = '\n';
+		// write( 1, &ch, sizeof( ch ) );
+	}
 
 	while ( 1 );
 }

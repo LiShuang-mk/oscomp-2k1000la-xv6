@@ -220,6 +220,50 @@ namespace mm
 		}
 	}
 
+	int VirtualMemoryManager::copy_str_in( PageTable &pt, eastl::string &dst, uint64 src_va, uint64 max )
+	{
+		uint64 n, va, pa;
+		int got_null = 0;
+
+		while ( got_null == 0 && max > 0 )
+		{
+			va = page_round_down( src_va );
+			pa = ( uint64 ) pt.walk_addr( va );
+			if ( pa == 0 )
+				return -1;
+			n = pg_size - ( src_va - va );
+			if ( n > max )
+				n = max;
+
+			char *p = ( char * ) ( pa + ( src_va - va ) );
+			while ( n > 0 )
+			{
+				if ( *p == '\0' )
+				{
+					got_null = 1;
+					break;
+				}
+				else
+				{
+					dst.push_back( *p );
+				}
+				--n;
+				--max;
+				p++;
+			}
+
+			src_va = va + pg_size;
+		}
+		if ( got_null )
+		{
+			return 0;
+		}
+		else
+		{
+			return -1;
+		}
+	}
+
 	int VirtualMemoryManager::either_copy_in( void *dst, bool user_src, uint64 src, uint64 len )
 	{
 		if ( user_src )

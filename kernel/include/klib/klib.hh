@@ -9,17 +9,17 @@
 #endif
 
 
-extern"C" {
-	void  *memset    (void *s, int c, size_t n);
-	void  *memcpy( void *dst, const void *src, size_t n );
-	void  *memmove( void *dst, const void *src, size_t n );
-	int    memcmp( const void *s1, const void *s2, size_t n );
-	size_t strlen( const char *s );
-	char  *strcat( char *dst, const char *src );
-	char  *strcpy( char *dst, const char *src );
-	char  *strncpy( char *dst, const char *src, size_t n );
-	int    strcmp( const char *s1, const char *s2 );
-	int    strncmp( const char *s1, const char *s2, size_t n );
+extern "C" {
+	void  *memset( void *s, int c, size_t n ) noexcept( true );
+	void  *memcpy( void *dst, const void *src, size_t n ) noexcept( true );
+	void  *memmove( void *dst, const void *src, size_t n ) noexcept( true );
+	int    memcmp( const void *s1, const void *s2, size_t n ) noexcept( true );
+	size_t strlen( const char *s ) noexcept( true );
+	char  *strcat( char *dst, const char *src ) noexcept( true );
+	char  *strcpy( char *dst, const char *src ) noexcept( true );
+	char  *strncpy( char *dst, const char *src, size_t n ) noexcept( true );
+	int    strcmp( const char *s1, const char *s2 ) noexcept( true );
+	int    strncmp( const char *s1, const char *s2, size_t n ) noexcept( true );
 }
 
 
@@ -32,7 +32,7 @@ extern "C++" {
 	int    strncmpamb( const char *s1, const char *s2, size_t n );
 	char  *strchr( const char *s, char c );
 	void   snstr( char *dst, wchar const *src, int len );
-	const void * memchr( const void *src_void, int c, size_t length );
+	const void * memchr( const void *src_void, int c, size_t length ) noexcept( true );
 #endif
 
 // stdlib.h

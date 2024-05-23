@@ -22,6 +22,7 @@ namespace syscall
 		_build_sysnum_enum_( getpid, 172 )
 		_build_sysnum_enum_( getppid, 173 )
 		_build_sysnum_enum_( brk, 214 )
+		_build_sysnum_enum_( exec, 221 )
 	};
 #undef _build_sysnum_enum_
 

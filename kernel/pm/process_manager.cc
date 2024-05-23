@@ -406,6 +406,11 @@ namespace pm
 		fs::fat::Fat32DirInfo dir_;
 		fs::fat::Fat32DirEntry *de;
 		int i, off;
+
+		proc->_pt.freewalk();
+		_proc_create_vm( proc );
+
+
 		if ( fs::fat::k_testcase_fs.get_root_dir()->find_sub_dir( path, dir_ )
 			== fs::fat::Fat32DirEntryStatus::fat32de_init_fail )
 		{

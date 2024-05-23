@@ -119,7 +119,7 @@ namespace fs
 				break;
 		}
 
-		return ret == n ? 0 : -1;
+		return ret == n ? n : -1;
 	}
 
 // ================ xv6 file pool ================	

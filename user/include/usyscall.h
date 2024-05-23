@@ -15,4 +15,5 @@ extern int fork( void );
 extern int getpid( void );
 extern int getppid( void );
 extern int brk( int n );
+extern int execv( const char *path, char * argv[] );
 #endif

@@ -12,6 +12,8 @@
 #include "mm/page_table.hh"
 #include "pm/sharemem.hh"
 
+#include <EASTL/string.h>
+
 namespace mm
 {
 	class VirtualMemoryManager
@@ -66,6 +68,7 @@ namespace mm
 		int copy_in( PageTable &pt, void *dst, uint64 src_va, uint64 len );
 
 		int copy_str_in( PageTable &pt, void *dst, uint64 src_va, uint64 max );
+		int copy_str_in( PageTable &pt, eastl::string &dst, uint64 src_va, uint64 max );
 
 		int either_copy_in( void *dst, bool user_src, uint64 src, uint64 len );
 

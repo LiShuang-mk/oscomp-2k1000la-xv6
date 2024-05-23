@@ -1,5 +1,5 @@
 #include "klib/klib.hh"
-void *memset( void *s, int c, size_t n )
+void *memset( void *s, int c, size_t n ) noexcept( true )
 {
 	for ( char *b = ( char* ) s; ( size_t ) ( b - ( char* ) s ) < n; b++ )
 		*b = c;
@@ -7,7 +7,7 @@ void *memset( void *s, int c, size_t n )
 }
 
 
-void *memmove( void *dst, const void *src, size_t n )
+void *memmove( void *dst, const void *src, size_t n ) noexcept( true )
 {
 // may overlap
 	if ( n <= 0 )return dst;
@@ -18,7 +18,7 @@ void *memmove( void *dst, const void *src, size_t n )
 }
 
 
-void *memcpy( void *out, const void *in, size_t n )
+void *memcpy( void *out, const void *in, size_t n ) noexcept( true )
 {
 	const char *i = ( const char* ) in;
 	char *j = ( char* ) out;
@@ -26,7 +26,7 @@ void *memcpy( void *out, const void *in, size_t n )
 	return out;
 }
 
-int memcmp( const void *s1, const void *s2, size_t n )
+int memcmp( const void *s1, const void *s2, size_t n ) noexcept( true )
 {
 	size_t cnt = 1;
 	const unsigned char *i = ( const unsigned char* ) s1, *j = ( const unsigned char* ) s2;
@@ -41,7 +41,7 @@ int memcmp( const void *s1, const void *s2, size_t n )
 const void *
 memchr( const void *src_void,
 	int c,
-	size_t length )
+	size_t length ) noexcept( true )
 {
 	const unsigned char *src = ( const unsigned char * ) src_void;
 	unsigned char d = c;
@@ -68,7 +68,7 @@ void snstr( char *dst, wchar const *src, int len )
 		*dst++ = 0;
 }
 
-char *strncpy( char *dst, const char *src, size_t n )
+char *strncpy( char *dst, const char *src, size_t n ) noexcept( true )
 {
 	char *j;
 	size_t cnt = 0;
@@ -77,7 +77,7 @@ char *strncpy( char *dst, const char *src, size_t n )
 	return dst;
 }
 
-char *strcat( char *dst, const char *src )
+char *strcat( char *dst, const char *src ) noexcept( true )
 {
 	char *j = dst;
 	while ( *j )j++;
@@ -86,7 +86,7 @@ char *strcat( char *dst, const char *src )
 	return dst;
 }
 
-int strcmp( const char *s1, const char *s2 )
+int strcmp( const char *s1, const char *s2 ) noexcept( true )
 {
 	for ( ; *s1 == *s2; s1++, s2++ )
 	{
@@ -95,7 +95,7 @@ int strcmp( const char *s1, const char *s2 )
 	return *s1 < *s2 ? -1 : 1;
 }
 
-int strncmp( const char *s1, const char *s2, size_t n )
+int strncmp( const char *s1, const char *s2, size_t n ) noexcept( true )
 {
 	size_t cnt = 1;
 	if ( n == 0 )return 0;
@@ -125,7 +125,7 @@ char* strchr( const char *s, char c )
 	return 0;
 }
 
-char *strcpy( char *dst, const char *src )
+char *strcpy( char *dst, const char *src ) noexcept( true )
 {
 	char *j;
 	for ( j = dst; *src; src++, j++ )*j = *src;
@@ -133,7 +133,7 @@ char *strcpy( char *dst, const char *src )
 	return dst;
 }
 
-size_t strlen( const char *s )
+size_t strlen( const char *s ) noexcept( true )
 {
 	size_t len = 0;
 	while ( *s )s++, len++;

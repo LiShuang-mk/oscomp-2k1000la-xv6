@@ -128,6 +128,15 @@ int main()
 		// for ( int i = 0; i < 16; i++ )
 		// 	printf( "%x\n", apbh[ i ] );
 
+
+		// uint32 * shut_down = ( uint32* ) ( ( 0x1fe27000UL + 0x14UL ) | loongarch::qemuls2k::dmwin::win_1 );
+		// log_info( "print PM1_CNT: 0x%x", *shut_down );
+		// *shut_down |= 0x7 << 10;
+		// log_info( "print PM1_CNT: 0x%x", *shut_down );
+
+		// log_info( "it will be not printed if machine is soft-off." );
+		// while ( 1 );
+
 		// volatile uint32 *p = ( volatile uint32 * ) ( 0x400e0000 | loongarch::qemuls2k::dmwin::win_1 );
 		// for ( int i = 0; i < 0x200; i += 4, p++ )
 		// 	printf( "%x\t\t%p\n", i, *p );
@@ -178,12 +187,13 @@ int main()
 		pm::k_pm.user_init();
 		log_info( "user init" );
 
-		pm::Pcb * np = pm::k_pm.alloc_proc();
-		np->_ofile[1] = pm::k_proc_pool[0]._ofile[1];
-		loongarch::Cpu::get_cpu()->set_cur_proc(np);
+		// pm::Pcb * np = pm::k_pm.alloc_proc();
+		// np->_ofile[ 1 ] = pm::k_proc_pool[ 0 ]._ofile[ 1 ];
+		// loongarch::Cpu::get_cpu()->set_cur_proc( np );
 
-		eastl::vector<eastl::string> args;
-		pm::k_pm.exec( "test_echo", args );
+		// eastl::vector<eastl::string> args;
+		// pm::k_pm.exec( "test_echo", args );
+
 		pm::k_scheduler.start_schedule();
 
 		while ( 1 );
