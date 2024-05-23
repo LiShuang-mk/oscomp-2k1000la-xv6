@@ -133,6 +133,7 @@ int main()
 		// log_info( "print PM1_CNT: 0x%x", *shut_down );
 		// *shut_down |= 0x7 << 10;
 		// log_info( "print PM1_CNT: 0x%x", *shut_down );
+		// *shut_down |= 1 << 13;
 
 		// log_info( "it will be not printed if machine is soft-off." );
 		// while ( 1 );

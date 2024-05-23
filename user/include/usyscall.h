@@ -17,5 +17,6 @@ extern int getppid( void );
 extern int brk( int n );
 extern int execv( const char *path, char * argv[] );
 extern int wait( int pid, int *state );
+extern int poweroff();
 
 #endif

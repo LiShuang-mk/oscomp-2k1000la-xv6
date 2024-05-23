@@ -9,6 +9,7 @@
 #include "fs/dev/pci_driver.hh"
 #include "fs/dev/ahci_controller.hh"
 #include "fs/dev/sata_driver.hh"
+#include "fs/dev/acpi_controller.hh"
 #include "fs/buffer_manager.hh"
 #include "hal/qemu_ls2k.hh"
 #include "hal/pci/pci_cfg_header.hh"
@@ -51,10 +52,12 @@ namespace dev
 				( loongarch::qemuls2k::sec_win_br_m ) |
 				( loongarch::qemuls2k::sec_win_en_m );
 
-			sata_init();
+			_sata_init();
+
+			_acpi_init();
 		}
 
-		void PciDriver::sata_init()
+		void PciDriver::_sata_init()
 		{
 			// distribute command list and FIS buffer space 
 
@@ -180,6 +183,11 @@ namespace dev
 			// } );
 			// while ( !flag );
 			// log_info( ">>>>>>>> flag change <<<<<<<<" );
+		}
+
+		void PciDriver::_acpi_init()
+		{
+			acpi::k_acpi_controller.init( "ACPI controller", 0x1fe27000UL | loongarch::qemuls2k::dmwin::win_1 );
 		}
 
 

@@ -173,5 +173,14 @@ int init_main( void )
 		// 	write( 1, wait_success, sizeof( wait_success ) );
 	}
 
+	for (int i = 0; i < 1000000000; i++)
+	{
+		
+	}
+	
+
+	// power off
+	poweroff();
+
 	while ( 1 );
 }

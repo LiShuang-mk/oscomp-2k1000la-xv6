@@ -24,6 +24,7 @@ namespace syscall
 		_build_sysnum_enum_( fork, 220 )
 		_build_sysnum_enum_( exec, 221 )
 		_build_sysnum_enum_( wait, 260 )
+		_build_sysnum_enum_( poweroff, 2024 )
 	};
 #undef _build_sysnum_enum_
 

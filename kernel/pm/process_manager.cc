@@ -607,7 +607,7 @@ namespace pm
 					if ( np->get_state() == ProcState::zombie )
 					{
 						pid = np->_pid;
-						if ( addr != 0 && mm::k_vmm.copyout( p->_pt, addr, ( const char * ) &np->_state, sizeof( np->_state ) ) < 0 )
+						if ( addr != 0 && mm::k_vmm.copyout( p->_pt, addr, ( const char * ) &np->_xstate, sizeof( np->_xstate ) ) < 0 )
 						{
 							np->_lock.release();
 							_wait_lock.release();

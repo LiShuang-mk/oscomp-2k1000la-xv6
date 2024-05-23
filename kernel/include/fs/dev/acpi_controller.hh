@@ -18,10 +18,14 @@ namespace dev
 		{
 		private:
 			smp::Lock _lock;
+			void * _reg_base = nullptr;
 
 		public:
-			void init( const char * lock_name );
+			void init( const char * lock_name, uint64 acpi_reg_base );
+			void power_off();
 		};
+
+		extern AcpiController k_acpi_controller;
 
 	} // namespace acpi
 	

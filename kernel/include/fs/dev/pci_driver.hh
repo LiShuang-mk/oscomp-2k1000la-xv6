@@ -22,11 +22,14 @@ namespace dev
 		public:
 			PciDriver() = default;
 			void init( const char *lock_name );
-			void sata_init();
+
+		private:
+			void _sata_init();
+			void _acpi_init();
 		};
 
 		extern PciDriver k_pci_driver;
 
 	} // namespace pci
-	
+
 } // namespace dev

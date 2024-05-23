@@ -9,6 +9,7 @@
 #include "syscall/syscall_handler.hh"
 #include "syscall/syscall_defs.hh"
 #include "hal/cpu.hh"
+#include "fs/dev/acpi_controller.hh"
 #include "pm/process.hh"
 #include "pm/trap_frame.hh"
 #include "pm/process_manager.hh"
@@ -42,6 +43,7 @@ namespace syscall
 		_syscall_funcs[ SYS_brk ] = std::bind( &SyscallHandler::_sys_brk, this );
 		_syscall_funcs[ SYS_exec ] = std::bind( &SyscallHandler::_sys_exec, this );
 		_syscall_funcs[ SYS_wait ] = std::bind( &SyscallHandler::_sys_wait, this );
+		_syscall_funcs[ SYS_poweroff ] = std::bind( &SyscallHandler::_sys_poweroff, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -232,6 +234,12 @@ namespace syscall
 		if ( _arg_addr( 1, p ) < 0 )
 			return -1;
 		return pm::k_pm.wait( p );
+	}
+
+	uint64 SyscallHandler::_sys_poweroff()
+	{
+		dev::acpi::k_acpi_controller.power_off();
+		return 0;
 	}
 
 } // namespace syscall
