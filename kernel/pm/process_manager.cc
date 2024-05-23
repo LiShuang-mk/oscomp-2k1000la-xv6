@@ -867,7 +867,7 @@ namespace pm
 		log_trace( "substring: %s\n", sub.c_str() );
 
 		// 测试 find
-		size_t pos = s.find( "EASTL" );
+		[[maybe_unused]] size_t pos = s.find( "EASTL" );
 		log_trace( "find EASTL at: %d\n", pos );
 
 		// 测试 rfind
@@ -875,7 +875,7 @@ namespace pm
 		log_trace( "rfind 'l' at: %d\n", pos );
 
 		// 测试 compare
-		int cmp = s.compare( "hello EASTL" );
+		[[maybe_unused]] int cmp = s.compare( "hello EASTL" );
 		log_trace( "compare with 'hello EASTL': %d\n", cmp );
 	}
 
@@ -901,7 +901,7 @@ namespace pm
 		log_trace( "map[5]: %d\n", m[ 5 ] );
 
 		// 测试 find
-		auto it = m.find( 3 );
+		[[maybe_unused]] auto it = m.find( 3 );
 		log_trace( "find 3: %d\n", it->second );
 
 		// 测试 erase
@@ -935,7 +935,7 @@ namespace pm
 		log_trace( "hash_map[5]: %d\n", m[ 5 ] );
 
 		// 测试 find
-		auto it = m.find( 3 );
+		[[maybe_unused]] auto it = m.find( 3 );
 		log_trace( "find 3: %d\n", it->second );
 
 		// 测试 erase

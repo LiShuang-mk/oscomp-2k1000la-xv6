@@ -71,7 +71,7 @@ int main()
 		log_info( "main addr: %p", &main );
 
 
-		uint64 tmp = loongarch::Cpu::read_csr( loongarch::csr::crmd );
+		[[maybe_unused]] uint64 tmp = loongarch::Cpu::read_csr( loongarch::csr::crmd );
 		log_trace( "crmd: %p", tmp );
 		loongarch::Cpu::euen_float();
 
@@ -611,7 +611,7 @@ void test_buffer()
 			printf( "\n" );
 	}
 
-	uint32 bpg;		// blocks per group
+	[[maybe_unused]] uint32 bpg;		// blocks per group
 	uint32 ipg;		// inodes pre group
 	uint32 jni;		// journal inode number
 	uint64 bs;		// block size
@@ -670,7 +670,7 @@ void test_buffer()
 	fs::ext4::BlockGroupDesc * bgd = ( fs::ext4::BlockGroupDesc * ) p;
 	bgd += bg_id;
 	uint64 bg0_it = ( uint64 ) bgd->inode_table_lo + ( ( uint64 ) bgd->inode_table_hi << 32 );
-	uint64 bg0_ibm = ( uint64 ) bgd->inode_bitmap_lo + ( ( uint64 ) bgd->inode_bitmap_hi << 32 );
+	[[maybe_unused]] uint64 bg0_ibm = ( uint64 ) bgd->inode_bitmap_lo + ( ( uint64 ) bgd->inode_bitmap_hi << 32 );
 	log_trace(
 		"┌──────────────────────────────────┐\n"
 		"│           块组%d描述符            │\n"
@@ -754,7 +754,7 @@ void test_buffer()
 			"inode use extent and extent header magic should be 0xF30A, but it is 0x%x here.",
 			ji_inr->inode_data.block.extents.header.magic
 		);
-		fs::ext4::ExtentHeader * h = &ji_inr->inode_data.block.extents.header;
+		[[maybe_unused]] fs::ext4::ExtentHeader * h = &ji_inr->inode_data.block.extents.header;
 		log_trace(
 			">> journal inode use extent\n"
 			">> present extent header below:\n"
@@ -796,7 +796,7 @@ void test_buffer()
 				printf( "\n" );
 		}
 
-		fs::jbd2::JournalSuperblock * jnl_sb = ( fs::jbd2::JournalSuperblock * ) p;
+		[[maybe_unused]] fs::jbd2::JournalSuperblock * jnl_sb = ( fs::jbd2::JournalSuperblock * ) p;
 		log_trace(
 			">> present journal super-block\n"
 			"|| 魔数             :  %xH\n"
@@ -879,7 +879,7 @@ void test_buffer()
 			printf( "\n" );
 	}
 
-	fs::jbd2::JournalSuperblock * jsb = ( fs::jbd2::JournalSuperblock * ) p;
+	[[maybe_unused]] fs::jbd2::JournalSuperblock * jsb = ( fs::jbd2::JournalSuperblock * ) p;
 	log_info( "journal super block magic is 0x%x", jsb->header.magic );
 
 	fs::k_bufm.release_buffer_sync( buf );

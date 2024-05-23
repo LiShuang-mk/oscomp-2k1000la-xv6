@@ -27,7 +27,7 @@ namespace fs
 		{
 			assert( _belong_fs != nullptr, "Fat32DirEntry: no belonging fs deteted while init. cluster number: %d", cluster_number );
 			uint dev = _belong_fs->owned_device();
-			Fat32Dbr * dbr = _belong_fs->get_super_block();
+			[[maybe_unused]] Fat32Dbr * dbr = _belong_fs->get_super_block();
 			assert( dbr->bootable_signature == 0xAA55, "Fat32DirEntry: get invalid DBR while init." );
 
 			_clusters_number.clear();

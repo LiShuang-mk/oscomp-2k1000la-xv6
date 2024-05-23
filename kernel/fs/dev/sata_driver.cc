@@ -135,7 +135,7 @@ namespace dev
 
 		void SataDriver::sata_probe()
 		{
-			ata::sata::HbaPortReg *port_reg;
+			[[maybe_unused]] ata::sata::HbaPortReg *port_reg;
 			uint port_num = 6;
 			for ( uint i = 0; i < port_num; i++ )
 			{

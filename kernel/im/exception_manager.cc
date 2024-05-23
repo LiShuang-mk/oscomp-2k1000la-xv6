@@ -294,7 +294,7 @@ namespace im
 		_exception_handlers[ loongarch::csr::ecode_pis ] = [] ( uint32 estat ) ->void
 		{
 			uint64 badv = loongarch::Cpu::read_csr( loongarch::csr::badv );
-			mm::Pte pte = loongarch::Cpu::get_cpu()->get_cur_proc()->get_pagetable().walk( badv, 0 );
+			[[maybe_unused]] mm::Pte pte = loongarch::Cpu::get_cpu()->get_cur_proc()->get_pagetable().walk( badv, 0 );
 			log_panic(
 				"handle exception PIS :\n"
 				"    badv : %x\n"
@@ -320,7 +320,7 @@ namespace im
 		_exception_handlers[ loongarch::csr::ecode_pme ] = [] ( uint32 estat ) ->void
 		{
 			uint64 badv = loongarch::Cpu::read_csr( loongarch::csr::badv );
-			mm::Pte pte = loongarch::Cpu::get_cpu()->get_cur_proc()->get_pagetable().walk( badv, 0 );
+			[[maybe_unused]] mm::Pte pte = loongarch::Cpu::get_cpu()->get_cur_proc()->get_pagetable().walk( badv, 0 );
 			log_panic(
 				"handle exception PME :\n"
 				"    badv : %x\n"
@@ -334,7 +334,7 @@ namespace im
 
 		_exception_handlers[ loongarch::csr::ecode_ade ] = [] ( uint32 estat ) -> void
 		{
-			uint e_sub_code =
+			[[maybe_unused]] uint e_sub_code =
 				( estat & ( loongarch::csr::Estat::estat_esubcode_m ) )
 				>> loongarch::csr::Estat::estat_esubcode_s;
 			log_panic(
