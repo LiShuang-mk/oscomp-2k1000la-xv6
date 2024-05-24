@@ -79,6 +79,7 @@ namespace syscall
 		uint64 _sys_dup();
 		uint64 _sys_dup2();
 		uint64 _sys_getcwd();
+		uint64 _sys_gettimeofday();
 	};
 
 	extern SyscallHandler k_syscall_handler;

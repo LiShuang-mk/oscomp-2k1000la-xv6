@@ -21,6 +21,7 @@ namespace syscall
 		_build_sysnum_enum_( dup2, 24 )
 		_build_sysnum_enum_( write, 64 )
 		_build_sysnum_enum_( exit, 93 )
+		_build_sysnum_enum_( gettimeofday, 169 )
 		_build_sysnum_enum_( getpid, 172 )
 		_build_sysnum_enum_( getppid, 173 )
 		_build_sysnum_enum_( brk, 214 )

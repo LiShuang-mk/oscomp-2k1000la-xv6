@@ -9,13 +9,14 @@
 #include "syscall/syscall_handler.hh"
 #include "syscall/syscall_defs.hh"
 #include "hal/cpu.hh"
+#include "fs/file.hh"
 #include "fs/dev/acpi_controller.hh"
 #include "pm/process.hh"
 #include "pm/trap_frame.hh"
 #include "pm/process_manager.hh"
 #include "mm/virtual_memory_manager.hh"
 #include "mm/physical_memory_manager.hh"
-#include "fs/file.hh"
+#include "tm/timer_manager.hh"
 #include "klib/klib.hh"
 
 namespace syscall
@@ -47,6 +48,7 @@ namespace syscall
 		_syscall_funcs[ SYS_dup ] = std::bind( &SyscallHandler::_sys_dup, this );
 		_syscall_funcs[ SYS_dup2 ] = std::bind( &SyscallHandler::_sys_dup2, this );
 		_syscall_funcs[ SYS_getcwd ] = std::bind( &SyscallHandler::_sys_getcwd, this );
+		_syscall_funcs[ SYS_gettimeofday ] = std::bind( &SyscallHandler::_sys_gettimeofday, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -295,6 +297,24 @@ namespace syscall
 			return -1;
 
 		return buf;
+	}
+
+	uint64 SyscallHandler::_sys_gettimeofday()
+	{
+		uint64 tv_addr;
+		tmm::timeval tv;
+
+		if ( _arg_addr( 0, tv_addr ) < 0 )
+			return -1;
+		
+		tv = tmm::k_tm.get_time_val();
+		
+		pm::Pcb * p = pm::k_pm.get_cur_pcb();
+		mm::PageTable pt = p->get_pagetable();
+		if ( mm::k_vmm.copyout( pt, tv_addr, ( const void * ) &tv, sizeof( tv ) ) < 0 )
+			return -1;
+
+		return 0;
 	}
 
 } // namespace syscall

@@ -188,6 +188,17 @@ int main()
 		pm::k_pm.user_init();
 		log_info( "user init" );
 
+		// tmm::timeval tv;
+		// log_info( "==== 开始 测试 timer ====" );
+		// tv = tmm::k_tm.get_time_val();
+		// log_trace( "tv.sec : %d, tv.usec : %d", tv.tv_sec, tv.tv_usec );
+		// for ( uint wt = 0; wt < tmm::qemu_fre; ++wt )
+		// 	;
+		// tv = tmm::k_tm.get_time_val();
+		// log_trace( "tv.sec : %d, tv.usec : %d", tv.tv_sec, tv.tv_usec );
+		// log_info( "==== 结束 测试 timer ====" );
+		// while ( 1 );
+
 		// pm::Pcb * np = pm::k_pm.alloc_proc();
 		// np->_ofile[ 1 ] = pm::k_proc_pool[ 0 ]._ofile[ 1 ];
 		// loongarch::Cpu::get_cpu()->set_cur_proc( np );

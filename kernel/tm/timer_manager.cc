@@ -9,6 +9,7 @@
 #include "tm/timer_manager.hh"
 #include "hal/cpu.hh"
 #include "hal/csr.hh"
+#include "klib/klib.hh"
 
 namespace tmm
 {
@@ -34,5 +35,22 @@ namespace tmm
 		/// TODO: wakeup(&ticks)
 		_lock.release();
 		return 2;
+	}
+
+	timeval TimerManager::get_time_val()
+	{
+		// uint64 t_val = loongarch::Cpu::read_csr(
+		// 	loongarch::csr::tval
+		// );
+		timeval tv;
+		// tv.tv_sec = t_val / qemu_fre;
+		// tv.tv_usec = t_val % qemu_fre;
+		// tv.tv_usec = qemu_fre_cal_usec( tv.tv_usec );
+
+		tv.tv_sec = _ticks * ms_per_tick / 1000;
+		tv.tv_usec = ( ( _ticks * ms_per_tick ) % 1000 ) * 1000;
+
+		log_info( "invoke get time = %d : %d", tv.tv_sec, tv.tv_usec );
+		return tv;
 	}
 } // namespace tm
