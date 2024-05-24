@@ -9,6 +9,7 @@
 #include "klib/liballoc_allocator.hh"
 #include "hal/cpu.hh"
 #include "mm/buddy_allocator.hh"
+#include "mm/memlayout.hh"
 #include "mm/page_table.hh"
 #include "klib/common.hh"
 
@@ -31,10 +32,15 @@ namespace kernellib
 
 	void *L_Allocator::malloc( uint64 req_size )
 	{
-		uint64 size = req_size;
-		if ( size == 0 )
+		int64 size = ( int64 ) req_size;
+		if ( size <= 0 )
 		{
 			log_warn( "L-allocator : Try to allocate 0 byte memory. Null will be returned." );
+			return nullptr;
+		}
+		if ( size >= ( int64 ) mm::vml::vm_kernel_heap_size )
+		{
+			log_warn( "L-allocator : request size too big : %d Bytes", size );
 			return nullptr;
 		}
 		if ( _use_align_ )
@@ -57,20 +63,20 @@ namespace kernellib
 
 		L_TagMajor * maj = _mem_root;
 		bool started_bet = false;
-		uint64 best_size = 0;
+		int64 best_size = 0;
 
 		// start at the best bet 
 		if ( _best_bet )
 		{
 			best_size = _best_bet->size - _best_bet->usage;
-			if ( best_size > size + sizeof( L_TagMinor ) )
+			if ( best_size > size + ( int64 ) sizeof( L_TagMinor ) )
 			{
 				maj = _best_bet;
 				started_bet = true;
 			}
 		}
 
-		uint64 diff;
+		int64 diff;
 		void *p;
 
 		// loop all link list to find space 
@@ -84,7 +90,7 @@ namespace kernellib
 			}
 
 			// CASE 1 : There is not enough space in this major chunk
-			if ( diff < size + sizeof( L_TagMinor ) )
+			if ( diff < size + ( int64 ) sizeof( L_TagMinor ) )
 			{
 			   // another major chunk next to this one
 				if ( maj->next )
@@ -139,8 +145,8 @@ namespace kernellib
 			}
 
 			// CASE 3 : Chunk in use and enough space at the start of the chunk 
-			diff = ( uint64 ) maj->first - ( uint64 ) maj - sizeof( L_TagMajor );
-			if ( diff >= size + sizeof( L_TagMinor ) )
+			diff = ( int64 ) ( ( uint64 ) maj->first - ( uint64 ) maj - sizeof( L_TagMajor ) );
+			if ( diff >= size + ( int64 ) sizeof( L_TagMinor ) )
 			{
 				maj->first->prev = ( L_TagMinor* ) ( ( uint64 ) maj + sizeof( L_TagMajor ) );
 				maj->first->prev->next = maj->first;
@@ -171,8 +177,8 @@ namespace kernellib
 				if ( min->next == nullptr )
 				{
 					// the rest of this chunk is free, look up whether it's big enough
-					diff = ( uint64 ) maj + maj->size - ( uint64 ) min - sizeof( L_TagMinor ) - min->size;
-					if ( diff >= size + sizeof( L_TagMinor ) )
+					diff = ( int64 ) ( ( uint64 ) maj + maj->size - ( uint64 ) min - sizeof( L_TagMinor ) - min->size );
+					if ( diff >= size + ( int64 ) sizeof( L_TagMinor ) )
 					{
 						min->next = ( L_TagMinor* ) ( ( uint64 ) min + sizeof( L_TagMinor ) + min->size );
 						min->next->prev = min;
@@ -199,8 +205,8 @@ namespace kernellib
 				// CASE 4.2 : Look up whether there is enough space between tow minors
 				else
 				{
-					diff = ( uint64 ) min->next - ( uint64 ) min - sizeof( L_TagMinor ) - min->size;
-					if ( diff >= size + sizeof( L_TagMinor ) )
+					diff = ( int64 ) ( ( uint64 ) min->next - ( uint64 ) min - sizeof( L_TagMinor ) - min->size );
+					if ( diff >= size + ( int64 ) sizeof( L_TagMinor ) )
 					{
 						L_TagMinor * new_min = ( L_TagMinor* ) ( ( uint64 ) min + sizeof( L_TagMinor ) + min->size );
 
@@ -304,17 +310,17 @@ namespace kernellib
 		maj->usage -= ( min->size + sizeof( L_TagMinor ) );
 		min->magic = _liballoc_dead;
 
-		if ( min->next ) min->next->prev = min->prev;
+		if ( min->next != nullptr ) min->next->prev = min->prev;
 
-		if ( min->prev ) min->prev->next = min->next;
-		else maj->first = min->next;
+		if ( min->prev != nullptr ) min->prev->next = min->next;
+		if ( min->prev == nullptr ) maj->first = min->next;
 
 		if ( maj->first )
 		{
 			if ( _best_bet )
 			{
-				uint64 best_size = _best_bet->size - _best_bet->usage;
-				uint64 maj_size = maj->size - maj->usage;
+				int64 best_size = ( int64 ) ( _best_bet->size - _best_bet->usage );
+				int64 maj_size = ( int64 ) ( maj->size - maj->usage );
 				if ( maj_size > best_size )
 					_best_bet = maj;
 			}
@@ -329,7 +335,7 @@ namespace kernellib
 				maj->prev->next = maj->next;
 			if ( maj->next )
 				maj->next->prev = maj->prev;
-			
+
 			_cach_size -= maj->size;
 			_base_allocator->free_pages( maj );
 		}
@@ -366,7 +372,7 @@ namespace kernellib
 
 		maj->prev = maj->next = nullptr;
 		maj->pages = st;
-		maj->pages = st * mm::pg_size;
+		maj->size = st * mm::pg_size;
 		maj->usage = sizeof( L_TagMajor );
 		maj->first = nullptr;
 

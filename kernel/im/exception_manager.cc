@@ -309,17 +309,24 @@ namespace im
 
 		_exception_handlers[ loongarch::csr::ecode_pis ] = [] ( uint32 estat ) ->void
 		{
-			uint64 badv = loongarch::Cpu::read_csr( loongarch::csr::badv );
-			[[maybe_unused]] mm::Pte pte = loongarch::Cpu::get_cpu()->get_cur_proc()->get_pagetable().walk( badv, 0 );
+			[[maybe_unused]] uint64 badv = loongarch::Cpu::read_csr( loongarch::csr::badv );
+			// [[maybe_unused]] mm::Pte pte = loongarch::Cpu::get_cpu()->get_cur_proc()->get_pagetable().walk( badv, 0 );
 			log_warn( "出现PIS异常很可能是一个诡异的bug, 此处继续运行" );
+			// log_error(
+			// 	"handle exception PIS :\n"
+			// 	"    badv : %x\n"
+			// 	"    badi : %x\n"
+			// 	"    pte  : %x",
+			// 	badv,
+			// 	loongarch::Cpu::read_csr( loongarch::csr::badi ),
+			// 	pte.get_data()
+			// );
 			log_error(
 				"handle exception PIS :\n"
 				"    badv : %x\n"
-				"    badi : %x\n"
-				"    pte  : %x",
+				"    badi : %x\n",
 				badv,
-				loongarch::Cpu::read_csr( loongarch::csr::badi ),
-				pte.get_data()
+				loongarch::Cpu::read_csr( loongarch::csr::badi )
 			);
 		};
 
@@ -358,10 +365,12 @@ namespace im
 				"handle exception ADE :\n"
 				"    type : %s\n"
 				"    badv : %x\n"
-				"    badi : %x",
+				"    badi : %x\n"
+				"    era  : %x",
 				e_sub_code ? "取指地址错误(ADEF)" : "访存指令地址错误(ADEM)",
 				loongarch::Cpu::read_csr( loongarch::csr::badv ),
-				loongarch::Cpu::read_csr( loongarch::csr::badi )
+				loongarch::Cpu::read_csr( loongarch::csr::badi ),
+				loongarch::Cpu::read_csr( loongarch::csr::era )
 			);
 		};
 

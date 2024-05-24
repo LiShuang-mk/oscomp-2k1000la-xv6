@@ -222,6 +222,7 @@ namespace syscall
 		}
 		else
 		{
+			_argv.clear();
 			ret = pm::k_pm.exec( _path, _argv );
 		}
 

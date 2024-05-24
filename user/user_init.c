@@ -28,6 +28,7 @@ __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_wait[] = 
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_getpid[] = "getpid";
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_getppid[] = "getppid";
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_dup[] = "dup";
+__attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_execve[] = "execve";
 
 
 int init_main( void )
@@ -36,6 +37,30 @@ int init_main( void )
 
 	int pid;
 
+	// ======== test execve ========
+	pid = fork();
+	if ( pid < 0 )
+	{
+		write( 1, errstr, sizeof( errstr ) );
+	}
+	else if ( pid == 0 )
+	{
+		if ( execv( exec_test_execve, 0 ) < 0 )
+		{
+			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
+		}
+		exit( 0 );
+	}
+	else
+	{
+		int child_exit_state = -100;
+		if ( wait( -1, &child_exit_state ) < 0 )
+			write( 1, wait_fail, sizeof( wait_fail ) );
+		else
+			write( 1, wait_success, sizeof( wait_success ) );
+	}
+
+#ifndef OS_DEBUG
 	// ======== test echo ========
 	pid = fork();
 	if ( pid < 0 )
@@ -196,12 +221,15 @@ int init_main( void )
 		// else
 		// 	write( 1, wait_success, sizeof( wait_success ) );
 	}
+#endif
 
-	for (int i = 0; i < 1000000000; i++)
+
+
+
+	for ( int i = 0; i < 1000000000; i++ )
 	{
-		
+
 	}
-	
 
 #ifndef OS_DEBUG
 	// power off
