@@ -19,14 +19,17 @@ namespace tmm
 
 	// 以下两个常量表达式应当是绑定在一起的
 
-	// 参考测例说明的时钟频率是12.5MHz
-	constexpr uint64 qemu_fre = 12 * _1M_dec + 500 * _1K_dec;
+	// 参考测例说明的时钟频率是12.5MHz, 但是测试发现比这个值要小一些，大约是四分之一
+	// constexpr uint64 qemu_fre = 12 * _1M_dec + 500 * _1K_dec;
+	constexpr uint64 qemu_fre = 3 * _1M_dec + 125 * _1K_dec;
 	// 由cycles计算出微秒的方法
-	constexpr uint64 qemu_fre_cal_usec( uint64 cycles ) { return cycles * 2 / 25; }
+	constexpr uint64 qemu_fre_cal_usec( uint64 cycles ) { return cycles * 8 / 25; }
+	// 由微秒计算出cycles的方法
+	constexpr uint64 qemu_fre_cal_cycles( uint64 usec ) { return usec * 25 / 8; }
 
-	// 50K 分频，则时间片 50K/12.5MHz ~ 4ms 
+	// 100K 分频，则时间片 100K/3.125MHz ~ 32ms 
 	// constexpr uint div_fre = 0x80000000UL;
-	constexpr uint div_fre = 50 * _1K_dec;
+	constexpr uint div_fre = ( 100 * _1K_dec ) >> 2;				// 低两位由硬件补齐
 	constexpr uint ms_per_tick = div_fre * _1K_dec / qemu_fre;
 
 	// 这个结构体来自Linux的定义 
@@ -44,6 +47,7 @@ namespace tmm
 	private:
 		smp::Lock _lock;
 		uint64 _ticks;
+		uint64 _tcfg_data;
 
 	public:
 		TimerManager() = default;
@@ -51,6 +55,10 @@ namespace tmm
 		int handle_clock_intr();
 
 		timeval get_time_val();
+
+		int sleep_n_ticks( int n );
+
+		int sleep_from_tv( timeval tv );
 	};
 
 	extern TimerManager k_tm;

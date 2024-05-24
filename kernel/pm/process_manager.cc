@@ -666,7 +666,7 @@ namespace pm
 		Pcb *p;
 		for ( p = k_proc_pool; p < &k_proc_pool[ num_process ]; p++ )
 		{
-			if ( p != k_pm.get_cur_pcb() )
+			if ( p != get_cur_pcb() )
 			{
 				p->_lock.acquire();
 				if ( p->_state == ProcState::sleeping && p->_chan == chan )

@@ -2,6 +2,7 @@
 #include "hal/qemu_ls2k.hh"
 #include "hal/cpu.hh"
 #include "hal/disk/mbr.hh"
+#include "hal/rtc/ls2k_rtc.hh"
 
 #include "fs/device.hh"
 #include "fs/file.hh"
@@ -128,19 +129,34 @@ int main()
 		// for ( int i = 0; i < 16; i++ )
 		// 	printf( "%x\n", apbh[ i ] );
 
-
-		// uint32 * shut_down = ( uint32* ) ( ( 0x1fe27000UL + 0x14UL ) | loongarch::qemuls2k::dmwin::win_1 );
-		// log_info( "print PM1_CNT: 0x%x", *shut_down );
-		// *shut_down |= 0x7 << 10;
-		// log_info( "print PM1_CNT: 0x%x", *shut_down );
-		// *shut_down |= 1 << 13;
-
-		// log_info( "it will be not printed if machine is soft-off." );
-		// while ( 1 );
-
 		// volatile uint32 *p = ( volatile uint32 * ) ( 0x400e0000 | loongarch::qemuls2k::dmwin::win_1 );
 		// for ( int i = 0; i < 0x200; i += 4, p++ )
 		// 	printf( "%x\t\t%p\n", i, *p );
+
+		// log_info( "======== 开始 测试 RTC ========" );	<<<<<<<<<<<<<<<<<<<<<<<<<< 测试未能成功，暂时弃用RTC
+
+		// volatile uint32 * rtc_trim = ( volatile uint32 * ) loongarch::qemuls2k::rtc_rtctrim;
+		// volatile uint32 * toy_trim = ( volatile uint32 * ) loongarch::qemuls2k::rtc_toytrim;
+		// *rtc_trim = 0;
+		// *toy_trim = 0;
+
+		// volatile uint32 * rtc_ctl = ( volatile uint32 * ) loongarch::qemuls2k::rtc_rtcctrl;
+		// log_trace( "rtcctrl : %p", *rtc_ctl );
+		// *rtc_ctl |= loongarch::qemuls2k::RtcRegRtcctrl::rtcctrl_ren_m;
+		// *rtc_ctl |= loongarch::qemuls2k::RtcRegRtcctrl::rtcctrl_ten_m;
+		// *rtc_ctl |= loongarch::qemuls2k::RtcRegRtcctrl::rtcctrl_eo_m;
+		// log_trace( "rtcctrl : %p", *rtc_ctl );
+
+		// volatile uint32 * rtc_read = ( volatile uint32 * ) loongarch::qemuls2k::rtc_rtcread0;
+		// volatile uint32 * rtc_write = ( volatile uint32 * ) loongarch::qemuls2k::rtc_rtcwrite0;
+		// log_trace( " rtcread : %x", *rtc_read );
+		// *rtc_write = 0x100;
+		// log_trace( " rtcread : %x", *rtc_read );
+		// for ( int i = 0; i < 10000; ++i );
+		// log_trace( " rtcread : %x", *rtc_read );
+
+		// log_info( "======== 结束 测试 RTC ========" );
+		// while ( 1 );
 
 		dev::ahci::k_ahci_ctl.init( "ahci controller" );
 

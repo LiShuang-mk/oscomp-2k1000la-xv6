@@ -101,7 +101,6 @@ namespace pm
 																		// 而lock的使用应当在接口中由类内部来决定
 		fs::Dentry *get_cwd() { return _cwd; }
 		void setTrapframe( TrapFrame *trapframe_ ) { _trapframe = trapframe_; }
-		int iskilled() { return _killed; }
 		void kill() { _killed = 1; }
 		Pcb * get_parent() { return parent; }
 		void set_state( ProcState state ) { _state = state; }

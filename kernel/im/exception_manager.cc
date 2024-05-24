@@ -64,6 +64,7 @@ namespace im
 		loongarch::Cpu::write_csr( loongarch::csr::tlbrentry, ( uint64 ) handle_tlbr );
 		loongarch::Cpu::write_csr( loongarch::csr::merrentry, ( uint64 ) handle_merr );
 
+		
 		_init_exception_handler();
 
 		syscall::k_syscall_handler.init();
@@ -80,6 +81,7 @@ namespace im
 		{
 			// log_info( "handle time intr" );
 			// log_trace( "read isr : %p", loongarch::qemuls2k::read_itr_cfg( loongarch::qemuls2k::ItrCfg::itr_isr_l ) );
+			tmm::k_tm.handle_clock_intr();
 			loongarch::Cpu::write_csr( loongarch::csr::ticlr, loongarch::Cpu::read_csr( loongarch::csr::ticlr ) | 1 );
 			return;
 		}

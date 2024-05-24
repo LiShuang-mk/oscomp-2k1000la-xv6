@@ -19,6 +19,7 @@ __attribute__( ( section( ".user.init.data" ) ) ) const char child_str[] = "chil
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_fail_str[] = "exec fail\n";
 __attribute__( ( section( ".user.init.data" ) ) ) const char wait_success[] = "wait success\n";
 __attribute__( ( section( ".user.init.data" ) ) ) const char wait_fail[] = "wait fail\n";
+__attribute__( ( section( ".user.init.data" ) ) ) const char sleep_success[] = "sleep_success\n";
 
 
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_echo[] = "write";
@@ -33,6 +34,7 @@ __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_execve[] 
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_getcwd[] = "getcwd";
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_gettimeofday[] = "gettimeofday";
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_yield[] = "yield";
+__attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_sleep[] = "sleep";
 
 
 int init_main( void )
@@ -64,7 +66,7 @@ int init_main( void )
 		// 	write( 1, wait_success, sizeof( wait_success ) );
 	}
 
-#ifndef OS_DEBUG
+#ifndef OS_DEBUGT
 	// ======== test echo ========
 	pid = fork();
 	if ( pid < 0 )
@@ -318,21 +320,42 @@ int init_main( void )
 		// 	write( 1, wait_success, sizeof( wait_success ) );
 	}
 
-
+	// ======== test sleep ========
+	pid = fork();
+	if ( pid < 0 )
+	{
+		write( 1, errstr, sizeof( errstr ) );
+	}
+	else if ( pid == 0 )
+	{
+		if ( execv( exec_test_sleep, 0 ) < 0 )
+		{
+			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
+		}
+		exit( 0 );
+	}
+	else
+	{
+		int child_exit_state = -100;
+		if ( wait( -1, &child_exit_state ) < 0 )
+			write( 1, wait_fail, sizeof( wait_fail ) );
+		// else
+		// 	write( 1, wait_success, sizeof( wait_success ) );
+	}
 
 #endif
 
 
 
 
-	for ( int i = 0; i < 1000000000; i++ )
+	for ( long int i = 0; i < 10000000000; i++ )
 	{
 
 	}
 
 #ifndef OS_DEBUG
 	// power off
-	// poweroff();
+	poweroff();
 #endif
 
 	while ( 1 );
