@@ -11,6 +11,7 @@
 
 extern int write( int fd, const void *buf, int len );
 extern int exit( int n );
+extern int clone( unsigned int flags, unsigned long sp );
 extern int fork( void );
 extern int getpid( void );
 extern int getppid( void );

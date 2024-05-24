@@ -164,7 +164,11 @@ namespace syscall
 
 	uint64 SyscallHandler::_sys_fork()
 	{
-		return pm::k_pm.fork();
+		uint64 u_sp;
+		if ( _arg_addr( 1, u_sp ) < 0 )
+			return -1;
+
+		return pm::k_pm.fork( u_sp );
 	}
 
 	uint64 SyscallHandler::_sys_getpid()
@@ -350,7 +354,7 @@ namespace syscall
 
 		if ( _arg_addr( 0, tms_addr ) < 0 )
 			return -1;
-		
+
 		pm::k_pm.get_cur_proc_tms( &tms_val );
 
 		pm::Pcb * p = pm::k_pm.get_cur_pcb();

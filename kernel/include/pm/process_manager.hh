@@ -66,6 +66,7 @@ namespace pm
 		void sleep( void *chan, smp::Lock *lock );
 		void wakeup( void *chan );
 		void exit( int state );
+		int fork( uint64 usp );
 		int fork();
 		void fork_ret();
 		int brk( int n );

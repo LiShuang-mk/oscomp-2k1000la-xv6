@@ -21,7 +21,15 @@ GEN_USER_SYSCALL gettimeofday 169
 GEN_USER_SYSCALL getpid 172
 GEN_USER_SYSCALL getppid 173
 GEN_USER_SYSCALL brk 214
-GEN_USER_SYSCALL fork 220
+GEN_USER_SYSCALL clone 220
 GEN_USER_SYSCALL execv 221
 GEN_USER_SYSCALL wait 260
 GEN_USER_SYSCALL poweroff 2024
+
+.global fork
+fork:
+	li.w	$a7, 220
+	li.w	$a0, 17
+	move	$a1, $zero
+	syscall	0
+	ret

@@ -292,6 +292,11 @@ namespace pm
 
 	int ProcessManager::fork()
 	{
+		return fork( 0 );
+	}
+
+	int ProcessManager::fork( uint64 usp )
+	{
 		int i, pid;
 		Pcb *np;					// new proc
 		Pcb *p = get_cur_pcb();		// current proc
@@ -333,6 +338,9 @@ namespace pm
 
 		// Cause fork to return 0 in the child.
 		np->get_trapframe()->a0 = 0;
+
+		if ( usp != 0 )
+			np->get_trapframe()->sp = usp;
 
 		/// TODO: >> Message Queue Copy
 		// addmqcount( p->mqmask );
