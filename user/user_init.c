@@ -32,6 +32,7 @@ __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_dup2[] = 
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_execve[] = "execve";
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_getcwd[] = "getcwd";
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_gettimeofday[] = "gettimeofday";
+__attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_yield[] = "yield";
 
 
 int init_main( void )
@@ -294,6 +295,29 @@ int init_main( void )
 		// 	write( 1, wait_success, sizeof( wait_success ) );
 	}
 
+	// ======== test yield ========
+	pid = fork();
+	if ( pid < 0 )
+	{
+		write( 1, errstr, sizeof( errstr ) );
+	}
+	else if ( pid == 0 )
+	{
+		if ( execv( exec_test_yield, 0 ) < 0 )
+		{
+			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
+		}
+		exit( 0 );
+	}
+	else
+	{
+		int child_exit_state = -100;
+		if ( wait( -1, &child_exit_state ) < 0 )
+			write( 1, wait_fail, sizeof( wait_fail ) );
+		// else
+		// 	write( 1, wait_success, sizeof( wait_success ) );
+	}
+
 
 
 #endif
@@ -308,7 +332,7 @@ int init_main( void )
 
 #ifndef OS_DEBUG
 	// power off
-	poweroff();
+	// poweroff();
 #endif
 
 	while ( 1 );

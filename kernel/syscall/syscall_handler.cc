@@ -14,6 +14,7 @@
 #include "pm/process.hh"
 #include "pm/trap_frame.hh"
 #include "pm/process_manager.hh"
+#include "pm/scheduler.hh"
 #include "mm/virtual_memory_manager.hh"
 #include "mm/physical_memory_manager.hh"
 #include "tm/timer_manager.hh"
@@ -49,6 +50,7 @@ namespace syscall
 		_syscall_funcs[ SYS_dup2 ] = std::bind( &SyscallHandler::_sys_dup2, this );
 		_syscall_funcs[ SYS_getcwd ] = std::bind( &SyscallHandler::_sys_getcwd, this );
 		_syscall_funcs[ SYS_gettimeofday ] = std::bind( &SyscallHandler::_sys_gettimeofday, this );
+		_syscall_funcs[ SYS_sched_yield ] = std::bind( &SyscallHandler::_sys_sched_yield, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -314,6 +316,12 @@ namespace syscall
 		if ( mm::k_vmm.copyout( pt, tv_addr, ( const void * ) &tv, sizeof( tv ) ) < 0 )
 			return -1;
 
+		return 0;
+	}
+
+	uint64 SyscallHandler::_sys_sched_yield()
+	{
+		pm::k_scheduler.yield();
 		return 0;
 	}
 
