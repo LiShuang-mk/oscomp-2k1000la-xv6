@@ -35,6 +35,7 @@ __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_getcwd[] 
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_gettimeofday[] = "gettimeofday";
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_yield[] = "yield";
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_sleep[] = "sleep";
+__attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_times[] = "times";
 
 
 int init_main( void )
@@ -329,6 +330,29 @@ int init_main( void )
 	else if ( pid == 0 )
 	{
 		if ( execv( exec_test_sleep, 0 ) < 0 )
+		{
+			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
+		}
+		exit( 0 );
+	}
+	else
+	{
+		int child_exit_state = -100;
+		if ( wait( -1, &child_exit_state ) < 0 )
+			write( 1, wait_fail, sizeof( wait_fail ) );
+		// else
+		// 	write( 1, wait_success, sizeof( wait_success ) );
+	}
+
+	// ======== test times ========
+	pid = fork();
+	if ( pid < 0 )
+	{
+		write( 1, errstr, sizeof( errstr ) );
+	}
+	else if ( pid == 0 )
+	{
+		if ( execv( exec_test_times, 0 ) < 0 )
 		{
 			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
 		}

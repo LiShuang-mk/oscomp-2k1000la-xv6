@@ -1,7 +1,8 @@
-#include "pm/scheduler.hh"
-#include "smp/lock.hh"
-#include "pm/process_manager.hh"
 #include "hal/cpu.hh"
+#include "smp/lock.hh"
+#include "pm/scheduler.hh"
+#include "pm/process_manager.hh"
+#include "tm/timer_manager.hh"
 #include "klib/common.hh"
 
 extern "C" {

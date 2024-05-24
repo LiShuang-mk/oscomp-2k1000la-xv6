@@ -83,6 +83,10 @@ namespace pm
 		//about msg queue 
 		uint _mqmask;
 
+		uint64 _start_tick;			// the tick value when the process starts running
+		uint64 _user_ticks;			// the ticks of that the process has run in user mode
+		uint64 _last_user_tick;		// the tick value of that the process returns to user mode last time
+
 		// vm
 		struct vma *vm[ 10 ];  // virtual memory area <<<<<<<<<<<<<<<<<< what??? Could ONE process has several vm space?
 
@@ -99,15 +103,14 @@ namespace pm
 																		// lock不正当的使用会带来问题，
 																		// 外部需要申请这个类的资源时应当在类中实现一个返回资源的接口,
 																		// 而lock的使用应当在接口中由类内部来决定
+	public:
 		fs::Dentry *get_cwd() { return _cwd; }
-		void setTrapframe( TrapFrame *trapframe_ ) { _trapframe = trapframe_; }
 		void kill() { _killed = 1; }
 		Pcb * get_parent() { return parent; }
 		void set_state( ProcState state ) { _state = state; }
 		void set_xstate( int xstate ) { _xstate = xstate; }
 		size_t get_sz() { return _sz; }
 		//void set_chan(void *chan) { _chan = chan; }
-	public:
 		uint get_pid() { return _pid; }
 		uint get_ppid() { return parent ? parent->_pid : 0; }
 		TrapFrame* get_trapframe() { return _trapframe; }
@@ -116,6 +119,8 @@ namespace pm
 		ProcState get_state() { return _state; }
 		char * get_name() { return _name; }
 		uint64 get_size() { return _sz; }
+		uint64 get_last_user_tick() { return _last_user_tick; }
+		uint64 get_user_ticks() { return _user_ticks; }
 		fs::xv6_file * get_open_file( int fd )
 		{
 			if ( fd < 0 || fd >= ( int ) max_open_files ) return nullptr;
@@ -123,6 +128,9 @@ namespace pm
 		}
 
 		void set_trapframe( TrapFrame * tf ) { _trapframe = tf; }
+
+		void set_last_user_tick( uint64 tick ) { _last_user_tick = tick; }
+		void set_user_ticks( uint64 ticks ) { _user_ticks = ticks; }
 
 		bool is_killed() { return _killed != 0; }
 	};

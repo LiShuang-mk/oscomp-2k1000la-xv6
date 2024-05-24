@@ -7,28 +7,37 @@
 //
 
 #include "hal/cpu.hh"
+#include "hal/qemu_ls2k.hh"
+
 #include "pm/process_manager.hh"
 #include "pm/process.hh"
 #include "pm/trap_frame.hh"
 #include "pm/scheduler.hh"
+
 #include "mm/memlayout.hh"
 #include "mm/physical_memory_manager.hh"
 #include "mm/virtual_memory_manager.hh"
 #include "mm/memlayout.hh"
+
+#include "tm/timer_manager.hh"
+
 #include "im/trap_wrapper.hh"
-#include "fs/fat/fat32_dir_entry.hh"
 #include "im/exception_manager.hh"
+
+#include "fs/fat/fat32_dir_entry.hh"
+#include "fs/elf.hh"
+#include "fs/fat/fat32_file_system.hh"
+#include "fs/file.hh"
+#include "fs/dev/console.hh"
+#include "fs/device.hh"
+
 #include <EASTL/vector.h>
 #include <EASTL/string.h>
 #include <EASTL/map.h>
 #include <EASTL/hash_map.h>
+
 #include "klib/common.hh"
-#include "fs/elf.hh"
-#include "fs/fat/fat32_file_system.hh"
-#include "hal/qemu_ls2k.hh"
-#include "fs/file.hh"
-#include "fs/dev/console.hh"
-#include "fs/device.hh"
+
 extern "C" {
 	extern uint64 _start_u_init;
 	extern uint64 _end_u_init;
@@ -260,6 +269,9 @@ namespace pm
 
 		p->_state = ProcState::runnable;
 
+		p->_start_tick = tmm::k_tm.get_ticks();
+		p->_user_ticks = 0;
+
 		p->_lock.release();
 
 		inited = 1;
@@ -349,6 +361,8 @@ namespace pm
 
 		np->_lock.acquire();
 		np->_state = ProcState::runnable;
+		np->_start_tick = tmm::k_tm.get_ticks();
+		np->_user_ticks = 0;
 		np->_lock.release();
 
 		return pid;
@@ -748,6 +762,24 @@ namespace pm
 			return -1;
 		p->_ofile[ fd ] = f;
 		return fd;
+	}
+
+	void ProcessManager::get_cur_proc_tms( tmm::tms * tsv )
+	{
+		Pcb * p = get_cur_pcb();
+		uint64 cur_tick = tmm::k_tm.get_ticks();
+
+		tsv->tms_utime = p->_user_ticks;
+		tsv->tms_stime = cur_tick - p->_start_tick - p->_user_ticks;
+		tsv->tms_cstime = tsv->tms_cutime = 0;
+
+		for ( auto &pp : k_proc_pool )
+		{
+			if ( pp._state == ProcState::unused || pp.parent != p )
+				continue;
+			tsv->tms_cutime += pp._user_ticks;
+			tsv->tms_cstime += cur_tick - pp._start_tick - pp._user_ticks;
+		}
 	}
 
 // ---------------- private helper functions ----------------

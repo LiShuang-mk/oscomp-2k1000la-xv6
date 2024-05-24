@@ -133,6 +133,11 @@ namespace im
 
 		pm::Pcb *proc = cpu->get_cur_proc();
 
+		proc->set_user_ticks(
+			proc->get_user_ticks() +
+			( tmm::k_tm.get_ticks() - proc->get_last_user_tick() )
+		);
+
 		pm::TrapFrame* trapframe;
 		trapframe = proc->get_trapframe();
 		trapframe->era = cpu->read_csr( loongarch::csr::CsrAddr::era );
@@ -208,6 +213,8 @@ namespace im
 		cur_cpu->write_csr( loongarch::csr::CsrAddr::prmd, x );
 
 		cur_cpu->write_csr( loongarch::csr::era, trapframe->era );
+
+		cur_proc->set_last_user_tick( tmm::k_tm.get_ticks() );
 
 		volatile uint64 pgdl = cur_proc->get_pagetable().get_base();
 

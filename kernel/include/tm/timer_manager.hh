@@ -42,6 +42,15 @@ namespace tmm
 		suseconds_t tv_usec;    /* microseconds */
 	};
 
+	// 这个结构体来自Linux的定义 
+	struct tms
+	{
+		uint64 tms_utime;
+		uint64 tms_stime;
+		uint64 tms_cutime;
+		uint64 tms_cstime;
+	};
+
 	class TimerManager
 	{
 	private:
@@ -59,6 +68,9 @@ namespace tmm
 		int sleep_n_ticks( int n );
 
 		int sleep_from_tv( timeval tv );
+
+	public:
+		uint64 get_ticks() { return _ticks; };
 	};
 
 	extern TimerManager k_tm;

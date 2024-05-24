@@ -20,6 +20,12 @@ namespace fs
 	}
 }
 
+namespace tmm
+{
+	struct tms;
+} // namespace tmm
+
+
 namespace pm
 {
 	constexpr int default_proc_slot = 1;
@@ -68,6 +74,8 @@ namespace pm
 
 		int alloc_fd( Pcb * p, fs::xv6_file * f );
 		int alloc_fd( Pcb * p, fs::xv6_file * f, int fd );
+
+		void get_cur_proc_tms( tmm::tms * tsv );
 
 	public:
 		void kill_proc( Pcb * p ) { p->_killed = 1; }

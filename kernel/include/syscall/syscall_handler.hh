@@ -82,6 +82,7 @@ namespace syscall
 		uint64 _sys_gettimeofday();
 		uint64 _sys_sched_yield();
 		uint64 _sys_sleep();
+		uint64 _sys_times();
 	};
 
 	extern SyscallHandler k_syscall_handler;

@@ -23,6 +23,7 @@ namespace syscall
 		_build_sysnum_enum_( exit, 93 )
 		_build_sysnum_enum_( sleep, 101 )
 		_build_sysnum_enum_( sched_yield, 124 )
+		_build_sysnum_enum_( times, 153 )
 		_build_sysnum_enum_( gettimeofday, 169 )
 		_build_sysnum_enum_( getpid, 172 )
 		_build_sysnum_enum_( getppid, 173 )

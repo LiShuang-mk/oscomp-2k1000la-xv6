@@ -52,6 +52,7 @@ namespace syscall
 		_syscall_funcs[ SYS_gettimeofday ] = std::bind( &SyscallHandler::_sys_gettimeofday, this );
 		_syscall_funcs[ SYS_sched_yield ] = std::bind( &SyscallHandler::_sys_sched_yield, this );
 		_syscall_funcs[ SYS_sleep ] = std::bind( &SyscallHandler::_sys_sleep, this );
+		_syscall_funcs[ SYS_times ] = std::bind( &SyscallHandler::_sys_times, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -333,13 +334,31 @@ namespace syscall
 
 		if ( _arg_addr( 0, tv_addr ) < 0 )
 			return -1;
-		
+
 		pm::Pcb * p = pm::k_pm.get_cur_pcb();
 		mm::PageTable pt = p->get_pagetable();
 		if ( mm::k_vmm.copy_in( pt, &tv, tv_addr, sizeof( tv ) ) < 0 )
 			return -1;
 
 		return tmm::k_tm.sleep_from_tv( tv );
+	}
+
+	uint64 SyscallHandler::_sys_times()
+	{
+		tmm::tms tms_val;
+		uint64 tms_addr;
+
+		if ( _arg_addr( 0, tms_addr ) < 0 )
+			return -1;
+		
+		pm::k_pm.get_cur_proc_tms( &tms_val );
+
+		pm::Pcb * p = pm::k_pm.get_cur_pcb();
+		mm::PageTable pt = p->get_pagetable();
+		if ( mm::k_vmm.copyout( pt, tms_addr, &tms_val, sizeof( tms_val ) ) < 0 )
+			return -1;
+
+		return tmm::k_tm.get_ticks();
 	}
 
 } // namespace syscall
