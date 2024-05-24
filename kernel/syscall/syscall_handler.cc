@@ -46,6 +46,7 @@ namespace syscall
 		_syscall_funcs[ SYS_poweroff ] = std::bind( &SyscallHandler::_sys_poweroff, this );
 		_syscall_funcs[ SYS_dup ] = std::bind( &SyscallHandler::_sys_dup, this );
 		_syscall_funcs[ SYS_dup2 ] = std::bind( &SyscallHandler::_sys_dup2, this );
+		_syscall_funcs[ SYS_getcwd ] = std::bind( &SyscallHandler::_sys_getcwd, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -273,6 +274,27 @@ namespace syscall
 			return -1;
 		fs::k_file_table.dup( f );
 		return fd;
+	}
+
+	uint64 SyscallHandler::_sys_getcwd()
+	{
+		char cwd[] = "/";
+		uint64 buf;
+		int size;
+
+		if ( _arg_addr( 0, buf ) < 0 )
+			return -1;
+		if ( _arg_int( 1, size ) < 0 )
+			return -1;
+		if ( size < ( int ) sizeof( cwd ) )
+			return -1;
+
+		pm::Pcb * p = pm::k_pm.get_cur_pcb();
+		mm::PageTable pt = p->get_pagetable();
+		if ( mm::k_vmm.copyout( pt, buf, ( const void * ) cwd, sizeof( cwd ) ) < 0 )
+			return -1;
+
+		return buf;
 	}
 
 } // namespace syscall

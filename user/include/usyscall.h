@@ -20,5 +20,6 @@ extern int wait( int pid, int *state );
 extern int poweroff();
 extern int dup( int fd );
 extern int dup2( int oldfd, int newfd );
+extern char * getcwd( char *buf, unsigned int size );
 
 #endif

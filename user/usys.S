@@ -10,6 +10,7 @@
 
 .section .user.init
 
+GEN_USER_SYSCALL getcwd 17
 GEN_USER_SYSCALL dup 23
 GEN_USER_SYSCALL dup2 24
 GEN_USER_SYSCALL write 64
