@@ -76,6 +76,7 @@ namespace syscall
 		uint64 _sys_exec();
 		uint64 _sys_wait();
 		uint64 _sys_poweroff();
+		uint64 _sys_dup();
 	};
 
 	extern SyscallHandler k_syscall_handler;

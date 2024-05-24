@@ -19,10 +19,7 @@ namespace pm
 
 	Pcb::Pcb()
 	{
-		for ( auto &of : _ofile )
-			of = nullptr;
-
-
+		
 	}
 
 	void Pcb::init( const char *lock_name, uint gid )
@@ -31,6 +28,8 @@ namespace pm
 		_state = ProcState::unused;
 		_gid = gid;
 		_kstack = mm::VirtualMemoryManager::kstack_vm_from_gid( _gid );
+		for ( auto &of : _ofile )
+			of = nullptr;
 	}
 
 	void Pcb::map_kstack( mm::PageTable &pt )

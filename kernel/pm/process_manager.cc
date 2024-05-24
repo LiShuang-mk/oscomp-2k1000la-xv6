@@ -723,6 +723,23 @@ namespace pm
 		log_info( "brk: newsize%d, oldsize%d", newsz, sz );
 		return 0;
 	}
+
+
+	int ProcessManager::alloc_fd( Pcb * p, fs::xv6_file * f )
+	{
+		int fd;
+
+		for ( fd = 3; fd < ( int ) max_open_files; fd++ )
+		{
+			if ( p->_ofile[ fd ] == nullptr )
+			{
+				p->_ofile[ fd ] = f;
+				return fd;
+			}
+		}
+		return -1;
+	}
+
 // ---------------- private helper functions ----------------
 
 	void ProcessManager::_proc_create_vm( Pcb * p )

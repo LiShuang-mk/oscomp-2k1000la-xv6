@@ -10,6 +10,7 @@
 
 .section .user.init
 
+GEN_USER_SYSCALL dup 23
 GEN_USER_SYSCALL write 64
 GEN_USER_SYSCALL exit 93
 GEN_USER_SYSCALL getpid 172

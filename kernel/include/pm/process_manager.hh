@@ -65,6 +65,9 @@ namespace pm
 		int brk( int n );
 		void user_init();
 
+
+		int alloc_fd( Pcb * p, fs::xv6_file * f );
+
 	public:
 		void kill_proc( Pcb * p ) { p->_killed = 1; }
 

@@ -44,6 +44,7 @@ namespace syscall
 		_syscall_funcs[ SYS_exec ] = std::bind( &SyscallHandler::_sys_exec, this );
 		_syscall_funcs[ SYS_wait ] = std::bind( &SyscallHandler::_sys_wait, this );
 		_syscall_funcs[ SYS_poweroff ] = std::bind( &SyscallHandler::_sys_poweroff, this );
+		_syscall_funcs[ SYS_dup ] = std::bind( &SyscallHandler::_sys_dup, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -240,6 +241,20 @@ namespace syscall
 	{
 		dev::acpi::k_acpi_controller.power_off();
 		return 0;
+	}
+
+	uint64 SyscallHandler::_sys_dup()
+	{
+		pm::Pcb * p = pm::k_pm.get_cur_pcb();
+		fs::xv6_file * f;
+		int fd;
+
+		if ( _arg_fd( 0, nullptr, &f ) < 0 )
+			return -1;
+		if ( ( fd = pm::k_pm.alloc_fd( p, f ) ) < 0 )
+			return -1;
+		fs::k_file_table.dup( f );
+		return fd;
 	}
 
 } // namespace syscall

@@ -26,7 +26,7 @@ namespace pm
 	constexpr int default_proc_prio = 10;
 	constexpr int lowest_proc_prio = 19;
 	constexpr int highest_proc_prio = 0;
-	constexpr uint max_open_files = 16;
+	constexpr uint max_open_files = 128;
 
 	enum ProcState
 	{
