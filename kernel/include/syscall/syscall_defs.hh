@@ -17,6 +17,7 @@ namespace syscall
 	enum SyscallNumber
 	{
 		_build_sysnum_enum_( dup, 23 )
+		_build_sysnum_enum_( dup2, 24 )
 		_build_sysnum_enum_( write, 64 )
 		_build_sysnum_enum_( exit, 93 )
 		_build_sysnum_enum_( getpid, 172 )

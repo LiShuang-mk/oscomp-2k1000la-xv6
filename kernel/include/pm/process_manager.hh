@@ -67,6 +67,7 @@ namespace pm
 
 
 		int alloc_fd( Pcb * p, fs::xv6_file * f );
+		int alloc_fd( Pcb * p, fs::xv6_file * f, int fd );
 
 	public:
 		void kill_proc( Pcb * p ) { p->_killed = 1; }

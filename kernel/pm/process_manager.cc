@@ -740,6 +740,16 @@ namespace pm
 		return -1;
 	}
 
+	int ProcessManager::alloc_fd( Pcb * p, fs::xv6_file * f, int fd )
+	{
+		if ( fd <= 2 || fd >= ( int ) max_open_files )
+			return -1;
+		if ( p->_ofile[ fd ] != nullptr )
+			return -1;
+		p->_ofile[ fd ] = f;
+		return fd;
+	}
+
 // ---------------- private helper functions ----------------
 
 	void ProcessManager::_proc_create_vm( Pcb * p )
