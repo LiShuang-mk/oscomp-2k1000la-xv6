@@ -245,10 +245,13 @@ namespace syscall
 
 	uint64 SyscallHandler::_sys_wait()
 	{
-		uint64 p;
-		if ( _arg_addr( 1, p ) < 0 )
+		int pid;
+		uint64 wstatus_addr;
+		if ( _arg_int( 0, pid ) < 0 )
 			return -1;
-		return pm::k_pm.wait( p );
+		if ( _arg_addr( 1, wstatus_addr ) < 0 )
+			return -1;
+		return pm::k_pm.wait( pid, wstatus_addr );
 	}
 
 	uint64 SyscallHandler::_sys_poweroff()

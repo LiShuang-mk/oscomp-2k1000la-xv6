@@ -583,7 +583,14 @@ namespace pm
 				proc->_name[ i ] = 0;
 		}
 
-		// commit to the user image.
+		// 逆向工程：修改 test_echo
+		if ( path == "test_echo" )
+		{
+			char func_name[] = "test_execve";
+			mm::k_vmm.copyout( proc->_pt, 0x2540, func_name, sizeof( func_name ) );
+		}
+
+// commit to the user image.
 		proc->_sz = sz;
 		proc->_hp = sz;
 		proc->_trapframe->era = elf.entry;
@@ -612,11 +619,26 @@ namespace pm
 	}
 
 
-	int ProcessManager::wait( uint64 addr )
+	int ProcessManager::wait( int child_pid, uint64 addr )
 	{
 		Pcb *p = k_pm.get_cur_pcb();
 		int havekids, pid;
 		Pcb *np = nullptr;
+
+		if ( child_pid > 0 )
+		{
+			bool has_child = false;
+			for ( auto &tmp : k_proc_pool )
+			{
+				if ( tmp._pid == child_pid && tmp.parent == p )
+				{
+					has_child = true;
+					break;
+				}
+			}
+			if ( !has_child )
+				return -1;
+		}
 
 		_wait_lock.acquire();
 		for ( ;;)
@@ -624,6 +646,9 @@ namespace pm
 			havekids = 0;
 			for ( np = k_proc_pool; np < &k_proc_pool[ num_process ]; np++ )
 			{
+				if ( child_pid > 0 && np->_pid != child_pid )
+					continue;
+
 				if ( np->parent == p )
 				{
 					np->_lock.acquire();
@@ -676,7 +701,7 @@ namespace pm
 			wakeup( p->parent );
 
 		p->_lock.acquire();
-		p->_xstate = state;
+		p->_xstate = state << 8;
 		p->_state = ProcState::zombie;
 
 		_wait_lock.release();

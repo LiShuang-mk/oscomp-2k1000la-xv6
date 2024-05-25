@@ -60,7 +60,7 @@ namespace pm
 		void sche_proc( Pcb *p );
 
 		int exec( eastl::string path, eastl::vector<eastl::string> args );
-		int wait( uint64 addr );
+		int wait( int child_pid, uint64 addr );
 		int load_seg( mm::PageTable &pt, uint64 va, fs::fat::Fat32DirEntry *de, uint offset, uint size );
 
 		void sleep( void *chan, smp::Lock *lock );
