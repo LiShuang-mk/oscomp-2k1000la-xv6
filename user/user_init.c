@@ -453,7 +453,7 @@ int init_main( void )
 
 #ifndef OS_DEBUG
 	// power off
-	// poweroff();
+	poweroff();
 #endif
 
 	while ( 1 );
