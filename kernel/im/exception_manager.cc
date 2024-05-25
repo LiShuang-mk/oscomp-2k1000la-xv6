@@ -75,6 +75,7 @@ namespace im
 	void ExceptionManager::kernel_trap()
 	{
 		// log_info( "enter kernel trap" );
+		// printf( "\033[33m k trap \033[0m" );
 		uint32 estat = ( uint32 ) loongarch::Cpu::read_csr( loongarch::csr::estat );
 		uint32 ecfg = ( uint32 ) loongarch::Cpu::read_csr( loongarch::csr::ecfg );
 		if ( estat & ecfg & loongarch::csr::itr_ti_m )
@@ -115,6 +116,7 @@ namespace im
 
 	void ExceptionManager::user_trap( uint64 estat )
 	{
+		// printf( "\033[32m u trap \033[0m" );
 		loongarch::Cpu *cpu = loongarch::Cpu::get_cpu();
 		[[maybe_unused]] uint64 test_estat = cpu->read_csr( loongarch::csr::CsrAddr::estat );
 		// estat = [] ()->uint64
@@ -147,7 +149,7 @@ namespace im
 		{
 //syscall
 			// log_info( "syscall: %d", proc->get_trapframe()->a7 );
-			// log_panic( "syscall not implement" );
+			// printf( "\033[34m sys %d \033[0m", proc->get_trapframe()->a7 );	<<<<<<<<<<<<<<<< 跟踪 syscall
 
 			if ( proc->is_killed() )
 				pm::k_pm.exit( -1 );

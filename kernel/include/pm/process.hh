@@ -87,6 +87,8 @@ namespace pm
 		uint64 _user_ticks;			// the ticks of that the process has run in user mode
 		uint64 _last_user_tick;		// the tick value of that the process returns to user mode last time
 
+		uint64 _hp;					// 一个假的堆指针，后续会删除
+
 		// vm
 		struct vma *vm[ 10 ];  // virtual memory area <<<<<<<<<<<<<<<<<< what??? Could ONE process has several vm space?
 

@@ -53,6 +53,7 @@ namespace syscall
 		_syscall_funcs[ SYS_sched_yield ] = std::bind( &SyscallHandler::_sys_sched_yield, this );
 		_syscall_funcs[ SYS_sleep ] = std::bind( &SyscallHandler::_sys_sleep, this );
 		_syscall_funcs[ SYS_times ] = std::bind( &SyscallHandler::_sys_times, this );
+		_syscall_funcs[ SYS_uname ] = std::bind( &SyscallHandler::_sys_uname, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -363,6 +364,55 @@ namespace syscall
 			return -1;
 
 		return tmm::k_tm.get_ticks();
+	}
+
+	struct _Utsname
+	{
+		char sysname[ 65 ];
+		char nodename[ 65 ];
+		char release[ 65 ];
+		char version[ 65 ];
+		char machine[ 65 ];
+		char domainname[ 65 ];
+	};
+	static const char _SYSINFO_sysname[] = "XN6";
+	static const char _SYSINFO_nodename[] = "(none-node)";
+	static const char _SYSINFO_release[] = "V1.0";
+	static const char _SYSINFO_version[] = "V1.0";
+	static const char _SYSINFO_machine[] = "LoongArch-2k1000";
+	static const char _SYSINFO_domainname[] = "(none-domain)";
+
+	uint64 SyscallHandler::_sys_uname()
+	{
+		uint64 usta;
+		uint64 sysa, noda, rlsa, vsna, mcha, dmna;
+
+		if ( _arg_addr( 0, usta ) < 0 ) return -11;
+		sysa = ( uint64 ) ( ( ( _Utsname* ) usta )->sysname );
+		noda = ( uint64 ) ( ( ( _Utsname* ) usta )->nodename );
+		rlsa = ( uint64 ) ( ( ( _Utsname* ) usta )->release );
+		vsna = ( uint64 ) ( ( ( _Utsname* ) usta )->version );
+		mcha = ( uint64 ) ( ( ( _Utsname* ) usta )->machine );
+		dmna = ( uint64 ) ( ( ( _Utsname* ) usta )->domainname );
+
+
+		pm::Pcb * p = pm::k_pm.get_cur_pcb();
+		mm::PageTable pt = p->get_pagetable();
+
+		if ( mm::k_vmm.copyout( pt, sysa, _SYSINFO_sysname, sizeof( _SYSINFO_sysname ) ) < 0 )
+			return -1;
+		if ( mm::k_vmm.copyout( pt, noda, _SYSINFO_nodename, sizeof( _SYSINFO_nodename ) ) < 0 )
+			return -1;
+		if ( mm::k_vmm.copyout( pt, rlsa, _SYSINFO_release, sizeof( _SYSINFO_release ) ) < 0 )
+			return -1;
+		if ( mm::k_vmm.copyout( pt, vsna, _SYSINFO_version, sizeof( _SYSINFO_version ) ) < 0 )
+			return -1;
+		if ( mm::k_vmm.copyout( pt, mcha, _SYSINFO_machine, sizeof( _SYSINFO_machine ) ) < 0 )
+			return -1;
+		if ( mm::k_vmm.copyout( pt, dmna, _SYSINFO_domainname, sizeof( _SYSINFO_domainname ) ) < 0 )
+			return -1;
+
+		return 0;
 	}
 
 } // namespace syscall

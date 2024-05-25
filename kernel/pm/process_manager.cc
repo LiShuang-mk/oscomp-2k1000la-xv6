@@ -209,6 +209,7 @@ namespace pm
 		// p->_priority = 19;
 
 		p->_sz = ( uint64 ) &_end_u_init - ( uint64 ) &_start_u_init;
+		p->_hp = p->_sz;
 		//p->_sz = 0;
 
 		// map user init stack
@@ -320,6 +321,7 @@ namespace pm
 			return -1;
 		}
 		np->_sz = p->_sz;
+		np->_hp = p->_hp;
 
 		/// TODO: >> Share Memory Copy
 		// shmaddcount( p->shmkeymask );
@@ -583,6 +585,7 @@ namespace pm
 
 		// commit to the user image.
 		proc->_sz = sz;
+		proc->_hp = sz;
 		proc->_trapframe->era = elf.entry;
 		proc->_trapframe->sp = sp;
 		proc->_state = ProcState::runnable;
@@ -719,31 +722,46 @@ namespace pm
 	}
 
 	int ProcessManager::brk( int n )
-	{
-		Pcb *p = get_cur_pcb();
-		uint64 sz = p->_sz;
-		uint64 newsz = sz + n;
-		mm::PageTable pt = p->_pt;
+	{	// 这里是一个假的brk，维护了一个假的堆指针 _hp
 
 		if ( n < 0 )
-		{
-			if ( mm::k_vmm.uvmdealloc( pt, sz, sz + n ) < 0 )
-			{
-				return -1;
-			}
-		}
-		else if ( n > 0 )
-		{
-			if ( ( n + p->_sz ) > ( static_cast< uint64 >( mm::vml::vm_end ) - static_cast< uint64 >( mm::PageEnum::pg_size ) ) )
-				return -1;
+			return -1;
 
-			if ( mm::k_vmm.vmalloc( pt, sz, newsz ) == 0 )
-				return -1;
-		}
+		Pcb * p = get_cur_pcb();
 
-		p->_sz = newsz;
-		log_info( "brk: newsize%d, oldsize%d", newsz, sz );
-		return 0;
+		if ( n == 0 )
+			return p->_hp;
+
+		if ( ( uint64 ) n <= p->_hp )
+			return p->_hp;
+
+		p->_hp = n;
+		return p->_hp;
+
+		// Pcb *p = get_cur_pcb();
+		// uint64 sz = p->_sz;
+		// uint64 newsz = sz + n;
+		// mm::PageTable pt = p->_pt;
+
+		// if ( n < 0 )
+		// {
+		// 	if ( mm::k_vmm.uvmdealloc( pt, sz, sz + n ) < 0 )
+		// 	{
+		// 		return -1;
+		// 	}
+		// }
+		// else if ( n > 0 )
+		// {
+		// 	if ( ( n + p->_sz ) > ( static_cast< uint64 >( mm::vml::vm_end ) - static_cast< uint64 >( mm::PageEnum::pg_size ) ) )
+		// 		return -1;
+
+		// 	if ( mm::k_vmm.vmalloc( pt, sz, newsz ) == 0 )
+		// 		return -1;
+		// }
+
+		// p->_sz = newsz;
+		// log_info( "brk: newsize%d, oldsize%d", newsz, sz );
+		// return 0;
 	}
 
 
