@@ -39,6 +39,8 @@ namespace pm
 		int _cur_pid;
 		Pcb * _init_proc;		// user init proc
 
+		uint _last_alloc_proc_gid;
+
 	public:
 		ProcessManager() = default;
 		void init( const char *pid_lock_name, const char *wait_lock_name );

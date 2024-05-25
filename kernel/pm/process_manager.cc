@@ -71,6 +71,7 @@ namespace pm
 			p.init( "pcb", i );
 		}
 		_cur_pid = 1;
+		_last_alloc_proc_gid = num_process - 1;
 	}
 
 	Pcb *ProcessManager::get_cur_pcb()
@@ -92,9 +93,10 @@ namespace pm
 
 	Pcb *ProcessManager::alloc_proc()
 	{
-		Pcb *p;
-		for ( p = k_proc_pool; p < &k_proc_pool[ num_process ]; p++ )
+		Pcb * p;
+		for ( uint i = 0; i < num_process; i++ )
 		{
+			p = &k_proc_pool[ ( _last_alloc_proc_gid + i ) % num_process ];
 			p->_lock.acquire();
 			if ( p->_state == ProcState::unused )
 			{
@@ -131,6 +133,8 @@ namespace pm
 				p->_context.sp = p->_kstack + mm::pg_size;
 
 				p->_lock.release();
+
+				_last_alloc_proc_gid = p->_gid;
 
 				return p;
 			}

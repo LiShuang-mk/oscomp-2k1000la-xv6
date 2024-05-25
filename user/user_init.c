@@ -13,7 +13,7 @@ char u_init_stack[ 2048 ] __attribute__( ( section( ".user.init.stack" ) ) );
 int init_main( void ) __attribute__( ( section( ".user.init" ) ) );
 static void printint( int xx, int base, int sign ) __attribute__( ( section( ".user.init" ) ) );
 
-__attribute__( ( section( ".user.init.data" ) ) ) const char str[] = "Hello World\n";
+__attribute__( ( section( ".user.init.data" ) ) ) const char str[] = "\nHello World\n\n\n";
 __attribute__( ( section( ".user.init.data" ) ) ) const char errstr[] = "fork fail\n";
 __attribute__( ( section( ".user.init.data" ) ) ) const char parent_str[] = "parent write. fork pid is ";
 __attribute__( ( section( ".user.init.data" ) ) ) const char child_str[] = "child write\n";
@@ -45,7 +45,7 @@ __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_waitpid[]
 
 __attribute__( ( section( ".user.init.data" ) ) ) const char digits[] = "0123456789abcdef";
 
- __attribute__( ( __unused__ ) ) static void printint( int xx, int base, int sign )
+__attribute__( ( __unused__ ) ) static void printint( int xx, int base, int sign )
 {
 	char buf[ 16 + 1 ];
 	int i;
@@ -78,6 +78,8 @@ int init_main( void )
 
 	int pid;
 
+#ifndef OS_DEBUGT
+
 	// ======== test execve ========
 	pid = fork();
 	if ( pid < 0 )
@@ -101,7 +103,6 @@ int init_main( void )
 		// 	write( 1, wait_success, sizeof( wait_success ) );
 	}
 
-#ifndef OS_DEBUGT
 	// ======== test echo ========
 	pid = fork();
 	if ( pid < 0 )

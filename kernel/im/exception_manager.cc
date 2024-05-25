@@ -360,6 +360,21 @@ namespace im
 				"handle exception PME :\n"
 				"    badv : %x\n"
 				"    badi : %x\n"
+				"    pte  : %p",
+				badv,
+				loongarch::Cpu::read_csr( loongarch::csr::badi ),
+				pte.get_data()
+			);
+		};
+
+		_exception_handlers[ loongarch::csr::ecode_ppi ] = [] ( uint32 estat ) ->void
+		{
+			uint64 badv = loongarch::Cpu::read_csr( loongarch::csr::badv );
+			[[maybe_unused]] mm::Pte pte = loongarch::Cpu::get_cpu()->get_cur_proc()->get_pagetable().walk( badv, 0 );
+			log_panic(
+				"handle exception PPI :\n"
+				"    badv : %x\n"
+				"    badi : %x\n"
 				"    pte  : %x",
 				badv,
 				loongarch::Cpu::read_csr( loongarch::csr::badi ),
