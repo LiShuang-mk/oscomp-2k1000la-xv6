@@ -587,12 +587,12 @@ namespace pm
 				proc->_name[ i ] = 0;
 		}
 
-		// 逆向工程：修改 test_echo
-		if ( path == "test_echo" )
-		{
-			char func_name[] = "test_execve";
-			mm::k_vmm.copyout( proc->_pt, 0x2540, func_name, sizeof( func_name ) );
-		}
+		// // 逆向工程：修改 test_echo
+		// if ( path == "test_echo" )
+		// {
+		// 	char func_name[] = "test_execve";
+		// 	mm::k_vmm.copyout( proc->_pt, 0x2540, func_name, sizeof( func_name ) );
+		// }
 
 // commit to the user image.
 		proc->_sz = sz;
