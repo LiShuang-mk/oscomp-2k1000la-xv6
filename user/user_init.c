@@ -74,7 +74,7 @@ __attribute__( ( __unused__ ) ) static void printint( int xx, int base, int sign
 
 int init_main( void )
 {
-	write( 1, str, sizeof( str ) );
+	write( 1, str, sizeof( str ) - 1 );
 
 	int pid;
 
