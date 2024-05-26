@@ -23,32 +23,50 @@ namespace fs
 	{
 	public:
 		dev_t dev;
-		uint64 ino;
-		uint32 nlink;
+		uint64 ino;		
 		mode_t mode;
+		uint32 nlink;
 		uint32 uid;     //user id
 		uint32 gid;     //group id
 		dev_t rdev;
 		uint64 __pad;
 		uint64 size;
-		size_t blksize;
-		uint64 __pad2;
+		size_t blksize;		
 		uint64 blocks;
+		uint64 __pad2;
 
 		Kstat() = default;
 		Kstat( const Kstat& ks_ ) :
-			dev( ks_.dev ), ino( ks_.ino ), nlink( ks_.nlink ), mode( ks_.mode ),
+			dev( ks_.dev ), ino( ks_.ino ), mode( ks_.mode ),nlink( ks_.nlink ), 
 			uid( ks_.uid ), gid( ks_.gid ), rdev( ks_.rdev ), __pad( ks_.__pad ),
-			size( ks_.size ), blksize( ks_.blksize ), __pad2( ks_.__pad2 ), blocks( ks_.blocks )
+			size( ks_.size ), blksize( ks_.blksize ),blocks( ks_.blocks ), __pad2( ks_.__pad2 ) 
 		{
 		};
-		Kstat( Dentry *dentry );
+		Kstat( Dentry *dentry )   //@TODO: 通过De初始化kstat不完全
+		{
+			if( dentry )
+			{
+				Inode *node = dentry->getNode();
+				if( node )
+				{
+					dev = node->rDev();
+					ino = node->rIno();
+					mode = node->rMode();
+					//uid = node->rUid();
+					//gid = node->rGid();
+					//rdev = node->rRdev();
+					//size = node->rSize();
+					//blksize = node->rBlocksize();
+					//blocks = node->rBlocks();
+				}
+			}
+		}
 		
   //Kstat(Pipe *pipe){};
 		Kstat( FileTypes f_type ) :
-			dev( 0 ), ino( -1 ), nlink( 1 ), mode( FT_NONE ),
+			dev( 0 ), ino( -1 ), mode( FT_NONE ), nlink( 1 ), 
 			uid( 0 ), gid( 0 ), rdev( 0 ), __pad( 0 ),
-			size( 0 ), blksize( 0 ), __pad2( 0 ), blocks( 0 )
+			size( 0 ), blksize( 0 ), blocks( 0 ), __pad2( 0 ) 
 		{
 		};
 		~Kstat() = default;

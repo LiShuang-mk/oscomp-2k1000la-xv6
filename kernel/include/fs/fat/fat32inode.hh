@@ -52,11 +52,12 @@ namespace fs{
                 }
                 void read_content( void *buf, uint64 read_len, uint64 offset, bool async_read = false );
 
+                bool is_dir() { return _dir_type == fat32nod_folder; }
             public:
                 void debug_set_belong_fs( Fat32FS* fs ) { _belong_fs = fs; }
 
             public:
-                virtual Inode* lookup( eastl::string dirname, off_t off_ = 0 ) override { return  nullptr; };
+                virtual Inode* lookup( eastl::string dirname, off_t off_ = 0 ) override ;
                 virtual Inode* mknode( eastl::string name, mode_t mode ) override { return nullptr; };
                 virtual size_t nodeRead( uint64 dst_, size_t off_, size_t len_ ) override { read_content( (void *)dst_, len_, off_ ); return len_; };
                 virtual size_t nodeWrite( uint64 src_, size_t off_, size_t len_ ) override { return 0; };

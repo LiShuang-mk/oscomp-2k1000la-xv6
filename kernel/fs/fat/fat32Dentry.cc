@@ -54,5 +54,19 @@ namespace fs{
                     
             rootInit( _node );
         }
+
+        Dentry * Fat32Dentry::EntrySearch(eastl::string name){
+            log_trace( "Fat32Dentry::EntrySearch: name = %s", name.c_str() );
+            if( auto it = _dentry_children.find( name ); it != _dentry_children.end() )
+                return it->second;
+            if(auto subnod = dynamic_cast<Fat32Inode*>( _node->lookup( name )  ) ){
+                log_trace( "Fat32Dentry::EntrySearch: found inode" );
+                auto subdentry = new Fat32Dentry(this, subnod, name);
+                _dentry_children[name] = subdentry;
+                return subdentry;
+            }
+            return nullptr;
+        
+        }
     }
 }
