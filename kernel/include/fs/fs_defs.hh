@@ -24,9 +24,9 @@ namespace fs
 		virtual Dentry* getRoot() const = 0;     // get root dentry  
 		virtual Dentry* getMntPoint() const = 0; // get mount point dentry
 		virtual FileSystem* getFileSystem() const = 0; // get file system
-		virtual bool isValid() const { return true; } // check if super block is valid
+		virtual bool isValid() const = 0; // check if super block is valid
 		virtual uint32 rDefaultMod() const = 0; // get default mode
-		virtual Inode *allocInode() = 0; // allocate inode
-		virtual void destroyInode( Inode *inode ) = 0; // destroy inode
+		//virtual Inode *allocInode() = 0; // allocate inode
+		//virtual void destroyInode( Inode *inode ) = 0; // destroy inode
 	};
 } // namespace fs

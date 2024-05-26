@@ -25,19 +25,22 @@ namespace fs
 		FileSystem( const FileSystem& fs ) = delete;
 		virtual ~FileSystem() = default;
 		FileSystem& operator=( const FileSystem& fs );
-		virtual char *rFSType() const = 0; // get file system type
-		virtual char *rKey() const = 0; // get fs's key in mount map
+		virtual void init() = 0;
+		//virtual eastl::string rFSType() const = 0; // get file system type
+		//virtual eastl::string rKey() const = 0; // get fs's key in mount map
 		virtual bool isRootFS() const = 0; // check if it is root fs
 		virtual SuperBlock *getSuperBlock() const = 0; // get super block
-		virtual int ldSuperBlock( uint64 dev, Dentry * mnt ) = 0; // load super block
-		virtual void unInstall() = 0; // uninstall file system
-		virtual long rMagic() const = 0; // get magic number
-		virtual long rBlockSize() const = 0; // get block size
+		//virtual int ldSuperBlock( uint64 dev, Dentry * mnt ) = 0; // load super block
+		//virtual void unInstall() = 0; // uninstall file system
+		//virtual long rMagic() const = 0; // get magic number
+		virtual size_t rBlockSize() const = 0; // get block size
 		virtual long rBlockNum() const = 0; // get block number
 		virtual long rBlockFree() const = 0; // get free block number
 		virtual long rMaxFile() const = 0; // max file num when read
 		virtual long rFreeFile() const = 0; // max file num when read free block
-		virtual long rNameLen() const = 0; // get max name length
+		virtual size_t rNamelen() const = 0; // get max name length
+		virtual Dentry *getRoot() const = 0; // get root dentry
+		virtual Dentry *getMntPoint() const = 0; // get mount point dentry
 	};
 
 	// Dentry * DentryRef;

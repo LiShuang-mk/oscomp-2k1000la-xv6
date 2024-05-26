@@ -12,6 +12,7 @@
 #include "fs/dev/sata_driver.hh"
 #include "fs/fat/fat32.hh"
 #include "fs/fat/fat32_file_system.hh"
+#include "fs/fat/fat32fs.hh"
 #include "fs/ext4/super_block.hh"
 #include "fs/ext4/block_group_descriptor.hh"
 #include "fs/ext4/index_node.hh"
@@ -183,6 +184,9 @@ int main()
 		// while ( 1 );
 
 
+		
+		new ( &fs::fat::k_fatfs ) fs::fat::Fat32FS;
+		fs::fat::k_fatfs.init();
 		new ( &fs::fat::k_testcase_fs ) fs::fat::Fat32FileSystem;
 		fs::fat::k_testcase_fs.init( 1, 0 );
 		log_info( "testcase fs init" );

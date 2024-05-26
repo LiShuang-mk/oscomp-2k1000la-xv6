@@ -34,7 +34,7 @@ namespace fs
 			{
 				uint64* buf_uint64 = static_cast< uint64* >( buf );
 				uint64 buffer = *buf_uint64;
-				if ( data.get_Entry()->getNode()->nodWrite( buffer, data.get_off(), len ) == len )
+				if ( data.get_Entry()->getNode()->nodeWrite( buffer, data.get_off(), len ) == len )
 				{
 					data.get_off() += len;
 					RC = len;
