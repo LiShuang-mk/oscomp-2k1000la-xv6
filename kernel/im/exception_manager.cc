@@ -342,7 +342,7 @@ namespace im
 			// 	loongarch::Cpu::read_csr( loongarch::csr::badi ),
 			// 	pte.get_data()
 			// );
-			log_panic(
+			log_error(
 				"handle exception PIS :\n"
 				"    badv : 0x%x\n"
 				"    badi : 0x%x\n"
