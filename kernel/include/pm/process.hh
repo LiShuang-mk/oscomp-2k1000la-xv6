@@ -16,6 +16,7 @@
 namespace fs
 {
 	class Dentry;
+
 	struct xv6_file;
 }
 namespace pm

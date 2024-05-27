@@ -24,9 +24,11 @@
 #include "im/trap_wrapper.hh"
 #include "im/exception_manager.hh"
 
-#include "fs/fat/fat32_dir_entry.hh"
 #include "fs/elf.hh"
+#include "fs/fat/fat32_dir_entry.hh"
+#include "fs/fat/fat32Dentry.hh"
 #include "fs/fat/fat32_file_system.hh"
+#include "fs/fat/fat32fs.hh"
 #include "fs/file.hh"
 #include "fs/dev/console.hh"
 #include "fs/device.hh"
@@ -186,6 +188,11 @@ namespace pm
 		p->_killed = 0;
 		p->_xstate = 0;
 		p->_state = ProcState::unused;
+		for ( auto &f : p->_ofile )
+		{
+			if ( f != nullptr && f->ref > 0 )
+				f->ref--;
+		}
 	}
 
 
@@ -267,6 +274,7 @@ namespace pm
 		f->major = dev::dev_console_num;
 		f->type = fs::xv6_file::FD_DEVICE;
 		p->_ofile[ 1 ] = f;
+		p->_cwd = fs::fat::k_fatfs.get_root();
 
 
 		/// TODO:
@@ -359,6 +367,7 @@ namespace pm
 				fs::k_file_table.dup( p->_ofile[ i ] );
 				np->_ofile[ i ] = p->_ofile[ i ];
 			}
+		np->_cwd = p->_cwd;
 
 		/// TODO: >> cwd inode ref-up
 		// np->cwd = idup( p->cwd );
@@ -791,6 +800,31 @@ namespace pm
 		// p->_sz = newsz;
 		// log_info( "brk: newsize%d, oldsize%d", newsz, sz );
 		// return 0;
+	}
+
+	int ProcessManager::open( eastl::string path )
+	{
+		Pcb * p = get_cur_pcb();
+
+		// 处理一下path
+		if ( path[ 0 ] == '.' )
+		{
+			path = path.substr( 2 );
+		}
+
+		fs::xv6_file * f = fs::k_file_table.alloc_file();
+		if ( f == nullptr )
+			return -2;
+
+		p->_cwd->EntrySearch( path );
+
+		f->type = fs::xv6_file::FD_INODE;
+		f->ref = 1;
+
+		/// TODO: set file readable or writable from Dentry, but it is brute force here
+		f->readable = f->writable = 1;
+
+		return alloc_fd( p, f );
 	}
 
 

@@ -23,5 +23,6 @@ extern int dup( int fd );
 extern int dup2( int oldfd, int newfd );
 extern char * getcwd( char *buf, unsigned int size );
 extern int sleep( int n );
+extern int openat( int dirfd, const char *path_name, int flags, int mode );
 
 #endif

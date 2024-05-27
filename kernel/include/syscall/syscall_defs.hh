@@ -19,6 +19,7 @@ namespace syscall
 		_build_sysnum_enum_( getcwd, 17 )
 		_build_sysnum_enum_( dup, 23 )
 		_build_sysnum_enum_( dup2, 24 )
+		_build_sysnum_enum_( openat, 56 )
 		_build_sysnum_enum_( write, 64 )
 		_build_sysnum_enum_( exit, 93 )
 		_build_sysnum_enum_( sleep, 101 )

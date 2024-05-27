@@ -11,6 +11,12 @@ namespace fs
 
 		Fat32FS k_fatfs;
 
+		Fat32FS::~Fat32FS()
+		{
+			delete _super_block;
+			delete _root;
+		}
+
 		void Fat32FS::init( int dev, uint64 start_lba, bool is_root )
 		{
 			/// @todo 1. load super block
@@ -27,6 +33,7 @@ namespace fs
 			_isroot = is_root;
 
 			/// @todo 3. init rootEntry, and it's fat32inode.
+			_root = new Fat32Dentry();
 			_root->init( _device, _super_block, this );
 			_mnt = _root;
 

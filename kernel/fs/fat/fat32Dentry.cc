@@ -7,66 +7,52 @@
 
 #include <EASTL/vector.h>
 
-namespace fs{
-    namespace fat{
-        void Fat32Dentry::init(uint32 dev, Fat32SuperBlock *sb, Fat32FS *fs){
+namespace fs
+{
+	namespace fat
+	{
+		Fat32Dentry::~Fat32Dentry()
+		{
+			delete _sub_dir_cache;
+		}
 
-            uint cluster_num = 2;
-            uint64 cls_num_in_sector = cluster_num / 
-                    (fs->get_bytes_per_sector() / sizeof(cluster_num_t));
-            uint64 cls_num_offset = cluster_num % 
-                    (fs->get_bytes_per_sector() / sizeof(cluster_num_t));
-
-            Buffer buf =  k_bufm.read_sync(
-                dev,
-                fs->get_fat_lba() + cls_num_in_sector
-            );
-            
-            eastl::vector<uint32> clusters_num;
-            clusters_num.clear();
-
-            using fat32_t = uint32;
-            fat32_t * fat32_p = ( fat32_t * ) buf.get_data_ptr();
-            fat32_p += cls_num_offset;
-            fat32_t * buf_end = ( fat32_t * ) buf.get_end_ptr();
-            for( fat32_t i = cluster_num; fat32_p < buf_end; fat32_p++ )
-            {
-                clusters_num.push_back( i );
-                if ( fat_is_end( *fat32_p) )
-                    break;
-                i = *fat32_p;
-            }
-            k_bufm.release_buffer_sync( buf );
-
-            assert(
-				fat32_p < buf_end,
-				"Fat32DirEntry: too long directory that covers more than %d clusters.",
-				default_buffer_size / sizeof( uint32 )
+		void Fat32Dentry::init( uint32 dev, Fat32SuperBlock *sb, Fat32FS *fs )
+		{
+			_node = new Fat32Inode();
+			_node->init(
+				2,
+				fs,
+				fat32nod_folder,
+				0
 			);
-            
-            _node = new Fat32Inode();
-            _node->init( dev, 
-                         clusters_num.front(),
-                         fs, 
-                         fat32nod_folder, 
-                         clusters_num, 
-                         0 );
-                    
-            rootInit( _node );
-        }
 
-        Dentry * Fat32Dentry::EntrySearch(eastl::string name){
-            log_trace( "Fat32Dentry::EntrySearch: name = %s", name.c_str() );
-            if( auto it = _dentry_children.find( name ); it != _dentry_children.end() )
-                return it->second;
-            if(auto subnod = dynamic_cast<Fat32Inode*>( _node->lookup( name )  ) ){
-                log_trace( "Fat32Dentry::EntrySearch: found inode" );
-                auto subdentry = new Fat32Dentry(this, subnod, name);
-                _dentry_children[name] = subdentry;
-                return subdentry;
-            }
-            return nullptr;
-        
-        }
-    }
+			rootInit( _node );
+		}
+
+		Dentry * Fat32Dentry::EntrySearch( eastl::string name )
+		{
+			log_trace( "Fat32Dentry::EntrySearch: name = %s", name.c_str() );
+			// if ( auto it = _dentry_children.find( name ); it != _dentry_children.end() )
+			// 	return it->second;
+			if ( _sub_dir_cache != nullptr && _sub_dir_cache->getName() == name )
+			{
+				return _sub_dir_cache;
+			}
+			// if ( [[maybe_unused]] auto subnod = dynamic_cast< Fat32Inode* >( _node->lookup( name ) ) )
+			if ( [[maybe_unused]] auto subnod = ( _node->lookup( name ) ) )
+			{
+				log_trace( "Fat32Dentry::EntrySearch: found inode" );
+				/// TODO: return local viriable?
+				// Fat32Dentry subdentry( this, subnod, name );
+				// _dentry_children[ name ] = subdentry;
+				// return subdentry;
+
+				delete _sub_dir_cache;
+				_sub_dir_cache = new Fat32Dentry( this, ( Fat32Inode* ) subnod, name );
+				return _sub_dir_cache;
+			}
+			return nullptr;
+
+		}
+	}
 }

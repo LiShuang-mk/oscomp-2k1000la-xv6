@@ -36,7 +36,7 @@ namespace fs
 			Fat32FS( const Fat32FS &fs ) = default;
 			Fat32FS( bool isroot_, eastl::string key_ ) : _isroot( isroot_ ) {};
 
-			~Fat32FS() = default;
+			~Fat32FS();
 			void init( int dev, uint64 start_lba, bool is_root = false );
 
 			Fat32Dentry * get_root() { return _root; }

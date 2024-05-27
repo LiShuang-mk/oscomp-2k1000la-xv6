@@ -22,6 +22,7 @@ __attribute__( ( section( ".user.init.data" ) ) ) const char wait_success[] = " 
 __attribute__( ( section( ".user.init.data" ) ) ) const char wait_fail[] = "wait fail\n";
 __attribute__( ( section( ".user.init.data" ) ) ) const char sleep_success[] = "sleep_success\n";
 __attribute__( ( section( ".user.init.data" ) ) ) const char print_int_error[] = "printint error\n";
+__attribute__( ( section( ".user.init.data" ) ) ) const char to_open_file[] = "text.txt";
 
 
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_echo[] = "write";
@@ -76,9 +77,32 @@ int init_main( void )
 {
 	write( 1, str, sizeof( str ) - 1 );
 
-	int pid;
+	__attribute__( ( __unused__ ) ) int pid;
 
-#ifndef OS_DEBUGT
+#ifndef OS_DEBUG
+
+	// ======== test clone ========
+	pid = fork();
+	if ( pid < 0 )
+	{
+		write( 1, errstr, sizeof( errstr ) );
+	}
+	else if ( pid == 0 )
+	{
+		if ( execv( exec_test_clone, 0 ) < 0 )
+		{
+			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
+		}
+		exit( 0 );
+	}
+	else
+	{
+		int child_exit_state = -100;
+		if ( wait( -1, &child_exit_state ) < 0 )
+			write( 1, wait_fail, sizeof( wait_fail ) );
+		// else
+		// 	write( 1, wait_success, sizeof( wait_success ) );
+	}
 
 	// ======== test execve ========
 	pid = fork();
@@ -102,6 +126,8 @@ int init_main( void )
 		// else
 		// 	write( 1, wait_success, sizeof( wait_success ) );
 	}
+
+
 
 	// ======== test echo ========
 	pid = fork();
@@ -425,52 +451,6 @@ int init_main( void )
 		// 	write( 1, wait_success, sizeof( wait_success ) );
 	}
 
-	// ======== test clone ========
-	pid = fork();
-	if ( pid < 0 )
-	{
-		write( 1, errstr, sizeof( errstr ) );
-	}
-	else if ( pid == 0 )
-	{
-		if ( execv( exec_test_clone, 0 ) < 0 )
-		{
-			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
-		}
-		exit( 0 );
-	}
-	else
-	{
-		int child_exit_state = -100;
-		if ( wait( -1, &child_exit_state ) < 0 )
-			write( 1, wait_fail, sizeof( wait_fail ) );
-		// else
-		// 	write( 1, wait_success, sizeof( wait_success ) );
-	}
-
-	// ======== test uname ========
-	pid = fork();
-	if ( pid < 0 )
-	{
-		write( 1, errstr, sizeof( errstr ) );
-	}
-	else if ( pid == 0 )
-	{
-		if ( execv( exec_test_uname, 0 ) < 0 )
-		{
-			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
-		}
-		exit( 0 );
-	}
-	else
-	{
-		int child_exit_state = -100;
-		if ( wait( -1, &child_exit_state ) < 0 )
-			write( 1, wait_fail, sizeof( wait_fail ) );
-		// else
-		// 	write( 1, wait_success, sizeof( wait_success ) );
-	}
-
 	// ======== test waitpid ========
 	pid = fork();
 	if ( pid < 0 )
@@ -504,10 +484,55 @@ int init_main( void )
 		// }
 	}
 
+	// ======== test uname ========
+	pid = fork();
+	if ( pid < 0 )
+	{
+		write( 1, errstr, sizeof( errstr ) );
+	}
+	else if ( pid == 0 )
+	{
+		if ( execv( exec_test_uname, 0 ) < 0 )
+		{
+			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
+		}
+		exit( 0 );
+	}
+	else
+	{
+		int child_exit_state = -100;
+		if ( wait( -1, &child_exit_state ) < 0 )
+			write( 1, wait_fail, sizeof( wait_fail ) );
+		// else
+		// 	write( 1, wait_success, sizeof( wait_success ) );
+	}
 
+#else
+	pid = fork();
+	if ( pid < 0 )
+	{
+		write( 1, errstr, sizeof( errstr ) );
+	}
+	else if ( pid == 0 )
+	{
+		int fd;
+		if ( ( fd = openat( -1, to_open_file, 0, 2 ) ) < 0 )
+		{
+			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
+		}
+		printint( fd, 10, 1 );
+		exit( 0 );
+	}
+	else
+	{
+		int child_exit_state = -100;
+		if ( wait( -1, &child_exit_state ) < 0 )
+			write( 1, wait_fail, sizeof( wait_fail ) );
+		// else
+		// 	write( 1, wait_success, sizeof( wait_success ) );
+	}
 
 #endif
-
 
 
 

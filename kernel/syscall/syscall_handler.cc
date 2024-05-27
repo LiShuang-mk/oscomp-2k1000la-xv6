@@ -54,6 +54,7 @@ namespace syscall
 		_syscall_funcs[ SYS_sleep ] = std::bind( &SyscallHandler::_sys_sleep, this );
 		_syscall_funcs[ SYS_times ] = std::bind( &SyscallHandler::_sys_times, this );
 		_syscall_funcs[ SYS_uname ] = std::bind( &SyscallHandler::_sys_uname, this );
+		_syscall_funcs[ SYS_openat ] = std::bind( &SyscallHandler::_sys_openat, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -416,6 +417,22 @@ namespace syscall
 			return -1;
 
 		return 0;
+	}
+
+	uint64 SyscallHandler::_sys_openat()
+	{
+		uint64 path_addr;
+
+		if ( _arg_addr( 1, path_addr ) < 0 )
+			return -1;
+
+		pm::Pcb * p = pm::k_pm.get_cur_pcb();
+		mm::PageTable pt = p->get_pagetable();
+		eastl::string path;
+		if ( mm::k_vmm.copy_str_in( pt, path, path_addr, 100 ) < 0 )
+			return -1;
+
+		return pm::k_pm.open( path );
 	}
 
 } // namespace syscall

@@ -159,12 +159,12 @@ namespace im
 
 			cpu->interrupt_on();
 
-			// tmm::k_tm.close_ti_intr();
-			
+			tmm::k_tm.close_ti_intr();
+
 			/// @todo syscall()
 			_syscall();
 
-			// tmm::k_tm.open_ti_intr();
+			tmm::k_tm.open_ti_intr();
 
 		}
 		else if ( ( which_dev = dev_intr() ) > 0 )
@@ -311,7 +311,7 @@ namespace im
 			uint64 badv = loongarch::Cpu::read_csr( loongarch::csr::badv );
 			[[maybe_unused]] mm::Pte pte = loongarch::Cpu::get_cpu()->get_cur_proc()->get_pagetable().walk( badv, 0 );
 			// log_warn( "出现PIS异常很可能是一个诡异的bug, 此处继续运行" );
-			log_panic(
+			log_error(
 				"handle exception PIL :\n"
 				"    badv : 0x%x\n"
 				"    badi : 0x%x\n"
@@ -342,7 +342,7 @@ namespace im
 			// 	loongarch::Cpu::read_csr( loongarch::csr::badi ),
 			// 	pte.get_data()
 			// );
-			log_error(
+			log_panic(
 				"handle exception PIS :\n"
 				"    badv : 0x%x\n"
 				"    badi : 0x%x\n"
