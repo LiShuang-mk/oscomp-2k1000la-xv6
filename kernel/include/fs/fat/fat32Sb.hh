@@ -15,14 +15,14 @@ namespace fs{
 		{
 			private:
 				FileSystem *fs;
-				fat::Fat32Dbr* dbr;
+				fat::Fat32Dbr _dbr;
 				bool is_valid;
 				
 			public:
 				Fat32SuperBlock() = default;
 				Fat32SuperBlock(const Fat32SuperBlock &super_block) = default;
 				Fat32SuperBlock( FileSystem *fs, fat::Fat32Dbr *dbr, bool valid)
-					: fs(fs), dbr(dbr), is_valid(valid) { };
+					: fs(fs), _dbr(*dbr), is_valid(valid) { };
 				~Fat32SuperBlock() = default;
 
 				Fat32SuperBlock& operator= (const Fat32SuperBlock &super_block) = default;
@@ -31,13 +31,13 @@ namespace fs{
 				FileSystem * getFileSystem() const override { return fs; }
 				bool isValid() const override { return is_valid; }
 				uint32 rDefaultMod() const override { return default_mode; }
-				fat::FatBpb * get_bpb() { return &dbr->bpb; }
-				fat::Fat32Ebpb * get_ebpb() { return &dbr->ebpb; }
-				fat::Fat32Dbr * get_dbr() { return dbr; }
-				uint rBlockSize() { return dbr->bpb.bytes_per_sector; }
-				uint rSectorPClu() { return dbr->bpb.sectors_per_cluster; }
-				uint rFatCnt() { return dbr->bpb.table_count; }
-				uint rBlockNum() { return dbr->bpb.total_sectors_32; }
+				fat::FatBpb * get_bpb() { return &_dbr.bpb; }
+				fat::Fat32Ebpb * get_ebpb() { return &_dbr.ebpb; }
+				fat::Fat32Dbr * get_dbr() { return &_dbr; }
+				uint rBlockSize() { return _dbr.bpb.bytes_per_sector; }
+				uint rSectorPClu() { return _dbr.bpb.sectors_per_cluster; }
+				uint rFatCnt() { return _dbr.bpb.table_count; }
+				uint rBlockNum() { return _dbr.bpb.total_sectors_32; }
 				
 		};
     }

@@ -37,6 +37,22 @@ namespace tmm
 		_ticks = 0;
 	}
 
+	void TimerManager::open_ti_intr()
+	{
+		_lock.acquire();
+		_tcfg_data |= ( loongarch::csr::Tcfg::tcfg_en_m );
+		loongarch::Cpu::write_csr( loongarch::csr::CsrAddr::tcfg, _tcfg_data );
+		_lock.release();
+	}
+
+	void TimerManager::close_ti_intr()
+	{
+		_lock.acquire();
+		_tcfg_data &= ~( loongarch::csr::Tcfg::tcfg_en_m );
+		loongarch::Cpu::write_csr( loongarch::csr::CsrAddr::tcfg, _tcfg_data );
+		_lock.release();
+	}
+
 	int TimerManager::handle_clock_intr()
 	{
 		_lock.acquire();

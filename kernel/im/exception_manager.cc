@@ -64,7 +64,7 @@ namespace im
 		loongarch::Cpu::write_csr( loongarch::csr::tlbrentry, ( uint64 ) handle_tlbr );
 		loongarch::Cpu::write_csr( loongarch::csr::merrentry, ( uint64 ) handle_merr );
 
-		
+
 		_init_exception_handler();
 
 		syscall::k_syscall_handler.init();
@@ -159,8 +159,12 @@ namespace im
 
 			cpu->interrupt_on();
 
+			// tmm::k_tm.close_ti_intr();
+			
 			/// @todo syscall()
 			_syscall();
+
+			// tmm::k_tm.open_ti_intr();
 
 		}
 		else if ( ( which_dev = dev_intr() ) > 0 )
@@ -309,11 +313,17 @@ namespace im
 			// log_warn( "出现PIS异常很可能是一个诡异的bug, 此处继续运行" );
 			log_panic(
 				"handle exception PIL :\n"
-				"    badv : %x\n"
-				"    badi : %x\n"
-				"    pte  : %x",
+				"    badv : 0x%x\n"
+				"    badi : 0x%x\n"
+				"    crmd : 0x%x\n"
+				"    era  : 0x%x\n"
+				"    tick : %d\n"
+				"    pte  : %p",
 				badv,
 				loongarch::Cpu::read_csr( loongarch::csr::badi ),
+				loongarch::Cpu::read_csr( loongarch::csr::crmd ),
+				loongarch::Cpu::read_csr( loongarch::csr::era ),
+				tmm::k_tm.get_ticks(),
 				pte.get_data()
 			);
 		};
@@ -334,10 +344,16 @@ namespace im
 			// );
 			log_error(
 				"handle exception PIS :\n"
-				"    badv : %x\n"
-				"    badi : %x\n",
+				"    badv : 0x%x\n"
+				"    badi : 0x%x\n"
+				"    crmd : 0x%x\n"
+				"    era  : 0x%x\n"
+				"    tick : %d",
 				badv,
-				loongarch::Cpu::read_csr( loongarch::csr::badi )
+				loongarch::Cpu::read_csr( loongarch::csr::badi ),
+				loongarch::Cpu::read_csr( loongarch::csr::crmd ),
+				loongarch::Cpu::read_csr( loongarch::csr::era ),
+				tmm::k_tm.get_ticks()
 			);
 		};
 
@@ -345,10 +361,16 @@ namespace im
 		{
 			log_panic(
 				"handle exception PIF :\n"
-				"    badv : %x\n"
-				"    badi : %x",
+				"    badv : 0x%x\n"
+				"    badi : 0x%x\n"
+				"    crmd : 0x%x\n"
+				"    era  : 0x%x\n"
+				"    tick : %d",
 				loongarch::Cpu::read_csr( loongarch::csr::badv ),
-				loongarch::Cpu::read_csr( loongarch::csr::badi )
+				loongarch::Cpu::read_csr( loongarch::csr::badi ),
+				loongarch::Cpu::read_csr( loongarch::csr::crmd ),
+				loongarch::Cpu::read_csr( loongarch::csr::era ),
+				tmm::k_tm.get_ticks()
 			);
 		};
 
@@ -415,10 +437,16 @@ namespace im
 		{
 			log_panic(
 				"handle exception INE :\n"
-				"    badv : %x\n"
-				"    badi : %x",
+				"    badv : 0x%x\n"
+				"    badi : 0x%x\n"
+				"    crmd : 0x%x\n"
+				"    era  : 0x%x\n"
+				"    tick : %d",
 				loongarch::Cpu::read_csr( loongarch::csr::badv ),
-				loongarch::Cpu::read_csr( loongarch::csr::badi )
+				loongarch::Cpu::read_csr( loongarch::csr::badi ),
+				loongarch::Cpu::read_csr( loongarch::csr::crmd ),
+				loongarch::Cpu::read_csr( loongarch::csr::era ),
+				tmm::k_tm.get_ticks()
 			);
 		};
 	}

@@ -25,7 +25,7 @@ namespace fs
 		FileSystem( const FileSystem& fs ) = delete;
 		virtual ~FileSystem() = default;
 		FileSystem& operator=( const FileSystem& fs );
-		virtual void init() = 0;
+		virtual void init( int dev, uint64 start_lba, bool is_root ) = 0;
 		//virtual eastl::string rFSType() const = 0; // get file system type
 		//virtual eastl::string rKey() const = 0; // get fs's key in mount map
 		virtual bool isRootFS() const = 0; // check if it is root fs

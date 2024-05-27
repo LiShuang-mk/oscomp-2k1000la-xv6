@@ -186,7 +186,7 @@ int main()
 
 		
 		new ( &fs::fat::k_fatfs ) fs::fat::Fat32FS;
-		fs::fat::k_fatfs.init();
+		fs::fat::k_fatfs.init( 1, 0, true );
 		new ( &fs::fat::k_testcase_fs ) fs::fat::Fat32FileSystem;
 		fs::fat::k_testcase_fs.init( 1, 0 );
 		log_info( "testcase fs init" );

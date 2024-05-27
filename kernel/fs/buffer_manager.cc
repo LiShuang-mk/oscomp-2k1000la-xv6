@@ -30,7 +30,7 @@ namespace fs
 		}
 	}
 
-	Buffer BufferManager::read( int dev, uint lba )
+	Buffer BufferManager::read( int dev, uint64 lba )
 	{
 		log_panic( "buffer : asynchronous read not implement" );
 		Buffer buf = _get_buffer_async( dev, lba );
@@ -69,7 +69,7 @@ namespace fs
 		return buf;
 	}
 
-	Buffer BufferManager::read_sync( int dev, uint lba )
+	Buffer BufferManager::read_sync( int dev, uint64 lba )
 	{
 		Buffer buf = _get_buffer_sync( dev, lba );
 		uint offset = _offset_from_lba( lba );

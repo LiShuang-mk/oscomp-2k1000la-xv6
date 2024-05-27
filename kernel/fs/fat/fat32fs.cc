@@ -4,30 +4,32 @@
 #include "fs/buffer_manager.hh"
 #include "fs/buffer.hh"
 
-namespace fs{
-    namespace fat{
+namespace fs
+{
+	namespace fat
+	{
 
-        Fat32FS k_fatfs;
-        
-        void Fat32FS::init(){
-            /// @todo 1. load super block
-            Buffer buf = k_bufm.read_sync( 1, 0 );
-			Fat32Dbr dbr = *( Fat32Dbr* ) buf.get_data_ptr();
+		Fat32FS k_fatfs;
 
-            _super_block = new Fat32SuperBlock( this, &dbr, true );
+		void Fat32FS::init( int dev, uint64 start_lba, bool is_root )
+		{
+			/// @todo 1. load super block
+			Buffer buf = k_bufm.read_sync( dev, start_lba );
+			Fat32Dbr *dbr = ( Fat32Dbr* ) buf.get_data_ptr();
+			assert( dbr->bootable_signature == 0xAA55, "Fat32FS : incorrect DBR loaded." );
 
-            /// @todo 2. set _start_lba, _fat_lba, _device
-            _device = 1;
-            _start_lba = 0;
-            _fat_lba = _start_lba + _super_block->get_bpb()->reserved_sector_count;
-            _isroot = true;
+			_super_block = new Fat32SuperBlock( this, dbr, true );
 
-            // @todo 3. init rootEntry, and it's fat32inode.
-            _root = new Fat32Dentry();
-            _root->init( 1 , _super_block, this);
-            _mnt = _root;
+			/// @todo 2. set _start_lba, _fat_lba, _device
+			_device = dev;
+			_start_lba = start_lba;
+			_fat_lba = _start_lba + _super_block->get_bpb()->reserved_sector_count;
+			_isroot = is_root;
 
+			/// @todo 3. init rootEntry, and it's fat32inode.
+			_root->init( _device, _super_block, this );
+			_mnt = _root;
 
-        }
-    }
+		}
+	}
 }
