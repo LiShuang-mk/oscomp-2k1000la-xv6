@@ -30,6 +30,7 @@ namespace fs
 			virtual bool isRoot() = 0;
 			virtual Dentry *getParent() = 0;
 			virtual eastl::string getName() = 0; 
+			virtual bool isMntPoint() = 0;
 	};
 
 } // namespace fs

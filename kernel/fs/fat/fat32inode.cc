@@ -2,6 +2,7 @@
 #include "fs/fat/fat32fs.hh"
 #include "fs/buffer.hh"
 #include "fs/buffer_manager.hh"
+#include "fs/inode.hh"
 
 #include <EASTL/vector.h>
 
@@ -100,6 +101,12 @@ namespace fs{
 			return _belong_fs->getSuperBlock();
 		}
 	
+		Inode * Fat32Inode::lookup( eastl::string dirname, off_t off_ )
+		{
+			if( !is_dir() ) return nullptr;
+			/// @todo 读取子目录项，加载该node
 
+			return nullptr;
+		}
 	}
 }

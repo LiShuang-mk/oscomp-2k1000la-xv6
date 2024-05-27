@@ -9,6 +9,8 @@
 #include "fs/path.hh"
 #include "fs/file.hh"
 #include "pm/process_manager.hh"
+#include "fs/dentry.hh"
+#include "fs/fs_defs.hh"
 
 #include <EASTL/unordered_map.h>
 
@@ -135,7 +137,33 @@ namespace fs
 	Dentry * Path::pathSearch( bool parent )
 	{
 		/// @todo 1: 通过路径名查找文件
-		return nullptr;
+		
+		if( pathname == "/" ) return mnt_table[ "/" ]->getSuperBlock()->getRoot();
+		Dentry * entry, * next;
+		if ( base == nullptr ) { return nullptr; }	// 无效路径
+		else if( ( entry = pathHitTable()) != nullptr) { }// 查询挂载表，找到对应根目录
+		else { entry = base; }	// 未找到对应根目录，使用当前目录
+
+		int dirsize = dirname.size();
+
+		for(int i=0; i < dirsize; i++)
+		{
+			log_trace( "pathSearch: dirname[{}]: {}", i, dirname[i] );
+			while(entry->isMntPoint()) 
+				log_panic("pathSearch: entry is a mount point"); 
+			
+			if( !( entry->getNode()->rMode() & (fs::File_dir << fs::FileAttrs::File_dir_s ) ) )
+				return nullptr; // 不是目录
+			if( parent && i == dirsize - 1 ) return entry; // 返回父目录
+			if( dirname[i] == "." ) next = entry;
+			else if( dirname[i] == ".." ) next = entry->getParent();
+			else {
+				if( auto it = entry->EntrySearch( dirname[i] ); it != nullptr ) next = it;
+				else return nullptr;
+			}
+			entry = next;
+		}
+		return entry;
 	}
 
 } // namespace fs
