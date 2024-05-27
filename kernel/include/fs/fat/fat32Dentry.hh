@@ -34,7 +34,11 @@ namespace fs
 			Fat32Dentry & operator=( const Fat32Dentry& dentry ) = delete;
 			Fat32Dentry( Fat32Dentry *parent_, Fat32Inode *node_, eastl::string name_ ) : _parent( parent_ ), _node( node_ ), _name( name_ ) {};
 			~Fat32Dentry();
+
+			/// TODO: 这个方法简单的返回 _sub_dir_cache，并且不保证将来仍然能够使用
+			///       为了保证多个进程能同时使用，这里应该改为池技术分配 dentry 实体 
 			virtual Dentry * EntrySearch( eastl::string name ) override;
+
 			virtual Dentry * EntryCreate( eastl::string name, uint32 mode ) override { return nullptr; };
 			virtual Inode * getNode() override { return _node; };
 			virtual bool isRoot() override { return false; };

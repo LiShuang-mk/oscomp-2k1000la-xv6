@@ -9,6 +9,7 @@
 #ifndef _USYSCALL_H_
 #define _USYSCALL_H_
 
+extern int read( int fd, void *buf, int len );
 extern int write( int fd, const void *buf, int len );
 extern int exit( int n );
 extern int clone( unsigned int flags, unsigned long sp );
@@ -24,5 +25,6 @@ extern int dup2( int oldfd, int newfd );
 extern char * getcwd( char *buf, unsigned int size );
 extern int sleep( int n );
 extern int openat( int dirfd, const char *path_name, int flags, int mode );
+extern int close( int fd );
 
 #endif

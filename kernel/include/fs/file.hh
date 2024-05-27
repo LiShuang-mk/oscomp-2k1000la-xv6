@@ -65,6 +65,8 @@ namespace fs
 	{
 		friend xv6_file_pool;
 	public:
+		xv6_file() : ref( 0 ), readable( 0 ), writable( 0 ), dentry( nullptr ), off( 0 ), major( 0 ) {};
+		
 		enum { FD_NONE, FD_PIPE, FD_INODE, FD_DEVICE } type;
 		int ref; // reference count
 		char readable;
@@ -72,10 +74,11 @@ namespace fs
 		Dentry * dentry;
 		// struct pipe *pipe; // FD_PIPE
 		// struct inode *ip;  // FD_INODE and FD_DEVICE
-		// uint off;          // FD_INODE
+		uint off;          // FD_INODE
 		short major;       // FD_DEVICE
 
 		int write( uint64 addr, int n );
+		int read( uint64 addr, int n );
 
 	};
 
@@ -88,6 +91,7 @@ namespace fs
 	public:
 		void init();
 		xv6_file * alloc_file();
+		void free_file( xv6_file * f );
 		void dup( xv6_file * f );
 	};
 

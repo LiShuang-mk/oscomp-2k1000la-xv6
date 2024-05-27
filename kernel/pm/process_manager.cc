@@ -188,10 +188,10 @@ namespace pm
 		p->_killed = 0;
 		p->_xstate = 0;
 		p->_state = ProcState::unused;
-		for ( auto &f : p->_ofile )
+		for ( int i = 3; i < ( int ) max_open_files; ++i )
 		{
-			if ( f != nullptr && f->ref > 0 )
-				f->ref--;
+			if ( p->_ofile[ i ] != nullptr && p->_ofile[ i ]->ref > 0 )
+				p->_ofile[ i ]->ref--;
 		}
 	}
 
@@ -816,15 +816,28 @@ namespace pm
 		if ( f == nullptr )
 			return -2;
 
-		p->_cwd->EntrySearch( path );
+		auto dentry = p->_cwd->EntrySearch( path );
+		if ( dentry == nullptr )
+			return -3;
 
 		f->type = fs::xv6_file::FD_INODE;
-		f->ref = 1;
+		f->dentry = dentry;
 
 		/// TODO: set file readable or writable from Dentry, but it is brute force here
 		f->readable = f->writable = 1;
 
 		return alloc_fd( p, f );
+	}
+
+	int ProcessManager::close( int fd )
+	{
+		if ( fd < 0 || fd >= ( int ) max_open_files )
+			return -1;
+		Pcb * p = get_cur_pcb();
+		if ( p->_ofile[ fd ] == nullptr )
+			return 0;
+		fs::k_file_table.free_file( p->_ofile[ fd ] );
+		return 0;
 	}
 
 

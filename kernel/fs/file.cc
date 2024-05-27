@@ -96,7 +96,7 @@ namespace fs
 
 			case FD_PIPE:
 			{
-				log_panic( "file pipe not implement" );
+				log_panic( "file pipe write not implement" );
 			} break;
 
 			case FD_DEVICE:
@@ -112,7 +112,7 @@ namespace fs
 
 			case FD_INODE:
 			{
-				log_panic( "file inode not implement" );
+				log_panic( "file inode write not implement" );
 			} break;
 
 			default:
@@ -120,6 +120,36 @@ namespace fs
 		}
 
 		return ret == n ? n : -1;
+	}
+
+	int xv6_file::read( uint64 addr, int n )
+	{
+		int ret;
+		switch ( type )
+		{
+
+			case FD_PIPE:
+			{
+				log_panic( "file pipe read not implement" );
+			} break;
+
+			case FD_DEVICE:
+			{
+				log_panic( "file device read not implement" );
+			} break;
+
+			case FD_INODE:
+			{
+				uint64 len = dentry->getNode()->nodeRead( addr, off, n );
+				off += len;
+				ret = ( int ) len;
+			} break;
+
+			default:
+				break;
+		}
+
+		return ret;
 	}
 
 // ================ xv6 file pool ================	
@@ -150,6 +180,27 @@ namespace fs
 		}
 		_lock.release();
 		return nullptr;
+	}
+
+	void xv6_file_pool::free_file( xv6_file * f )
+	{
+		_lock.acquire();
+		if ( f->ref <= 0 )
+		{
+			log_error( "[file pool] free no-ref file" );
+			_lock.release();
+			return;
+		}
+		--f->ref;
+		if ( f->ref == 0 )
+		{
+			f->readable = f->writable = 0;
+			f->dentry = nullptr;
+			f->major = 0;
+			f->off = 0;
+			f->type = xv6_file::FD_NONE;
+		}
+		_lock.release();
 	}
 
 	void xv6_file_pool::dup( xv6_file *f )

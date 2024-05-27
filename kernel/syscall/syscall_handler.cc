@@ -38,6 +38,7 @@ namespace syscall
 		_path.clear();
 
 		_syscall_funcs[ SYS_write ] = std::bind( &SyscallHandler::_sys_write, this );
+		_syscall_funcs[ SYS_read ] = std::bind( &SyscallHandler::_sys_read, this );
 		_syscall_funcs[ SYS_exit ] = std::bind( &SyscallHandler::_sys_exit, this );
 		_syscall_funcs[ SYS_fork ] = std::bind( &SyscallHandler::_sys_fork, this );
 		_syscall_funcs[ SYS_getpid ] = std::bind( &SyscallHandler::_sys_getpid, this );
@@ -55,6 +56,7 @@ namespace syscall
 		_syscall_funcs[ SYS_times ] = std::bind( &SyscallHandler::_sys_times, this );
 		_syscall_funcs[ SYS_uname ] = std::bind( &SyscallHandler::_sys_uname, this );
 		_syscall_funcs[ SYS_openat ] = std::bind( &SyscallHandler::_sys_openat, this );
+		_syscall_funcs[ SYS_close ] = std::bind( &SyscallHandler::_sys_close, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -153,6 +155,38 @@ namespace syscall
 		}
 
 		return f->write( p, n );
+	}
+
+	uint64 SyscallHandler::_sys_read()
+	{
+		fs::xv6_file * f;
+		uint64 buf;
+		int n;
+
+		if ( _arg_fd( 0, nullptr, &f ) < 0 )
+			return -1;
+		if ( _arg_addr( 1, buf ) < 0 )
+			return -2;
+		if ( _arg_int( 2, n ) < 0 )
+			return -3;
+
+		if ( f == nullptr )
+			return -4;
+		if ( n <= 0 )
+			return -5;
+
+		pm::Pcb * p = pm::k_pm.get_cur_pcb();
+		mm::PageTable pt = p->get_pagetable();
+
+		char * k_buf = new char[ n + 1 ];
+		int ret = f->read( ( uint64 ) k_buf, n );
+		if ( ret < 0 )
+			return -6;
+		if ( mm::k_vmm.copyout( pt, buf, k_buf, ret ) < 0 )
+			return -7;
+
+		delete[] k_buf;
+		return ret;
 	}
 
 	uint64 SyscallHandler::_sys_exit()
@@ -434,5 +468,15 @@ namespace syscall
 
 		return pm::k_pm.open( path );
 	}
+
+	uint64 SyscallHandler::_sys_close()
+	{
+		int fd;
+
+		if ( _arg_int( 0, fd ) < 0 )
+			return -1;
+		return pm::k_pm.close( fd );
+	}
+
 
 } // namespace syscall
