@@ -31,7 +31,7 @@ namespace fs
 		dev_t rdev;
 		uint64 __pad;
 		uint64 size;
-		size_t blksize;	
+		uint32 blksize;	
 		int __pad2;	
 		uint64 blocks;
 		long st_atime_sec;
