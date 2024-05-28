@@ -117,6 +117,7 @@ namespace im
 	void ExceptionManager::user_trap( uint64 estat )
 	{
 		// printf( "\033[32m u trap \033[0m" );
+
 		loongarch::Cpu *cpu = loongarch::Cpu::get_cpu();
 		[[maybe_unused]] uint64 test_estat = cpu->read_csr( loongarch::csr::CsrAddr::estat );
 		// estat = [] ()->uint64
@@ -144,6 +145,8 @@ namespace im
 		trapframe = proc->get_trapframe();
 		trapframe->era = cpu->read_csr( loongarch::csr::CsrAddr::era );
 
+		// printf( "\nestat=0x%x a7=%d era=0x%x\n", estat, trapframe->a7, loongarch::Cpu::read_csr( loongarch::csr::era ) );
+
 		if ( ( ( estat & loongarch::csr::Estat::estat_ecode_m ) >> loongarch::csr::Estat::estat_ecode_s )
 			== 0xb )
 		{
@@ -157,9 +160,9 @@ namespace im
 			//update pc
 			proc->get_trapframe()->era += 4;
 
-			cpu->interrupt_on();
-
 			tmm::k_tm.close_ti_intr();
+
+			cpu->interrupt_on();
 
 			/// @todo syscall()
 			_syscall();
@@ -181,6 +184,7 @@ namespace im
 			uint ecode = ( estat & loongarch::csr::Estat::estat_ecode_m ) >> loongarch::csr::Estat::estat_ecode_s;
 			assert( ecode < _LA_ECODE_MAX_NUM_, "" );
 			log_info( _la_ecode_spec_[ ecode ] );
+
 			_exception_handlers[ ecode ]( estat );
 			// pm::k_pm.kill_proc( proc );
 		}

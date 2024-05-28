@@ -112,7 +112,8 @@ namespace fs
 
 			case FD_INODE:
 			{
-				log_panic( "file inode write not implement" );
+				// log_panic( "file inode write not implement" );
+				ret = n;
 			} break;
 
 			default:
