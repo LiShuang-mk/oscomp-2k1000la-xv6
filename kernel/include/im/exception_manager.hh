@@ -14,12 +14,13 @@
 namespace im
 {
 	constexpr uint max_ecode_num = 0x40;
+	extern char _user_or_kernel;
 	class ExceptionManager
 	{
 	private:
 		smp::Lock _lock;
 		std::function<void( uint32 )> _exception_handlers[ max_ecode_num ];
-		
+
 
 	public:
 		ExceptionManager() = default;

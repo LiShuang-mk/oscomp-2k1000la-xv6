@@ -11,6 +11,7 @@
 #include "hal/cpu.hh"
 #include "fs/file.hh"
 #include "fs/dev/acpi_controller.hh"
+#include "fs/kstat.hh"
 #include "pm/process.hh"
 #include "pm/trap_frame.hh"
 #include "pm/process_manager.hh"
@@ -19,6 +20,7 @@
 #include "mm/physical_memory_manager.hh"
 #include "tm/timer_manager.hh"
 #include "klib/klib.hh"
+
 
 namespace syscall
 {
@@ -57,6 +59,7 @@ namespace syscall
 		_syscall_funcs[ SYS_uname ] = std::bind( &SyscallHandler::_sys_uname, this );
 		_syscall_funcs[ SYS_openat ] = std::bind( &SyscallHandler::_sys_openat, this );
 		_syscall_funcs[ SYS_close ] = std::bind( &SyscallHandler::_sys_close, this );
+		_syscall_funcs[ SYS_fstat ] = std::bind( &SyscallHandler::_sys_fstat, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -484,5 +487,24 @@ namespace syscall
 		return pm::k_pm.close( fd );
 	}
 
+	uint64 SyscallHandler::_sys_fstat()
+	{
+		int fd;
+		fs::Kstat kst;
+		uint64 kst_addr;
+
+		if(_arg_int(0, fd) < 0)
+			return -1;
+
+		if(_arg_addr(1, kst_addr) < 0)
+			return -1;
+
+		pm::k_pm.fstat(fd, &kst);
+		mm::PageTable pt = pm::k_pm.get_cur_pcb()->get_pagetable();
+		if( mm::k_vmm.copyout( pt, kst_addr, &kst, sizeof( kst ) ) < 0 )
+			return -1;
+			
+		return 0;
+	}
 
 } // namespace syscall

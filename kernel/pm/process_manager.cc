@@ -32,6 +32,7 @@
 #include "fs/file.hh"
 #include "fs/dev/console.hh"
 #include "fs/device.hh"
+#include "fs/kstat.hh"
 
 #include <EASTL/vector.h>
 #include <EASTL/string.h>
@@ -841,7 +842,8 @@ namespace pm
 
 		f->type = fs::xv6_file::FD_INODE;
 		f->dentry = dentry;
-
+		fs::Kstat kst_ ( dentry );
+		f->kst = kst_;
 		if ( flags & O_RDWR )
 			f->readable = f->writable = 1;
 		else if ( flags & O_WRONLY )
@@ -863,6 +865,19 @@ namespace pm
 		return 0;
 	}
 
+	int ProcessManager::fstat( int fd, fs::Kstat* st)
+	{
+		if( fd < 0 || fd >= ( int ) max_open_files )
+			return -1;
+		
+		Pcb * p = get_cur_pcb();
+		if( p->_ofile[ fd ] == nullptr )
+			return -1;
+		fs::xv6_file * f = p->_ofile[ fd ];
+		*st = f->kst;
+
+		return 0;
+	}
 
 	int ProcessManager::alloc_fd( Pcb * p, fs::xv6_file * f )
 	{

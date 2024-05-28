@@ -23,6 +23,7 @@ namespace syscall
 		_build_sysnum_enum_( close, 57 )
 		_build_sysnum_enum_( read, 63 )
 		_build_sysnum_enum_( write, 64 )
+		_build_sysnum_enum_( fstat, 80 )
 		_build_sysnum_enum_( exit, 93 )
 		_build_sysnum_enum_( sleep, 101 )
 		_build_sysnum_enum_( sched_yield, 124 )

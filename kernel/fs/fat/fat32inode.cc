@@ -11,7 +11,7 @@ namespace fs
 
 	namespace fat
 	{
-		void Fat32Inode::init( uint32 first_cluster, Fat32FS *belong_fs, Fat32NodeType node_type, mode_t attr )
+		void Fat32Inode::init( uint32 first_cluster, Fat32FS *belong_fs, Fat32NodeType node_type, mode_t attr, size_t size )
 		{
 			_first_cluster = first_cluster;
 			_belong_fs = belong_fs;
@@ -46,6 +46,11 @@ namespace fs
 				i = *fat32_p;
 			}
 			k_bufm.release_buffer_sync( buf );
+
+			if( !size )  //for root inode
+				_size = _cover_size_bytes();
+			else	
+				_size = size;
 
 			assert(
 				fat32_p < buf_end,
@@ -194,7 +199,9 @@ namespace fs
 						( ( uint32 ) dir_info.first_cluster_high << 16 ) + ( uint32 ) dir_info.first_cluster_low,
 						_belong_fs,
 						( dir_info.attribute & Fat32DirectryAttribute::fat32_directry ) ? Fat32NodeType::fat32nod_folder : Fat32NodeType::fat32nod_file,
-						0		/// TODO: inode attribute
+						0,		/// TODO: inode attribute
+						dir_info.file_size_bytes
+
 					);
 					if ( _sub_inode_cache == nullptr )
 					{

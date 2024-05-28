@@ -45,6 +45,7 @@ __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_brk[] = "
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_uname[] = "uname";
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_waitpid[] = "waitpid";
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_open[] = "open";
+__attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_fstat[] = "fstat";
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_openat[] = "openat";
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_close[] = "close";
 
@@ -109,27 +110,27 @@ int init_main( void )
 	}
 
 	// ======== test execve ========
-	pid = fork();
-	if ( pid < 0 )
-	{
-		write( 1, errstr, sizeof( errstr ) );
-	}
-	else if ( pid == 0 )
-	{
-		if ( execv( exec_test_execve, 0 ) < 0 )
-		{
-			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
-		}
-		exit( 0 );
-	}
-	else
-	{
-		int child_exit_state = -100;
-		if ( wait( -1, &child_exit_state ) < 0 )
-			write( 1, wait_fail, sizeof( wait_fail ) );
-		// else
-		// 	write( 1, wait_success, sizeof( wait_success ) );
-	}
+	// pid = fork();
+	// if ( pid < 0 )
+	// {
+	// 	write( 1, errstr, sizeof( errstr ) );
+	// }
+	// else if ( pid == 0 )
+	// {
+	// 	if ( execv( exec_test_execve, 0 ) < 0 )
+	// 	{
+	// 		write( 1, exec_fail_str, sizeof( exec_fail_str ) );
+	// 	}
+	// 	exit( 0 );
+	// }
+	// else
+	// {
+	// 	int child_exit_state = -100;
+	// 	if ( wait( -1, &child_exit_state ) < 0 )
+	// 		write( 1, wait_fail, sizeof( wait_fail ) );
+	// 	// else
+	// 	// 	write( 1, wait_success, sizeof( wait_success ) );
+	// }
 
 	// ======== test echo ========
 	pid = fork();
@@ -535,6 +536,29 @@ int init_main( void )
 	}
 
 	// ======== test close ========
+	pid = fork();
+	if ( pid < 0 )
+	{
+		write( 1, errstr, sizeof( errstr ) );
+	}
+	else if ( pid == 0 )
+	{
+		if ( execv( exec_test_close, 0 ) < 0 )
+		{
+			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
+		}
+		exit( 0 );
+	}
+	else
+	{
+		int child_exit_state = -100;
+		if ( wait( -1, &child_exit_state ) < 0 )
+			write( 1, wait_fail, sizeof( wait_fail ) );
+		// else
+		// 	write( 1, wait_success, sizeof( wait_success ) );
+	}
+
+	// ========== test fstat ==========
 	// pid = fork();
 	// if ( pid < 0 )
 	// {
@@ -542,7 +566,7 @@ int init_main( void )
 	// }
 	// else if ( pid == 0 )
 	// {
-	// 	if ( execv( exec_test_close, 0 ) < 0 )
+	// 	if ( execv( exec_test_fstat, 0 ) < 0 )
 	// 	{
 	// 		write( 1, exec_fail_str, sizeof( exec_fail_str ) );
 	// 	}
@@ -556,7 +580,7 @@ int init_main( void )
 	// 	// else
 	// 	// 	write( 1, wait_success, sizeof( wait_success ) );
 	// }
-
+	
 	// ======== test openat ========
 	pid = fork();
 	if ( pid < 0 )
@@ -590,30 +614,10 @@ int init_main( void )
 	}
 	else if ( pid == 0 )
 	{
-		int fd;
-		if ( ( fd = openat( -1, to_open_file, 0, 2 ) ) < 0 )
+		if ( execv( exec_test_fstat, 0 ) < 0 )
 		{
 			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
 		}
-		printint( fd, 10, 1 );
-		char buf[ 256 ];
-		int len;
-		if ( ( len = read( fd, buf, sizeof( buf ) ) ) < 0 )
-		{
-			write( 1, read_fail, sizeof( read_fail ) );
-		}
-		else
-		{
-			int str_len = 0;
-			for ( int i = 0; i < sizeof( buf ); ++i, ++str_len )
-			{
-				if ( buf[ i ] == 0 )
-					break;
-			}
-			write( 1, buf, str_len );
-		}
-		int ret = close( fd );
-		printint( ret, 10, 1 );
 		exit( 0 );
 	}
 	else

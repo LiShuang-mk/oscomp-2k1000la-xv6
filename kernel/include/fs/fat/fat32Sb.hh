@@ -34,10 +34,10 @@ namespace fs{
 				fat::FatBpb * get_bpb() { return &_dbr.bpb; }
 				fat::Fat32Ebpb * get_ebpb() { return &_dbr.ebpb; }
 				fat::Fat32Dbr * get_dbr() { return &_dbr; }
-				uint rBlockSize() { return _dbr.bpb.bytes_per_sector; }
+				size_t rBlockSize() const override { return _dbr.bpb.bytes_per_sector; }
 				uint rSectorPClu() { return _dbr.bpb.sectors_per_cluster; }
 				uint rFatCnt() { return _dbr.bpb.table_count; }
-				uint rBlockNum() { return _dbr.bpb.total_sectors_32; }
+				size_t rBlockNum() const override { return _dbr.bpb.total_sectors_32; }
 				
 		};
     }

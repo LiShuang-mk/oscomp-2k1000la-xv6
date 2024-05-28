@@ -31,15 +31,21 @@ namespace fs
 		dev_t rdev;
 		uint64 __pad;
 		uint64 size;
-		size_t blksize;		
+		size_t blksize;	
+		int __pad2;	
 		uint64 blocks;
-		uint64 __pad2;
+		long st_atime_sec;
+		long st_atime_nsec;
+		long st_mtime_sec;
+		long st_mtime_nsec;
+		long st_ctime_sec;
+		long st_ctime_nsec;
 
 		Kstat() = default;
 		Kstat( const Kstat& ks_ ) :
 			dev( ks_.dev ), ino( ks_.ino ), mode( ks_.mode ),nlink( ks_.nlink ), 
 			uid( ks_.uid ), gid( ks_.gid ), rdev( ks_.rdev ), __pad( ks_.__pad ),
-			size( ks_.size ), blksize( ks_.blksize ),blocks( ks_.blocks ), __pad2( ks_.__pad2 ) 
+			size( ks_.size ), blksize( ks_.blksize ),__pad2( ks_.__pad2 ), blocks( ks_.blocks ) 
 		{
 		};
 		Kstat( Dentry *dentry )   //@TODO: 通过De初始化kstat不完全
@@ -52,12 +58,21 @@ namespace fs
 					dev = node->rDev();
 					ino = node->rIno();
 					mode = node->rMode();
-					//uid = node->rUid();
-					//gid = node->rGid();
-					//rdev = node->rRdev();
-					//size = node->rSize();
-					//blksize = node->rBlocksize();
-					//blocks = node->rBlocks();
+					nlink = 1;
+					uid = 0;
+					gid = 0;
+					rdev = 0;
+					size = node->rFileSize();
+					__pad = 0;
+					blksize = node->getSb()->rBlockSize();
+					blocks = node->getSb()->rBlockNum();	
+					__pad2 = 0;
+					st_atime_nsec = 0;
+					st_atime_sec = 0;
+					st_mtime_nsec = 0;
+					st_mtime_sec = 0;
+					st_ctime_nsec = 0;
+					st_ctime_sec = 0;
 				}
 			}
 		}
@@ -66,7 +81,7 @@ namespace fs
 		Kstat( FileTypes f_type ) :
 			dev( 0 ), ino( -1 ), mode( FT_NONE ), nlink( 1 ), 
 			uid( 0 ), gid( 0 ), rdev( 0 ), __pad( 0 ),
-			size( 0 ), blksize( 0 ), blocks( 0 ), __pad2( 0 ) 
+			size( 0 ), blksize( 0 ), __pad2( 0 ), blocks( 0 )
 		{
 		};
 		~Kstat() = default;

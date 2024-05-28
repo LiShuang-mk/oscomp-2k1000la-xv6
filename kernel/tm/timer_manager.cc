@@ -35,6 +35,8 @@ namespace tmm
 		// asm volatile( "csrwr %0, 0x41" : : "r" ( tcfg_data ) );
 
 		_ticks = 0;
+
+		// close_ti_intr();
 	}
 
 	void TimerManager::open_ti_intr()
