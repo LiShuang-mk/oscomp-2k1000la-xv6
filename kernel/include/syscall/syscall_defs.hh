@@ -20,6 +20,8 @@ namespace syscall
 		_build_sysnum_enum_( dup, 23 )
 		_build_sysnum_enum_( dup2, 24 )
 		_build_sysnum_enum_( mkdir, 34 )
+		_build_sysnum_enum_( umount, 39 )
+		_build_sysnum_enum_( mount, 40 )
 		_build_sysnum_enum_( chdir, 49 )
 		_build_sysnum_enum_( openat, 56 )
 		_build_sysnum_enum_( close, 57 )

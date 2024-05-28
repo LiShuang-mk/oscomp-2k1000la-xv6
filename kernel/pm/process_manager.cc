@@ -189,10 +189,15 @@ namespace pm
 		p->_killed = 0;
 		p->_xstate = 0;
 		p->_state = ProcState::unused;
+		if ( p->_ofile[ 1 ]->ref > 1 )
+			p->_ofile[ 1 ]->ref--;
 		for ( int i = 3; i < ( int ) max_open_files; ++i )
 		{
 			if ( p->_ofile[ i ] != nullptr && p->_ofile[ i ]->ref > 0 )
+			{
 				p->_ofile[ i ]->ref--;
+				p->_ofile[ i ] = nullptr;
+			}
 		}
 	}
 

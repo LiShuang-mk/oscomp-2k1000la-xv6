@@ -63,6 +63,8 @@ namespace syscall
 		_syscall_funcs[ SYS_getdents ] = std::bind( &SyscallHandler::_sys_getdents, this );
 		_syscall_funcs[ SYS_mkdir ] = std::bind( &SyscallHandler::_sys_mkdir, this );
 		_syscall_funcs[ SYS_chdir ] = std::bind( &SyscallHandler::_sys_chdir, this );
+		_syscall_funcs[ SYS_mount ] = std::bind( &SyscallHandler::_sys_mount, this );
+		_syscall_funcs[ SYS_umount ] = std::bind( &SyscallHandler::_sys_umount, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -566,6 +568,16 @@ namespace syscall
 			return -1;
 
 		return pm::k_pm.chdir( path );
+	}
+
+	uint64 SyscallHandler::_sys_mount()
+	{
+		return 0;
+	}
+
+	uint64 SyscallHandler::_sys_umount()
+	{
+		return 0;
 	}
 
 } // namespace syscall
