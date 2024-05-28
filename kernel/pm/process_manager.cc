@@ -802,8 +802,17 @@ namespace pm
 		// return 0;
 	}
 
-	int ProcessManager::open( eastl::string path )
+	int ProcessManager::open( int dir_fd, eastl::string path, uint flags )
 	{
+		enum OpenFlags : uint
+		{
+			O_RDONLY = 0x000U,
+			O_WRONLY = 0x001U,
+			O_RDWR = 0x002U,
+			O_CREATE = 0x040U,
+			O_DIRECTORY = 0x0200000U
+		};
+
 		Pcb * p = get_cur_pcb();
 
 		// 处理一下path
@@ -816,15 +825,29 @@ namespace pm
 		if ( f == nullptr )
 			return -2;
 
-		auto dentry = p->_cwd->EntrySearch( path );
-		if ( dentry == nullptr )
-			return -3;
+		fs::Dentry *dentry;
+		if ( dir_fd <= 2 )
+		{
+			dentry = p->_cwd->EntrySearch( path );
+			if ( dentry == nullptr )
+				return -3;
+		}
+		else
+		{
+			dentry = p->_ofile[ dir_fd ]->dentry->EntrySearch( path );
+			if ( dentry == nullptr )
+				return -4;
+		}
 
 		f->type = fs::xv6_file::FD_INODE;
 		f->dentry = dentry;
 
-		/// TODO: set file readable or writable from Dentry, but it is brute force here
-		f->readable = f->writable = 1;
+		if ( flags & O_RDWR )
+			f->readable = f->writable = 1;
+		else if ( flags & O_WRONLY )
+			f->readable = !( f->writable = 1 );
+		else
+			f->readable = !( f->writable = 0 );
 
 		return alloc_fd( p, f );
 	}

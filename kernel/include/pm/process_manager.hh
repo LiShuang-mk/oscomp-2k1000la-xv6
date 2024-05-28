@@ -72,7 +72,7 @@ namespace pm
 		int fork();
 		void fork_ret();
 		int brk( int n );
-		int open( eastl::string path );
+		int open( int dir_fd, eastl::string path, uint flags );
 		int close( int fd );
 
 		void user_init();

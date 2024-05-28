@@ -45,6 +45,7 @@ __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_brk[] = "
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_uname[] = "uname";
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_waitpid[] = "waitpid";
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_open[] = "open";
+__attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_openat[] = "openat";
 
 __attribute__( ( section( ".user.init.data" ) ) ) const char digits[] = "0123456789abcdef";
 
@@ -518,6 +519,29 @@ int init_main( void )
 	else if ( pid == 0 )
 	{
 		if ( execv( exec_test_open, 0 ) < 0 )
+		{
+			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
+		}
+		exit( 0 );
+	}
+	else
+	{
+		int child_exit_state = -100;
+		if ( wait( -1, &child_exit_state ) < 0 )
+			write( 1, wait_fail, sizeof( wait_fail ) );
+		// else
+		// 	write( 1, wait_success, sizeof( wait_success ) );
+	}
+
+	// ======== test openat ========
+	pid = fork();
+	if ( pid < 0 )
+	{
+		write( 1, errstr, sizeof( errstr ) );
+	}
+	else if ( pid == 0 )
+	{
+		if ( execv( exec_test_openat, 0 ) < 0 )
 		{
 			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
 		}
