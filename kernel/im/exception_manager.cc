@@ -115,6 +115,7 @@ namespace im
 		assert( ecode < _LA_ECODE_MAX_NUM_, "" );
 		log_info( _la_ecode_spec_[ ecode ] );
 		_user_or_kernel = 'k';
+		// printf( "%d", ecode );
 		_exception_handlers[ ecode ]( estat );
 		// log_panic( "not implement" );
 	}
@@ -122,7 +123,8 @@ namespace im
 	void ExceptionManager::user_trap( uint64 estat )
 	{
 		// printf( "\033[32m u trap \033[0m" );
-		
+
+
 
 		loongarch::Cpu *cpu = loongarch::Cpu::get_cpu();
 		[[maybe_unused]] uint64 test_estat = cpu->read_csr( loongarch::csr::CsrAddr::estat );
@@ -192,6 +194,7 @@ namespace im
 			log_info( _la_ecode_spec_[ ecode ] );
 
 			_user_or_kernel = 'u';
+
 			_exception_handlers[ ecode ]( estat );
 			// pm::k_pm.kill_proc( proc );
 		}
@@ -319,11 +322,11 @@ namespace im
 	{
 		_exception_handlers[ loongarch::csr::ecode_pil ] = [] ( uint32 estat ) ->void
 		{
-			// printf( ( _user_or_kernel == 'u' ) ? "u" : "k" );
+			// // printf( ( _user_or_kernel == 'u' ) ? "u" : "k" );
 			// printf( "PIL" );
 			// printf( "0x%x", loongarch::Cpu::read_csr( loongarch::csr::era ) );
-			uint64 badv = loongarch::Cpu::read_csr( loongarch::csr::badv );
-			[[maybe_unused]] mm::Pte pte = loongarch::Cpu::get_cpu()->get_cur_proc()->get_pagetable().walk( badv, 0 );
+			[[maybe_unused]] uint64 badv = loongarch::Cpu::read_csr( loongarch::csr::badv );
+			// [[maybe_unused]] mm::Pte pte = loongarch::Cpu::get_cpu()->get_cur_proc()->get_pagetable().walk( badv, 0 );
 			// log_warn( "出现PIS异常很可能是一个诡异的bug, 此处继续运行" );
 			log_error(
 				"handle exception PIL :\n"
@@ -426,13 +429,17 @@ namespace im
 			log_panic(
 				"handle exception ADE :\n"
 				"    type : %s\n"
-				"    badv : %x\n"
-				"    badi : %x\n"
-				"    era  : %x",
+				"    badv : 0x%x\n"
+				"    badi : 0x%x\n"
+				"    crmd : 0x%x\n"
+				"    era  : 0x%x\n"
+				"    tick : %d\n",
 				e_sub_code ? "取指地址错误(ADEF)" : "访存指令地址错误(ADEM)",
 				loongarch::Cpu::read_csr( loongarch::csr::badv ),
 				loongarch::Cpu::read_csr( loongarch::csr::badi ),
-				loongarch::Cpu::read_csr( loongarch::csr::era )
+				loongarch::Cpu::read_csr( loongarch::csr::crmd ),
+				loongarch::Cpu::read_csr( loongarch::csr::era ),
+				tmm::k_tm.get_ticks()
 			);
 		};
 
@@ -470,6 +477,7 @@ namespace im
 		uint64 num;
 		pm::Pcb * p = loongarch::Cpu::get_cpu()->get_cur_proc();
 
+		// printf( "sys a0=0x%x a7=%d\n", p->get_trapframe()->a0, p->get_trapframe()->a7 );
 		num = p->get_trapframe()->a7;
 		if ( num > 0 && num < syscall::max_syscall_funcs_num )
 		{

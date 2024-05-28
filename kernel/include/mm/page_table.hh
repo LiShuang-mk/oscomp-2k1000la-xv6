@@ -13,6 +13,7 @@
 
 namespace mm
 {
+	extern bool debug_trace_walk;
 	class PageTable
 	{
 	private:

@@ -34,13 +34,14 @@ namespace loongarch
 		enum InterAddr : uint64
 		{
 			uart0 = 0x1fe20000UL | dmwin::win_0,
+			// uart0 = 0x1fe001e0UL | dmwin::win_0,
 		};
 
 		enum memory : uint64
 		{
 			mem_start = ( 0x90000000UL + _1M * 512 ) | dmwin::win_0,		// 起始的512MiB留给内核
 			// mem_size = CommonSize::_1M << 7, 			// 128M 
-			mem_size = _1M * 256, 			// 256M 
+			mem_size = _1M * 128, 			// 256M 
 			// mem_size = _1M * 512, 							// 512M 
 			mem_end = mem_start + mem_size
 		};

@@ -60,6 +60,7 @@ namespace syscall
 		_syscall_funcs[ SYS_openat ] = std::bind( &SyscallHandler::_sys_openat, this );
 		_syscall_funcs[ SYS_close ] = std::bind( &SyscallHandler::_sys_close, this );
 		_syscall_funcs[ SYS_fstat ] = std::bind( &SyscallHandler::_sys_fstat, this );
+		_syscall_funcs[ SYS_getdents ] = std::bind( &SyscallHandler::_sys_getdents, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -493,18 +494,60 @@ namespace syscall
 		fs::Kstat kst;
 		uint64 kst_addr;
 
-		if(_arg_int(0, fd) < 0)
+		if ( _arg_int( 0, fd ) < 0 )
 			return -1;
 
-		if(_arg_addr(1, kst_addr) < 0)
+		if ( _arg_addr( 1, kst_addr ) < 0 )
 			return -1;
 
-		pm::k_pm.fstat(fd, &kst);
+		pm::k_pm.fstat( fd, &kst );
 		mm::PageTable pt = pm::k_pm.get_cur_pcb()->get_pagetable();
-		if( mm::k_vmm.copyout( pt, kst_addr, &kst, sizeof( kst ) ) < 0 )
+		if ( mm::k_vmm.copyout( pt, kst_addr, &kst, sizeof( kst ) ) < 0 )
 			return -1;
-			
+
 		return 0;
+	}
+
+	uint64 SyscallHandler::_sys_getdents()
+	{
+		// 这个定义来自 Linux
+		struct linux_dirent
+		{
+			unsigned long  d_ino;     /* Inode number */
+			unsigned long  d_off;     /* Offset to next linux_dirent */
+			unsigned short d_reclen;  /* Length of this linux_dirent */
+			unsigned char  d_type;
+			char           d_name[ 128 - sizeof( d_ino ) - sizeof( d_off ) - sizeof( d_reclen ) - sizeof( d_type ) ];  /* Filename (null-terminated) */
+							  /* length is actually (d_reclen - 2 -
+								 offsetof(struct linux_dirent, d_name)) */
+			/*
+			char           pad;       // Zero padding byte
+			char           d_type;    // File type (only since Linux
+									  // 2.6.4); offset is (d_reclen - 1)
+			*/
+		} dirent;
+		dirent.d_reclen = 128;
+
+		fs::xv6_file * f;
+		uint64 buf_addr;
+		int buf_len;
+
+		if ( _arg_fd( 0, nullptr, &f ) < 0 )
+			return -1;
+		if ( _arg_addr( 1, buf_addr ) < 0 )
+			return -1;
+		if ( _arg_int( 2, buf_len ) < 0 )
+			return -1;
+
+		eastl::string name = f->dentry->getName();
+		for ( uint i = 0; i < name.size(); ++i )
+			dirent.d_name[ i ] = name[ i ];
+
+		mm::PageTable pt = pm::k_pm.get_cur_pcb()->get_pagetable();
+		if ( mm::k_vmm.copyout( pt, buf_addr, &dirent, sizeof( dirent ) ) < 0 )
+			return -1;
+
+		return sizeof( dirent );
 	}
 
 } // namespace syscall

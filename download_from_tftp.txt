@@ -9,3 +9,4 @@ tftpboot 0x9000000090000000 10.0.0.1:kernel.bin
 scsi reset; ext4load scsi 0 ${loadaddr} /kernel.bin; go ${loadaddr}
 
 0x9000000090000000
+0x9000000000200000

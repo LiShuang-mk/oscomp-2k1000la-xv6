@@ -3,7 +3,7 @@ ENTRY( _entry )
 
 SECTIONS
 {
-  . = 0x9000000090000000;
+  . = 0x9000000000200000;
 
   .text : {
 	PROVIDE(stext = .);

@@ -29,7 +29,7 @@ namespace tmm
 
 	// 100K 分频，则时间片 100K/3.125MHz ~ 32ms 
 	// constexpr uint div_fre = 0x80000000UL;
-	constexpr uint div_fre = ( 400 * _1K_dec ) >> 2;				// 低两位由硬件补齐
+	constexpr uint div_fre = ( 800 * _1K_dec ) >> 2;				// 低两位由硬件补齐
 	constexpr uint ms_per_tick = div_fre * _1K_dec / qemu_fre;
 
 	// 这个结构体来自Linux的定义 

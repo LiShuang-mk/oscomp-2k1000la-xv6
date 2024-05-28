@@ -56,6 +56,8 @@ extern uint64 etext;
 extern "C" {
 	extern uint64 _u_init_txts;
 	extern uint64 _u_init_txte;
+	extern uint64 _u_init_dats;
+	extern uint64 _u_init_date;
 	extern int init_main( void );
 }
 
@@ -68,6 +70,7 @@ int main()
 
 		// printf init 
 		kernellib::k_printer.init( &dev::k_console, "printer" );
+		printf( "hello world\n" );
 		log_info( "Hello World!\n" );
 
 		log_info( "main addr: %p", &main );
@@ -116,8 +119,8 @@ int main()
 		// while ( 1 );
 
 		// sharemem init
-		pm::k_shmManager.init( "shm lock" );
-		log_info( "shm init" );
+		// pm::k_shmManager.init( "shm lock" );
+		// log_info( "shm init" );
 
 
 		// uint32 apbh[ 64 ];
@@ -201,9 +204,11 @@ int main()
 		// log_info( "text start %p\n", &stext );
 		// log_info( "text end   %p\n", &etext ); 
 
-		log_info( "user code start %p", &_start_u_init );
-		log_info( "user init_main address %p", ( uint64 ) &init_main );
-		log_info( "user code size %d Bytes", ( uint64 ) &_u_init_txte - ( uint64 ) &_u_init_txts );
+		printf( "user init start %p\n", &_start_u_init );
+		printf( "user init_main address %p\n", ( uint64 ) &init_main );
+		printf( "user code size %d Bytes\n", ( uint64 ) &_u_init_txte - ( uint64 ) &_u_init_txts );
+		printf( "user data_start address %p\n", ( uint64 ) &_u_init_dats );
+		printf( "user date size %d Bytes\n", ( uint64 ) &_u_init_date - ( uint64 ) &_u_init_dats );
 
 		pm::k_pm.user_init();
 		log_info( "user init" );
@@ -226,6 +231,7 @@ int main()
 		// eastl::vector<eastl::string> args;
 		// pm::k_pm.exec( "test_echo", args );
 
+		// mm::debug_trace_walk = true;
 		pm::k_scheduler.start_schedule();
 
 		while ( 1 );

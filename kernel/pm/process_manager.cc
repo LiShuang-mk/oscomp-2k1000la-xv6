@@ -817,7 +817,7 @@ namespace pm
 		Pcb * p = get_cur_pcb();
 
 		// 处理一下path
-		if ( path[ 0 ] == '.' )
+		if ( path[ 0 ] == '.' && path[ 1 ] == '/' )
 		{
 			path = path.substr( 2 );
 		}
@@ -829,9 +829,14 @@ namespace pm
 		fs::Dentry *dentry;
 		if ( dir_fd <= 2 )
 		{
-			dentry = p->_cwd->EntrySearch( path );
-			if ( dentry == nullptr )
-				return -3;
+			if ( path == "." )
+				dentry = p->_cwd;
+			else
+			{
+				dentry = p->_cwd->EntrySearch( path );
+				if ( dentry == nullptr )
+					return -3;
+			}
 		}
 		else
 		{
@@ -842,7 +847,7 @@ namespace pm
 
 		f->type = fs::xv6_file::FD_INODE;
 		f->dentry = dentry;
-		fs::Kstat kst_ ( dentry );
+		fs::Kstat kst_( dentry );
 		f->kst = kst_;
 		if ( flags & O_RDWR )
 			f->readable = f->writable = 1;
@@ -865,13 +870,13 @@ namespace pm
 		return 0;
 	}
 
-	int ProcessManager::fstat( int fd, fs::Kstat* st)
+	int ProcessManager::fstat( int fd, fs::Kstat* st )
 	{
-		if( fd < 0 || fd >= ( int ) max_open_files )
+		if ( fd < 0 || fd >= ( int ) max_open_files )
 			return -1;
-		
+
 		Pcb * p = get_cur_pcb();
-		if( p->_ofile[ fd ] == nullptr )
+		if ( p->_ofile[ fd ] == nullptr )
 			return -1;
 		fs::xv6_file * f = p->_ofile[ fd ];
 		*st = f->kst;

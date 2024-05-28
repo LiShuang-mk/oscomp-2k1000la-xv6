@@ -17,6 +17,8 @@ namespace mm
 {
 	PageTable k_pagetable;
 
+	bool debug_trace_walk = false;
+
 	PageTable::PageTable()
 		: _base_addr( 0 )
 	{
@@ -37,29 +39,45 @@ namespace mm
 		pt.set_base( _base_addr );
 		Pte pte;
 
+		if ( debug_trace_walk )
+			printf( "[walk trace] 0x%x : ", va );
+		uint64 pg_num;
+
 		// search in level-3 
-		pte = pt.get_pte( pt.dir3_num( va ) );
+		pg_num = pt.dir3_num( va );
+		pte = pt.get_pte( pg_num );
+		if ( debug_trace_walk )
+			printf( "0x%x->", pte.get_data() );
 		if ( !_walk_to_next_level( pte, alloc, pt ) )
 		{
 			log_warn( "walk fail" );
 			return Pte();
 		}
 		// search in level-2 
-		pte = pt.get_pte( pt.dir2_num( va ) );
+		pg_num = pt.dir2_num( va );
+		pte = pt.get_pte( pg_num );
+		if ( debug_trace_walk )
+			printf( "0x%x->", pte.get_data() );
 		if ( !_walk_to_next_level( pte, alloc, pt ) )
 		{
 			log_warn( "walk fail" );
 			return Pte();
 		}
 		// search in level-1 
-		pte = pt.get_pte( pt.dir1_num( va ) );
+		pg_num = pt.dir1_num( va );
+		pte = pt.get_pte( pg_num );
+		if ( debug_trace_walk )
+			printf( "0x%x->", pte.get_data() );
 		if ( !_walk_to_next_level( pte, alloc, pt ) )
 		{
 			log_warn( "walk fail" );
 			return Pte();
 		}
 
-		pte = pt.get_pte( pt.pt_num( va ) );
+		pg_num = pt.pt_num( va );
+		pte = pt.get_pte( pg_num );
+		if ( debug_trace_walk )
+			printf( "0x%x\n", pte.get_data() );
 		return pte;
 	}
 

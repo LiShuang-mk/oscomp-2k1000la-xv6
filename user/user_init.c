@@ -48,6 +48,8 @@ __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_open[] = 
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_fstat[] = "fstat";
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_openat[] = "openat";
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_close[] = "close";
+__attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_read[] = "read";
+__attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_getdents[] = "getdents";
 
 __attribute__( ( section( ".user.init.data" ) ) ) const char digits[] = "0123456789abcdef";
 
@@ -84,7 +86,8 @@ int init_main( void )
 
 	__attribute__( ( __unused__ ) ) int pid;
 
-#ifndef OS_DEBUG
+#ifndef OS_DEBUGD
+
 
 	// ======== test clone ========
 	pid = fork();
@@ -109,30 +112,7 @@ int init_main( void )
 		// 	write( 1, wait_success, sizeof( wait_success ) );
 	}
 
-	// ======== test execve ========
-	// pid = fork();
-	// if ( pid < 0 )
-	// {
-	// 	write( 1, errstr, sizeof( errstr ) );
-	// }
-	// else if ( pid == 0 )
-	// {
-	// 	if ( execv( exec_test_execve, 0 ) < 0 )
-	// 	{
-	// 		write( 1, exec_fail_str, sizeof( exec_fail_str ) );
-	// 	}
-	// 	exit( 0 );
-	// }
-	// else
-	// {
-	// 	int child_exit_state = -100;
-	// 	if ( wait( -1, &child_exit_state ) < 0 )
-	// 		write( 1, wait_fail, sizeof( wait_fail ) );
-	// 	// else
-	// 	// 	write( 1, wait_success, sizeof( wait_success ) );
-	// }
-
-	// ======== test echo ========
+	// ======== test fork ========
 	pid = fork();
 	if ( pid < 0 )
 	{
@@ -140,7 +120,7 @@ int init_main( void )
 	}
 	else if ( pid == 0 )
 	{
-		if ( execv( exec_test_echo, 0 ) < 0 )
+		if ( execv( exec_test_fork, 0 ) < 0 )
 		{
 			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
 		}
@@ -155,9 +135,7 @@ int init_main( void )
 		// 	write( 1, wait_success, sizeof( wait_success ) );
 	}
 
-
-
-	// ======== test fork ========
+	// ======== test echo ========
 	pid = fork();
 	if ( pid < 0 )
 	{
@@ -165,7 +143,7 @@ int init_main( void )
 	}
 	else if ( pid == 0 )
 	{
-		if ( execv( exec_test_fork, 0 ) < 0 )
+		if ( execv( exec_test_echo, 0 ) < 0 )
 		{
 			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
 		}
@@ -559,28 +537,28 @@ int init_main( void )
 	}
 
 	// ========== test fstat ==========
-	// pid = fork();
-	// if ( pid < 0 )
-	// {
-	// 	write( 1, errstr, sizeof( errstr ) );
-	// }
-	// else if ( pid == 0 )
-	// {
-	// 	if ( execv( exec_test_fstat, 0 ) < 0 )
-	// 	{
-	// 		write( 1, exec_fail_str, sizeof( exec_fail_str ) );
-	// 	}
-	// 	exit( 0 );
-	// }
-	// else
-	// {
-	// 	int child_exit_state = -100;
-	// 	if ( wait( -1, &child_exit_state ) < 0 )
-	// 		write( 1, wait_fail, sizeof( wait_fail ) );
-	// 	// else
-	// 	// 	write( 1, wait_success, sizeof( wait_success ) );
-	// }
-	
+	pid = fork();
+	if ( pid < 0 )
+	{
+		write( 1, errstr, sizeof( errstr ) );
+	}
+	else if ( pid == 0 )
+	{
+		if ( execv( exec_test_fstat, 0 ) < 0 )
+		{
+			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
+		}
+		exit( 0 );
+	}
+	else
+	{
+		int child_exit_state = -100;
+		if ( wait( -1, &child_exit_state ) < 0 )
+			write( 1, wait_fail, sizeof( wait_fail ) );
+		// else
+		// 	write( 1, wait_success, sizeof( wait_success ) );
+	}
+
 	// ======== test openat ========
 	pid = fork();
 	if ( pid < 0 )
@@ -604,9 +582,7 @@ int init_main( void )
 		// 	write( 1, wait_success, sizeof( wait_success ) );
 	}
 
-
-
-#else
+	// ======== test read ========
 	pid = fork();
 	if ( pid < 0 )
 	{
@@ -614,7 +590,7 @@ int init_main( void )
 	}
 	else if ( pid == 0 )
 	{
-		if ( execv( exec_test_fstat, 0 ) < 0 )
+		if ( execv( exec_test_read, 0 ) < 0 )
 		{
 			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
 		}
@@ -629,6 +605,76 @@ int init_main( void )
 		// 	write( 1, wait_success, sizeof( wait_success ) );
 	}
 
+	// ======== test getdents ========
+	pid = fork();
+	if ( pid < 0 )
+	{
+		write( 1, errstr, sizeof( errstr ) );
+	}
+	else if ( pid == 0 )
+	{
+		if ( execv( exec_test_getdents, 0 ) < 0 )
+		{
+			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
+		}
+		exit( 0 );
+	}
+	else
+	{
+		int child_exit_state = -100;
+		if ( wait( -1, &child_exit_state ) < 0 )
+			write( 1, wait_fail, sizeof( wait_fail ) );
+		// else
+		// 	write( 1, wait_success, sizeof( wait_success ) );
+	}
+
+
+	// ======== test execve ========
+	pid = fork();
+	if ( pid < 0 )
+	{
+		write( 1, errstr, sizeof( errstr ) );
+	}
+	else if ( pid == 0 )
+	{
+		if ( execv( exec_test_execve, 0 ) < 0 )
+		{
+			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
+		}
+		exit( 0 );
+	}
+	else
+	{
+		int child_exit_state = -100;
+		if ( wait( -1, &child_exit_state ) < 0 )
+			write( 1, wait_fail, sizeof( wait_fail ) );
+		// else
+		// 	write( 1, wait_success, sizeof( wait_success ) );
+	}
+
+#else	// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< DEBUG
+	// pid = fork();
+	// if ( pid < 0 )
+	// {
+	// 	write( 1, errstr, sizeof( errstr ) );
+	// }
+	// else if ( pid == 0 )
+	// {
+	// 	if ( execv( exec_test_fstat, 0 ) < 0 )
+	// 	{
+	// 		write( 1, exec_fail_str, sizeof( exec_fail_str ) );
+	// 	}
+	// 	exit( 0 );
+	// }
+	// else
+	// {
+	// 	int child_exit_state = -100;
+	// 	if ( wait( -1, &child_exit_state ) < 0 )
+	// 		write( 1, wait_fail, sizeof( wait_fail ) );
+	// 	// else
+	// 	// 	write( 1, wait_success, sizeof( wait_success ) );
+	// }
+
 #endif
 
 
@@ -640,7 +686,7 @@ int init_main( void )
 
 #ifndef OS_DEBUG
 	// power off
-	poweroff();
+	// poweroff();
 #endif
 
 	while ( 1 );
