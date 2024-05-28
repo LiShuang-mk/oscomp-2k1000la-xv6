@@ -14,6 +14,8 @@
 
 namespace fs
 {
+	struct Kstat;
+
 	namespace fat
 	{
 		class Fat32DirEntry;
@@ -74,7 +76,7 @@ namespace pm
 		int brk( int n );
 		int open( eastl::string path );
 		int close( int fd );
-
+		int fstat( int fd, struct fs::Kstat *buf );
 		void user_init();
 
 

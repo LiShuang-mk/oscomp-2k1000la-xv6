@@ -31,13 +31,14 @@ namespace fs
 			eastl::vector<uint32> _clusters_number;
 			// eastl::unordered_map<eastl::string, Fat32DirectryShort> _children;
 			mode_t _attr;
+			size_t _size;
 
 			Fat32Inode * _sub_inode_cache = nullptr;
 
 		public:
 			Fat32Inode() = default;
 
-			void init( uint32 first_cluster, Fat32FS *belong_fs, Fat32NodeType node_type, mode_t attr );
+			void init( uint32 first_cluster, Fat32FS *belong_fs, Fat32NodeType node_type, mode_t attr, size_t size = 0);
 
 			void read_content( void *buf, uint64 read_len, uint64 offset, bool async_read = false );
 
@@ -65,6 +66,7 @@ namespace fs
 			virtual mode_t rMode() const override { return _attr; };
 			virtual dev_t rDev() const override;
 			virtual uint64 rIno() const override { return _first_cluster; };
+			virtual size_t rFileSize() const override { return _size; };
 			virtual SuperBlock *getSb() const override;
 			virtual Fat32FS *getFS() const { return _belong_fs; };
 		private:

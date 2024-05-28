@@ -76,7 +76,8 @@ namespace fs
 		// struct inode *ip;  // FD_INODE and FD_DEVICE
 		uint off;          // FD_INODE
 		short major;       // FD_DEVICE
-
+		fs::Kstat kst;
+		
 		int write( uint64 addr, int n );
 		int read( uint64 addr, int n );
 

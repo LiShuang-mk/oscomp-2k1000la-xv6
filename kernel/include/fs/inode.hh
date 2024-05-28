@@ -45,7 +45,7 @@ namespace fs
 		//virtual int ioctl( uint64 req, uint64 arg ) = 0;
 		virtual mode_t rMode() const = 0; // get mode
 		virtual dev_t rDev() const = 0; // get device number
-		//virtual uint64 rFileSize()   const = 0; // get file size
+		virtual uint64 rFileSize()   const = 0; // get file size
 		virtual uint64 rIno() const = 0; // get inode number
 		// Ctime, Mtime, Atime temporarily not implemented
 		//virtual bool Empty() const = 0; // check if inode is empty
