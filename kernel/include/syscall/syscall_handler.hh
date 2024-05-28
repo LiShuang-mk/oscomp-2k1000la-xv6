@@ -89,6 +89,8 @@ namespace syscall
 		uint64 _sys_close();
 		uint64 _sys_fstat();
 		uint64 _sys_getdents();
+		uint64 _sys_mkdir();
+		uint64 _sys_chdir();
 	};
 
 	extern SyscallHandler k_syscall_handler;

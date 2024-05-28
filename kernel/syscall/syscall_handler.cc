@@ -61,6 +61,8 @@ namespace syscall
 		_syscall_funcs[ SYS_close ] = std::bind( &SyscallHandler::_sys_close, this );
 		_syscall_funcs[ SYS_fstat ] = std::bind( &SyscallHandler::_sys_fstat, this );
 		_syscall_funcs[ SYS_getdents ] = std::bind( &SyscallHandler::_sys_getdents, this );
+		_syscall_funcs[ SYS_mkdir ] = std::bind( &SyscallHandler::_sys_mkdir, this );
+		_syscall_funcs[ SYS_chdir ] = std::bind( &SyscallHandler::_sys_chdir, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -331,7 +333,7 @@ namespace syscall
 
 	uint64 SyscallHandler::_sys_getcwd()
 	{
-		char cwd[] = "/";
+		char cwd[128];
 		uint64 buf;
 		int size;
 
@@ -339,12 +341,13 @@ namespace syscall
 			return -1;
 		if ( _arg_int( 1, size ) < 0 )
 			return -1;
-		if ( size < ( int ) sizeof( cwd ) )
+		if ( size >= ( int ) sizeof( cwd ) )
 			return -1;
 
 		pm::Pcb * p = pm::k_pm.get_cur_pcb();
 		mm::PageTable pt = p->get_pagetable();
-		if ( mm::k_vmm.copyout( pt, buf, ( const void * ) cwd, sizeof( cwd ) ) < 0 )
+		uint len = pm::k_pm.getcwd( cwd );
+		if ( mm::k_vmm.copyout( pt, buf, ( const void * ) cwd, len ) < 0 )
 			return -1;
 
 		return buf;
@@ -548,6 +551,21 @@ namespace syscall
 			return -1;
 
 		return sizeof( dirent );
+	}
+
+	uint64 SyscallHandler::_sys_mkdir()
+	{
+		return 0;
+	}
+
+	uint64 SyscallHandler::_sys_chdir()
+	{
+		eastl::string path;
+
+		if ( _arg_str( 0, path, mm::pg_size ) < 0 )
+			return -1;
+
+		return pm::k_pm.chdir( path );
 	}
 
 } // namespace syscall

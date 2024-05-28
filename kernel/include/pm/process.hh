@@ -13,6 +13,8 @@
 #include "pm/context.hh"
 #include "pm/sharemem.hh"
 
+#include <EASTL/string.h>
+
 namespace fs
 {
 	class Dentry;
@@ -53,6 +55,7 @@ namespace pm
 		int _gid = num_process;					// global ID in pool 
 
 		fs::Dentry *_cwd;				// current working directory
+		eastl::string _cwd_name;
 		// p->lock must be held when using these:
 		enum ProcState _state;        // Process state
 		void *_chan;                  // If non-zero, sleeping on chan

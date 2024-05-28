@@ -276,6 +276,7 @@ namespace pm
 		f->type = fs::xv6_file::FD_DEVICE;
 		p->_ofile[ 1 ] = f;
 		p->_cwd = fs::fat::k_fatfs.get_root();
+		p->_cwd_name = p->_cwd->getName();
 
 
 		/// TODO:
@@ -369,6 +370,7 @@ namespace pm
 				np->_ofile[ i ] = p->_ofile[ i ];
 			}
 		np->_cwd = p->_cwd;
+		np->_cwd_name = p->_cwd_name;
 
 		/// TODO: >> cwd inode ref-up
 		// np->cwd = idup( p->cwd );
@@ -882,6 +884,33 @@ namespace pm
 		*st = f->kst;
 
 		return 0;
+	}
+
+	int ProcessManager::chdir( eastl::string &path )
+	{
+		Pcb *p = get_cur_pcb();
+
+		fs::Dentry *dentry;
+
+		dentry = p->_cwd->EntrySearch( path );
+		if ( dentry == nullptr )
+			return -1;
+		p->_cwd = dentry;
+		p->_cwd_name = path;
+		return 0;
+	}
+
+	int ProcessManager::getcwd( char * out_buf )
+	{
+		Pcb * p = get_cur_pcb();
+
+		eastl::string cwd;
+		cwd = p->_cwd_name;
+		uint i = 0;
+		for ( ; i < cwd.size(); ++i )
+			out_buf[ i ] = cwd[ i ];
+		out_buf[ i ] = '\0';
+		return i + 1;
 	}
 
 	int ProcessManager::alloc_fd( Pcb * p, fs::xv6_file * f )

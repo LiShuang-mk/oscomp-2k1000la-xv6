@@ -77,6 +77,10 @@ namespace pm
 		int open( int dir_fd, eastl::string path, uint flags );
 		int close( int fd );
 		int fstat( int fd, struct fs::Kstat *buf );
+		int chdir( eastl::string &path );
+		int getcwd( char * out_buf );
+
+
 		void user_init();
 
 
