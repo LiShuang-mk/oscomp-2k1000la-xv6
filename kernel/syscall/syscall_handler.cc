@@ -458,9 +458,15 @@ namespace syscall
 
 	uint64 SyscallHandler::_sys_openat()
 	{
+		int dir_fd;
 		uint64 path_addr;
+		int flags;
 
+		if ( _arg_int( 0, dir_fd ) < 0 )
+			return -1;
 		if ( _arg_addr( 1, path_addr ) < 0 )
+			return -1;
+		if ( _arg_int( 2, flags ) < 0 )
 			return -1;
 
 		pm::Pcb * p = pm::k_pm.get_cur_pcb();
@@ -469,7 +475,7 @@ namespace syscall
 		if ( mm::k_vmm.copy_str_in( pt, path, path_addr, 100 ) < 0 )
 			return -1;
 
-		return pm::k_pm.open( path );
+		return pm::k_pm.open( dir_fd, path, flags );
 	}
 
 	uint64 SyscallHandler::_sys_close()
