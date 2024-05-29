@@ -73,7 +73,7 @@ namespace pm
 				ch = _data.front();
 				_data.pop();
 				mm::PageTable pt = pr->get_pagetable();
-				if ( mm::k_vmm.copyout( pt, addr, &ch, 1 ) == -1 )
+				if ( mm::k_vmm.copyout( pt, addr + i, &ch, 1 ) == -1 )
 					break;
 			}
 			k_pm.wakeup( &_write_sleep ); //DOC: piperead-wakeup

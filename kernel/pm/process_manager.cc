@@ -983,8 +983,8 @@ namespace pm
 		int fd0, fd1;
 		Pcb *p = get_cur_pcb();
 
-		ipc::Pipe pipe_ = ipc::Pipe();
-		if ( pipe_.alloc( rf, wf ) < 0 )
+		ipc::Pipe *pipe_ =  new ipc::Pipe();
+		if ( pipe_->alloc( rf, wf ) < 0 )
 			return -1;
 		fd0 = -1;
 		if ( ( ( fd0 = alloc_fd ( p, rf ) ) < 0) 

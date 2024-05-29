@@ -11,8 +11,6 @@
 #include "fs/dentry.hh"
 #include "fs/inode.hh"
 
-#include "pm/ipc/pipe.hh"
-
 namespace fs
 {
 	int File::write( void *buf, size_t len )
@@ -98,7 +96,7 @@ namespace fs
 
 			case FD_PIPE:
 			{
-				log_panic( "file pipe write not implement" );
+				ret = pipe->write( addr, n );
 			} break;
 
 			case FD_DEVICE:

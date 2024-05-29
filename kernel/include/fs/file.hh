@@ -11,6 +11,7 @@
 #include "fs/file_defs.hh"
 #include "fs/kstat.hh"
 
+#include "pm/ipc/pipe.hh"
 namespace pm
 {
 	namespace ipc{
@@ -92,12 +93,15 @@ namespace fs
 	};
 
 	constexpr uint file_pool_max_size = 100;
+	constexpr uint pipe_pool_max_size = 10;
 	class xv6_file_pool
 	{
 	private:
 		smp::Lock _lock;
 		xv6_file _files[ file_pool_max_size ];
 		eastl::vector <eastl::string> _unlink_list;
+		pm::ipc::Pipe _pipe[ pipe_pool_max_size ];
+		int pipe_map[ pipe_pool_max_size ];
 	public:
 		void init();
 		xv6_file * alloc_file();
@@ -106,6 +110,7 @@ namespace fs
 		xv6_file * find_file( eastl::string path);
 		int unlink( eastl::string path );
 		bool has_unlinked( eastl::string path) { return eastl::find( _unlink_list.begin(), _unlink_list.end(), path ) != _unlink_list.end();};
+		pm::ipc::Pipe * alloc_pipe();
 	};
 
 	extern xv6_file_pool k_file_table;
