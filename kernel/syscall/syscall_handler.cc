@@ -65,6 +65,9 @@ namespace syscall
 		_syscall_funcs[ SYS_chdir ] = std::bind( &SyscallHandler::_sys_chdir, this );
 		_syscall_funcs[ SYS_mount ] = std::bind( &SyscallHandler::_sys_mount, this );
 		_syscall_funcs[ SYS_umount ] = std::bind( &SyscallHandler::_sys_umount, this );
+		_syscall_funcs[ SYS_mmap ] = std::bind( &SyscallHandler::_sys_mmap, this );
+		_syscall_funcs[ SYS_munmap ] = std::bind( &SyscallHandler::_sys_munmap, this );
+		_syscall_funcs[ SYS_statx ] = std::bind( &SyscallHandler::_sys_statx, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -335,7 +338,7 @@ namespace syscall
 
 	uint64 SyscallHandler::_sys_getcwd()
 	{
-		char cwd[128];
+		char cwd[ 256 ];
 		uint64 buf;
 		int size;
 
@@ -578,6 +581,115 @@ namespace syscall
 	uint64 SyscallHandler::_sys_umount()
 	{
 		return 0;
+	}
+
+	uint64 SyscallHandler::_sys_mmap()
+	{
+		int map_size;
+		int fd;
+
+		if ( _arg_int( 1, map_size ) < 0 )
+			return -1;
+
+		if ( _arg_int( 4, fd ) < 0 )
+			return -1;
+
+		return pm::k_pm.mmap( fd, map_size );
+	}
+
+	uint64 SyscallHandler::_sys_munmap()
+	{
+		return 0;
+	}
+
+	uint64 SyscallHandler::_sys_statx()
+	{
+		using __u16 = uint16;
+		using __u32 = uint32;
+		using __s64 = int64;
+		using __u64 = uint64;
+		struct statx_timestamp
+		{
+			__s64 tv_sec;    /* Seconds since the Epoch (UNIX time) */
+			__u32 tv_nsec;   /* Nanoseconds since tv_sec */
+		};
+		struct statx
+		{
+			__u32 stx_mask;        /* Mask of bits indicating
+									  filled fields */
+			__u32 stx_blksize;     /* Block size for filesystem I/O */
+			__u64 stx_attributes;  /* Extra file attribute indicators */
+			__u32 stx_nlink;       /* Number of hard links */
+			__u32 stx_uid;         /* User ID of owner */
+			__u32 stx_gid;         /* Group ID of owner */
+			__u16 stx_mode;        /* File type and mode */
+			__u64 stx_ino;         /* Inode number */
+			__u64 stx_size;        /* Total size in bytes */
+			__u64 stx_blocks;      /* Number of 512B blocks allocated */
+			__u64 stx_attributes_mask;
+								   /* Mask to show what's supported
+									  in stx_attributes */
+
+			/* The following fields are file timestamps */
+			struct statx_timestamp stx_atime;  /* Last access */
+			struct statx_timestamp stx_btime;  /* Creation */
+			struct statx_timestamp stx_ctime;  /* Last status change */
+			struct statx_timestamp stx_mtime;  /* Last modification */
+
+			/* If this file represents a device, then the next two
+			   fields contain the ID of the device */
+			__u32 stx_rdev_major;  /* Major ID */
+			__u32 stx_rdev_minor;  /* Minor ID */
+
+			/* The next two fields contain the ID of the device
+			   containing the filesystem where the file resides */
+			__u32 stx_dev_major;   /* Major ID */
+			__u32 stx_dev_minor;   /* Minor ID */
+
+			__u64 stx_mnt_id;      /* Mount ID */
+
+			/* Direct I/O alignment restrictions */
+			__u32 stx_dio_mem_align;
+			__u32 stx_dio_offset_align;
+		};
+
+		int fd;
+		eastl::string path_name;
+		fs::Kstat kst;
+		statx stx;
+		uint64 kst_addr;
+
+		if ( _arg_int( 0, fd ) < 0 )
+			return -1;
+
+		if ( _arg_str( 1, path_name, 128 ) < 0 )
+			return -1;
+
+		if ( _arg_addr( 4, kst_addr ) < 0 )
+			return -1;
+
+		if ( fd > 0 )
+		{
+			pm::k_pm.fstat( fd, &kst );
+			mm::PageTable pt = pm::k_pm.get_cur_pcb()->get_pagetable();
+			if ( mm::k_vmm.copyout( pt, kst_addr, &kst, sizeof( kst ) ) < 0 )
+				return -1;
+			return 0;
+		}
+		else
+		{
+			int ffd;
+			ffd = pm::k_pm.open( fd, path_name, 2 );
+			if ( ffd < 0 )
+				return -1;
+			pm::k_pm.fstat( ffd, &kst );
+			pm::k_pm.close( ffd );
+			stx.stx_size = kst.size;
+			mm::PageTable pt = pm::k_pm.get_cur_pcb()->get_pagetable();
+			if ( mm::k_vmm.copyout( pt, kst_addr, &stx, sizeof( stx ) ) < 0 )
+				return -1;
+			return 0;
+		}
 	}
 
 } // namespace syscall

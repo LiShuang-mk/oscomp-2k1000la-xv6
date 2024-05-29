@@ -918,6 +918,41 @@ namespace pm
 		return i + 1;
 	}
 
+	int ProcessManager::mmap( int fd, int map_size )
+	{
+		/// TODO: actually, it shall map buffer and pin buffer at memory
+
+		Pcb * p = get_cur_pcb();
+
+		if ( fd <= 2 || fd >= ( int ) max_open_files || map_size < 0 )
+			return -1;
+
+		fs::Dentry * dent = p->_ofile[ fd ]->dentry;
+		if ( dent == nullptr )
+			return -1;
+
+		uint64 fsz = ( uint64 ) map_size;
+		uint64 fst = p->_sz;
+
+		uint64 newsz = mm::k_vmm.vmalloc( p->_pt, fst, fst + fsz );
+		if ( newsz == 0 )
+			return -1;
+
+		p->_sz = newsz;
+
+		char * buf = new char[ fsz + 1 ];
+		dent->getNode()->nodeRead( ( uint64 ) buf, 0, fsz );
+
+		if ( mm::k_vmm.copyout( p->_pt, fst, ( const void * ) buf, fsz ) < 0 )
+		{
+			delete[] buf;
+			return -1;
+		}
+
+		delete[] buf;
+		return fst;
+	}
+
 	int ProcessManager::alloc_fd( Pcb * p, fs::xv6_file * f )
 	{
 		int fd;

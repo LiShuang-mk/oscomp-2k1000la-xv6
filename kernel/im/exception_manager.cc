@@ -124,8 +124,6 @@ namespace im
 	{
 		// printf( "\033[32m u trap \033[0m" );
 
-
-
 		loongarch::Cpu *cpu = loongarch::Cpu::get_cpu();
 		[[maybe_unused]] uint64 test_estat = cpu->read_csr( loongarch::csr::CsrAddr::estat );
 		// estat = [] ()->uint64
@@ -155,35 +153,14 @@ namespace im
 
 		// printf( "\nestat=0x%x a7=%d era=0x%x\n", estat, trapframe->a7, loongarch::Cpu::read_csr( loongarch::csr::era ) );
 
-		if ( ( ( estat & loongarch::csr::Estat::estat_ecode_m ) >> loongarch::csr::Estat::estat_ecode_s )
-			== 0xb )
-		{
-//syscall
-			// log_info( "syscall: %d", proc->get_trapframe()->a7 );
-			// printf( "\033[34m sys %d \033[0m", proc->get_trapframe()->a7 );	<<<<<<<<<<<<<<<< 跟踪 syscall
-
-			if ( proc->is_killed() )
-				pm::k_pm.exit( -1 );
-
-			//update pc
-			proc->get_trapframe()->era += 4;
-
-			tmm::k_tm.close_ti_intr();
-
-			cpu->interrupt_on();
-
-			/// @todo syscall()
-			_syscall();
-
-			tmm::k_tm.open_ti_intr();
-
-		}
-		else if ( ( which_dev = dev_intr() ) > 0 )
+		if ( ( estat & loongarch::csr::Estat::estat_is_m ) )
 		{
 // device trap
+			which_dev = dev_intr();
 			// ok
 		}
-		else
+
+		if ( estat & loongarch::csr::Estat::estat_ecode_m )
 		{
 			log_error( "unexcepted usertrapcause estat=%x pid=%d\n, era=%p",
 				cpu->read_csr( loongarch::csr::CsrAddr::estat ),
@@ -454,6 +431,8 @@ namespace im
 			);
 		};
 
+		_exception_handlers[ loongarch::csr::ecode_sys ] = std::bind( &ExceptionManager::_syscall, this );
+
 		_exception_handlers[ loongarch::csr::ecode_ine ] = [] ( uint32 ) -> void
 		{
 			log_panic(
@@ -474,8 +453,20 @@ namespace im
 
 	void ExceptionManager::_syscall()
 	{
+		loongarch::Cpu * cpu = loongarch::Cpu::get_cpu();
+		pm::Pcb * p = cpu->get_cur_proc();
+
+		if ( p->is_killed() )
+			pm::k_pm.exit( -1 );
+
+		//update pc
+		p->get_trapframe()->era += 4;
+
+		tmm::k_tm.close_ti_intr();
+
+		cpu->interrupt_on();
+
 		uint64 num;
-		pm::Pcb * p = loongarch::Cpu::get_cpu()->get_cur_proc();
 
 		// printf( "sys a0=0x%x a7=%d\n", p->get_trapframe()->a0, p->get_trapframe()->a7 );
 		num = p->get_trapframe()->a7;
@@ -490,6 +481,8 @@ namespace im
 				p->get_pid(), p->get_name(), num );
 			p->get_trapframe()->a0 = -1;
 		}
+
+		tmm::k_tm.open_ti_intr();
 	}
 
 }// namespace im

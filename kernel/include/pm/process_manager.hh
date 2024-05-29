@@ -79,6 +79,7 @@ namespace pm
 		int fstat( int fd, struct fs::Kstat *buf );
 		int chdir( eastl::string &path );
 		int getcwd( char * out_buf );
+		int mmap( int fd, int map_size );
 
 
 		void user_init();
