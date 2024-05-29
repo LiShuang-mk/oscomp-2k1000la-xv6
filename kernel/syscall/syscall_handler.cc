@@ -69,6 +69,7 @@ namespace syscall
 		_syscall_funcs[ SYS_munmap ] = std::bind( &SyscallHandler::_sys_munmap, this );
 		_syscall_funcs[ SYS_statx ] = std::bind( &SyscallHandler::_sys_statx, this );
 		_syscall_funcs[ SYS_unlinkat ] = std::bind( &SyscallHandler::_sys_unlinkat, this );
+		_syscall_funcs[ SYS_pipe ] = std::bind( &SyscallHandler::_sys_pipe, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -714,4 +715,27 @@ namespace syscall
 		int res = pm::k_pm.unlink( fd, path, flags );
 		return res;
 	}
+
+	uint64 SyscallHandler::_sys_pipe()
+	{
+		int fd[2];
+		uint64 addr;
+
+		if(_arg_addr(0, addr) < 0)
+			return -1;
+
+		pm::Pcb *p = pm::k_pm.get_cur_pcb();
+		mm::PageTable pt = p->get_pagetable();
+		if (mm::k_vmm.copy_in(pt, &fd, addr, 2 * sizeof(fd[0])) < 0)
+			return -1;
+
+		if (pm::k_pm.pipe(fd, 0) < 0)
+			return -1;
+
+		if (mm::k_vmm.copyout(pt, addr, &fd, 2 * sizeof(fd[0])) < 0)
+			return -1;
+
+		return 0;
+	}
+
 } // namespace syscall

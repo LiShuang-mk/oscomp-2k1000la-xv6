@@ -57,6 +57,7 @@ __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_umount[] 
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_mmap[] = "mmap";
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_munmap[] = "munmap";
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_unlinkat[] = "unlink";
+__attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_pipe[] = "pipe";
 
 __attribute__( ( section( ".user.init.data" ) ) ) const char digits[] = "0123456789abcdef";
 
@@ -95,6 +96,30 @@ int init_main( void )
 
 #ifndef OS_DEBUGD
 
+
+	
+	// ======== test pipe ========
+	pid = fork();
+	if ( pid < 0 )
+	{
+		write( 1, errstr, sizeof( errstr ) );
+	}
+	else if ( pid == 0 )
+	{
+		if ( execv( exec_test_pipe, 0 ) < 0 )
+		{
+			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
+		}
+		exit( 0 );
+	}
+	else
+	{
+		int child_exit_state = -100;
+		if ( wait( -1, &child_exit_state ) < 0 )
+			write( 1, wait_fail, sizeof( wait_fail ) );
+		// else
+		// 	write( 1, wait_success, sizeof( wait_success ) );
+	}
 
 	// ======== test unlinkat ========
 	pid = fork();

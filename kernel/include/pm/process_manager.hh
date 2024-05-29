@@ -81,7 +81,7 @@ namespace pm
 		int getcwd( char * out_buf );
 		int mmap( int fd, int map_size );
 		int unlink( int fd, eastl::string path, int flags );
-
+		int pipe ( int *fd , int );
 
 		void user_init();
 

@@ -11,8 +11,16 @@
 #include "fs/file_defs.hh"
 #include "fs/kstat.hh"
 
-namespace fs
+namespace pm
 {
+	namespace ipc{
+
+		class Pipe;
+
+	}
+}
+namespace fs
+{	
 	class Dentry;
 
 	class File
@@ -72,7 +80,7 @@ namespace fs
 		char readable;
 		char writable;
 		Dentry * dentry;
-		// struct pipe *pipe; // FD_PIPE
+		pm::ipc::Pipe *pipe; // FD_PIPE
 		// struct inode *ip;  // FD_INODE and FD_DEVICE
 		uint off;          // FD_INODE
 		short major;       // FD_DEVICE

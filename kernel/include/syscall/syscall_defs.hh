@@ -26,6 +26,7 @@ namespace syscall
 		_build_sysnum_enum_( chdir, 49 )
 		_build_sysnum_enum_( openat, 56 )
 		_build_sysnum_enum_( close, 57 )
+		_build_sysnum_enum_( pipe, 59 )
 		_build_sysnum_enum_( getdents, 61 )
 		_build_sysnum_enum_( read, 63 )
 		_build_sysnum_enum_( write, 64 )

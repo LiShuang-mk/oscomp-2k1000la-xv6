@@ -12,6 +12,11 @@
 
 #include <EASTL/queue.h>
 
+namespace fs{
+
+	class xv6_file;
+
+}
 namespace pm
 {
 	class ProcessManager;
@@ -42,6 +47,11 @@ namespace pm
 			int write( uint64 addr, int n );
 
 			int read( uint64, int n );
+
+			int alloc( fs::xv6_file * &f0, fs::xv6_file * &f1);
+
+			void close( bool is_write );
+
 		};
 
 	} // namespace ipc

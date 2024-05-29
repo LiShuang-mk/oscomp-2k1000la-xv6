@@ -13,6 +13,7 @@
 #include "pm/process.hh"
 #include "pm/trap_frame.hh"
 #include "pm/scheduler.hh"
+#include "pm/ipc/pipe.hh"
 
 #include "mm/memlayout.hh"
 #include "mm/physical_memory_manager.hh"
@@ -971,6 +972,35 @@ namespace pm
 		else{
 			return -1; //current not support other dir, only for cwd
 		}
+	}
+
+	int ProcessManager::pipe( int *fd, int flags)
+	{
+		fs::xv6_file *rf, *wf;
+		rf = nullptr;
+		wf = nullptr;
+
+		int fd0, fd1;
+		Pcb *p = get_cur_pcb();
+
+		ipc::Pipe pipe_ = ipc::Pipe();
+		if ( pipe_.alloc( rf, wf ) < 0 )
+			return -1;
+		fd0 = -1;
+		if ( ( ( fd0 = alloc_fd ( p, rf ) ) < 0) 
+				|| ( fd1 = alloc_fd ( p, wf ) ) < 0 )
+		{
+			if( fd0 >= 0)
+				p->_ofile[fd0] = 0;
+			fs::k_file_table.free_file(rf);
+			fs::k_file_table.free_file(wf);
+			return -1;
+		}
+		p->_ofile[fd0] = rf;
+		p->_ofile[fd1] = wf;
+		fd[0] = fd0;
+		fd[1] = fd1;
+		return 0;
 	}
 
 	int ProcessManager::alloc_fd( Pcb * p, fs::xv6_file * f )

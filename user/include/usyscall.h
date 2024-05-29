@@ -27,4 +27,5 @@ extern int sleep( int n );
 extern int openat( int dirfd, const char *path_name, int flags, int mode );
 extern int close( int fd );
 extern int unlinkat( int fd, char *fname, int flags );
+extern int pipe( int *fd );
 #endif

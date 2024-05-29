@@ -97,6 +97,7 @@ namespace syscall
 		uint64 _sys_munmap();
 		uint64 _sys_statx();
 		uint64 _sys_unlinkat();
+		uint64 _sys_pipe();
 	};
 
 	extern SyscallHandler k_syscall_handler;
