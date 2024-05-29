@@ -93,6 +93,7 @@ namespace syscall
 		uint64 _sys_chdir();
 		uint64 _sys_mount();
 		uint64 _sys_umount();
+		uint64 _sys_unlinkat();
 	};
 
 	extern SyscallHandler k_syscall_handler;

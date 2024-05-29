@@ -65,6 +65,7 @@ namespace syscall
 		_syscall_funcs[ SYS_chdir ] = std::bind( &SyscallHandler::_sys_chdir, this );
 		_syscall_funcs[ SYS_mount ] = std::bind( &SyscallHandler::_sys_mount, this );
 		_syscall_funcs[ SYS_umount ] = std::bind( &SyscallHandler::_sys_umount, this );
+		_syscall_funcs[ SYS_unlinkat ] = std::bind( &SyscallHandler::_sys_unlinkat, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -481,7 +482,8 @@ namespace syscall
 		if ( mm::k_vmm.copy_str_in( pt, path, path_addr, 100 ) < 0 )
 			return -1;
 
-		return pm::k_pm.open( dir_fd, path, flags );
+		int res = pm::k_pm.open( dir_fd, path, flags );
+		return res;
 	}
 
 	uint64 SyscallHandler::_sys_close()
@@ -580,4 +582,24 @@ namespace syscall
 		return 0;
 	}
 
+	uint64 SyscallHandler::_sys_unlinkat()
+	{
+		int fd, flags;
+		uint64 path_addr;
+
+		if ( _arg_int( 0, fd ) < 0 )
+			return -1;
+		if ( _arg_addr( 1, path_addr ) < 0 )
+			return -1;
+		if ( _arg_int( 2, flags ) < 0 )
+			return -1;
+		eastl::string path;
+		pm::Pcb * p = pm::k_pm.get_cur_pcb();
+		mm::PageTable pt = p->get_pagetable();
+		if ( mm::k_vmm.copy_str_in( pt, path, path_addr, 100 ) < 0 )
+			return -1;
+
+		int res = pm::k_pm.unlink( fd, path, flags );
+		return res;
+	}
 } // namespace syscall

@@ -212,4 +212,28 @@ namespace fs
 		_lock.release();
 	}
 
+	xv6_file * xv6_file_pool::find_file( eastl::string path )
+	{
+		_lock.acquire();
+		for ( auto &f : _files )
+		{
+			if ( f.dentry && f.dentry->getName() == path )
+			{
+				_lock.release();
+				return &f;
+			}
+		}
+		_lock.release();
+		return nullptr;
+	}
+
+	int xv6_file_pool::unlink( eastl::string path )
+	{
+		_lock.acquire();
+		_unlink_list.push_back( path );
+		_lock.release();
+		return 0;
+	}
+
+
 } // namespace fs

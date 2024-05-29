@@ -89,11 +89,15 @@ namespace fs
 	private:
 		smp::Lock _lock;
 		xv6_file _files[ file_pool_max_size ];
+		eastl::vector <eastl::string> _unlink_list;
 	public:
 		void init();
 		xv6_file * alloc_file();
 		void free_file( xv6_file * f );
 		void dup( xv6_file * f );
+		xv6_file * find_file( eastl::string path);
+		int unlink( eastl::string path );
+		bool has_unlinked( eastl::string path) { return eastl::find( _unlink_list.begin(), _unlink_list.end(), path ) != _unlink_list.end();};
 	};
 
 	extern xv6_file_pool k_file_table;

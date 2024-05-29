@@ -12,3 +12,4 @@ build/**
 *.bin
 *.dis
 copy_kernel_to_ext4.sh
+oscomp/*

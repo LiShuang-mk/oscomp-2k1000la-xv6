@@ -833,6 +833,9 @@ namespace pm
 		if ( f == nullptr )
 			return -2;
 
+		if( fs::k_file_table.has_unlinked( path ) )
+			return -5;  //
+ 		
 		fs::Dentry *dentry;
 		if ( dir_fd <= 2 )
 		{
@@ -916,6 +919,23 @@ namespace pm
 			out_buf[ i ] = cwd[ i ];
 		out_buf[ i ] = '\0';
 		return i + 1;
+	}
+
+	int ProcessManager::unlink(int fd, eastl::string path, int flags )
+	{
+		
+		if( fd == -100 ){  //atcwd
+			if( path == "")  //empty path
+				return -1;
+
+			if( path[0] == '.' && path[1] == '/' )
+				path = path.substr(2);
+			
+			return fs::k_file_table.unlink(path);
+		}
+		else{
+			return -1; //current not support other dir, only for cwd
+		}
 	}
 
 	int ProcessManager::alloc_fd( Pcb * p, fs::xv6_file * f )
