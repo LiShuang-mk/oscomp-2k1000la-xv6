@@ -30,11 +30,11 @@ namespace tmm
 		// _tcfg_data =
 		// 	( ( ( uint64 ) div_fre ) << loongarch::csr::Tcfg::tcfg_initval_s ) |
 		// 	( loongarch::csr::Tcfg::tcfg_en_m );
+		_ticks = 0;
 
 		loongarch::Cpu::write_csr( loongarch::csr::CsrAddr::tcfg, _tcfg_data );
 		// asm volatile( "csrwr %0, 0x41" : : "r" ( tcfg_data ) );
 
-		_ticks = 0;
 
 		// close_ti_intr();
 	}

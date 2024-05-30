@@ -78,6 +78,8 @@ namespace im
 
 	void ExceptionManager::kernel_trap()
 	{
+		// tmm::k_tm.close_ti_intr();
+
 		// log_info( "enter kernel trap" );
 		// printf( "\033[33m k trap \033[0m" );
 		uint32 estat = ( uint32 ) loongarch::Cpu::read_csr( loongarch::csr::estat );
@@ -123,11 +125,15 @@ namespace im
 			_exception_handlers[ ecode ]( estat );
 			// log_panic( "not implement" );}
 		}
+
+		// tmm::k_tm.open_ti_intr();
 	}
 
 	void ExceptionManager::user_trap( uint64 estat )
 	{
 		// printf( "\033[32m u trap \033[0m" );
+		// tmm::k_tm.close_ti_intr();
+
 
 		loongarch::Cpu *cpu = loongarch::Cpu::get_cpu();
 		[[maybe_unused]] uint64 test_estat = cpu->read_csr( loongarch::csr::CsrAddr::estat );
@@ -167,13 +173,17 @@ namespace im
 
 		if ( estat & loongarch::csr::Estat::estat_ecode_m )
 		{
-			log_error( "unexcepted usertrapcause estat=%x pid=%d\n, era=%p",
-				cpu->read_csr( loongarch::csr::CsrAddr::estat ),
-				proc->get_pid(),
-				cpu->read_csr( loongarch::csr::CsrAddr::era ) );
+
 			uint ecode = ( estat & loongarch::csr::Estat::estat_ecode_m ) >> loongarch::csr::Estat::estat_ecode_s;
-			assert( ecode < _LA_ECODE_MAX_NUM_, "" );
-			log_info( _la_ecode_spec_[ ecode ] );
+			if ( ecode != 0xb )
+			{
+				log_error( "unexcepted usertrapcause estat=%x pid=%d\n, era=%p",
+					cpu->read_csr( loongarch::csr::CsrAddr::estat ),
+					proc->get_pid(),
+					cpu->read_csr( loongarch::csr::CsrAddr::era ) );
+				assert( ecode < _LA_ECODE_MAX_NUM_, "" );
+				log_info( _la_ecode_spec_[ ecode ] );
+			}
 
 			_user_or_kernel = 'u';
 
@@ -188,6 +198,8 @@ namespace im
 		{
 			pm::k_pm.sche_proc( proc );
 		}
+
+		// tmm::k_tm.open_ti_intr();
 
 		user_trap_ret();
 	}
@@ -304,7 +316,7 @@ namespace im
 	{
 		_exception_handlers[ loongarch::csr::ecode_pil ] = [] ( uint32 estat ) ->void
 		{
-			// // printf( ( _user_or_kernel == 'u' ) ? "u" : "k" );
+			// printf( ( _user_or_kernel == 'u' ) ? "u" : "k" );
 			// printf( "PIL" );
 			// printf( "0x%x", loongarch::Cpu::read_csr( loongarch::csr::era ) );
 			[[maybe_unused]] uint64 badv = loongarch::Cpu::read_csr( loongarch::csr::badv );
@@ -488,6 +500,7 @@ namespace im
 		}
 
 		tmm::k_tm.open_ti_intr();
+
 	}
 
 }// namespace im
