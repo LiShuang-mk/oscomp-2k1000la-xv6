@@ -878,6 +878,7 @@ namespace pm
 		if ( p->_ofile[ fd ] == nullptr )
 			return 0;
 		fs::k_file_table.free_file( p->_ofile[ fd ] );
+		p->_ofile[ fd ] = nullptr;
 		return 0;
 	}
 
@@ -983,7 +984,7 @@ namespace pm
 		int fd0, fd1;
 		Pcb *p = get_cur_pcb();
 
-		ipc::Pipe *pipe_ =  new ipc::Pipe();
+		ipc::Pipe *pipe_ = new ipc::Pipe();
 		if ( pipe_->alloc( rf, wf ) < 0 )
 			return -1;
 		fd0 = -1;

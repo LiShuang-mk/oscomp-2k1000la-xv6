@@ -23,10 +23,10 @@ namespace fs
 		private:
 			Fat32Dentry *_parent;
 			Fat32Inode *_node;
-			eastl::unordered_map<eastl::string, Fat32DirectryShort> _children;
-			// eastl::unordered_map<eastl::string, Fat32Dentry *> _dentry_children;
+			// eastl::unordered_map<eastl::string, Fat32DirectryShort> _children;
+			eastl::unordered_map<eastl::string, Fat32Dentry *> _dentry_children;
 			eastl::string _name;
-			Dentry * _sub_dir_cache = nullptr;
+			// Dentry * _sub_dir_cache = nullptr;
 		public:
 
 			Fat32Dentry() = default;
@@ -39,7 +39,7 @@ namespace fs
 			///       为了保证多个进程能同时使用，这里应该改为池技术分配 dentry 实体 
 			virtual Dentry * EntrySearch( eastl::string name ) override;
 
-			virtual Dentry * EntryCreate( eastl::string name, uint32 mode ) override { return nullptr; };
+			virtual Dentry * EntryCreate( eastl::string name, uint32 mode ) override;
 			virtual Inode * getNode() override { return _node; };
 			virtual bool isRoot() override { return false; };
 			virtual Dentry *getParent() override { return _parent == nullptr ? nullptr : _parent; };

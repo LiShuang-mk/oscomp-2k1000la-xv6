@@ -88,9 +88,10 @@ namespace im
 			// log_trace( "read isr : %p", loongarch::qemuls2k::read_itr_cfg( loongarch::qemuls2k::ItrCfg::itr_isr_l ) );
 			tmm::k_tm.handle_clock_intr();
 			loongarch::Cpu::write_csr( loongarch::csr::ticlr, loongarch::Cpu::read_csr( loongarch::csr::ticlr ) | 1 );
-			return;
+			// return;
 		}
-		else if ( estat & ecfg & loongarch::csr::itr_hwi_m )
+
+		if ( estat & ecfg & loongarch::csr::itr_hwi_m )
 		{
 			// log_trace(
 			// 	"read isr : %p\n"
@@ -102,22 +103,26 @@ namespace im
 			{
 				log_info( "SATA 中断." );
 				ahci_read_handle();
-				return;
+				// return;
 			}
 			else if ( estat & loongarch::csr::itr_hwi_m & ( ( 1 << 2 ) << loongarch::csr::itr_hwi_s ) )
 			{
 				log_info( "键盘中断" );
 				k_im.clear_uart0_intr();
-				return;
+				// return;
 			}
 		}
-		uint ecode = ( estat & loongarch::csr::Estat::estat_ecode_m ) >> loongarch::csr::Estat::estat_ecode_s;
-		assert( ecode < _LA_ECODE_MAX_NUM_, "" );
-		log_info( _la_ecode_spec_[ ecode ] );
-		_user_or_kernel = 'k';
-		// printf( "%d", ecode );
-		_exception_handlers[ ecode ]( estat );
-		// log_panic( "not implement" );
+
+		if ( estat & loongarch::csr::Estat::estat_ecode_m )
+		{
+			uint ecode = ( estat & loongarch::csr::Estat::estat_ecode_m ) >> loongarch::csr::Estat::estat_ecode_s;
+			assert( ecode < _LA_ECODE_MAX_NUM_, "" );
+			log_info( _la_ecode_spec_[ ecode ] );
+			_user_or_kernel = 'k';
+			// printf( "%d", ecode );
+			_exception_handlers[ ecode ]( estat );
+			// log_panic( "not implement" );}
+		}
 	}
 
 	void ExceptionManager::user_trap( uint64 estat )
@@ -303,7 +308,7 @@ namespace im
 			// printf( "PIL" );
 			// printf( "0x%x", loongarch::Cpu::read_csr( loongarch::csr::era ) );
 			[[maybe_unused]] uint64 badv = loongarch::Cpu::read_csr( loongarch::csr::badv );
-			// [[maybe_unused]] mm::Pte pte = loongarch::Cpu::get_cpu()->get_cur_proc()->get_pagetable().walk( badv, 0 );
+			[[maybe_unused]] mm::Pte pte = loongarch::Cpu::get_cpu()->get_cur_proc()->get_pagetable().walk( badv, 0 );
 			// log_warn( "出现PIS异常很可能是一个诡异的bug, 此处继续运行" );
 			log_error(
 				"handle exception PIL :\n"

@@ -37,6 +37,7 @@ namespace fs
 			_root->init( _device, _super_block, this );
 			_mnt = _root;
 
+			_root->EntryCreate( "test_unlink", 0 );
 		}
 	}
 }

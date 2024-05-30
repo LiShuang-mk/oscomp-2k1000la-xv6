@@ -72,9 +72,7 @@ namespace pm
 					break;
 				ch = _data.front();
 				_data.pop();
-				mm::PageTable pt = pr->get_pagetable();
-				if ( mm::k_vmm.copyout( pt, addr + i, &ch, 1 ) == -1 )
-					break;
+				*( ( ( char * ) addr ) + i ) = ch;
 			}
 			k_pm.wakeup( &_write_sleep ); //DOC: piperead-wakeup
 			_lock.release();
@@ -83,10 +81,10 @@ namespace pm
 
 		int Pipe::alloc( fs::xv6_file * &f0, fs::xv6_file * &f1 )
 		{
-			if( ( f0 = fs::k_file_table.alloc_file( ) ) == nullptr 
-					|| ( f1 = fs::k_file_table.alloc_file( ) ) == nullptr )
+			if ( ( f0 = fs::k_file_table.alloc_file() ) == nullptr
+				|| ( f1 = fs::k_file_table.alloc_file() ) == nullptr )
 				return -1; // allocate file failed
-			
+
 			// init pipe
 			_read_is_open = true;
 			_write_is_open = true;
@@ -119,7 +117,7 @@ namespace pm
 				_read_is_open = false;
 				k_pm.wakeup( &_write_sleep );
 			}
-			
+
 			if ( !_read_is_open && !_write_is_open )
 			{
 				_lock.release();

@@ -195,6 +195,9 @@ namespace fs
 		--f->ref;
 		if ( f->ref == 0 )
 		{
+			if ( f->type == xv6_file::FD_PIPE )
+				f->pipe->close( f->writable );
+
 			f->readable = f->writable = 0;
 			f->dentry = nullptr;
 			f->major = 0;
