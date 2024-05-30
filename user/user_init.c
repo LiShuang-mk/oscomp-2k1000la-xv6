@@ -441,29 +441,6 @@ int init_main( void )
 		// 	write( 1, wait_success, sizeof( wait_success ) );
 	}
 
-	// ======== test brk ========
-	pid = fork();
-	if ( pid < 0 )
-	{
-		write( 1, errstr, sizeof( errstr ) );
-	}
-	else if ( pid == 0 )
-	{
-		if ( execv( exec_test_brk, 0 ) < 0 )
-		{
-			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
-		}
-		exit( 0 );
-	}
-	else
-	{
-		int child_exit_state = -100;
-		if ( wait( -1, &child_exit_state ) < 0 )
-			write( 1, wait_fail, sizeof( wait_fail ) );
-		// else
-		// 	write( 1, wait_success, sizeof( wait_success ) );
-	}
-
 	// ======== test waitpid ========
 	pid = fork();
 	if ( pid < 0 )
@@ -495,6 +472,29 @@ int init_main( void )
 		// 	printint( child_exit_state, 10, 1 );
 		// 	write( 1, wait_success, sizeof( wait_success ) );
 		// }
+	}
+
+	// ======== test brk ========
+	pid = fork();
+	if ( pid < 0 )
+	{
+		write( 1, errstr, sizeof( errstr ) );
+	}
+	else if ( pid == 0 )
+	{
+		if ( execv( exec_test_brk, 0 ) < 0 )
+		{
+			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
+		}
+		exit( 0 );
+	}
+	else
+	{
+		int child_exit_state = -100;
+		if ( wait( -1, &child_exit_state ) < 0 )
+			write( 1, wait_fail, sizeof( wait_fail ) );
+		// else
+		// 	write( 1, wait_success, sizeof( wait_success ) );
 	}
 
 	// ======== test uname ========
@@ -543,7 +543,7 @@ int init_main( void )
 		// 	write( 1, wait_success, sizeof( wait_success ) );
 	}
 
-	// ======== test close ========
+	// ========== test fstat ==========
 	pid = fork();
 	if ( pid < 0 )
 	{
@@ -551,7 +551,7 @@ int init_main( void )
 	}
 	else if ( pid == 0 )
 	{
-		if ( execv( exec_test_close, 0 ) < 0 )
+		if ( execv( exec_test_fstat, 0 ) < 0 )
 		{
 			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
 		}
@@ -565,8 +565,8 @@ int init_main( void )
 		// else
 		// 	write( 1, wait_success, sizeof( wait_success ) );
 	}
-
-	// ========== test fstat ==========
+	
+	// ======== test close ========
 	pid = fork();
 	if ( pid < 0 )
 	{
@@ -574,7 +574,7 @@ int init_main( void )
 	}
 	else if ( pid == 0 )
 	{
-		if ( execv( exec_test_fstat, 0 ) < 0 )
+		if ( execv( exec_test_close, 0 ) < 0 )
 		{
 			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
 		}

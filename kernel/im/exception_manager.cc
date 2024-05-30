@@ -308,7 +308,7 @@ namespace im
 			// printf( "PIL" );
 			// printf( "0x%x", loongarch::Cpu::read_csr( loongarch::csr::era ) );
 			[[maybe_unused]] uint64 badv = loongarch::Cpu::read_csr( loongarch::csr::badv );
-			[[maybe_unused]] mm::Pte pte = loongarch::Cpu::get_cpu()->get_cur_proc()->get_pagetable().walk( badv, 0 );
+			// [[maybe_unused]] mm::Pte pte = loongarch::Cpu::get_cpu()->get_cur_proc()->get_pagetable().walk( badv, 0 );
 			// log_warn( "出现PIS异常很可能是一个诡异的bug, 此处继续运行" );
 			log_error(
 				"handle exception PIL :\n"
