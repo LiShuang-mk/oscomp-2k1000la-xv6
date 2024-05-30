@@ -769,46 +769,52 @@ namespace pm
 	}
 
 	int ProcessManager::brk( int n )
-	{	// 这里是一个假的brk，维护了一个假的堆指针 _hp
-
-		if ( n < 0 )
-			return -1;
-
-		Pcb * p = get_cur_pcb();
-
-		if ( n == 0 )
-			return p->_hp;
-
-		if ( ( uint64 ) n <= p->_hp )
-			return p->_hp;
-
-		p->_hp = n;
-		return p->_hp;
-
-		// Pcb *p = get_cur_pcb();
-		// uint64 sz = p->_sz;
-		// uint64 newsz = sz + n;
-		// mm::PageTable pt = p->_pt;
-
+	{	
+		//这里是一个假的brk，维护了一个假的堆指针 _hp
+		
 		// if ( n < 0 )
-		// {
-		// 	if ( mm::k_vmm.uvmdealloc( pt, sz, sz + n ) < 0 )
-		// 	{
-		// 		return -1;
-		// 	}
-		// }
-		// else if ( n > 0 )
-		// {
-		// 	if ( ( n + p->_sz ) > ( static_cast< uint64 >( mm::vml::vm_end ) - static_cast< uint64 >( mm::PageEnum::pg_size ) ) )
-		// 		return -1;
+		// 	return -1;
 
-		// 	if ( mm::k_vmm.vmalloc( pt, sz, newsz ) == 0 )
-		// 		return -1;
-		// }
+		// Pcb * p = get_cur_pcb();
 
-		// p->_sz = newsz;
-		// log_info( "brk: newsize%d, oldsize%d", newsz, sz );
-		// return 0;
+		// if ( n == 0 )
+		// 	return p->_hp;
+
+		// if ( ( uint64 ) n <= p->_hp )
+		// 	return p->_hp;
+
+		// p->_hp = n;
+		// return p->_hp;
+
+		Pcb *p = get_cur_pcb();		// 输入参数	：期望的堆大小
+		uint64 sz = p->_sz;			// 输出  	：实际的堆大小
+		uint64 oldhp = p->_hp;
+		uint64 newhp = n;
+		mm::PageTable pt = p->_pt;
+		uint64 differ = newhp - oldhp;
+
+		if( n == 0 )		// get current heap size
+			return p->_hp;
+
+		if ( differ < 0 && newhp >= sz )   //shrink
+		{
+			if ( mm::k_vmm.uvmdealloc( pt, oldhp, newhp ) < 0 )
+			{
+				return -1;
+			}
+		}
+		else if ( differ > 0 )
+		{
+			if ( newhp > ( static_cast< uint64 >( mm::vml::vm_end ) - static_cast< uint64 >( mm::PageEnum::pg_size ) ) )
+				return -1;
+
+			if ( mm::k_vmm.vmalloc( pt, oldhp, newhp ) == 0 )
+				return -1;
+		}
+
+		log_info( "brk: newsize%d, oldsize%d", newhp, oldhp );
+		p->_hp = newhp;
+		return newhp ; // 返回堆的大小
 	}
 
 	int ProcessManager::open( int dir_fd, eastl::string path, uint flags )
