@@ -41,6 +41,7 @@ export CXXFLAGS = $(CFLAGS)
 export CXXFLAGS += -std=c++23
 export CXXFLAGS += -include $(WORKPATH)/kernel/include/klib/virtual_function.hh
 export CXXFLAGS += -include $(WORKPATH)/kernel/include/klib/global_operator.hh
+export CXXFLAGS += -include $(WORKPATH)/kernel/include/types.hh
 export LDFLAGS = -z max-page-size=4096  
 
 export WORKPATH = $(shell pwd)
@@ -50,7 +51,8 @@ export BUILDPATH = $(WORKPATH)/build
 STATIC_MODULE = \
 	$(BUILDPATH)/kernel.a \
 	$(BUILDPATH)/user/user.a \
-	$(BUILDPATH)/thirdparty/EASTL/libeastl.a
+	$(BUILDPATH)/thirdparty/EASTL/libeastl.a \
+	$(BUILDPATH)/hal_loongarch.a
 
 
 # .PHONY 是一个伪规则，其后面依赖的规则目标会成为一个伪目标，使得规则执行时不会实际生成这个目标文件
@@ -64,6 +66,7 @@ all: initdir probe_host compile_all load_kernel
 	@echo "-------- 生成成功 --------"
 
 initdir:
+	$(MAKE) initdir -C hal/loongarch
 	$(MAKE) initdir -C kernel
 	$(MAKE) initdir -C user
 	$(MAKE) initdir -C thirdparty/EASTL
@@ -75,8 +78,9 @@ probe_host:
 
 
 compile_all:
-	$(MAKE) EASTL
+	$(MAKE) -C thirdparty/EASTL
 	$(MAKE) all -C user
+	$(MAKE) all -C hal/loongarch
 	$(MAKE) all -C kernel
 
 load_kernel: $(BUILDPATH)/kernel.elf
@@ -91,9 +95,7 @@ clean:
 	$(MAKE) clean -C kernel
 	$(MAKE) clean -C user
 	$(MAKE) clean -C thirdparty/EASTL
-
-EASTL:
-	$(MAKE) -C thirdparty/EASTL
+	$(MAKE) clean -C hal/loongarch
 
 EASTL_test:
 	$(MAKE) test -C thirdparty/EASTL

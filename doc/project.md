@@ -16,8 +16,11 @@ kernel中也会分为多个模块，这些模块共同组成系统架构，架�
 <center>架构图 - v1.1</center>
 </br></br>
 
-![架构图 - v1.1](./img/architecture-v1.2.png)
+![架构图 - v1.2](./img/architecture-v1.2.png)
 <center>架构图 - v1.2</center>
+
+![架构图 - v2.0](./img/architecture-v2.0.png)
+<center>架构图 - v2.0</center>
 
 ## I. 如何插入新模块到kernel
 

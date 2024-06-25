@@ -37,6 +37,8 @@
 
 #include <bit>
 
+#include <hsai_global.hh>
+
 #include <EASTL/string.h>
 #include <EASTL/unordered_map.h>
 
@@ -61,10 +63,18 @@ extern "C" {
 	extern int init_main( void );
 }
 
+namespace loongarch
+{
+	extern const char * get_test_str();
+} // namespace loongarch
+
+
 int main()
 {
 	if ( loongarch::Cpu::read_tp() == 0 )
 	{
+		hsai::hardware_abstract_init();
+
 		// console init 
 		dev::k_console.init( "console" );
 
@@ -74,6 +84,9 @@ int main()
 		log_info( "Hello World!\n" );
 
 		log_info( "main addr: %p", &main );
+
+		printf( "test hal module: %s\n", loongarch::get_test_str() );
+		while ( 1 );
 
 
 		[[maybe_unused]] uint64 tmp = loongarch::Cpu::read_csr( loongarch::csr::crmd );
