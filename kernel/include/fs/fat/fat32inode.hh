@@ -58,17 +58,17 @@ namespace fs
 			 * [tofix] 考虑将跨越两个buffer的目录项单独处理，或
 			 * 是对_read_sub_dir 进行修复
 			 **************************************************/
-			virtual Inode* lookup( eastl::string dirname, off_t off_ = 0 ) override;
+			Inode* lookup( eastl::string dirname, off_t off_ = 0 ) override;
 
-			virtual Inode* mknode( eastl::string name, mode_t mode ) override { return nullptr; };
-			virtual size_t nodeRead( uint64 dst_, size_t off_, size_t len_ ) override { read_content( ( void * ) dst_, len_, off_ ); return len_; };
-			virtual size_t nodeWrite( uint64 src_, size_t off_, size_t len_ ) override { return 0; };
-			virtual mode_t rMode() const override { return _attr; };
-			virtual dev_t rDev() const override;
-			virtual uint64 rIno() const override { return _first_cluster; };
-			virtual size_t rFileSize() const override { return _size; };
-			virtual SuperBlock *getSb() const override;
-			virtual Fat32FS *getFS() const { return _belong_fs; };
+			Inode* mknode( eastl::string name, mode_t mode ) override { return nullptr; };
+			size_t nodeRead( uint64 dst_, size_t off_, size_t len_ ) override { read_content( ( void * ) dst_, len_, off_ ); return len_; };
+			size_t nodeWrite( uint64 src_, size_t off_, size_t len_ ) override { return 0; };
+			mode_t rMode() const override { return _attr; };
+			dev_t  rDev() const override;
+			uint64 rIno() const override { return _first_cluster; };
+			size_t  rFileSize() const override { return _size; };
+			SuperBlock *getSb() const override;
+			FileSystem *getFS() const override;
 		private:
 			uint64 _cluster_to_lba( uint64 cluster );
 			uint64 _cover_size_bytes();

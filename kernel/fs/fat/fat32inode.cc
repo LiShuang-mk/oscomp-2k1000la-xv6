@@ -156,6 +156,11 @@ namespace fs
 			return _belong_fs->getSuperBlock();
 		}
 
+		FileSystem * Fat32Inode::getFS() const
+		{
+			return _belong_fs;
+		}
+		
 		Inode * Fat32Inode::lookup( eastl::string dirname, off_t off_ )
 		{
 			if ( !is_dir() ) return nullptr;

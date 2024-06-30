@@ -15,7 +15,8 @@ namespace fs
 	class Dentry;
 	class DStat;
 	class SuperBlock;
-
+	class FileSystem;
+	
 	class Inode
 	{
 	public:
@@ -50,6 +51,7 @@ namespace fs
 		// Ctime, Mtime, Atime temporarily not implemented
 		//virtual bool Empty() const = 0; // check if inode is empty
 		virtual SuperBlock *getSb() const = 0; // get super block
+		virtual FileSystem *getFS() const = 0; // get file system
 		//virtual int create( Inode *dir, Dentry *dentry, eastl::string name, uint32 mode ) = 0;
 		//virtual int mkdir( Inode *dir, Dentry *dentry, eastl::string name, uint32 mode ) = 0;
 	};
