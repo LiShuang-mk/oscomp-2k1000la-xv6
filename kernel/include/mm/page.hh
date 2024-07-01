@@ -9,7 +9,8 @@
 #pragma once 
 
 #include "types.hh"
-#include "smp/lock.hh"
+
+#include <smp/spin_lock.hh>
 
 namespace mm
 {

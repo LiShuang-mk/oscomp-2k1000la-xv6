@@ -10,8 +10,10 @@
  * This allocator is from liballoc, but be packaged into a class.
 */
 
-#include "smp/lock.hh"
+
 #include "mm/page.hh"
+
+#include <smp/spin_lock.hh>
 
 namespace mm
 {
@@ -56,7 +58,7 @@ namespace kernellib
 	class L_Allocator
 	{
 	private:
-		smp::Lock _lock;
+		hsai::SpinLock _lock;
 		mm::BuddyAllocator * _base_allocator;
 
 		constexpr static uint _default_page_per_chunk = 32;

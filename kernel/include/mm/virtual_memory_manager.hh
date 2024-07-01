@@ -8,9 +8,10 @@
 
 #pragma once 
 
-#include "smp/lock.hh"
 #include "mm/page_table.hh"
 #include "pm/sharemem.hh"
+
+#include <smp/spin_lock.hh>
 
 #include <EASTL/string.h>
 
@@ -19,7 +20,7 @@ namespace mm
 	class VirtualMemoryManager
 	{
 	private:
-		smp::Lock _lock;
+		hsai::SpinLock _lock;
 
 	public:
 		static uint64 kstack_vm_from_gid( uint gid );

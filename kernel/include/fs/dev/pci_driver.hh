@@ -8,7 +8,7 @@
 
 #pragma once 
 
-#include "smp/lock.hh"
+#include <smp/spin_lock.hh>
 
 namespace dev
 {
@@ -17,7 +17,7 @@ namespace dev
 		class PciDriver
 		{
 		private:
-			smp::Lock _lock;
+			hsai::SpinLock _lock;
 
 		public:
 			PciDriver() = default;

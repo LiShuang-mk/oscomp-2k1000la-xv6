@@ -1,6 +1,8 @@
 #pragma once
-#include "smp/lock.hh"
+
 #include "pm/process.hh"
+
+#include <smp/spin_lock.hh>
 
 namespace pm
 {
@@ -8,7 +10,7 @@ namespace pm
 	class Scheduler
 	{
 	private:
-		smp::Lock _sche_lock;
+		hsai::SpinLock _sche_lock;
 	public:
 		Scheduler() = default;
 		void init( const char *name );

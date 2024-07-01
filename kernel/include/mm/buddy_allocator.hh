@@ -8,9 +8,10 @@
 
 #pragma once 
 
-#include "smp/lock.hh"
 #include "mm/buddy.hh"
 #include "klib/common.hh"
+
+#include <smp/spin_lock.hh>
 
 namespace mm
 {
@@ -19,7 +20,7 @@ namespace mm
 	class BuddyAllocator
 	{
 	private:
-		smp::Lock _lock;
+		hsai::SpinLock _lock;
 		PageTable *_page_table;
 		void *_heap_addr;
 		uint64 _heap_size;

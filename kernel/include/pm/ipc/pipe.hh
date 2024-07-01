@@ -8,7 +8,7 @@
 
 #pragma once 
 
-#include "smp/lock.hh"
+#include <smp/spin_lock.hh>
 
 #include <EASTL/queue.h>
 
@@ -29,7 +29,7 @@ namespace pm
 		{
 			friend ProcessManager;
 		private:
-			smp::Lock _lock;
+			hsai::SpinLock _lock;
 			eastl::queue<uint8> _data;
 			bool _read_is_open;
 			bool _write_is_open;

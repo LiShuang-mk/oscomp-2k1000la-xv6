@@ -8,17 +8,18 @@
 
 #pragma once 
 
-#include "smp/lock.hh"
 #include "mm/buddy_allocator.hh"
 #include "klib/liballoc_allocator.hh"
 #include "klib/buddy_page_alloc.hh"
+
+#include <smp/spin_lock.hh>
 
 namespace mm
 {
 	class HeapMemoryManager
 	{
 	private:
-		smp::Lock _lock;
+		hsai::SpinLock _lock;
 
 		BuddyAllocator _k_allocator_coarse;
 

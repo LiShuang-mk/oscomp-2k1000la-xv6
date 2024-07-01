@@ -8,10 +8,11 @@
 
 #pragma once 
 
-#include "smp/lock.hh"
 #include "hal/sata/hba_param.hh"
 #include "klib/common.hh"
 #include "klib/function.hh"
+
+#include <smp/spin_lock.hh>
 
 namespace ata
 {
@@ -30,7 +31,7 @@ namespace dev
 		class AhciController
 		{
 		private:
-			smp::Lock _lock;
+			hsai::SpinLock _lock;
 			struct ata::sata::HbaCmdTbl *_cmd_tbl = nullptr;
 			// void *_pr = nullptr;
 			int _is_idtf = false;

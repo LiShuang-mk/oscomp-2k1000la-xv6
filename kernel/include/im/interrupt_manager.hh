@@ -8,14 +8,15 @@
 
 #pragma once 
 
-#include "smp/lock.hh"
+#include <smp/spin_lock.hh>
+
 
 namespace im
 {
 	class InterruptManager
 	{
 	private:
-		smp::Lock _lock;
+		hsai::SpinLock _lock;
 
 	public:
 		InterruptManager() = default;

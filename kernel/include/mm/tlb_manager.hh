@@ -8,14 +8,14 @@
 
 #pragma once 
 
-#include "smp/lock.hh"
+#include <smp/spin_lock.hh>
 
 namespace mm
 {
 	class TlbManager
 	{
 	private:
-		smp::Lock _lock;
+		hsai::SpinLock _lock;
 
 	public:
 		TlbManager() = default;

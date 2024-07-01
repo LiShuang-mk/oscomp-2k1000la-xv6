@@ -8,8 +8,9 @@
 
 #pragma once 
 
-#include "smp/lock.hh"
 #include "klib/function.hh"
+
+#include <smp/spin_lock.hh>
 
 namespace im
 {
@@ -18,7 +19,7 @@ namespace im
 	class ExceptionManager
 	{
 	private:
-		smp::Lock _lock;
+		hsai::SpinLock _lock;
 		std::function<void( uint32 )> _exception_handlers[ max_ecode_num ];
 
 

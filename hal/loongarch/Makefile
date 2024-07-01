@@ -1,12 +1,23 @@
-# CXXFLAGS += -I ../thirdparty/EASTL/include
-# CXXFLAGS += -I ../kernel/include/klib
-# CXXFLAGS += -Wno-deprecated-declarations
-# CXXFLAGS += -I ../thirdparty/EASTL/test/packages/EABase/include/Common
+################################################################
+# >>>>    file name : loongarch-make
+# >>>> created time : 2024-06-29
+# >>>>       author : lishuang-mk
+# >>>>       e-mail : lishuang.mk@whu.edu.cn
+# >>>>  description : compile the loongarch libcpu codes and
+#                     call the target platform MAKE
+# >>>>  PLEASE NOTE : This file is for learning purposes only
+################################################################
 
+# *******************************************************
+# >>>> support platform
+support_platform = qemu_2k1000 2k1000
 
-# this module name
-mod_name = hal_loongarch
+# >>>> 
+# *******************************************************
 
+# *******************************************************
+# >>>> make function
+# >>>> 
 
 # card src function
 # -> $1: directory
@@ -18,54 +29,81 @@ card_src = $(foreach d,$(wildcard $1*),$(call card_src,$d/,$2)$(filter $2,$d))
 #        null means current directory
 card_dir = $(foreach d, $(filter-out include/, $(wildcard $1*/)), $(call card_dir, $1$d) $d)
 
-submod = $(call card_dir, ) # $1 = null
+# >>>>
+# ********************************************************
+
+# ********************************************************
+# >>>> compile flags
+# >>>>
+
+export CFLAGS += -I $(WORKPATH)/hsai/include/
+export CXXFLAGS += -I $(WORKPATH)/hsai/include/
+
+# >>>>
+# ********************************************************
+
+# check platform
+plat_name = \
+	$(if $(filter $(CONF_PLATFORM),$(support_platform)), \
+	$(CONF_PLATFORM), \
+	$(error platform '${CONF_PLATFORM}' is not supported)\
+	)
+plat_name := $(strip $(plat_name))
+
+# architecture name
+arch_name = $(CONF_ARCH)
+
+# target name
+target_name = hal_$(arch_name)_$(plat_name)
 
 # card source
-c_src = $(foreach d, $(submod), $(wildcard $(d)*.c)) $(wildcard *.c)
-cc_src = $(foreach d, $(submod), $(wildcard $(d)*.cc)) $(wildcard *.cc)
-s_src = $(foreach d, $(submod), $(wildcard $(d)*.S)) $(wildcard *.S)
+c_src = $(wildcard *.c)
+cc_src = $(wildcard *.cc)
+s_src = $(wildcard *.S)
 
 srcs = $(c_src) $(cc_src) $(s_src)
 
-
 # card obj file name
-c_obj = $(patsubst %.c,$(BUILDPATH)/$(mod_name)/%.o,$(c_src))
-cc_obj = $(patsubst %.cc,$(BUILDPATH)/$(mod_name)/%.o,$(cc_src))
-s_obj = $(patsubst %.S,$(BUILDPATH)/$(mod_name)/%.o,$(s_src))
+c_obj = $(patsubst %.c,$(BUILDPATH)/hal/$(arch_name)/%.o,$(c_src))
+cc_obj = $(patsubst %.cc,$(BUILDPATH)/hal/$(arch_name)/%.o,$(cc_src))
+s_obj = $(patsubst %.S,$(BUILDPATH)/hal/$(arch_name)/%.o,$(s_src))
+
 objs = $(c_obj) $(cc_obj) $(s_obj)
 
 # the source files' dependencies, created by gcc
 depends = \
-	$(patsubst %.cc, $(BUILDPATH)/$(mod_name)/%.d, $(cc_src)) \
-	$(patsubst %.c, $(BUILDPATH)/$(mod_name)/%.d, $(c_src)) \
-	$(patsubst %.S, $(BUILDPATH)/$(mod_name)/%.d, $(s_src))
+	$(patsubst %.cc, $(BUILDPATH)/hal/$(arch_name)/%.d, $(cc_src)) \
+	$(patsubst %.c, $(BUILDPATH)/hal/$(arch_name)/%.d, $(c_src)) \
+	$(patsubst %.S, $(BUILDPATH)/hal/$(arch_name)/%.d, $(s_src))
 
 
-.PHONY: all clean test initdir
+.PHONY: all clean test initdir add_libcpu compile_platform
 
-all: $(BUILDPATH)/$(mod_name).a
-# all: $(BUILDPATH)/kernel.elf
+all: initdir compile_platform add_libcpu
 
 initdir:
-	mkdir -p $(BUILDPATH)/$(mod_name)
-	cd $(BUILDPATH); for dir in $(submod); do mkdir -p "$(BUILDPATH)/$(mod_name)/$$dir"; done
+	mkdir -p $(BUILDPATH)/hal/$(arch_name)
 
-$(BUILDPATH)/$(mod_name).a: $(objs)
-	$(AR) rcs $@ $^
+compile_platform:
+	$(MAKE) all -C $(plat_name)
 
-$(cc_obj): $(BUILDPATH)/$(mod_name)/%.o: %.cc 
-	$(CXX) -c $(CXXFLAGS) -MF $(BUILDPATH)/$(mod_name)/$*.d -o $@ $<
+add_libcpu: $(objs)
+	$(AR) rc $(BUILDPATH)/$(target_name).a $(objs)
 
-$(c_obj): $(BUILDPATH)/$(mod_name)/%.o: %.c 
-	$(CC) -c $(CFLAGS) -MF $(BUILDPATH)/$(mod_name)/$*.d -o $@ $<
+$(cc_obj): $(BUILDPATH)/hal/$(arch_name)/%.o: %.cc 
+	$(CXX) -c $(CXXFLAGS) -MF $(BUILDPATH)/hal/$(arch_name)/$*.d -o $@ $<
 
-$(s_obj): $(BUILDPATH)/$(mod_name)/%.o: %.S 
-	$(CC) -c $(ASFLAGS) -MF $(BUILDPATH)/$(mod_name)/$*.d -o $@ $<
+$(c_obj): $(BUILDPATH)/hal/$(arch_name)/%.o: %.c 
+	$(CC) -c $(CFLAGS) -MF $(BUILDPATH)/hal/$(arch_name)/$*.d -o $@ $<
+
+$(s_obj): $(BUILDPATH)/hal/$(arch_name)/%.o: %.S 
+	$(CC) -c $(ASFLAGS) -MF $(BUILDPATH)/hal/$(arch_name)/$*.d -o $@ $<
 
 -include $(depends)
 
 test:
-	@echo $(submod)
+	@echo $(plat_name)
+	@echo $(target_name)
 #	@echo $(call test_wild, $(test_dir), %.$(test_cc_ext))
 #	@echo $(call test_wild, $(test_dir), %.$(test_c_ext))
 #	@echo $(call test_wild, $(test_dir), %.$(test_S_ext))
@@ -78,10 +116,5 @@ test:
 #	@echo "--------> build : $(BUILDPATH)"
 
 clean: 
-	for mod in $(submod) ; do \
-		cd "$(BUILDPATH)/kernel/$$mod" ; \
-		rm -f *.o *.d; \
-		cd "$(WORKPATH)/kernel/$$mod" ; \
-		rm -f *.o *.d; \
-	done
-	cd $(BUILDPATH); rm -f kernel.elf kernel/*.o kernel/*.d kernel.a kernel.dis
+	cd "$(BUILDPATH)/hal/$(arch_name)"; rm -f *.o *.d
+	$(MAKE) clean -C $(plat_name)

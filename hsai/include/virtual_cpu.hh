@@ -8,12 +8,16 @@
 
 #pragma once
 
+#ifndef NUMCPU
+#define NUMCPU 1
+#endif
+
+#include "hsai_types.hh"
+
 namespace hsai	// hardware service abstract interface
 {
 	class VirtualCpu
 	{
-		using uint = unsigned int;
-
 	protected:
 		int _num_off;		// number of interrupt's off
 		int _int_ena;		// interrupt enable status before push-off()
@@ -37,8 +41,10 @@ namespace hsai	// hardware service abstract interface
 	};
 
 	// constexpr int max_cpu_num = 4;
+	
 	extern VirtualCpu * k_cpus[ NUMCPU ];
 
 	int register_cpu( VirtualCpu * p_cpu, int cpu_id );
+	VirtualCpu * get_cpu();
 
 } // namespace hsai

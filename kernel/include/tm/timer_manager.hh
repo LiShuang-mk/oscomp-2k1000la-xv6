@@ -8,8 +8,9 @@
 
 #pragma once 
 
-#include "smp/lock.hh"
 #include "types.hh"
+
+#include <smp/spin_lock.hh>
 
 namespace tmm
 {
@@ -54,7 +55,7 @@ namespace tmm
 	class TimerManager
 	{
 	private:
-		smp::Lock _lock;
+		hsai::SpinLock _lock;
 		uint64 _ticks;
 		uint64 _tcfg_data;
 

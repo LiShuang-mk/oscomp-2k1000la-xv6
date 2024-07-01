@@ -63,29 +63,23 @@ extern "C" {
 	extern int init_main( void );
 }
 
-namespace loongarch
-{
-	extern const char * get_test_str();
-} // namespace loongarch
-
-
 int main()
 {
 	if ( loongarch::Cpu::read_tp() == 0 )
 	{
-		hsai::hardware_abstract_init();
-
 		// console init 
-		dev::k_console.init( "console" );
+		dev::k_console.init( "console", true );
 
 		// printf init 
 		kernellib::k_printer.init( &dev::k_console, "printer" );
+
+		hsai::hardware_abstract_init();
+
 		printf( "hello world\n" );
 		log_info( "Hello World!\n" );
 
 		log_info( "main addr: %p", &main );
-
-		printf( "test hal module: %s\n", loongarch::get_test_str() );
+		
 		while ( 1 );
 
 

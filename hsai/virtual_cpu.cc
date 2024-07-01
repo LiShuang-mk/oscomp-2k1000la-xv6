@@ -13,7 +13,7 @@ namespace hsai
 {
 	VirtualCpu * k_cpus[ NUMCPU ] = { nullptr };
 
-	int register_cpu( virtual * p_cpu, int cpu_id )
+	int register_cpu( VirtualCpu * p_cpu, int cpu_id )
 	{
 		if ( cpu_id < 0 || cpu_id >= NUMCPU )
 			return -1;
@@ -21,6 +21,12 @@ namespace hsai
 			return -2;
 		k_cpus[ cpu_id ] = p_cpu;
 		return cpu_id;
+	}
+
+	VirtualCpu * get_cpu()
+	{
+		u32 cpuid = k_cpus[ 0 ]->get_cpu_id();
+		return k_cpus[ cpuid ];
 	}
 
 	VirtualCpu::VirtualCpu()
@@ -52,6 +58,5 @@ namespace hsai
 		if ( _num_off == 0 && _int_ena )
 			_interrupt_on();
 	}
-
 
 } // namespace hsai

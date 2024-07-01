@@ -9,7 +9,8 @@
 #pragma once 
 
 #include "types.hh"
-#include "smp/lock.hh"
+
+#include <smp/spin_lock.hh>
 
 namespace pm
 {
@@ -17,7 +18,7 @@ namespace pm
 	{
 	private:
 		bool _locked = false;
-		smp::Lock _lock;
+		hsai::SpinLock _lock;
 		uint _pid;
 		// for debugging 
 		const char *_name;

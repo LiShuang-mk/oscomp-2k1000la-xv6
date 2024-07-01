@@ -8,7 +8,7 @@
 
 #pragma once 
 
-#include "smp/lock.hh"
+#include <smp/spin_lock.hh>
 
 namespace mm
 {
@@ -24,7 +24,7 @@ namespace mm
 	class PhysicalMemoryManager
 	{
 	private:
-		smp::Lock _lock;
+		hsai::SpinLock _lock;
 		PageHead *_free_list = nullptr;
 		uint64 _ram_base;
 		uint64 _ram_end;

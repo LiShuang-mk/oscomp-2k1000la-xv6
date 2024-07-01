@@ -8,13 +8,13 @@
 
 #pragma once 
 
-#include "smp/lock.hh"
+#include <smp/spin_lock.hh>
 
 class UartManager
 {
 private:
 	uint64 _uart_base;
-	smp::Lock _lock;
+	hsai::SpinLock _lock;
 	static const int _buf_size = 32;
 	char _buf[ _buf_size ];
 	uint64 tx_w;

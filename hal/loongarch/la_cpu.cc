@@ -16,14 +16,9 @@ namespace loongarch
 	{
 		for ( int i = 0; i < NUMCPU; i++ )
 		{
-			new ( k_la_cpus + i ) Cpu;
+			new ( &k_la_cpus[ i ] ) Cpu;
 			hsai::register_cpu( k_la_cpus + i, i );
 		}
-
-	}
-
-	Cpu::Cpu()
-	{
 
 	}
 
@@ -46,7 +41,7 @@ namespace loongarch
 
 	int Cpu::is_interruptible()
 	{
-
+		return 0;
 	}
-	
+
 } // namespace loongarch

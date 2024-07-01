@@ -8,9 +8,10 @@
 
 #pragma once 
 
-#include "smp/lock.hh"
 #include "mm/page.hh"
 #include "mm/memlayout.hh"
+
+#include <smp/spin_lock.hh>
 
 namespace mm
 {
@@ -54,7 +55,7 @@ namespace mm
 	{
 		friend BuddyAllocator;
 	private:
-		smp::Lock _lock;
+		hsai::SpinLock _lock;
 
 		constexpr static uint _used_page_list_size = buddy_max_heap_pages_cnt / node_per_page;
 

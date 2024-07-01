@@ -1,6 +1,7 @@
 
 #pragma once
-#include "smp/lock.hh"
+
+#include <smp/spin_lock.hh>
 
 namespace pm
 {
@@ -13,7 +14,7 @@ namespace pm
         friend ShmManager;
         
         private:
-            smp::Lock _lock;
+            hsai::SpinLock _lock;
             int refcnt;     // reference count
             int pagenum;    // number of pages
             void *phyaddr[ pm::MAX_SHM_PGNUM ];   // physical address

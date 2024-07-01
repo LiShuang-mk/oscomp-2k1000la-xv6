@@ -8,10 +8,11 @@
 
 #pragma once 
 
-#include "smp/lock.hh"
 #include "mm/page_table.hh"
 #include "pm/context.hh"
 #include "pm/sharemem.hh"
+
+#include <smp/spin_lock.hh>
 
 #include <EASTL/string.h>
 
@@ -51,7 +52,7 @@ namespace pm
 		friend ShmManager;
 		friend Scheduler;
 	public:
-		smp::Lock _lock;
+		hsai::SpinLock _lock;
 		int _gid = num_process;					// global ID in pool 
 
 		fs::Dentry *_cwd;				// current working directory

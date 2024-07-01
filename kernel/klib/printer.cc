@@ -10,6 +10,8 @@
 #include "klib/common.hh"
 #include "fs/dev/console.hh"
 
+#include <hsai_log.hh>
+
 namespace kernellib
 {
 	Printer k_printer;
@@ -24,6 +26,8 @@ namespace kernellib
 		_lock.init( name );
 		_locking = 1;
 		_panicked = 0;
+
+		hsai::p_hsai_logout = &level_log_out;
 	}
 
 	void Printer::printint( int xx, int base, int sign )
@@ -112,7 +116,7 @@ namespace kernellib
 						_trace_flag = 0;
 						printf( "\n\t     " );
 						_trace_flag = 1;
-						_locking = 1;
+						_locking = locking;
 					}
 					else
 					{
@@ -327,5 +331,97 @@ namespace kernellib
 		k_printer._locking = 1;
 
 		panic( f, l, "assert fail for above reason." );
+	}
+
+
+	void Printer::log_output_info( const char * f, uint l, const char * info, va_list ap )
+	{
+		k_printer.printf( f );
+		k_printer.printf( " : " );
+		k_printer.printf( "%d", l );
+		k_printer.printf( " :\n\t     " );
+		_trace_flag = 1;
+		k_printer.vprintf( info, ap );
+		_trace_flag = 0;
+	}
+
+	void Printer::log_out_va( OutputLevel level, const char * f, uint l, const char * info, va_list ap )
+	{
+
+		switch ( level )
+		{
+			case OutputLevel::out_trace:
+			{
+#ifdef LINUX_BUILD
+				k_printer.printf( "\033[93m[ trace ] => " );
+#else 
+				k_printer.printf( "[ trace ] => " );
+#endif 
+			} break;
+			case OutputLevel::out_info:
+			{
+#ifdef LINUX_BUILD
+				k_printer.printf( "\033[36m[ info ]  => " );
+#else 
+				k_printer.printf( "[ info ]  => " );
+#endif 
+			} break;
+			case OutputLevel::out_warn:
+			{
+#ifdef LINUX_BUILD
+				k_printer.printf( "\033[33m[ warn ]  => " );
+#else 
+				k_printer.printf( "[ warn ]  => " );
+#endif 
+			} break;
+			case OutputLevel::out_error:
+			{
+#ifdef LINUX_BUILD
+				k_printer.printf( "\033[35m[ error ] => " );
+#else 
+				k_printer.printf( "[ error ] => " );
+#endif  
+			} break;
+			case OutputLevel::out_panic:
+			{
+#ifdef LINUX_BUILD
+				k_printer.printf( "\033[31m[ panic ] => " );
+#else 
+				k_printer.printf( "[ panic ] => " );
+#endif 
+			} break;
+			default:
+				break;
+		}
+		log_output_info( f, l, info, ap );
+#ifdef LINUX_BUILD
+		k_printer.printf( "\033[0m\n" );
+#else 
+		k_printer.printf( "\n" );
+#endif 
+	}
+
+	void Printer::log_out( OutputLevel level, const char * f, uint l, const char * info, ... )
+	{
+		va_list ap;
+		va_start( ap, info );
+		log_out_va( level, f, l, info, ap );
+		va_end( ap );
+	}
+
+	void level_log_out( hsai::HsaiLogLevel level, const char * fn, uint ln, const char * info, ... )
+	{
+		va_list ap;
+		va_start( ap, info );
+		switch ( level )
+		{
+			case hsai::log_trace: k_printer.log_out_va( out_trace, fn, ln, info, ap ); break;
+			case hsai::log_info:  k_printer.log_out_va( out_info, fn, ln, info, ap ); break;
+			case hsai::log_warn:  k_printer.log_out_va( out_warn, fn, ln, info, ap ); break;
+			case hsai::log_error: k_printer.log_out_va( out_error, fn, ln, info, ap ); break;
+			case hsai::log_panic: k_printer.log_out_va( out_panic, fn, ln, info, ap ); break;
+			default: break;
+		}
+		va_end( ap );
 	}
 }

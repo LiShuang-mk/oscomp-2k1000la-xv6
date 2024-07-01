@@ -4,13 +4,13 @@
 
 -------------------------------------------------------------
 
-# xv6-qemu-Loongarch-ls2k 
+# XN6 - Xn6 is Not XV6
 
 ## [** <!重要!> 自2024年4月25日起本仓库迁移至gitlab进行开发 **](https://gitlab.eduxiji.net/T202410486992576/OSKernel2024-2k1000la-xv6.git)
 
-俺争取不掉队设计的基于qemu-ls2k的os是基于xv6-ls3A5000修改而来的。
+俺争取不掉队设计的 XV6 OS 是基于 xv6-ls3A5000 修改而来的。
 
-### 搭建开发环境
+### 搭建开发环境 (Ubuntu+VSCode+GCC+QEMU+GDB)
 
 `声明：本文档只适合在x86-64架构主机上搭建开发环境`
 
@@ -33,7 +33,7 @@
 
 ### 文档 
 
-#### 1. [=> Makefile工程](./doc/project.md)
+#### 1. [=> 工程架构](./doc/project.md)
 
 #### 2. [=> 关于HAL与CSR](./doc/hal.md)
 

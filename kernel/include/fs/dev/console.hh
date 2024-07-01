@@ -8,8 +8,10 @@
 
 #pragma once 
 
-#include "smp/lock.hh"
 #include "hal/uart.hh"
+
+#include <smp/spin_lock.hh>
+
 
 namespace dev
 {
@@ -18,8 +20,9 @@ namespace dev
 	class Console
 	{
 	private:
-		smp::Lock _lock;
+		hsai::SpinLock _lock;
 		UartManager _uart_m;
+		bool _use_k_debug_uart;
 		const int _backspace = 0x100;
 		char _ibuf[ console_input_buf_size ];
 		uint _ridx;			// read index
@@ -27,7 +30,7 @@ namespace dev
 		uint _eidx;			// edit index
 	public:
 		Console();
-		void init( const char *name );
+		void init( const char *name, bool use_default_uart );
 		void putc( char c );
 
 		int write( int from_user, uint64 src, uint64 n );

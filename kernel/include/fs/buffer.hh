@@ -87,7 +87,7 @@ namespace fs
 		BufferNode _nodes[ max_buffer_per_block ];				// buffer 链表节点
 		BufferNode _node_head;									// buffer 链表头
 
-		smp::Lock _lock;
+		hsai::SpinLock _lock;
 		uint _block_number;										// 当前block的块号
 		uint _current_buffer_counts;							// 当前block拥有的buffer数量，是实际上的该块拥有的buffer数，可以动态更新
 		void *_buffer_base[ max_buffer_per_block ];				// buffer的基地址

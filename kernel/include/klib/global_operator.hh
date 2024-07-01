@@ -12,6 +12,8 @@
 
 #include "types.hh"
 
+#include <new>
+
 extern void * operator new( uint64 size );
 extern void * operator new[]( uint64 size );
 extern void operator delete( void * p ) noexcept;

@@ -750,7 +750,7 @@ namespace pm
 		}
 	}
 
-	void ProcessManager::sleep( void *chan, smp::Lock *lock )
+	void ProcessManager::sleep( void *chan, hsai::SpinLock *lock )
 	{
 		Pcb *proc = k_pm.get_cur_pcb();
 

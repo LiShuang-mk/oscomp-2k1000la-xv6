@@ -8,10 +8,11 @@
 
 #pragma once 
 
-#include "smp/lock.hh"
 #include "hal/sata/hba_param.hh"
 #include "hal/sata/hba_port.hh"
 #include "klib/common.hh"
+
+#include <smp/spin_lock.hh>
 
 namespace ata
 {
@@ -50,7 +51,7 @@ namespace dev
 			friend ahci::AhciController;
 			friend pci::PciDriver;
 		protected:
-			smp::Lock _lock;
+			hsai::SpinLock _lock;
 			ata::sata::HbaMemReg *_hba_mem_reg = nullptr;
 			ata::sata::HbaPortReg *_hba_port_reg[ ata::sata::max_port_num ];
 			uint _port_num = 0;

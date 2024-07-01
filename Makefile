@@ -1,12 +1,13 @@
 # configure 
 CONF_CPU_NUM = 1
-CONF_ARCH = loongarch 
-CONF_PLATFORM = ls2k
+export CONF_ARCH ?= loongarch
+export CONF_PLATFORM ?= qemu_2k1000
 # CONF_LINUX_BUILD = 1
 
 # make variable define 
 
 HOST_OS = $(shell uname)
+HAL_LIB_NAME = hal_${CONF_ARCH}_${CONF_PLATFORM}.a
 
 # 带有export的变量会在递归调用子目录的Makefile时传递下去
 
@@ -28,13 +29,13 @@ export CFLAGS += -MD
 export CFLAGS += -DNUMCPU=$(CONF_CPU_NUM)
 export CFLAGS += -DARCH=$(CONF_ARCH)
 export CFLAGS += -DPLATFORM=$(CONF_PLATFORM)
-# export CFLAGS += -DOS_DEBUG
+export CFLAGS += -DOS_DEBUG										# open debug output
 ifeq ($(HOST_OS),Linux)
 export CFLAGS += -DLINUX_BUILD=1
 endif
 export CFLAGS += -march=loongarch64 -mabi=lp64d
-export CFLAGS += -ffreestanding -fno-common -nostdlib
-export CFLAGS += -I ./include -fno-stack-protector 
+export CFLAGS += -ffreestanding -fno-common -nostdlib -fno-stack-protector 
+export CFLAGS += -I ./include 
 export CFLAGS += -fno-pie -no-pie 
 # export CFLAGS += -static-libstdc++ -lstdc++
 export CXXFLAGS = $(CFLAGS)
@@ -42,7 +43,7 @@ export CXXFLAGS += -std=c++23
 export CXXFLAGS += -include $(WORKPATH)/kernel/include/klib/virtual_function.hh
 export CXXFLAGS += -include $(WORKPATH)/kernel/include/klib/global_operator.hh
 export CXXFLAGS += -include $(WORKPATH)/kernel/include/types.hh
-export LDFLAGS = -z max-page-size=4096  
+export LDFLAGS = -z max-page-size=4096
 
 export WORKPATH = $(shell pwd)
 export BUILDPATH = $(WORKPATH)/build
@@ -52,50 +53,56 @@ STATIC_MODULE = \
 	$(BUILDPATH)/kernel.a \
 	$(BUILDPATH)/user/user.a \
 	$(BUILDPATH)/thirdparty/EASTL/libeastl.a \
-	$(BUILDPATH)/hal_loongarch.a
+	$(BUILDPATH)/hsai.a \
+	$(BUILDPATH)/$(HAL_LIB_NAME)
 
 
 # .PHONY 是一个伪规则，其后面依赖的规则目标会成为一个伪目标，使得规则执行时不会实际生成这个目标文件
-.PHONY: all clean test initdir probe_host compile_all load_kernel EASTL EASTL_test
+.PHONY: all clean test initdir probe_host compile_all load_kernel EASTL EASTL_test config_platform
 
 # rules define 
 
-all: initdir probe_host compile_all load_kernel
+all: probe_host compile_all load_kernel
 	$(OBJCOPY) -O binary ./build/kernel.elf ./kernel.bin
 	@echo "__________________________"
 	@echo "-------- 生成成功 --------"
 
-initdir:
-	$(MAKE) initdir -C hal/loongarch
-	$(MAKE) initdir -C kernel
-	$(MAKE) initdir -C user
-	$(MAKE) initdir -C thirdparty/EASTL
-
 probe_host:
 	@echo "********************************"
 	@echo "当前主机操作系统：$(HOST_OS)"
+	@echo "编译目标平台：$(CONF_ARCH)-$(CONF_PLATFORM)"
 	@echo "********************************"
 
-
 compile_all:
-	$(MAKE) -C thirdparty/EASTL
+	$(MAKE) all -C thirdparty/EASTL
 	$(MAKE) all -C user
-	$(MAKE) all -C hal/loongarch
+	$(MAKE) all -C hsai
+	$(MAKE) all -C hal/$(CONF_ARCH)
 	$(MAKE) all -C kernel
 
 load_kernel: $(BUILDPATH)/kernel.elf
 
 $(BUILDPATH)/kernel.elf: $(STATIC_MODULE) kernel/kernel.ld 
-	$(LD) $(LDFLAGS) -T kernel/kernel.ld -o $@ $(STATIC_MODULE)
+	$(LD) $(LDFLAGS) -T kernel/kernel.ld -o $@ -Wl,--whole-archive $(STATIC_MODULE) -Wl,--no-whole-archive
 
 test:
-	$(MAKE) test -C kernel
+	$(MAKE) test -C hsai
+#	$(MAKE) test -C kernel
 
 clean:
 	$(MAKE) clean -C kernel
 	$(MAKE) clean -C user
 	$(MAKE) clean -C thirdparty/EASTL
-	$(MAKE) clean -C hal/loongarch
+	$(MAKE) clean -C hsai
+	$(MAKE) clean -C hal/$(CONF_ARCH)
 
 EASTL_test:
 	$(MAKE) test -C thirdparty/EASTL
+
+# config_platform:
+# 	@cd hal/$(CONF_ARCH)/$(CONF_PLATFORM); \
+# 		cp config.mk $(WORKPATH)/hsai/Makedefs.mk
+# 	@echo "******** 配置成功 ********"
+# 	@echo "- 架构 : ${CONF_ARCH}"
+# 	@echo "- 平台 : ${CONF_PLATFORM}"
+# 	@echo "**************************"

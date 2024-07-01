@@ -20,7 +20,7 @@ namespace loongarch
 		virtual void _interrupt_off() override;
 
 	public:
-		Cpu();
+		Cpu() {};
 
 		virtual uint get_cpu_id() override;
 		virtual int is_interruptible() override;
@@ -28,5 +28,6 @@ namespace loongarch
 	};
 
 	extern Cpu k_la_cpus[ NUMCPU ];
-	extern void cpu_init();
+	void cpu_init();
+	
 } // namespace loongarch

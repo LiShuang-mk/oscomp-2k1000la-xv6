@@ -8,7 +8,7 @@
 
 #pragma once 
 
-#include "smp/lock.hh"
+#include <smp/spin_lock.hh>
 
 namespace dev
 {
@@ -18,7 +18,7 @@ namespace dev
 		class RtcController
 		{
 		private:
-			smp::Lock _lock;
+			hsai::SpinLock _lock;
 
 		public:
 			void init( const char * lock_name );

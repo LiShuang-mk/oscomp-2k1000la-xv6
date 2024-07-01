@@ -8,7 +8,9 @@
 
 #pragma once 
 #include "pm/process.hh"
-#include "smp/lock.hh"
+
+#include <smp/spin_lock.hh>
+
 #include <EASTL/string.h>
 #include <EASTL/vector.h>
 
@@ -36,8 +38,8 @@ namespace pm
 	class ProcessManager
 	{
 	private:
-		smp::Lock _pid_lock;
-		smp::Lock _wait_lock;
+		hsai::SpinLock _pid_lock;
+		hsai::SpinLock _wait_lock;
 		int _cur_pid;
 		Pcb * _init_proc;		// user init proc
 
@@ -67,7 +69,7 @@ namespace pm
 		int wait( int child_pid, uint64 addr );
 		int load_seg( mm::PageTable &pt, uint64 va, fs::fat::Fat32DirEntry *de, uint offset, uint size );
 
-		void sleep( void *chan, smp::Lock *lock );
+		void sleep( void *chan, hsai::SpinLock *lock );
 		void wakeup( void *chan );
 		void exit( int state );
 		int fork( uint64 usp );
