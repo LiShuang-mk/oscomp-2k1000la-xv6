@@ -26,9 +26,9 @@
 #include "im/exception_manager.hh"
 
 #include "fs/elf.hh"
-#include "fs/fat/fat32_dir_entry.hh"
+//#include "fs/fat/fat32_dir_entry.hh"
 #include "fs/fat/fat32Dentry.hh"
-#include "fs/fat/fat32_file_system.hh"
+//#include "fs/fat/fat32_file_system.hh"
 #include "fs/fat/fat32fs.hh"
 #include "fs/file.hh"
 #include "fs/dev/console.hh"
@@ -448,9 +448,9 @@ namespace pm
 		mm::PageTable pt_old;
 		uint64 ustack[ MAXARG ];
 		elf::elfhdr elf;
-		elf::proghdr ph;
-		fs::fat::Fat32DirInfo dir_;
-		fs::fat::Fat32DirEntry *de;
+		elf::proghdr ph = {} ;
+		//fs::fat::Fat32DirInfo dir_;
+		fs::Dentry *de;
 		int i, off;
 
 		// proc->_pt.freewalk();
@@ -458,20 +458,20 @@ namespace pm
 		_proc_create_vm( proc );
 
 
-		if ( fs::fat::k_testcase_fs.get_root_dir()->find_sub_dir( path, dir_ )
-			== fs::fat::Fat32DirEntryStatus::fat32de_init_fail )
+		if ( ( de = fs::fat::k_fatfs.get_root_dir()->EntrySearch( path ) ) 			
+									== nullptr )
 		{
 			log_error( "exec: cannot find file" );
 			return -1;   // 拿到文件夹信息
 		}
-		if ( ( de = fs::fat::k_testcase_fs.get_dir_entry( dir_ ) ) == nullptr )
-		{
-			log_error( "exec: cannot find file" );
-			return -1; 	 // 拿到文件信息
-		}
+		// if ( ( de = fs::fat::k_fatfs.get_dir_entry( dir_ ) ) == nullptr )
+		// {
+		// 	log_error( "exec: cannot find file" );
+		// 	return -1; 	 // 拿到文件信息
+		// }
 
 		/// @todo check ELF header
-		de->read_content( &elf, sizeof( elf ), 0 );
+		de->getNode()->nodeRead( reinterpret_cast<uint64>(&elf), 0, sizeof( elf ));
 
 		if ( elf.magic != elf::elfEnum::ELF_MAGIC )  // check magicnum
 		{
@@ -487,7 +487,7 @@ namespace pm
 
 		for ( i = 0, off = elf.phoff; i < elf.phnum; i++, off += sizeof( ph ) )
 		{
-			de->read_content( &ph, sizeof( ph ), off );
+			de->getNode()->nodeRead( reinterpret_cast<uint64>(&ph), off, sizeof( ph ) );
 
 			if ( ph.type != elf::elfEnum::ELF_PROG_LOAD )
 				continue;
@@ -621,7 +621,7 @@ namespace pm
 		return argc;
 	}
 
-	int ProcessManager::load_seg( mm::PageTable &pt, uint64 va, fs::fat::Fat32DirEntry *de, uint offset, uint size )
+	int ProcessManager::load_seg( mm::PageTable &pt, uint64 va, fs::Dentry *de, uint offset, uint size )
 	{	//好像没有机会返回 -1, pa失败的话会panic，de的read也没有返回值
 		uint i, n;
 		uint64 pa;
@@ -635,7 +635,7 @@ namespace pm
 				n = size - i;
 			else
 				n = mm::PageEnum::pg_size;
-			de->read_content( ( void * ) ( pa | loongarch::qemuls2k::dmwin::win_0 ), n, offset + i );
+			de->getNode()->nodeRead( reinterpret_cast<uint64>( ( void * ) ( pa | loongarch::qemuls2k::dmwin::win_0 ) ), offset + i, n );
 		}
 		return 0;
 	}

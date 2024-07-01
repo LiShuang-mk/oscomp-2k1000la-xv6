@@ -27,6 +27,7 @@ namespace fs
 			_super_block = new Fat32SuperBlock( this, dbr, true );
 
 			/// @todo 2. set _start_lba, _fat_lba, _device
+			_fstype = "fat32";
 			_device = dev;
 			_start_lba = start_lba;
 			_fat_lba = _start_lba + _super_block->get_bpb()->reserved_sector_count;

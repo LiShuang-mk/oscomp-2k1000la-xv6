@@ -16,6 +16,7 @@
 #include "fs/ext4/super_block.hh"
 #include "fs/ext4/block_group_descriptor.hh"
 #include "fs/ext4/index_node.hh"
+#include "fs/ramfs/ramfs.hh"
 #include "fs/jbd2/journal_super_block.hh"
 #include "fs/buffer_manager.hh"
 
@@ -187,12 +188,14 @@ int main()
 		// while ( 1 );
 
 
-		
+		new ( &fs::ramfs::k_ramfs ) fs::ramfs::RamFS;
+		fs::ramfs::k_ramfs.initfd();
 		new ( &fs::fat::k_fatfs ) fs::fat::Fat32FS;
 		fs::fat::k_fatfs.init( 1, 0, true );
-		new ( &fs::fat::k_testcase_fs ) fs::fat::Fat32FileSystem;
-		fs::fat::k_testcase_fs.init( 1, 0 );
-		log_info( "testcase fs init" );
+		log_info( " fat32 fs init" );
+		//new ( &fs::fat::k_testcase_fs ) fs::fat::Fat32FileSystem;
+		//fs::fat::k_testcase_fs.init( 1, 0 );
+		//log_info( "testcase fs init" );
 
 		dev::k_dm.init();
 		log_info( "k_dm init" );
