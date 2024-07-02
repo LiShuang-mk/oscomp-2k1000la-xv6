@@ -1,5 +1,4 @@
 #include "fs/ramfs/ramfsInode.hh"
-#include "fs/ramfs/ramfsSb.hh"
 #include "fs/ramfs/ramfs.hh"
 
 namespace fs{

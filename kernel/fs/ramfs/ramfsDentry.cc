@@ -1,6 +1,5 @@
 #include "fs/ramfs/ramfsDentry.hh"
 #include "fs/ramfs/ramfsInode.hh"
-#include "fs/ramfs/ramfsSb.hh"
 #include "fs/ramfs/ramfs.hh"
 
 #include "fs/inode.hh"
@@ -28,15 +27,42 @@ namespace fs{
             return nullptr;
         }
 
-        Dentry *RamFSDen::EntryCreate( eastl::string name, uint32 mode ){
-            RamFS *nodefs;
-            if( ( nodefs = dynamic_cast<RamFS *>( node->getFS() ) ) == nullptr ){
-                log_error( "RamFSDen::EntryCreate: nodefs is not RamFS" );
+        Dentry* RamFSDen::EntryCreate(eastl::string name, uint32 mode) {
+            if (name.empty()) {
+                log_error("RamFSDen::EntryCreate: name is empty");
                 return nullptr;
             }
-            RamInode *inode = new RamInode( nodefs, node->rIno(), S_ISDIR( mode ) );
-            RamFSDen *dentry = new RamFSDen( name, inode );
-            children[ name ] = dentry;
+
+            // check if the name already exists
+            if (children.find(name) != children.end()) {
+                log_error("RamFSDen::EntryCreate: name already exists");
+                return nullptr;
+            }
+            
+            [[maybe_unused]] FileSystem *fs = node->getFS();
+
+            RamFS* nodefs = static_cast <RamFS*>(node->getFS());
+            if (nodefs == nullptr) {
+                log_error("RamFSDen::EntryCreate: nodefs is not RamFS");
+                return nullptr;
+            }
+
+            RamInode* inode = new RamInode(nodefs, k_ramfs.alloc_ino(), S_ISDIR(mode));
+            if (inode == nullptr) {
+                log_error("RamFSDen::EntryCreate: Failed to create RamInode");
+                return nullptr;
+            }
+
+            RamFSDen* dentry = new RamFSDen( name, inode, this);
+            if (dentry == nullptr) {
+                log_error("RamFSDen::EntryCreate: Failed to create RamFSDen");
+                delete inode; // 避免内存泄漏
+                return nullptr;
+            }
+
+            children [ name ] = dentry;
+
+            log_info("RamFSDen::EntryCreate: created %s, parent %s", name.c_str(), this->name.c_str());
             return dentry;
         }
 
@@ -44,5 +70,18 @@ namespace fs{
             return node;
         }
 
+        void RamFSDen::init(uint32 dev, RamFS *fs){
+            parent = nullptr;
+            node = new RamInode( fs, fs->alloc_ino(), true );
+            //node->init( 0, fs, true );
+            name = "/";
+
+            // init device dentry
+            // EntryCreate( "dev", 1 ); // 暂时把第二个参数为正数认为是目录
+            // EntryCreate( "proc", 1 );
+            // EntryCreate( "sys", 1 );
+            // EntryCreate( "tmp", 1 );
+            // EntryCreate( "mnt", 1 );
+        }
     }
 }

@@ -12,12 +12,13 @@
 
 #include <EASTL/string.h>
 #include <EASTL/vector.h>
-
+#include <EASTL/unordered_map.h>
 namespace fs
 {
 	class Dentry;
 	class File;
-
+	class FileSystem;
+	
 	class Path
 	{
 	private:
@@ -70,4 +71,5 @@ namespace fs
 		Dentry *pathCreate( uint32 mode );
 	};
 
+	extern eastl::unordered_map<eastl::string, FileSystem *> mnt_table;
 } // namespace fs

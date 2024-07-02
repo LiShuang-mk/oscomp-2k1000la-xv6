@@ -12,17 +12,15 @@ namespace fs{
     
     namespace ramfs{
 
-        class RamFsDen;
-        class RamFS;
-
         class RamFSSb : public fs::SuperBlock {
-            RamFsDen * root;
             FileSystem *fs;
             bool is_valid;
 
             public:
-                RamFSSb(FileSystem *);
-			    Dentry *getRoot() const override { return nullptr; };
+                RamFSSb() = default;
+                RamFSSb(FileSystem * _fs) : fs(_fs), is_valid(true) {}
+                ~RamFSSb() = default;
+			    Dentry *getRoot() const override { return fs->getRoot(); };
                 Dentry *getMntPoint() const override { log_panic("RamFS getMntPoint is forbidden!"); return nullptr; }
                 FileSystem *getFileSystem() const override { return nullptr; }
                 bool isValid() const override { return true; }

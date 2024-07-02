@@ -55,6 +55,7 @@ namespace fs
 			long rBlockFree() const override { return rBlockNum(); } /// @todo FAT32 free block number
 			long rMaxFile() const override { return rBlockNum() / _super_block->rSectorPClu(); } /// @todo FAT32 max file number
 			long rFreeFile() const override { return rBlockFree() / _super_block->rSectorPClu(); } /// @todo FAT32 free file number
+			eastl::string rFStype() const override { return _fstype; } 
 			size_t rNamelen() const override { return Fat32MaxPathLength; }
 			//void unInstall() override {  } /// @todo FAT32 uninstall file system
 			Dentry *getRoot() const override { return nullptr; };

@@ -23,9 +23,9 @@ namespace fs{
                 const uint ino;
                 bool is_dir;
                 eastl::vector<uint8> data;
-                eastl::unordered_map<eastl::string, RamInode*> children;
 
             public:
+                RamInode() = default;
                 RamInode( RamFS *fs_, uint ino_, bool is_dir_ = false ) : belong_fs( fs_ ), ino( ino_ ), is_dir( is_dir_ ) {}
                 ~RamInode() = default;
                 

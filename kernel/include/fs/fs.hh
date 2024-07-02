@@ -38,6 +38,7 @@ namespace fs
 		virtual long rBlockFree() const = 0; // get free block number
 		virtual long rMaxFile() const = 0; // max file num when read
 		virtual long rFreeFile() const = 0; // max file num when read free block
+		virtual eastl::string rFStype() const = 0; // get filesystem type
 		virtual size_t rNamelen() const = 0; // get max name length
 		virtual Dentry *getRoot() const = 0; // get root dentry
 		virtual Dentry *getMntPoint() const = 0; // get mount point dentry

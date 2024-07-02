@@ -19,6 +19,7 @@
 #include "fs/ramfs/ramfs.hh"
 #include "fs/jbd2/journal_super_block.hh"
 #include "fs/buffer_manager.hh"
+#include "fs/path.hh"
 
 #include "tm/timer_manager.hh"
 
@@ -187,11 +188,14 @@ int main()
 		// test_buffer();
 		// while ( 1 );
 
-
+		fs::mnt_table.clear(); // clean mnt_Table
 		new ( &fs::ramfs::k_ramfs ) fs::ramfs::RamFS;
 		fs::ramfs::k_ramfs.initfd();
+		//fs::mnt_table[ fs::ramfs::k_ramfs.rFStype() ] = &fs::ramfs::k_ramfs;
+		log_info( "ramfs init" );
 		new ( &fs::fat::k_fatfs ) fs::fat::Fat32FS;
-		fs::fat::k_fatfs.init( 1, 0, true );
+		fs::fat::k_fatfs.init( 1, 0, true );		
+		//fs::mnt_table[ fs::fat::k_fatfs.rFStype() ] = &fs::fat::k_fatfs;
 		log_info( " fat32 fs init" );
 		//new ( &fs::fat::k_testcase_fs ) fs::fat::Fat32FileSystem;
 		//fs::fat::k_testcase_fs.init( 1, 0 );
