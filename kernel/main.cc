@@ -6,6 +6,7 @@
 
 #include "fs/device.hh"
 #include "fs/file.hh"
+#include "fs/dentrycache.hh"
 #include "fs/dev/console.hh"
 #include "fs/dev/pci_driver.hh"
 #include "fs/dev/ahci_controller.hh"
@@ -193,6 +194,8 @@ int main()
 		fs::ramfs::k_ramfs.initfd();
 		//fs::mnt_table[ fs::ramfs::k_ramfs.rFStype() ] = &fs::ramfs::k_ramfs;
 		log_info( "ramfs init" );
+		new ( &fs::dentrycache::k_dentryCache ) fs::dentrycache::dentryCache;
+		fs::dentrycache::k_dentryCache.init();
 		new ( &fs::fat::k_fatfs ) fs::fat::Fat32FS;
 		fs::fat::k_fatfs.init( 1, 0, true );		
 		//fs::mnt_table[ fs::fat::k_fatfs.rFStype() ] = &fs::fat::k_fatfs;

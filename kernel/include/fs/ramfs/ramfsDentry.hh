@@ -34,7 +34,8 @@ namespace fs{
                 eastl::string getName() override { return name; };
                 bool isMntPoint() override { return false; }; 
                 int dentry_type() override { return 0; }; //generally ramfs does not have dentry type
-        
+                eastl::string rName() override { return name; }; // get dentry' name
+                
             public:
                 void init( uint32 dev, RamFS *fs ); // for purpose of root init
         };

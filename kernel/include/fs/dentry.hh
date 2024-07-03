@@ -22,7 +22,7 @@ namespace fs
 	public:
 		Dentry() = default;
 		Dentry( const Dentry& dentry ) = delete;
-		Dentry & operator=( const Dentry& dentry ) = delete;
+		Dentry & operator=( const Dentry& dentry ) = default;
 		virtual ~Dentry() = default;
 		//Dentry( Dentry *parent_, Inode *node_, eastl::string name_ ) : parent( parent_ ), node( node_ ), name( name_ ), isMountPoint( false ) {};
 		virtual Dentry * EntrySearch( eastl::string name ) = 0;
@@ -33,6 +33,8 @@ namespace fs
 		virtual eastl::string getName() = 0;
 		virtual bool isMntPoint() = 0;
 		virtual int dentry_type() = 0;
+		
+		virtual eastl::string rName() = 0; // get dentry' name
 	};
 
 } // namespace fs

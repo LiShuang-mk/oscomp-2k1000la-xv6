@@ -31,25 +31,25 @@ namespace fs
 
 			Fat32Dentry() = default;
 			Fat32Dentry( const Fat32Dentry& dentry ) = delete;
-			Fat32Dentry & operator=( const Fat32Dentry& dentry ) = delete;
+			Fat32Dentry & operator=( const Fat32Dentry& dentry ) = default;
 			Fat32Dentry( Fat32Dentry *parent_, Fat32Inode *node_, eastl::string name_ ) : _parent( parent_ ), _node( node_ ), _name( name_ ) {};
 			~Fat32Dentry();
 
 			/// TODO: 这个方法简单的返回 _sub_dir_cache，并且不保证将来仍然能够使用
 			///       为了保证多个进程能同时使用，这里应该改为池技术分配 dentry 实体 
-			virtual Dentry * EntrySearch( eastl::string name ) override;
+			Dentry * EntrySearch( eastl::string name ) override;
 
-			virtual Dentry * EntryCreate( eastl::string name, uint32 mode ) override;
-			virtual Inode * getNode() override { return _node; };
-			virtual bool isRoot() override { return false; };
-			virtual Dentry *getParent() override { return _parent == nullptr ? nullptr : _parent; };
-			virtual eastl::string getName() override { return _name; };
-			virtual bool isMntPoint() override { return false; };
+			Dentry * EntryCreate( eastl::string name, uint32 mode ) override;
+			Inode * getNode() override { return _node; };
+			bool isRoot() override { return false; };
+			Dentry *getParent() override { return _parent == nullptr ? nullptr : _parent; };
+			eastl::string getName() override { return _name; };
+			bool isMntPoint() override { return false; };
 			Fat32Dentry *dirinfo2dentry( Fat32Dentry *dirinfo );
 			void rootInit( Fat32Inode *node ) { _parent = nullptr; _node = node; _name = "/"; };
 			void init( uint32 dev, Fat32SuperBlock *sb, Fat32FS *fs );   /// @todo init root
-			virtual int dentry_type() override { return -1; };
-
+			int dentry_type() override { return -1; };
+			eastl::string rName() override { return _name; }; // get dentry' name
 		};
 	}
 }
