@@ -9,6 +9,11 @@ namespace fs
 {
 	class Inode;
 
+	namespace dentrycache{
+
+		class dentryCache;
+
+	}
 	namespace fat
 	{
 
@@ -20,6 +25,7 @@ namespace fs
 
 		class Fat32Dentry : public Dentry
 		{
+			friend class dentrycache::dentryCache;
 		private:
 			Fat32Dentry *_parent;
 			Fat32Inode *_node;
@@ -27,6 +33,7 @@ namespace fs
 			eastl::unordered_map<eastl::string, Fat32Dentry *> _dentry_children;
 			eastl::string _name;
 			// Dentry * _sub_dir_cache = nullptr;
+			uint Did; // dentry id
 		public:
 
 			Fat32Dentry() = default;
@@ -50,6 +57,8 @@ namespace fs
 			void init( uint32 dev, Fat32SuperBlock *sb, Fat32FS *fs );   /// @todo init root
 			int dentry_type() override { return -1; };
 			eastl::string rName() override { return _name; }; // get dentry' name
+			uint getDid() override { return Did; };
+			void reset() override { _parent = nullptr; _node = nullptr; _name.clear(); _dentry_children.clear(); Did = 0;}
 		};
 	}
 }

@@ -33,8 +33,10 @@ namespace fs
 		virtual eastl::string getName() = 0;
 		virtual bool isMntPoint() = 0;
 		virtual int dentry_type() = 0;
-		
+		virtual uint getDid() = 0;
 		virtual eastl::string rName() = 0; // get dentry' name
+		virtual void reset() = 0; // reset dentry, used by dentrycache
+		uint Did; // dentry id
 	};
 
 } // namespace fs

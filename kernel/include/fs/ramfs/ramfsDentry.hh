@@ -8,6 +8,11 @@ namespace fs{
 
     //class Dentry;
 
+    namespace dentrycache{
+
+        class dentryCache;
+
+    }
     namespace ramfs{
 
         class RamInode;
@@ -15,10 +20,12 @@ namespace fs{
         class RamFS;
         
         class RamFSDen : public Dentry{
+            friend class dentrycache::dentryCache;
             eastl::string name;
             eastl::unordered_map<eastl::string, RamFSDen *> children;
             RamInode *node;
             RamFSDen *parent;
+            uint Did; // dentry id
 
             public:
                 RamFSDen() = default;
@@ -35,7 +42,8 @@ namespace fs{
                 bool isMntPoint() override { return false; }; 
                 int dentry_type() override { return 0; }; //generally ramfs does not have dentry type
                 eastl::string rName() override { return name; }; // get dentry' name
-                
+                uint getDid() override { return Did; };  // Dentry id should allocated by dentrycache
+                void reset() override { parent = nullptr; node = nullptr; name.clear(); children.clear(); Did = 0; }
             public:
                 void init( uint32 dev, RamFS *fs ); // for purpose of root init
         };

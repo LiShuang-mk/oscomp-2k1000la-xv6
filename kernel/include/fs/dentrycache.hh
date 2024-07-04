@@ -30,7 +30,7 @@ namespace fs
 
         constexpr uint MAX_DENTRY_NUM = 1024;
         constexpr uint DENTRY_TYPES = 2;
-
+        constexpr uint INACTIVE_LIST_MAX_SIZE = 300;  // tentative size
         class dentryCache
         {
             smp::Lock _lock;
@@ -47,8 +47,10 @@ namespace fs
             void init();
             Dentry *getDentry();
             void putDentry(Dentry *dentry);
-            Dentry *alloDentry();
-            void releaseDentry(Dentry *dentry);
+            Dentry *alloDentry(DentryType type);
+            void releaseDentry(Dentry *dentry);  // who will call this function apparently? , OOOO, it should be releaseInactiveDentry
+            void touchDentry(Dentry *dentry);
+            void releaseInactiveDentry();
         };
 
         extern dentryCache k_dentryCache;
