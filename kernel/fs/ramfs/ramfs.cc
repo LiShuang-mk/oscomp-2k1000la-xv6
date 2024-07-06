@@ -1,6 +1,7 @@
 #include "fs/ramfs/ramfs.hh"
-#include "fs/ramfs/ramfsDentry.hh"
+//#include "fs/ramfs/ramfsDentry.hh"
 
+#include "fs/dentrycache.hh"
 #include "fs/dentry.hh"
 
 namespace fs{
@@ -40,5 +41,14 @@ namespace fs{
             _super_block = new RamFSSb( this );
         }
         
+        void RamFS::dentryCacheTest( )
+        {
+            Dentry *dentry = fs::dentrycache::k_dentryCache.alloDentry( DentryType::RAMFS_DENTRY );
+			_root = static_cast<RamFSDen *>(dentry);
+			//_root->init( _device, _super_block, this );
+			_root->init( "/", nullptr, nullptr);
+
+			return;
+        }
     }
 }

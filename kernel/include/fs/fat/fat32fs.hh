@@ -73,6 +73,8 @@ namespace fs
 			uint64 get_bytes_per_sector() { return _super_block->get_bpb()->bytes_per_sector; }
 
 			Fat32Dentry * get_root_dir() { return _root; }
+
+			//void DentryCacheTest();
 		};
 
 		extern Fat32FS k_fatfs;

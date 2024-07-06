@@ -22,15 +22,16 @@ namespace fs
     namespace dentrycache
     {
 
-        enum DentryType
-        {
-            RAMFS_DENTRY = 0,
-            FAT32_DENTRY = 1,
-        };
+        
 
         constexpr uint MAX_DENTRY_NUM = 1024;
         constexpr uint DENTRY_TYPES = 2;
         constexpr uint INACTIVE_LIST_MAX_SIZE = 300;  // tentative size
+
+        /**
+         * @brief Dentry cache
+         * 
+         */
         class dentryCache
         {
             smp::Lock _lock;
@@ -50,7 +51,7 @@ namespace fs
             Dentry *alloDentry(DentryType type);
             void releaseDentry(Dentry *dentry);  // who will call this function apparently? , OOOO, it should be releaseInactiveDentry
             void touchDentry(Dentry *dentry);
-            void releaseInactiveDentry();
+            Dentry *releaseInactiveDentry( DentryType type );
         };
 
         extern dentryCache k_dentryCache;

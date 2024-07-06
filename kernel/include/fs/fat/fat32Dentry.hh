@@ -55,10 +55,13 @@ namespace fs
 			Fat32Dentry *dirinfo2dentry( Fat32Dentry *dirinfo );
 			void rootInit( Fat32Inode *node ) { _parent = nullptr; _node = node; _name = "/"; };
 			void init( uint32 dev, Fat32SuperBlock *sb, Fat32FS *fs );   /// @todo init root
-			int dentry_type() override { return -1; };
+			void init( Fat32Dentry *parent_, Fat32Inode *node_, eastl::string name_ ) { _parent = parent_; _node = node_; _name = name_; };
+			DentryType dentry_type() override { return DentryType::FAT32_DENTRY; };
 			eastl::string rName() override { return _name; }; // get dentry' name
 			uint getDid() override { return Did; };
-			void reset() override { _parent = nullptr; _node = nullptr; _name.clear(); _dentry_children.clear(); Did = 0;}
+			void reset( eastl::vector<int> &bitmap ) override; 
+
+			void dentrycachetest();
 		};
 	}
 }

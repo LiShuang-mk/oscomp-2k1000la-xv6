@@ -4,7 +4,7 @@
 
 #include <EASTL/string.h>
 #include <EASTL/list.h>
-
+#include <EASTL/iterator.h>
 
 namespace fs
 {
@@ -25,10 +25,10 @@ namespace fs
             }
 
             //init _ramsDentryPool
-            for ( ; _index < MAX_DENTRY_NUM; ++_index)
+            for ( uint i = 0; _index < MAX_DENTRY_NUM; ++_index, ++i)
             {
-                _ramDentryPool[ _index ] = ramfs::RamFSDen();
-                _ramDentryPool[ _index ].Did = _index;  
+                _ramDentryPool[ i ] = ramfs::RamFSDen();
+                _ramDentryPool[ i ].Did = _index;  
             }
 
             _active_list.clear();
@@ -55,9 +55,9 @@ namespace fs
                         break;
                     }
                 }
-                if( !found ) 
-                    /// @todo release in_active_list dentry
-                log_error("No available fat32Dentry can be used\n");
+                if( !found ) /// @todo release in_active_list dentry
+                    dentry = releaseInactiveDentry( type );
+                //log_error("No available fat32Dentry can be used\n");
                 break;
             case DentryType::RAMFS_DENTRY:
                 for(auto &d : _ramDentryPool)
@@ -72,8 +72,8 @@ namespace fs
                     }
                 }
                 if( !found ) 
-                    /// @todo release in_active_list dentry
-                log_error("No available ramfsDentry can be used\n");
+                    dentry = releaseInactiveDentry( type );
+                //log_error("No available ramfsDentry can be used\n");
                 break;
             default:
                 log_error("Dentry type not supported\n");
@@ -95,7 +95,8 @@ namespace fs
                 Dentry *to_release = _inactive_list.back();
                 _inactive_list.pop_back();
                 /// @todo: reset dentry in dentrycache, and simutaneous reset dentry in fsDnetryTree
-                to_release->reset();
+                /// 直接交由下方的dentry自行修改合适吗？
+                to_release->reset( bitmap );
             }
 
             bitmap[dentry->getDid()] = 0;
@@ -117,6 +118,23 @@ namespace fs
             // 将dentry添加到active_list的前端
             _active_list.push_front(dentry);
             _lock.release();
+        }
+        
+        Dentry* dentryCache::releaseInactiveDentry(DentryType type) {
+            _lock.acquire(); 
+            for (auto it = _inactive_list.rbegin(); it != _inactive_list.rend(); ++it) {
+                if ((*it)->dentry_type() == type) {
+                    // 找到了匹配的dentry
+                    Dentry* matchedDentry = *it;
+                    auto eraseIt = eastl::next(it).base();
+                    _inactive_list.erase(eraseIt);
+                    _lock.release(); // 释放锁
+                    releaseDentry(matchedDentry); // 释放dentry
+                    return matchedDentry; // 返回找到的dentry
+                }
+            }
+            _lock.release(); 
+            return nullptr; // 如果没有找到匹配的dentry，返回nullptr
         }
     } //  namespace dentrycache
 

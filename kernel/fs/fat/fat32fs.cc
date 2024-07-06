@@ -1,8 +1,9 @@
 #include "fs/fat/fat32fs.hh"
-#include "fs/fat/fat32Dentry.hh"
+//#include "fs/fat/fat32Dentry.hh"
 #include "fs/dentry.hh"
 #include "fs/buffer_manager.hh"
 #include "fs/buffer.hh"
+#include "fs/dentrycache.hh"
 
 namespace fs
 {
@@ -40,5 +41,6 @@ namespace fs
 
 			_root->EntryCreate( "test_unlink", 0 );
 		}
+
 	}
 }

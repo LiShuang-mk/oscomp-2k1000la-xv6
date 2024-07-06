@@ -44,6 +44,7 @@ namespace fs{
                 Dentry *getRoot() const override { return nullptr; } // RamFS does not have root dentry
                 Dentry *getMntPoint() const override { return nullptr; } // RamFS does not have mount point dentry
                 int alloc_ino() { return _ino++; }
+                void dentryCacheTest();
         };
 
         extern RamFS k_ramfs;

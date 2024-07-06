@@ -83,5 +83,20 @@ namespace fs{
             // EntryCreate( "tmp", 1 );
             // EntryCreate( "mnt", 1 );
         }
+
+        void RamFSDen::reset( eastl::vector<int> &bitmap ){
+
+            bitmap[ Did ] = 0;
+            
+            parent = nullptr;
+            node = nullptr;
+            name.clear();
+            for( auto &p : children )
+            {
+                p.second->reset( bitmap );
+            }
+            children.clear();
+            Did = 0;
+        }
     }
 }

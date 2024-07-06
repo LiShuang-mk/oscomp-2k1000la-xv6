@@ -12,10 +12,18 @@
 
 #include <EASTL/string.h>
 #include <EASTL/unordered_map.h>
+#include <EASTL/vector.h>
 
+using eastl::vector;
 namespace fs
 {
 	class Inode;
+
+	enum DentryType
+    {
+            RAMFS_DENTRY = 0,
+            FAT32_DENTRY = 1,
+    };
 
 	class Dentry
 	{               // Directory Entry， 目录项，存在于缓存，不用交由下层FS实现
@@ -32,10 +40,10 @@ namespace fs
 		virtual Dentry *getParent() = 0;
 		virtual eastl::string getName() = 0;
 		virtual bool isMntPoint() = 0;
-		virtual int dentry_type() = 0;
+		virtual DentryType dentry_type() = 0;
 		virtual uint getDid() = 0;
 		virtual eastl::string rName() = 0; // get dentry' name
-		virtual void reset() = 0; // reset dentry, used by dentrycache
+		virtual void reset( vector<int> &bitmap ) = 0; // reset dentry, used by dentrycache
 		uint Did; // dentry id
 	};
 

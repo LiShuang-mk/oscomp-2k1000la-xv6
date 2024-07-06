@@ -4,9 +4,9 @@
 #include "fs/buffer_manager.hh"
 #include "fs/fat/fat32Sb.hh"
 #include "fs/fat/fat32fs.hh"
+//#include "fs/dentrycache.hh"
 
 #include <EASTL/vector.h>
-
 namespace fs
 {
 	namespace fat
@@ -64,5 +64,31 @@ namespace fs
 			_dentry_children[ name ] = new Fat32Dentry( this, nullptr, name );
 			return nullptr;
 		}
+
+		void Fat32Dentry::reset( eastl::vector<int> &bitmap )
+		{
+			bitmap[ Did ] = 0;
+			_parent = nullptr;
+			_node = nullptr;
+			_name.clear();
+			for( auto &p : _dentry_children )
+			{
+				p.second->reset( bitmap );
+			}
+			_dentry_children.clear();
+			Did = 0;
+		}
+	
+		// void Fat32Dentry::dentrycachetest( )
+		// {
+		// 	log_info( "Fat32Dentry::dentrycachetest" );
+		// 	fs::dentrycache::dentryCache &dc = fs::dentrycache::k_dentryCache;
+		// 	Dentry *dentry = dc.alloDentry( DentryType::FAT32_DENTRY );
+			
+		// 	Fat32Dentry *f32dentry = static_cast<Fat32Dentry *>( dentry );
+		// 	f32dentry->init( this, nullptr, "Level_1_Entry_1" );
+		// 	chil
+			
+		// }
 	}
 }
