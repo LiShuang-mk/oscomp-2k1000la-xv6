@@ -45,9 +45,14 @@ namespace fs{
                 eastl::string rName() override { return name; }; // get dentry' name
                 uint getDid() override { return Did; };  // Dentry id should allocated by dentrycache
                 void reset( eastl::vector<int> &bitmap ) override ;
+                void add_children( RamFSDen *den) { children[ den->rName() ] = den; };
+
+                void printChildrenInfo();
             public:
                 void init( uint32 dev, RamFS *fs ); // for purpose of root init
                 void init( eastl::string name_, RamInode *node_, RamFSDen *parent_ ) { name = name_; node = node_; parent = parent_; };
+                void delete_child( eastl::string name ) { children.erase( name ); };
+            
         };
     }
 }

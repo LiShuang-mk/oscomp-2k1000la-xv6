@@ -87,7 +87,7 @@ namespace fs{
         void RamFSDen::reset( eastl::vector<int> &bitmap ){
 
             bitmap[ Did ] = 0;
-            
+            parent->delete_child( name ); // delete from parent
             parent = nullptr;
             node = nullptr;
             name.clear();
@@ -97,6 +97,15 @@ namespace fs{
             }
             children.clear();
             Did = 0;
+        }
+
+        void RamFSDen::printChildrenInfo(){
+            log_info("RamFSDen::printChildrenInfo: %s", name.c_str());
+            for( auto &p : children )
+            {
+                p.second->printChildrenInfo();
+            }
+            return;
         }
     }
 }

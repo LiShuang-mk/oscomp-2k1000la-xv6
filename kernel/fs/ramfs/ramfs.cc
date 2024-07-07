@@ -1,6 +1,7 @@
 #include "fs/ramfs/ramfs.hh"
 //#include "fs/ramfs/ramfsDentry.hh"
 
+//#include "fs/fat/fat32Dentry.hh"
 #include "fs/dentrycache.hh"
 #include "fs/dentry.hh"
 
@@ -48,6 +49,33 @@ namespace fs{
 			//_root->init( _device, _super_block, this );
 			_root->init( "/", nullptr, nullptr);
 
+            RamFSDen *dentry1;
+            dentry1 = static_cast<RamFSDen *>(fs::dentrycache::k_dentryCache.alloDentry( DentryType::RAMFS_DENTRY ));
+            dentry1->init( "dev", nullptr, _root );
+            _root->add_children( dentry1 );
+            dentry1 = static_cast<RamFSDen *>(fs::dentrycache::k_dentryCache.alloDentry( DentryType::RAMFS_DENTRY ));
+            dentry1->init( "proc", nullptr, _root );
+            _root->add_children( dentry1 );  
+
+            // fat::Fat32Dentry *dentry2;
+            // dentry2 = static_cast<fat::Fat32Dentry *>(fs::dentrycache::k_dentryCache.alloDentry( DentryType::FAT32_DENTRY ));
+            // dentry2->init( dentry1, nullptr, "fatDentry" );
+
+            RamFSDen *dev = static_cast<RamFSDen *>(_root->EntrySearch( "dev" ));// 准备在dev下创建sda1
+            dentry1 = static_cast<RamFSDen *>(fs::dentrycache::k_dentryCache.alloDentry( DentryType::RAMFS_DENTRY ));
+            dentry1->init( "sda1", nullptr, dev );
+            dev->add_children( dentry1 );
+            _root->printChildrenInfo( );
+
+            dentry1 = static_cast<RamFSDen *>(fs::dentrycache::k_dentryCache.alloDentry( DentryType::RAMFS_DENTRY ));
+            dentry1->init( "sda2", nullptr, dev );
+            dev->add_children( dentry1 );
+
+            _root->printChildrenInfo();
+            
+            dentry1 = static_cast<RamFSDen *>(fs::dentrycache::k_dentryCache.alloDentry( DentryType::RAMFS_DENTRY ));
+            dentry1->init( "sda3", nullptr, dev );
+            dev->add_children( dentry1 );
 			return;
         }
     }

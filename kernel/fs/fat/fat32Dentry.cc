@@ -68,6 +68,7 @@ namespace fs
 		void Fat32Dentry::reset( eastl::vector<int> &bitmap )
 		{
 			bitmap[ Did ] = 0;
+			_parent->delete_child( _name ); // delete from parent
 			_parent = nullptr;
 			_node = nullptr;
 			_name.clear();
@@ -76,6 +77,7 @@ namespace fs
 				p.second->reset( bitmap );
 			}
 			_dentry_children.clear();
+
 			Did = 0;
 		}
 	

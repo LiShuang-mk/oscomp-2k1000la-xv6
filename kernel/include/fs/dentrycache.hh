@@ -24,10 +24,10 @@ namespace fs
 
         
 
-        constexpr uint MAX_DENTRY_NUM = 1024;
+        constexpr uint MAX_DENTRY_NUM = 8;
         constexpr uint DENTRY_TYPES = 2;
         constexpr uint INACTIVE_LIST_MAX_SIZE = 300;  // tentative size
-
+        constexpr uint ACTIVE_LIST_MAX_SIZE = 3;
         /**
          * @brief Dentry cache
          * 
@@ -51,7 +51,9 @@ namespace fs
             Dentry *alloDentry(DentryType type);
             void releaseDentry(Dentry *dentry);  // who will call this function apparently? , OOOO, it should be releaseInactiveDentry
             void touchDentry(Dentry *dentry);
+            void touchDentryInternal(Dentry *dentry);
             Dentry *releaseInactiveDentry( DentryType type );
+
         };
 
         extern dentryCache k_dentryCache;

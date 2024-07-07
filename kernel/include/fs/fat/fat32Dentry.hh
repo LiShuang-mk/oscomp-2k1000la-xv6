@@ -60,6 +60,7 @@ namespace fs
 			eastl::string rName() override { return _name; }; // get dentry' name
 			uint getDid() override { return Did; };
 			void reset( eastl::vector<int> &bitmap ) override; 
+			void delete_child( eastl::string name ) override { _dentry_children.erase( name ); };
 
 			void dentrycachetest();
 		};
