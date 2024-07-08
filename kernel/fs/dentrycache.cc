@@ -73,8 +73,9 @@ namespace fs
                         break;
                     }
                 }
-                if( !found ) 
+                if( !found ) {
                     dentry = releaseInactiveDentry( type );
+                }
                 //log_error("No available ramfsDentry can be used\n");
                 break;
             default:
@@ -127,7 +128,8 @@ namespace fs
                 releaseDentry(to_release);
             }
             _active_list.push_front(dentry);
-            touchDentryInternal(dentry->getParent());
+            if( dentry->getParent() != nullptr )
+                touchDentryInternal(dentry->getParent());
             _lock.release();
         }
         
@@ -162,6 +164,7 @@ namespace fs
                     //_inactive_list.erase(eraseIt);
                     //_lock.release(); // 释放锁
                     releaseDentry(matchedDentry); // 释放dentry
+                    bitmap[matchedDentry->getDid()] = 1;
                     return matchedDentry; // 返回找到的dentry
                 }
             }

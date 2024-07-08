@@ -96,7 +96,7 @@ namespace fs{
                 p.second->reset( bitmap );
             }
             children.clear();
-            Did = 0;
+            //Did = 0;
         }
 
         void RamFSDen::printChildrenInfo(){

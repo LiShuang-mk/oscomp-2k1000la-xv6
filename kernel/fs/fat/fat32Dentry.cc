@@ -78,7 +78,7 @@ namespace fs
 			}
 			_dentry_children.clear();
 
-			Did = 0;
+			//Did = 0;
 		}
 	
 		// void Fat32Dentry::dentrycachetest( )

@@ -5,6 +5,8 @@
 #include "fs/dentrycache.hh"
 #include "fs/dentry.hh"
 
+using namespace fs::dentrycache;
+
 namespace fs{
 
     namespace ramfs{
@@ -48,13 +50,16 @@ namespace fs{
 			_root = static_cast<RamFSDen *>(dentry);
 			//_root->init( _device, _super_block, this );
 			_root->init( "/", nullptr, nullptr);
+            k_dentryCache.touchDentry( _root );
 
             RamFSDen *dentry1;
             dentry1 = static_cast<RamFSDen *>(fs::dentrycache::k_dentryCache.alloDentry( DentryType::RAMFS_DENTRY ));
             dentry1->init( "dev", nullptr, _root );
+            k_dentryCache.touchDentry( dentry1 );
             _root->add_children( dentry1 );
             dentry1 = static_cast<RamFSDen *>(fs::dentrycache::k_dentryCache.alloDentry( DentryType::RAMFS_DENTRY ));
             dentry1->init( "proc", nullptr, _root );
+            k_dentryCache.touchDentry( dentry1 );
             _root->add_children( dentry1 );  
 
             // fat::Fat32Dentry *dentry2;
@@ -64,18 +69,22 @@ namespace fs{
             RamFSDen *dev = static_cast<RamFSDen *>(_root->EntrySearch( "dev" ));// 准备在dev下创建sda1
             dentry1 = static_cast<RamFSDen *>(fs::dentrycache::k_dentryCache.alloDentry( DentryType::RAMFS_DENTRY ));
             dentry1->init( "sda1", nullptr, dev );
+            k_dentryCache.touchDentry( dentry1 );
             dev->add_children( dentry1 );
             _root->printChildrenInfo( );
 
             dentry1 = static_cast<RamFSDen *>(fs::dentrycache::k_dentryCache.alloDentry( DentryType::RAMFS_DENTRY ));
             dentry1->init( "sda2", nullptr, dev );
+            k_dentryCache.touchDentry( dentry1 );
             dev->add_children( dentry1 );
 
             _root->printChildrenInfo();
             
             dentry1 = static_cast<RamFSDen *>(fs::dentrycache::k_dentryCache.alloDentry( DentryType::RAMFS_DENTRY ));
             dentry1->init( "sda3", nullptr, dev );
+            k_dentryCache.touchDentry( dentry1 );
             dev->add_children( dentry1 );
+            _root->printChildrenInfo();
 			return;
         }
     }
