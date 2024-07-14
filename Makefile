@@ -28,7 +28,7 @@ export OBJCOPY = ${TOOLPREFIX}objcopy
 export OBJDUMP = ${TOOLPREFIX}objdump
 export AR  = ${TOOLPREFIX}ar
 
-export ASFLAGS = -march=loongarch64 -mabi=lp64d -g
+export ASFLAGS = -march=loongarch64 -mabi=lp64d -g -nostdlib
 export ASFLAGS += -I ./include
 export ASFLAGS += -MD 
 export CFLAGS = -g -Wall -Werror -O0 -fno-omit-frame-pointer

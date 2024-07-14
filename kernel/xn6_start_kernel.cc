@@ -54,208 +54,212 @@ extern "C" {
 	extern int init_main( void );
 }
 
-int main()
-{
-	if ( hsai::get_cpu()->get_cpu_id() == 0 )
+extern "C" {
+	int main() { while ( 1 ); }
+
+	int xn6_start_kernel()
 	{
-		// console init 
-		dev::k_console.init( "console", true );
+		if ( hsai::get_cpu()->get_cpu_id() == 0 )
+		{
+			// console init 
+			dev::k_console.init( "console", true );
 
-		// printf init 
-		kernellib::k_printer.init( &dev::k_console, "printer" );
+			// printf init 
+			kernellib::k_printer.init( &dev::k_console, "printer" );
 
-		hsai::hardware_abstract_init();
-
-		
-
-		printf( "hello world\n" );
-		log_info( "Hello World!\n" );
-
-		log_info( "main addr: %p", &main );
-
-		while ( 1 );
-
-		// physical memory init 
-		mm::k_pmm.init( "physical memory manager" );
-		log_info( "pmm init" );
-
-		// process init 
-		pm::k_pm.init( "next pid", "wait lock" );
-		log_info( "pm init" );
-
-		// vm init 
-		mm::k_vmm.init( "virtual memory manager " );
-		log_info( "vm init" );
-
-		// log_trace(
-		// 	"hmm初始化前跟踪空闲物理页 : %d",
-		// 	mm::k_pmm.trace_free_pages_count()
-		// );
-		mm::k_hmm.init( "k_heap manager" );
-		log_info( "hmm init" );
-		// log_trace(
-		// 	"hmm初始化后跟踪空闲物理页 : %d",
-		// 	mm::k_pmm.trace_free_pages_count()
-		// );
-
-		hsai::hardware_secondary_init();
-
-		// timer init 
-		tmm::k_tm.init( "timer manager" );
-		log_info( "tm init" );
-
-		// while ( 1 );
-
-		// sharemem init
-		// pm::k_shmManager.init( "shm lock" );
-		// log_info( "shm init" );
-
-
-		// uint32 apbh[ 64 ];
-		// uint64 addr = ( ( 0xFE0UL << 28 ) | ( 0x0UL << 16 ) | ( 0x2UL << 11 ) | ( 0x0UL << 8 ) );
-		// printf( "addr: \n%p\n", addr | loongarch::qemuls2k::dmwin::win_1 );
-		// printf( "head: \n" );
-		// volatile uint32 * p = ( volatile uint32 * ) ( addr | loongarch::qemuls2k::dmwin::win_1 );
-		// for ( int i = 0; i < 16; i++, p++ )
-		// 	apbh[ i ] = *p;
-		// for ( int i = 0; i < 16; i++ )
-		// 	printf( "%x\n", apbh[ i ] );
-
-		// volatile uint32 *p = ( volatile uint32 * ) ( 0x400e0000 | loongarch::qemuls2k::dmwin::win_1 );
-		// for ( int i = 0; i < 0x200; i += 4, p++ )
-		// 	printf( "%x\t\t%p\n", i, *p );
-
-		// log_info( "======== 开始 测试 RTC ========" );	<<<<<<<<<<<<<<<<<<<<<<<<<< 测试未能成功，暂时弃用RTC
-
-		// volatile uint32 * rtc_trim = ( volatile uint32 * ) loongarch::qemuls2k::rtc_rtctrim;
-		// volatile uint32 * toy_trim = ( volatile uint32 * ) loongarch::qemuls2k::rtc_toytrim;
-		// *rtc_trim = 0;
-		// *toy_trim = 0;
-
-		// volatile uint32 * rtc_ctl = ( volatile uint32 * ) loongarch::qemuls2k::rtc_rtcctrl;
-		// log_trace( "rtcctrl : %p", *rtc_ctl );
-		// *rtc_ctl |= loongarch::qemuls2k::RtcRegRtcctrl::rtcctrl_ren_m;
-		// *rtc_ctl |= loongarch::qemuls2k::RtcRegRtcctrl::rtcctrl_ten_m;
-		// *rtc_ctl |= loongarch::qemuls2k::RtcRegRtcctrl::rtcctrl_eo_m;
-		// log_trace( "rtcctrl : %p", *rtc_ctl );
-
-		// volatile uint32 * rtc_read = ( volatile uint32 * ) loongarch::qemuls2k::rtc_rtcread0;
-		// volatile uint32 * rtc_write = ( volatile uint32 * ) loongarch::qemuls2k::rtc_rtcwrite0;
-		// log_trace( " rtcread : %x", *rtc_read );
-		// *rtc_write = 0x100;
-		// log_trace( " rtcread : %x", *rtc_read );
-		// for ( int i = 0; i < 10000; ++i );
-		// log_trace( " rtcread : %x", *rtc_read );
-
-		// log_info( "======== 结束 测试 RTC ========" );
-		// while ( 1 );
-
-		dev::ahci::k_ahci_ctl.init( "ahci controller" );
-
-		dev::pci::k_pci_driver.init( "pci driver" );
+			hsai::hardware_abstract_init();
 
 
 
-		// 这个测试里面包含修改硬盘数据的敏感操作
-		// 使用前先备份2kfs.img或sdcard.img
-		// test_sata();
+			printf( "hello world\n" );
+			log_info( "Hello World!\n" );
 
-		log_trace(
-			"bufm 初始化前跟踪空闲物理页 : %d",
-			mm::k_pmm.trace_free_pages_count()
-		);
-		fs::k_bufm.init( "buffer manager" );
-		log_info( "bufm init" );
-		log_trace(
-			"bufm 初始化后跟踪空闲物理页 : %d",
-			mm::k_pmm.trace_free_pages_count()
-		);
+			log_info( "xn6_start_kernel addr: %p", &xn6_start_kernel );
 
-		// test_buffer();
-		// while ( 1 );
+			while ( 1 );
 
+			// physical memory init 
+			mm::k_pmm.init( "physical memory manager" );
+			log_info( "pmm init" );
 
+			// process init 
+			pm::k_pm.init( "next pid", "wait lock" );
+			log_info( "pm init" );
 
-		new ( &fs::fat::k_fatfs ) fs::fat::Fat32FS;
-		fs::fat::k_fatfs.init( 1, 0, true );
-		new ( &fs::fat::k_testcase_fs ) fs::fat::Fat32FileSystem;
-		fs::fat::k_testcase_fs.init( 1, 0 );
-		log_info( "testcase fs init" );
+			// vm init 
+			mm::k_vmm.init( "virtual memory manager " );
+			log_info( "vm init" );
 
-		dev::k_dm.init();
-		log_info( "k_dm init" );
+			// log_trace(
+			// 	"hmm初始化前跟踪空闲物理页 : %d",
+			// 	mm::k_pmm.trace_free_pages_count()
+			// );
+			mm::k_hmm.init( "k_heap manager" );
+			log_info( "hmm init" );
+			// log_trace(
+			// 	"hmm初始化后跟踪空闲物理页 : %d",
+			// 	mm::k_pmm.trace_free_pages_count()
+			// );
 
-		// test_fat32();
-		// while ( 1 );
-		// eastl::vector<eastl::string> args;
-		// pm::k_pm.exec("test_echo",args);
-		// log_info( "text start %p\n", &stext );
-		// log_info( "text end   %p\n", &etext ); 
+			hsai::hardware_secondary_init();
 
-		printf( "user init start %p\n", &_start_u_init );
-		printf( "user init_main address %p\n", ( uint64 ) &init_main );
-		printf( "user code size %d Bytes\n", ( uint64 ) &_u_init_txte - ( uint64 ) &_u_init_txts );
-		printf( "user data_start address %p\n", ( uint64 ) &_u_init_dats );
-		printf( "user date size %d Bytes\n", ( uint64 ) &_u_init_date - ( uint64 ) &_u_init_dats );
+			// timer init 
+			tmm::k_tm.init( "timer manager" );
+			log_info( "tm init" );
 
-		pm::k_pm.user_init();
-		log_info( "user init" );
+			// while ( 1 );
 
-		// tmm::timeval tv;
-		// log_info( "==== 开始 测试 timer ====" );
-		// tv = tmm::k_tm.get_time_val();
-		// log_trace( "tv.sec : %d, tv.usec : %d", tv.tv_sec, tv.tv_usec );
-		// for ( uint wt = 0; wt < tmm::qemu_fre; ++wt )
-		// 	;
-		// tv = tmm::k_tm.get_time_val();
-		// log_trace( "tv.sec : %d, tv.usec : %d", tv.tv_sec, tv.tv_usec );
-		// log_info( "==== 结束 测试 timer ====" );
-		// while ( 1 );
-
-		// pm::Pcb * np = pm::k_pm.alloc_proc();
-		// np->_ofile[ 1 ] = pm::k_proc_pool[ 0 ]._ofile[ 1 ];
-		// loongarch::Cpu::get_cpu()->set_cur_proc( np );
-
-		// eastl::vector<eastl::string> args;
-		// pm::k_pm.exec( "test_echo", args );
-
-		// mm::debug_trace_walk = true;
-		pm::k_scheduler.start_schedule();
-
-		while ( 1 );
+			// sharemem init
+			// pm::k_shmManager.init( "shm lock" );
+			// log_info( "shm init" );
 
 
-		// test_noreturn();
-		//pm::k_pm.vectortest();
-		//pm::k_pm.stringtest();
-		//pm::k_pm.maptest();
-		//pm::k_pm.hashtest();   //  < -------------  threr are some problem in heap dealloc
+			// uint32 apbh[ 64 ];
+			// uint64 addr = ( ( 0xFE0UL << 28 ) | ( 0x0UL << 16 ) | ( 0x2UL << 11 ) | ( 0x0UL << 8 ) );
+			// printf( "addr: \n%p\n", addr | loongarch::qemuls2k::dmwin::win_1 );
+			// printf( "head: \n" );
+			// volatile uint32 * p = ( volatile uint32 * ) ( addr | loongarch::qemuls2k::dmwin::win_1 );
+			// for ( int i = 0; i < 16; i++, p++ )
+			// 	apbh[ i ] = *p;
+			// for ( int i = 0; i < 16; i++ )
+			// 	printf( "%x\n", apbh[ i ] );
 
-		// fs::Buffer buf = fs::k_bufm.get_buffer( 0, 0 );
-		// log_trace( "测试 buffer : %p", buf.debug_get_buffer_base() );
-		// // fs::k_bufm.release_buffer( buf );
-		// buf = fs::k_bufm.get_buffer( 0, 1024 );
-		// log_trace( "测试 buffer : %p", buf.debug_get_buffer_base() );
-		// // fs::k_bufm.release_buffer( buf );
+			// volatile uint32 *p = ( volatile uint32 * ) ( 0x400e0000 | loongarch::qemuls2k::dmwin::win_1 );
+			// for ( int i = 0; i < 0x200; i += 4, p++ )
+			// 	printf( "%x\t\t%p\n", i, *p );
 
-		while ( 1 );
+			// log_info( "======== 开始 测试 RTC ========" );	<<<<<<<<<<<<<<<<<<<<<<<<<< 测试未能成功，暂时弃用RTC
 
-		printf( "\n" );
-		log_trace( "simple trace" );
-		log_trace( "test\n%s", "trace" );
-		log_info( "test info" );
-		log_warn( "test warn " );
-		log_error( "test error" );
-		// log_panic( "test panic" );
-		assert( 0, "" );
+			// volatile uint32 * rtc_trim = ( volatile uint32 * ) loongarch::qemuls2k::rtc_rtctrim;
+			// volatile uint32 * toy_trim = ( volatile uint32 * ) loongarch::qemuls2k::rtc_toytrim;
+			// *rtc_trim = 0;
+			// *toy_trim = 0;
 
-		log_info( "Kernel not complete. About to enter loop. " );
-		while ( 1 ); // stop here
+			// volatile uint32 * rtc_ctl = ( volatile uint32 * ) loongarch::qemuls2k::rtc_rtcctrl;
+			// log_trace( "rtcctrl : %p", *rtc_ctl );
+			// *rtc_ctl |= loongarch::qemuls2k::RtcRegRtcctrl::rtcctrl_ren_m;
+			// *rtc_ctl |= loongarch::qemuls2k::RtcRegRtcctrl::rtcctrl_ten_m;
+			// *rtc_ctl |= loongarch::qemuls2k::RtcRegRtcctrl::rtcctrl_eo_m;
+			// log_trace( "rtcctrl : %p", *rtc_ctl );
+
+			// volatile uint32 * rtc_read = ( volatile uint32 * ) loongarch::qemuls2k::rtc_rtcread0;
+			// volatile uint32 * rtc_write = ( volatile uint32 * ) loongarch::qemuls2k::rtc_rtcwrite0;
+			// log_trace( " rtcread : %x", *rtc_read );
+			// *rtc_write = 0x100;
+			// log_trace( " rtcread : %x", *rtc_read );
+			// for ( int i = 0; i < 10000; ++i );
+			// log_trace( " rtcread : %x", *rtc_read );
+
+			// log_info( "======== 结束 测试 RTC ========" );
+			// while ( 1 );
+
+			dev::ahci::k_ahci_ctl.init( "ahci controller" );
+
+			dev::pci::k_pci_driver.init( "pci driver" );
+
+
+
+			// 这个测试里面包含修改硬盘数据的敏感操作
+			// 使用前先备份2kfs.img或sdcard.img
+			// test_sata();
+
+			log_trace(
+				"bufm 初始化前跟踪空闲物理页 : %d",
+				mm::k_pmm.trace_free_pages_count()
+			);
+			fs::k_bufm.init( "buffer manager" );
+			log_info( "bufm init" );
+			log_trace(
+				"bufm 初始化后跟踪空闲物理页 : %d",
+				mm::k_pmm.trace_free_pages_count()
+			);
+
+			// test_buffer();
+			// while ( 1 );
+
+
+
+			new ( &fs::fat::k_fatfs ) fs::fat::Fat32FS;
+			fs::fat::k_fatfs.init( 1, 0, true );
+			new ( &fs::fat::k_testcase_fs ) fs::fat::Fat32FileSystem;
+			fs::fat::k_testcase_fs.init( 1, 0 );
+			log_info( "testcase fs init" );
+
+			dev::k_dm.init();
+			log_info( "k_dm init" );
+
+			// test_fat32();
+			// while ( 1 );
+			// eastl::vector<eastl::string> args;
+			// pm::k_pm.exec("test_echo",args);
+			// log_info( "text start %p\n", &stext );
+			// log_info( "text end   %p\n", &etext ); 
+
+			printf( "user init start %p\n", &_start_u_init );
+			printf( "user init_main address %p\n", ( uint64 ) &init_main );
+			printf( "user code size %d Bytes\n", ( uint64 ) &_u_init_txte - ( uint64 ) &_u_init_txts );
+			printf( "user data_start address %p\n", ( uint64 ) &_u_init_dats );
+			printf( "user date size %d Bytes\n", ( uint64 ) &_u_init_date - ( uint64 ) &_u_init_dats );
+
+			pm::k_pm.user_init();
+			log_info( "user init" );
+
+			// tmm::timeval tv;
+			// log_info( "==== 开始 测试 timer ====" );
+			// tv = tmm::k_tm.get_time_val();
+			// log_trace( "tv.sec : %d, tv.usec : %d", tv.tv_sec, tv.tv_usec );
+			// for ( uint wt = 0; wt < tmm::qemu_fre; ++wt )
+			// 	;
+			// tv = tmm::k_tm.get_time_val();
+			// log_trace( "tv.sec : %d, tv.usec : %d", tv.tv_sec, tv.tv_usec );
+			// log_info( "==== 结束 测试 timer ====" );
+			// while ( 1 );
+
+			// pm::Pcb * np = pm::k_pm.alloc_proc();
+			// np->_ofile[ 1 ] = pm::k_proc_pool[ 0 ]._ofile[ 1 ];
+			// loongarch::Cpu::get_cpu()->set_cur_proc( np );
+
+			// eastl::vector<eastl::string> args;
+			// pm::k_pm.exec( "test_echo", args );
+
+			// mm::debug_trace_walk = true;
+			pm::k_scheduler.start_schedule();
+
+			while ( 1 );
+
+
+			// test_noreturn();
+			//pm::k_pm.vectortest();
+			//pm::k_pm.stringtest();
+			//pm::k_pm.maptest();
+			//pm::k_pm.hashtest();   //  < -------------  threr are some problem in heap dealloc
+
+			// fs::Buffer buf = fs::k_bufm.get_buffer( 0, 0 );
+			// log_trace( "测试 buffer : %p", buf.debug_get_buffer_base() );
+			// // fs::k_bufm.release_buffer( buf );
+			// buf = fs::k_bufm.get_buffer( 0, 1024 );
+			// log_trace( "测试 buffer : %p", buf.debug_get_buffer_base() );
+			// // fs::k_bufm.release_buffer( buf );
+
+			while ( 1 );
+
+			printf( "\n" );
+			log_trace( "simple trace" );
+			log_trace( "test\n%s", "trace" );
+			log_info( "test info" );
+			log_warn( "test warn " );
+			log_error( "test error" );
+			// log_panic( "test panic" );
+			assert( 0, "" );
+
+			log_info( "Kernel not complete. About to enter loop. " );
+			while ( 1 ); // stop here
+		}
+		else	// smp not implement
+			while ( 1 );
+
+		return 0;
 	}
-	else	// smp not implement
-		while ( 1 );
-
-	return 0;
 }
 
 void* buffer1;

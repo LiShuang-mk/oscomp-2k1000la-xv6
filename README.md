@@ -35,16 +35,18 @@
 
 #### 1. [=> 工程架构](./doc/project.md)
 
-#### 2. [=> 关于HAL与CSR](./doc/hal.md)
+#### 2. [=> 硬件接口设计](./doc/hsai.md)
 
-#### 3. [=> ls2k的IO方式](./doc/ls2k_io.md)
+#### 3. [=> HSAI 参考](./doc/hsai_reference.md)
 
-#### 4. [=> qemu-ls2k + gdb 调试方式](./doc/qemu_debug.md)
+#### 4. [=> ls2k的IO方式](./doc/ls2k_io.md)
 
-#### 5. [=> 文件系统](./doc/fs.md)
+#### 5. [=> qemu-ls2k + gdb 调试方式](./doc/qemu_debug.md)
 
-#### 6. [=> 动态内存](./doc/dyn_mem.md)
+#### 6. [=> 文件系统](./doc/fs.md)
 
-#### 7. [=> 空间地址划分](./doc/memlayout.md)
+#### 7. [=> 动态内存](./doc/dyn_mem.md)
 
-#### 8. [=> uboot启动与调试](./doc/how_to_uboot.md)
+#### 8. [=> 空间地址划分](./doc/memlayout.md)
+
+#### 9. [=> uboot启动与调试](./doc/how_to_uboot.md)

@@ -12,7 +12,7 @@
 
 namespace hsai
 {
-	extern ulong kernel_syscall( ulong sys_num );
-	extern ulong get_syscall_max_num();
+	extern __hsai_kernel ulong kernel_syscall( ulong sys_num );
+	extern __hsai_kernel ulong get_syscall_max_num();
 
 } // namespace hsai

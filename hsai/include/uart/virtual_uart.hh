@@ -10,7 +10,7 @@
 
 namespace hsai
 {
-	class VirtualUartController
+	class VirtualUartController __hsai_hal
 	{
 	public:
 		virtual void init() = 0;

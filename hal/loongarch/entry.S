@@ -37,7 +37,7 @@ _test_init_atexit:
 
 		bl			_cpu_init
 
-	# jump to start() in start.c
-        bl          main
+	# jump to xn6_start_kernel()
+        bl          xn6_start_kernel
 spin:
         b           spin

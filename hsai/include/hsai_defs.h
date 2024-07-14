@@ -12,4 +12,6 @@
 #define __hsai_kernel
 #define __hsai_hal
 
+#define NUMCPU 1
+
 #endif // _HSAI_DEFS_H_

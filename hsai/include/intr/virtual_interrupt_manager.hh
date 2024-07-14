@@ -10,7 +10,7 @@
 
 namespace hsai
 {
-	class VirtualInterruptManager
+	class VirtualInterruptManager __hsai_hal
 	{
 	public:
 		virtual int handle_dev_intr() = 0;

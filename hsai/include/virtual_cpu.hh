@@ -18,7 +18,7 @@ namespace pm
 
 namespace hsai	// hardware service abstract interface
 {
-	class VirtualCpu
+	class VirtualCpu __hsai_hal
 	{
 	protected:
 		int _num_off;		// number of interrupt's off
