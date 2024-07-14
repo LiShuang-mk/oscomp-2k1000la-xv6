@@ -28,6 +28,7 @@ namespace mm
 	public:
 		VirtualMemoryManager() {};
 		void init( const char *lock_name );
+
 		/// @brief map va to pa through pt 
 		/// @param pt pagetable to use 
 		/// @param va virtual address 
@@ -60,7 +61,7 @@ namespace mm
 		/// @param phyaddr 
 		/// @return newshm if success
 		uint64 allocshm( PageTable &pt, uint64 oldshm, uint64 newshm, uint64 sz, void *phyaddr[ pm::MAX_SHM_PGNUM ] );
-		
+
 		/// @brief 
 		/// @param pt 
 		/// @param sz 
@@ -87,7 +88,7 @@ namespace mm
 		/// @param oldshm oldshm lower address
 		/// @param newshm newshm lower address 
 		/// @return oldshm if success
-		uint64 deallocshm(PageTable &pt, uint64 oldshm, uint64 newshm );
+		uint64 deallocshm( PageTable &pt, uint64 oldshm, uint64 newshm );
 		/// @brief copy from kernel to user
 		/// @param pt pagetable to use
 		/// @param va dest virtual address 
@@ -111,7 +112,22 @@ namespace mm
 		/// @param newsz new size
 		/// @return 
 		uint64 uvmdealloc( PageTable &pt, uint64 oldsz, uint64 newsz );
-	private:
+
+	public:
+		bool map_code_pages( PageTable &pt, ulong va, ulong size, ulong pa, bool for_user )
+		{
+			return map_pages( pt, va, size, pa,
+				hsai::Pte::map_code_page_flags() | hsai::Pte::valid_flag()
+				| ( for_user ? ( hsai::Pte::user_plv_flag() ) : ( hsai::Pte::super_plv_flag() ) )
+			);
+		};
+		bool map_data_pages( PageTable &pt, ulong va, ulong size, ulong pa, bool for_user )
+		{
+			return map_pages( pt, va, size, pa,
+				hsai::Pte::map_data_page_flags() | hsai::Pte::valid_flag()
+				| ( for_user ? ( hsai::Pte::user_plv_flag() ) : ( hsai::Pte::super_plv_flag() ) )
+			);
+		};
 
 	};
 

@@ -10,12 +10,14 @@
 #include "hal/sata/hba_cmd.hh"
 #include "hal/sata/hba_port.hh"
 #include "hal/ata/ata_cmd.hh"
-#include "hal/qemu_ls2k.hh"
 #include "fs/dev/ahci_controller.hh"
 #include "fs/dev/sata_driver.hh"
 #include "fs/fat/fat32.hh"
 #include "mm/physical_memory_manager.hh"
 #include "klib/common.hh"
+
+#include <hsai_global.hh>
+#include <mem/virtual_memory.hh>
 
 namespace dev
 {
@@ -68,9 +70,7 @@ namespace dev
 			fis_h2d->control = 0;
 
 			// physical region address 
-			void *pr = ( void * )
-				( loongarch::qemuls2k::virt_to_phy_address( ( uint64 ) buffer )
-					| loongarch::qemuls2k::iodma_win_base );
+			void *pr = ( void * ) hsai::k_mem->to_io( ( ulong ) buffer );
 
 			// 暂时直接引用 0 号命令槽
 			struct ata::sata::HbaCmdHeader* head = sata::k_sata_driver.get_cmd_header( port, 0 );
@@ -95,7 +95,7 @@ namespace dev
 
 			// 设置数据区 
 			ata::sata::HbaPrd *prd0 = &cmd_tbl->prdt[ 0 ];
-			prd0->dba = ( uint64 ) loongarch::qemuls2k::virt_to_phy_address( ( uint64 ) pr );
+			prd0->dba = hsai::k_mem->to_phy( ( ulong ) pr );
 			prd0->interrupt = 1;
 			prd0->dbc = 512 - 1;
 
@@ -197,9 +197,7 @@ namespace dev
 					log_warn( "PR长度超过4MiB, read DMA命令将不会被发送" );
 					return;
 				}
-				prd->dba =
-					loongarch::qemuls2k::virt_to_phy_address( dba ) |
-					loongarch::qemuls2k::iodma_win_base;
+				prd->dba = hsai::k_mem->to_io( dba );
 				prd->dbc = dbc - 1;
 				prd->interrupt = 1;
 			}
@@ -298,9 +296,7 @@ namespace dev
 					log_warn( "PR长度超过4MiB, write DMA命令将不会被发送" );
 					return;
 				}
-				prd->dba =
-					loongarch::qemuls2k::virt_to_phy_address( dba ) |
-					loongarch::qemuls2k::iodma_win_base;
+				prd->dba = hsai::k_mem->to_io( dba );
 				prd->dbc = dbc - 1;
 				prd->interrupt = 1;
 			}

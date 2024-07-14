@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "hsai_types.hh"
+#include "kernel/types.hh"
 
 #include <atomic>
 

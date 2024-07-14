@@ -24,16 +24,16 @@ namespace mm
 		_lock.init( lock_name );
 		_page_table = page_table;
 
-		assert( ( ( uint64 ) heap_start % mm::PageEnum::pg_size ) == 0, "heap start address should be aligned to page. page size : %d bytes", mm::pg_size );
-		assert( heap_size > 4 * mm::pg_size, "heap size too small. page size : %d bytes", mm::pg_size );
-		assert( ( heap_size & ( heap_size - 1 ) ) == 0, "heap size should be a power of 2. input heap size in hex : %xh", mm::pg_size );
+		assert( ( ( uint64 ) heap_start % hsai::page_size ) == 0, "heap start address should be aligned to page. page size : %d bytes", hsai::page_size );
+		assert( heap_size > 4 * hsai::page_size, "heap size too small. page size : %d bytes", hsai::page_size );
+		assert( ( heap_size & ( heap_size - 1 ) ) == 0, "heap size should be a power of 2. input heap size in hex : %xh", hsai::page_size );
 		assert( heap_size <= buddy_max_heap_size, "heap size too big. max size is %d MiB.", buddy_max_heap_size / _1M );
 
 		_heap_addr = heap_start;
 		_heap_size = heap_size;
 
 		// one heap page is correspendent to one node 
-		uint heap_page_cnt = heap_size / mm::pg_size;
+		uint heap_page_cnt = heap_size / hsai::page_size;
 
 		// init bnode manager
 
@@ -43,16 +43,10 @@ namespace mm
 
 		uint64 pa;
 		uint64 va = ( uint64 ) heap_start;
-		for ( uint i = 0; i < heap_page_cnt; i++, va += mm::pg_size )
+		for ( uint i = 0; i < heap_page_cnt; i++, va += hsai::page_size )
 		{
 			pa = ( uint64 ) mm::k_pmm.alloc_page();
-			mm::k_vmm.map_pages( *_page_table, va, mm::pg_size, pa,
-				( loongarch::PteEnum::presence_m ) |
-				( loongarch::PteEnum::writable_m ) |
-				( loongarch::PteEnum::dirty_m ) |
-				( 0 << loongarch::PteEnum::plv_s ) |							// 特权级0
-				( loongarch::MatEnum::mat_cc << loongarch::PteEnum::mat_s )		// 强序可缓存 
-			);
+			mm::k_vmm.map_data_pages( *_page_table, va, hsai::page_size, pa, false );
 		}
 
 		// init bnodes map 
@@ -186,7 +180,7 @@ namespace mm
 			">> heap-boudary : %p -- %p",
 			( uint64 ) _heap_addr,
 			( uint64 ) _heap_addr + _heap_size );
-		assert( size > mm::pg_size, "size too small to cover a page. size = %d bytes", size );
+		assert( size > hsai::page_size, "size too small to cover a page. size = %d bytes", size );
 		assert( ( size & ( size - 1 ) ) == 0, "size shall be a power of 2. size : %xh", size );
 		assert( order < ( int ) _node_manager._node_list_array_max_length, "get fault order, maybe common algorithm error." );
 

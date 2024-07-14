@@ -62,6 +62,7 @@ namespace kernellib
 		static void info( const char *f, uint l, const char *info, ... );
 		static void trace( const char *f, uint l, const char *info, ... );
 		static void assrt( const char *f, uint l, const char *expr, const char *detail, ... );
+		static void assrt_va( const char *f, uint l, const char *expr, const char *detail, va_list ap );
 
 		static void log_out( OutputLevel level, const char * f, uint l, const char * info, ... );
 		static void log_out_va( OutputLevel level, const char * f, uint l, const char * info, va_list ap );
@@ -71,5 +72,7 @@ namespace kernellib
 	extern Printer k_printer;
 
 	void level_log_out( hsai::HsaiLogLevel level, const char * fn, uint ln, const char * info, ... );
+	void assert_log_out( const char *f, uint l, const char *expr, const char *detail, ... );
+	void printf_log_out( const char *fmt, ... );
 
 } // namespace kernellib

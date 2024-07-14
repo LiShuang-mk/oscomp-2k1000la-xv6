@@ -10,7 +10,8 @@
 
 #include "hal/ata/ata_types.hh"
 #include "hal/sata/hba_param.hh"
-#include "mm/page.hh"
+
+#include <mem/page.hh>
 
 namespace ata
 {
@@ -73,7 +74,7 @@ namespace ata
 		}__attribute__( ( __packed__ ) );
 		static_assert( sizeof( struct HbaPrd ) == 4 * sizeof( uint32 ), "PRD size must equal to 16 bytes." );
 
-		constexpr uint prd_max_cnt = ( mm::pg_size - 0x80U ) / sizeof( struct HbaPrd );
+		constexpr uint prd_max_cnt = ( hsai::page_size - 0x80U ) / sizeof( struct HbaPrd );
 		/// @brief refer to AHCI - 4.2.3 Command Table 
 		/// @details 注意虽然文档中说明了PRD最多有65535个item
 		///          但此处使item填满一个物理页剩下的空间
@@ -85,7 +86,7 @@ namespace ata
 			byte resv[ 0x30U ];
 			struct HbaPrd prdt[ prd_max_cnt ];
 		}__attribute__( ( __packed__ ) );
-		static_assert( sizeof( struct HbaCmdTbl ) == mm::pg_size, "AHCI command table size must equal to page size." );
+		static_assert( sizeof( struct HbaCmdTbl ) == hsai::page_size, "AHCI command table size must equal to page size." );
 	} // namespace sata
 
 } // namespace ata

@@ -11,5 +11,7 @@
 namespace hsai
 {
 	void ( *p_hsai_logout )( HsaiLogLevel log_level, const char * fn, uint ln, const char *info, ... ) = nullptr;
-	
+	void ( *p_hsai_assert )( const char *f, uint l, const char *expr, const char *detail, ... ) = nullptr;
+	void ( *p_hsai_printf )( const char *fmt, ... ) = nullptr;
+
 } // namespace hsai

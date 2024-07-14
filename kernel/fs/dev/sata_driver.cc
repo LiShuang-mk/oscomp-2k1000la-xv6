@@ -8,11 +8,13 @@
 
 #include "mm/physical_memory_manager.hh"
 #include "fs/dev/sata_driver.hh"
-#include "hal/qemu_ls2k.hh"
 #include "hal/sata/hba_mem.hh"
 #include "hal/sata/hba_cmd.hh"
 #include "hal/sata/hba_fis.hh"
 #include "hal/sata/fis.hh"
+
+#include <hsai_global.hh>
+#include <mem/virtual_memory.hh>
 
 namespace dev
 {
@@ -60,7 +62,7 @@ namespace dev
 				{
 					head = get_cmd_header( i, j );
 					page = ( uint64 ) mm::k_pmm.alloc_page();
-					page = loongarch::qemuls2k::virt_to_phy_address( page );
+					page = hsai::k_mem->to_phy( page );
 					head->ctba = ( uint32 ) page;
 					head->ctbau = ( uint32 ) ( page >> 32 );
 				}
@@ -98,9 +100,7 @@ namespace dev
 			assert( head_index < ata::sata::max_cmd_slot, "" );
 
 			// 使用非缓存窗口
-			ata::sata::HbaCmdHeader *head =
-				( ata::sata::HbaCmdHeader* ) ( ( uint64 ) _port_cmd_lst_base[ port ]
-					| loongarch::qemuls2k::dmwin::win_1 );
+			ata::sata::HbaCmdHeader *head = ( ata::sata::HbaCmdHeader* ) hsai::k_mem->to_io( ( uint64 ) _port_cmd_lst_base[ port ] );
 			head += head_index;
 			return head;
 		}
@@ -114,7 +114,7 @@ namespace dev
 			uint64 addr = ( uint64 ) ( head->ctba );
 			addr |= ( uint64 ) ( head->ctbau ) << 32;
 			// 使用非缓存窗口
-			addr |= loongarch::qemuls2k::dmwin::win_0;
+			addr = hsai::k_mem->to_io( addr );
 			ata::sata::HbaCmdTbl *tbl = ( ata::sata::HbaCmdTbl * ) addr;
 			return tbl;
 		}
@@ -162,7 +162,7 @@ namespace dev
 			// log_trace( "port[%d].is = %x", i, _hba_port_reg[ i ]->is );
 			if ( ( _hba_port_reg[ i ]->is & 0x1U ) )
 			{
-				ata::sata::HbaRevFis *rev_fis = ( ata::sata::HbaRevFis* ) ( ( uint64 ) _hba_port_reg[ i ]->fb | loongarch::qemuls2k::dmwin::win_0 );
+				ata::sata::HbaRevFis *rev_fis = ( ata::sata::HbaRevFis* ) ( hsai::k_mem->to_vir( ( uint64 ) _hba_port_reg[ i ]->fb ) );
 				log_trace( "receive d2h fis => addr: %p", rev_fis );
 				for ( int i = 0; i < 20; ++i )
 					printf( "%B ", rev_fis->rfis[ i ] );

@@ -11,15 +11,26 @@
 #include "mm/page.hh"
 #include "mm/physical_memory_manager.hh"
 
+#include <hsai_global.hh>
+#include <mem/virtual_memory.hh>
+#include <mem/page.hh>
+
 namespace mm
 {
+	/// @brief This struct just be used to unused physical page;
+	/// @details A simple link list connect all unused page;
+	struct PageHead
+	{
+		struct PageHead *_next;
+	};
+
 	PhysicalMemoryManager k_pmm;
 
-	void PhysicalMemoryManager::init( const char *name, uint64 ram_base, uint64 ram_end )
+	void PhysicalMemoryManager::init( const char *name )
 	{
 		_lock.init( name );
-		_ram_base = ram_base;
-		_ram_end = ram_end;
+		_ram_base = hsai::k_mem->mem_start();
+		_ram_end = _ram_base + hsai::k_mem->mem_size();
 		_free_list = nullptr;
 		_trace_page_cnt = 0;
 		_free_range( ( void* ) _ram_base, ( void * ) _ram_end );
@@ -28,9 +39,9 @@ namespace mm
 	void PhysicalMemoryManager::_free_range( void *pa_start, void *pa_end )
 	{
 		char *p;
-		p = ( char * ) page_round_up( ( uint64 ) pa_start );
+		p = ( char * ) hsai::page_round_up( ( uint64 ) pa_start );
 		int page_cnt = 0;
-		for ( ; p + pg_size <= ( char * ) pa_end; p += pg_size )
+		for ( ; p + hsai::page_size <= ( char * ) pa_end; p += hsai::page_size )
 		{
 			_free_page( p );
 			page_cnt++;
@@ -49,11 +60,11 @@ namespace mm
 	{
 		struct PageHead *r;
 
-		if ( ( ( uint64 ) pa % pg_size ) != 0 || ( uint64 ) pa < _ram_base || ( uint64 ) pa >= _ram_end )
+		if ( ( ( uint64 ) pa % hsai::page_size ) != 0 || ( uint64 ) pa < _ram_base || ( uint64 ) pa >= _ram_end )
 			log_panic( "free page" );
 
 		  // Fill with junk to catch dangling refs.
-		// memset( pa, 1, pg_size );
+		// memset( pa, 1, hsai::page_size );
 		_fill_junk( pa, MemJunk::freed_junk );
 
 		r = ( struct PageHead* ) pa;
@@ -88,7 +99,7 @@ namespace mm
 	void PhysicalMemoryManager::_fill_junk( void * pa, MemJunk mj )
 	{
 		uint64 *p = ( uint64 * ) pa;
-		const uint cnt = ( uint ) PageEnum::pg_size >> 3;
+		const uint cnt = ( uint ) hsai::page_size >> 3;
 		for ( uint i = 0; i < cnt; i++ )
 			p[ i ] = mj;
 	}

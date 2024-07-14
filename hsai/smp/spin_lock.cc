@@ -8,6 +8,7 @@
 
 #include "smp/spin_lock.hh"
 #include "virtual_cpu.hh"
+#include "hsai_global.hh"
 #include "hsai_log.hh"
 
 namespace hsai

@@ -356,8 +356,8 @@ namespace kernellib
 		st = size + sizeof( L_TagMajor ) + sizeof( L_TagMinor );
 
 		// pages occupied
-		st += mm::pg_size - 1;
-		st /= mm::pg_size;
+		st += hsai::page_size - 1;
+		st /= hsai::page_size;
 
 		// make sure it's greater than the min pages
 		if ( st < _page_per_chunk )
@@ -372,7 +372,7 @@ namespace kernellib
 
 		maj->prev = maj->next = nullptr;
 		maj->pages = st;
-		maj->size = st * mm::pg_size;
+		maj->size = st * hsai::page_size;
 		maj->usage = sizeof( L_TagMajor );
 		maj->first = nullptr;
 

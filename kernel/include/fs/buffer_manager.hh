@@ -8,9 +8,10 @@
 
 #pragma once 
 
-#include "smp/lock.hh"
 #include "fs/buffer.hh"
 #include "klib/common.hh"
+
+#include <smp/spin_lock.hh>
 
 namespace fs
 {
@@ -40,7 +41,7 @@ namespace fs
 	class BufferManager
 	{
 	private:
-		smp::Lock _lock;
+		hsai::SpinLock _lock;
 		BufferBlock _buffer_pool[ block_per_pool ];
 
 	public:

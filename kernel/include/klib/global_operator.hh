@@ -10,16 +10,14 @@
 
 // #include <stddef.h>
 
-#include "types.hh"
-
 #include <new>
 
-extern void * operator new( uint64 size );
-extern void * operator new[]( uint64 size );
+extern void * operator new( unsigned long size );
+extern void * operator new[]( unsigned long size );
 extern void operator delete( void * p ) noexcept;
-extern void operator delete( void * p, uint64 size ) noexcept;
+extern void operator delete( void * p, unsigned long size ) noexcept;
 extern void operator delete[]( void * p ) noexcept;
-extern void operator delete[]( void * p, uint64 size ) noexcept;
+extern void operator delete[]( void * p, unsigned long size ) noexcept;
 
 // inline void *operator new(size_t, void *p)     throw() { return p; }  
 // inline void *operator new[](size_t, void *p)   throw() { return p; }

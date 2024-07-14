@@ -8,8 +8,14 @@
 
 #pragma once 
 
-#include "types.hh"
+#include "loongarch.hh"
+
+#include <kernel/types.hh>
 #include <virtual_cpu.hh>
+
+extern "C" {
+	void _cpu_init();
+}
 
 namespace loongarch
 {
@@ -20,14 +26,17 @@ namespace loongarch
 		virtual void _interrupt_off() override;
 
 	public:
-		Cpu() {};
+		Cpu() : VirtualCpu() {};
+		static Cpu * get_la_cpu();
 
 		virtual uint get_cpu_id() override;
 		virtual int is_interruptible() override;
 
+		uint64 read_csr( csr::CsrAddr r );
+		void write_csr( csr::CsrAddr r, uint64 d );
+
+		void intr_on() { _interrupt_on(); }
+		void intr_off() { _interrupt_off(); }
 	};
 
-	extern Cpu k_la_cpus[ NUMCPU ];
-	void cpu_init();
-	
 } // namespace loongarch

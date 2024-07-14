@@ -30,6 +30,7 @@ card_dir = $(foreach d, $(filter-out include/, $(wildcard $1*/)), $(call card_di
 # >>>> compile flags
 # >>>>
 
+ASFLAGS += -I ../include/
 CFLAGS += -I ../include/
 CXXFLAGS += -I ../include/
 

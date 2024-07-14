@@ -8,11 +8,13 @@
 
 #pragma once
 
-#ifndef NUMCPU
-#define NUMCPU 1
-#endif
+#include "kernel/types.hh"
 
-#include "hsai_types.hh"
+namespace pm
+{
+	class Pcb;
+} // namespace pm
+
 
 namespace hsai	// hardware service abstract interface
 {
@@ -21,19 +23,26 @@ namespace hsai	// hardware service abstract interface
 	protected:
 		int _num_off;		// number of interrupt's off
 		int _int_ena;		// interrupt enable status before push-off()
+		pm::Pcb * _cur_proc;
+		void * _context;
 
+	public:
+		VirtualCpu();
+		static int register_cpu( VirtualCpu * p_cpu, int cpu_id );
+
+		virtual uint get_cpu_id() = 0;
+		virtual int is_interruptible() = 0;
 		virtual void _interrupt_on() = 0;
 		virtual void _interrupt_off() = 0;
 
 	public:
-		VirtualCpu();
-
-		virtual uint get_cpu_id() = 0;
-		virtual int is_interruptible() = 0;
-
-	public:
 		int get_num_off() { return _num_off; }
 		int get_int_ena() { return _int_ena; }
+		pm::Pcb * get_cur_proc() { return _cur_proc; }
+		void * get_context() { return _context; }
+
+		void set_cur_proc( pm::Pcb * proc ) { _cur_proc = proc; }
+		void set_int_ena( int int_ena ) { _int_ena = int_ena; }
 
 	public:
 		void push_interrupt_off();
@@ -41,10 +50,5 @@ namespace hsai	// hardware service abstract interface
 	};
 
 	// constexpr int max_cpu_num = 4;
-	
-	extern VirtualCpu * k_cpus[ NUMCPU ];
-
-	int register_cpu( VirtualCpu * p_cpu, int cpu_id );
-	VirtualCpu * get_cpu();
 
 } // namespace hsai

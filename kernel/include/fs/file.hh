@@ -97,7 +97,7 @@ namespace fs
 	class xv6_file_pool
 	{
 	private:
-		smp::Lock _lock;
+		hsai::SpinLock _lock;
 		xv6_file _files[ file_pool_max_size ];
 		eastl::vector <eastl::string> _unlink_list;
 		pm::ipc::Pipe _pipe[ pipe_pool_max_size ];

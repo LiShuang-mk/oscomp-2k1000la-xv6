@@ -54,7 +54,7 @@ namespace mm
 
 		inline uint64 _page_index_in_heap( void *ptr )
 		{
-			return ( ( uint64 ) ptr - ( uint64 ) _heap_addr ) / mm::pg_size;
+			return ( ( uint64 ) ptr - ( uint64 ) _heap_addr ) / hsai::page_size;
 		}
 
 		inline void _record_node_in_map( BuddyNode *bnode, uint64 index, bool is_busy )
@@ -91,7 +91,7 @@ namespace mm
 
 		inline int _size_to_order( uint64 size )
 		{
-			return lowest_bit( size ) - pg_size_shift;
+			return lowest_bit( size ) - hsai::page_size_shift;
 		}
 
 		inline void * _get_buddy_start_addr( uint64 ptr, uint64 area_size )

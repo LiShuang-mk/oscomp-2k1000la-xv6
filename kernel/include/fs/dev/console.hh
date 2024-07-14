@@ -21,7 +21,6 @@ namespace dev
 	{
 	private:
 		hsai::SpinLock _lock;
-		UartManager _uart_m;
 		bool _use_k_debug_uart;
 		const int _backspace = 0x100;
 		char _ibuf[ console_input_buf_size ];

@@ -17,6 +17,7 @@ namespace hsai
 		virtual void put_char_sync( int c ) = 0;
 		virtual void put_char( int c ) = 0;
 		// virtual int get_char( int c ) = 0;
+		virtual void handle_interrupt() = 0;
 	};
 
 	extern VirtualUartController * k_debug_uart;

@@ -37,8 +37,8 @@ namespace pm
 				else
 				{
 					char ch;
-					mm::PageTable pt = pr->get_pagetable();
-					if ( mm::k_vmm.copy_in( pt, &ch, addr + i, 1 ) == -1 )
+					mm::PageTable *pt = pr->get_pagetable();
+					if ( mm::k_vmm.copy_in( *pt, &ch, addr + i, 1 ) == -1 )
 						break;
 					_data.push( ch );
 					i++;

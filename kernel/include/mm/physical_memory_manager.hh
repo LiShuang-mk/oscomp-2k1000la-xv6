@@ -32,7 +32,7 @@ namespace mm
 
 	public:
 		PhysicalMemoryManager() {};
-		void init( const char *name, uint64 ram_base, uint64 ram_end );
+		void init( const char *name );
 		void free_page( void *pa );
 		void *alloc_page();
 		void clear_page( void *pa );

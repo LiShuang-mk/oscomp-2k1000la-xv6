@@ -57,4 +57,9 @@ namespace hsai
 		hsai_panic( "put char not implement" );
 	}
 
+	void UartNs16550::handle_interrupt()
+	{
+		
+	}
+
 } // namespace hsai

@@ -51,7 +51,7 @@ namespace pm
 		// case 2: if sys have not create key's share memory, create it and map it to the proc
 		if ( Shmtabs[ key ].refcnt == 0 )
 		{
-			shm = mm::k_vmm.allocshm( pg, shm, shm - num * mm::pg_size, pcb->_sz, phyaddr );
+			shm = mm::k_vmm.allocshm( pg, shm, shm - num * hsai::page_size, pcb->_sz, phyaddr );
 			if ( shm == 0 )
 			{
 				Shmtabs[ key ]._lock.release();
@@ -70,7 +70,7 @@ namespace pm
 			}
 			num = Shmtabs[ key ].pagenum;
 
-			if ( ( shm = mm::k_vmm.mapshm( pg, shm, shm - num * mm::pg_size, pcb->_sz, phyaddr ) ) == 0 )
+			if ( ( shm = mm::k_vmm.mapshm( pg, shm, shm - num * hsai::page_size, pcb->_sz, phyaddr ) ) == 0 )
 			{
 				Shmtabs[ key ]._lock.release();
 				return reinterpret_cast< void* >( -1 );
@@ -131,7 +131,7 @@ namespace pm
 	int ShmManager::shmrelease( mm::PageTable &pt, uint64 shm, uint keymask )
 	{
 		Shmtabs[ keymask ]._lock.acquire();
-		mm::k_vmm.deallocshm( pt, shm, mm::vml::vm_trap_frame - 64 * 2 * mm::pg_size );
+		mm::k_vmm.deallocshm( pt, shm, mm::vml::vm_trap_frame - 64 * 2 * hsai::page_size );
 		for ( int k = 0; k < 8; k++ )
 		{
 			if ( shmkeyused( k, keymask ) )

@@ -9,10 +9,11 @@
 #pragma once 
 
 #include "mm/page_table.hh"
-#include "pm/context.hh"
+// #include "pm/context.hh"
 #include "pm/sharemem.hh"
 
 #include <smp/spin_lock.hh>
+#include <process_interface.hh>
 
 #include <EASTL/string.h>
 
@@ -72,7 +73,7 @@ namespace pm
 		uint64 _sz;                   // Size of process memory (bytes)
 		mm::PageTable _pt;    // User lower half address page table
 		TrapFrame *_trapframe; // data page for uservec.S, use DMW address
-		Context _context;      // swtch() here to run process
+		void * _context;      // swtch() here to run process
 		fs::xv6_file *_ofile[ max_open_files ];  // Open files
 		// struct inode *cwd;           // Current directory
 		char _name[ 16 ];               // Process name (debugging)
@@ -105,7 +106,7 @@ namespace pm
 		int get_priority();
 
 	public:
-		Context *get_context() { return &_context; }
+		void * get_context() { return ( void * ) _context; }
 		// smp::Lock &get_lock() { return _lock; }		<<<<<<<<<<<<<<<<<< 注意任何时候都不要尝试把任何的类的私有lock返回出去，
 																		// lock不正当的使用会带来问题，
 																		// 外部需要申请这个类的资源时应当在类中实现一个返回资源的接口,
@@ -122,7 +123,7 @@ namespace pm
 		uint get_ppid() { return parent ? parent->_pid : 0; }
 		TrapFrame* get_trapframe() { return _trapframe; }
 		uint64 get_kstack() { return _kstack; }
-		mm::PageTable get_pagetable() { return _pt; }
+		mm::PageTable * get_pagetable() { return &_pt; }
 		ProcState get_state() { return _state; }
 		char * get_name() { return _name; }
 		uint64 get_size() { return _sz; }

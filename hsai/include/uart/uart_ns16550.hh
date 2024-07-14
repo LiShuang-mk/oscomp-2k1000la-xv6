@@ -13,7 +13,7 @@
 
 #pragma once 
 
-#include "hsai_types.hh"
+#include "kernel/types.hh"
 #include "uart/virtual_uart.hh"
 #include "smp/spin_lock.hh"
 
@@ -32,6 +32,7 @@ namespace hsai
 		virtual void init() override;
 		virtual void put_char_sync( int c ) override;
 		virtual void put_char( int c ) override;
+		virtual void handle_interrupt() override;
 
 	private:
 		// 内部寄存器偏移

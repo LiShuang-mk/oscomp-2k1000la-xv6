@@ -7,14 +7,15 @@
 //
 
 #include "virtual_cpu.hh"
+#include "hsai_global.hh"
 #include "hsai_log.hh"
 
 namespace hsai
 {
-	VirtualCpu * k_cpus[ NUMCPU ] = { nullptr };
 
-	int register_cpu( VirtualCpu * p_cpu, int cpu_id )
+	int VirtualCpu::register_cpu( VirtualCpu * p_cpu, int cpu_id )
 	{
+		hsai_trace( "register cpu %d", cpu_id );
 		if ( cpu_id < 0 || cpu_id >= NUMCPU )
 			return -1;
 		if ( p_cpu == nullptr )
@@ -23,15 +24,10 @@ namespace hsai
 		return cpu_id;
 	}
 
-	VirtualCpu * get_cpu()
-	{
-		u32 cpuid = k_cpus[ 0 ]->get_cpu_id();
-		return k_cpus[ cpuid ];
-	}
-
 	VirtualCpu::VirtualCpu()
 		: _num_off( 0 )
 		, _int_ena( 0 )
+		, _cur_proc( nullptr )
 	{
 	}
 

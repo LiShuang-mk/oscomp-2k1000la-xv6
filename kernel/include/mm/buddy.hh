@@ -8,9 +8,9 @@
 
 #pragma once 
 
-#include "mm/page.hh"
 #include "mm/memlayout.hh"
 
+#include <mem/page.hh>
 #include <smp/spin_lock.hh>
 
 namespace mm
@@ -27,7 +27,7 @@ namespace mm
 		BuddyNode *_next;
 	}__attribute__( ( __packed__ ) );
 
-	constexpr uint node_per_page = mm::pg_size / sizeof( BuddyNode );
+	constexpr uint node_per_page = hsai::page_size / sizeof( BuddyNode );
 
 	// This struct is used to store buddy-node
 	// due to the dynamic allocation of buddy-node
@@ -46,7 +46,7 @@ namespace mm
 			k++;
 		return k;
 	}( );
-	constexpr uint64 buddy_max_heap_pages_cnt = buddy_max_heap_size / mm::pg_size;
+	constexpr uint64 buddy_max_heap_pages_cnt = buddy_max_heap_size / hsai::page_size;
 
 	static_assert( buddy_max_heap_size >= _1M, "buddy max heap size set too small" );
 	static_assert( ( buddy_max_heap_size&( buddy_max_heap_size - 1 ) ) == 0, "buddy max heap size shall be 1MiB aligned" );
@@ -66,7 +66,7 @@ namespace mm
 		// used to allocate node 
 		BuddyNode _free_node_list;
 
-		constexpr static uint _node_list_array_max_length = buddy_max_heap_size_shift - mm::pg_size_shift + 1;
+		constexpr static uint _node_list_array_max_length = buddy_max_heap_size_shift - hsai::page_size_shift + 1;
 
 		// available area node list
 		BuddyNode _node_list_array[ _node_list_array_max_length ];

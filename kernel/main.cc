@@ -1,8 +1,4 @@
-#include "hal/loongarch.hh"
-#include "hal/qemu_ls2k.hh"
-#include "hal/cpu.hh"
 #include "hal/disk/mbr.hh"
-#include "hal/rtc/ls2k_rtc.hh"
 
 #include "fs/device.hh"
 #include "fs/file.hh"
@@ -21,9 +17,6 @@
 
 #include "tm/timer_manager.hh"
 
-#include "im/exception_manager.hh"
-#include "im/interrupt_manager.hh"
-
 #include "mm/physical_memory_manager.hh"
 #include "mm/virtual_memory_manager.hh"
 #include "mm/heap_memory_manager.hh"
@@ -38,12 +31,10 @@
 #include <bit>
 
 #include <hsai_global.hh>
+#include <virtual_cpu.hh>
 
 #include <EASTL/string.h>
 #include <EASTL/unordered_map.h>
-
-// entry.S needs one stack per CPU.
-__attribute__( ( aligned( 16 ) ) ) char stack0[ loongarch::entry_stack_size * NUMCPU ];
 
 void test_sata();
 void test_buffer();
@@ -65,7 +56,7 @@ extern "C" {
 
 int main()
 {
-	if ( loongarch::Cpu::read_tp() == 0 )
+	if ( hsai::get_cpu()->get_cpu_id() == 0 )
 	{
 		// console init 
 		dev::k_console.init( "console", true );
@@ -75,22 +66,17 @@ int main()
 
 		hsai::hardware_abstract_init();
 
+		
+
 		printf( "hello world\n" );
 		log_info( "Hello World!\n" );
 
 		log_info( "main addr: %p", &main );
-		
+
 		while ( 1 );
 
-
-		[[maybe_unused]] uint64 tmp = loongarch::Cpu::read_csr( loongarch::csr::crmd );
-		log_trace( "crmd: %p", tmp );
-		loongarch::Cpu::euen_float();
-
 		// physical memory init 
-		mm::k_pmm.init( "physical memory manager",
-			loongarch::qemuls2k::memory::mem_start,
-			loongarch::qemuls2k::memory::mem_end );
+		mm::k_pmm.init( "physical memory manager" );
 		log_info( "pmm init" );
 
 		// process init 
@@ -112,17 +98,12 @@ int main()
 		// 	mm::k_pmm.trace_free_pages_count()
 		// );
 
+		hsai::hardware_secondary_init();
+
 		// timer init 
 		tmm::k_tm.init( "timer manager" );
 		log_info( "tm init" );
 
-		// interrupt init 
-		im::k_im.init( "interrupt init" );
-		log_info( "im init" );
-
-		// exception init 
-		im::k_em.init( "exception manager " );
-		log_info( "em init" );
 		// while ( 1 );
 
 		// sharemem init
@@ -194,7 +175,7 @@ int main()
 		// while ( 1 );
 
 
-		
+
 		new ( &fs::fat::k_fatfs ) fs::fat::Fat32FS;
 		fs::fat::k_fatfs.init( 1, 0, true );
 		new ( &fs::fat::k_testcase_fs ) fs::fat::Fat32FileSystem;

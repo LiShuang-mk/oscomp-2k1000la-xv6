@@ -57,7 +57,7 @@ namespace pm
 		void set_slot( Pcb *p, int slot );
 		void set_priority( Pcb *p, int priority );
 		void set_shm( Pcb *p );
-		void set_vma( Pcb *p );
+		// void set_vma( Pcb *p );
 		int set_trapframe( Pcb *p );
 
 		mm::PageTable proc_pagetable( Pcb *p );
@@ -71,6 +71,7 @@ namespace pm
 
 		void sleep( void *chan, hsai::SpinLock *lock );
 		void wakeup( void *chan );
+		void exit_proc( Pcb * p, int state );
 		void exit( int state );
 		int fork( uint64 usp );
 		int fork();

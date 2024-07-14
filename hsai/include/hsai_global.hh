@@ -8,8 +8,38 @@
 
 #pragma once
 
+#include "kernel/types.hh"
+
+#ifndef NUMCPU
+#define NUMCPU 1
+#endif
+
 namespace hsai
 {
-	extern void hardware_abstract_init( void );
+	/*****************************************************************
+	 * > HSAI 全局函数
+	 * > 这个部分的函数由 HAL 来实现
+	 *****************************************************************/
+
+	void __hsai_hal hardware_abstract_init( void );
+
+	void __hsai_hal hardware_secondary_init( void );
+
+
 	
+
+	class VirtualCpu;
+
+	extern VirtualCpu * k_cpus[ NUMCPU ];
+	VirtualCpu * get_cpu();
+
+	class VirtualMemory;
+
+	extern VirtualMemory * k_mem;
+
+	class VirtualInterruptManager;
+
+	extern VirtualInterruptManager * k_im;
+
+
 } // namespace hsai

@@ -10,12 +10,13 @@
 
 #include "types.hh"
 #include "pm/sleep_lock.hh"
-#include "mm/page.hh"
 #include "klib/common.hh"
+
+#include <mem/page.hh>
 
 namespace fs
 {
-	constexpr uint default_buffer_size = mm::PageEnum::pg_size/*bytes*/;
+	constexpr uint default_buffer_size = hsai::page_size/*bytes*/;
 	constexpr uint max_buffer_per_block = 64;
 
 	// it is simplified here, which should be read from SATA device.
