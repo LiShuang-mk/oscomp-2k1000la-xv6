@@ -24,13 +24,13 @@ namespace fs
 
         
 
-        constexpr uint MAX_DENTRY_NUM = 8;
+        constexpr uint MAX_DENTRY_NUM = 70;
         constexpr uint DENTRY_TYPES = 2;
-        constexpr uint INACTIVE_LIST_MAX_SIZE = 300;  // tentative size
-        constexpr uint ACTIVE_LIST_MAX_SIZE = 3;
+        constexpr uint INACTIVE_LIST_MAX_SIZE = 40;  // tentative size
+        constexpr uint ACTIVE_LIST_MAX_SIZE = 30;
         /**
          * @brief Dentry cache
-         * 
+         * @test dentryCacheTest
          */
         class dentryCache
         {

@@ -45,6 +45,7 @@ namespace fs
 		virtual eastl::string rName() = 0; // get dentry' name
 		virtual void reset( vector<int> &bitmap ) = 0; // reset dentry, used by dentrycache
 		virtual void delete_child( eastl::string name ) = 0;
+		virtual eastl::unordered_map<eastl::string, Dentry*>& getChildren() = 0;
 		uint Did; // dentry id
 	};
 

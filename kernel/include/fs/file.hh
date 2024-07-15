@@ -115,5 +115,4 @@ namespace fs
 
 	extern xv6_file_pool k_file_table;
 
-
 } // namespace fs

@@ -12,6 +12,7 @@
 #include "fs/file.hh"
 #include "fs/dev/acpi_controller.hh"
 #include "fs/kstat.hh"
+#include "fs/path.hh"
 #include "pm/process.hh"
 #include "pm/trap_frame.hh"
 #include "pm/process_manager.hh"
@@ -578,7 +579,41 @@ namespace syscall
 
 	uint64 SyscallHandler::_sys_mount()
 	{
-		return 0;
+		uint64 dev_addr;
+		uint64 mnt_addr;
+		uint64 fstype_addr;
+		eastl::string dev;
+		eastl::string mnt;
+		eastl::string fstype;
+		int flags;
+		uint64 data;
+		pm::Pcb *p = pm::k_pm.get_cur_pcb();
+		mm::PageTable pt = p->get_pagetable();
+
+		if ( _arg_addr( 0, dev_addr ) < 0 )
+			return -1;
+		if ( _arg_addr( 1, mnt_addr ) < 0 )
+			return -1;
+		if ( _arg_addr( 2, fstype_addr ) < 0 )
+			return -1;
+		
+		if( mm::k_vmm.copy_str_in( pt, dev, dev_addr, 100 ) < 0 )
+			return -1;
+		if( mm::k_vmm.copy_str_in( pt, mnt, mnt_addr, 100 ) < 0 )
+			return -1;
+		if( mm::k_vmm.copy_str_in( pt, fstype, fstype_addr, 100 ) < 0 )
+			return -1;
+
+		if ( _arg_int( 3, flags ) < 0 )
+			return -1;
+		if ( _arg_addr( 4, data ) < 0 )
+			return -1;
+		
+		//return pm::k_pm.mount( dev, mnt, fstype, flags, data );
+		fs::Path devpath( dev );
+		fs::Path mntpath( mnt );
+
+		return devpath.mount( mntpath, fstype, flags, data );
 	}
 
 	uint64 SyscallHandler::_sys_umount()

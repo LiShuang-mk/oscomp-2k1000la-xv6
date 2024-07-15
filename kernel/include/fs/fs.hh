@@ -25,7 +25,7 @@ namespace fs
 		FileSystem( const FileSystem& fs ) = delete;
 		virtual ~FileSystem() = default;
 		FileSystem& operator=( const FileSystem& fs );
-		virtual void init( int dev, uint64 start_lba, bool is_root ) = 0;
+		virtual void init( int dev, uint64 start_lba, eastl::string fstype,eastl::string rootname, bool is_root ) = 0;
 		//virtual eastl::string rFSType() const = 0; // get file system type
 		//virtual eastl::string rKey() const = 0; // get fs's key in mount map
 		virtual bool isRootFS() const = 0; // check if it is root fs
@@ -42,6 +42,8 @@ namespace fs
 		virtual size_t rNamelen() const = 0; // get max name length
 		virtual Dentry *getRoot() const = 0; // get root dentry
 		virtual Dentry *getMntPoint() const = 0; // get mount point dentry
+		virtual int mount( Dentry *dev, Dentry *&mnt, eastl::string fstype ) = 0 ;
+
 	};
 
 	// Dentry * DentryRef;

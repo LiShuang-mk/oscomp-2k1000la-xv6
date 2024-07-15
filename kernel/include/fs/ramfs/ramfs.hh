@@ -20,7 +20,7 @@ namespace fs{
             ramfs::RamFSSb *_super_block;    // super block            
             bool _isroot;
             RamFSDen *_root;
-            RamFSDen *_mnt;
+            Dentry *_mnt;
             uint32 _ino = 0;
 
             public:
@@ -31,7 +31,7 @@ namespace fs{
                 RamFS( bool isroot_ ) : _isroot( isroot_ ) {};
                 
                 ~RamFS() = default;
-		        void init( int dev, uint64 start_lba, bool is_root ) override { log_error(" ramfs don't support this function "); } // 
+		        void init( int dev, uint64 start_lba, eastl::string fstype, eastl::string rootname, bool is_root ) override { log_error(" ramfs don't support this function "); } // 
                 bool isRootFS() const override { return _isroot; }
                 SuperBlock *getSuperBlock() const override { return _super_block; }
                 size_t rBlockSize() const override { return 512; } // RamFS does not have block size
@@ -41,10 +41,13 @@ namespace fs{
                 long rFreeFile() const override { return 0x100; } // RamFS does not have free file number
                 eastl::string rFStype() const override { return _fstype; }
                 size_t rNamelen() const override { return 512; } // RamFS does not have max name length
-                Dentry *getRoot() const override { return nullptr; } // RamFS does not have root dentry
-                Dentry *getMntPoint() const override { return nullptr; } // RamFS does not have mount point dentry
+                Dentry *getRoot() const override ;// RamFS does not have root dentry
+                Dentry *getMntPoint() const override { return _mnt; } // RamFS does not have mount point dentry
                 int alloc_ino() { return _ino++; }
                 void dentryCacheTest();
+                int  mount( Dentry *dev, Dentry *&mnt, eastl::string fstype ) override ;
+
+                void traversal();
         };
 
         extern RamFS k_ramfs;

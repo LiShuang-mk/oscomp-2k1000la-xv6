@@ -30,7 +30,7 @@ namespace fs
 			Fat32Dentry *_parent;
 			Fat32Inode *_node;
 			// eastl::unordered_map<eastl::string, Fat32DirectryShort> _children;
-			eastl::unordered_map<eastl::string, Fat32Dentry *> _dentry_children;
+			eastl::unordered_map<eastl::string, fs::Dentry *> _dentry_children;
 			eastl::string _name;
 			// Dentry * _sub_dir_cache = nullptr;
 			uint Did; // dentry id
@@ -53,8 +53,8 @@ namespace fs
 			eastl::string getName() override { return _name; };
 			bool isMntPoint() override { return false; };
 			Fat32Dentry *dirinfo2dentry( Fat32Dentry *dirinfo );
-			void rootInit( Fat32Inode *node ) { _parent = nullptr; _node = node; _name = "/"; };
-			void init( uint32 dev, Fat32SuperBlock *sb, Fat32FS *fs );   /// @todo init root
+			void rootInit( Fat32Inode *node, eastl::string rootname ) { _parent = nullptr; _node = node; _name = rootname; };
+			void init( uint32 dev, Fat32SuperBlock *sb, Fat32FS *fs, eastl::string rootname );   /// @todo init root
 			void init( Fat32Dentry *parent_, Fat32Inode *node_, eastl::string name_ ) { _parent = parent_; _node = node_; _name = name_; };
 			DentryType dentry_type() override { return DentryType::FAT32_DENTRY; };
 			eastl::string rName() override { return _name; }; // get dentry' name
@@ -63,6 +63,8 @@ namespace fs
 			void delete_child( eastl::string name ) override { _dentry_children.erase( name ); };
 
 			void dentrycachetest();
+			eastl::unordered_map<eastl::string , fs::Dentry *>& getChildren() override ;
+
 		};
 	}
-}
+};

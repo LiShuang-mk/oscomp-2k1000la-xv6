@@ -34,6 +34,7 @@
 #include "fs/dev/console.hh"
 #include "fs/device.hh"
 #include "fs/kstat.hh"
+#include "fs/ramfs/ramfs.hh"
 
 #include <EASTL/vector.h>
 #include <EASTL/string.h>
@@ -281,7 +282,9 @@ namespace pm
 		f->major = dev::dev_console_num;
 		f->type = fs::xv6_file::FD_DEVICE;
 		p->_ofile[ 1 ] = f;
-		p->_cwd = fs::fat::k_fatfs.get_root();
+		//p->_cwd = fs::fat::k_fatfs.get_root();
+		/// @todo 这里暂时修改进程的工作目录为fat的挂载点
+		p->_cwd = fs::ramfs::k_ramfs.getRoot()->EntrySearch( "mnt" );
 		p->_cwd_name = p->_cwd->getName();
 
 
@@ -458,8 +461,9 @@ namespace pm
 		_proc_create_vm( proc );
 
 
-		if ( ( de = fs::fat::k_fatfs.get_root_dir()->EntrySearch( path ) ) 			
-									== nullptr )
+		// if ( ( de = fs::fat::k_fatfs.get_root_dir()->EntrySearch( path ) ) 			
+		// 							== nullptr )
+		if ( ( de = fs::ramfs::k_ramfs.getRoot()->EntrySearch( "mnt" )->EntrySearch( path ) ) == nullptr )
 		{
 			log_error( "exec: cannot find file" );
 			return -1;   // 拿到文件夹信息

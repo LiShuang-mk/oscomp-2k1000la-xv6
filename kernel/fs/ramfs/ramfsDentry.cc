@@ -1,13 +1,14 @@
-#include "fs/ramfs/ramfsDentry.hh"
+//#include "fs/ramfs/ramfsDentry.hh"
 #include "fs/ramfs/ramfsInode.hh"
 #include "fs/ramfs/ramfs.hh"
 
+#include "fs/dentrycache.hh"
 #include "fs/inode.hh"
 #include "fs/fs.hh"
 
 #include <EASTL/string.h>
 #include <EASTL/unordered_map.h>
-
+#include <EASTL/queue.h>
 namespace fs{
     
     namespace ramfs{
@@ -27,7 +28,7 @@ namespace fs{
             return nullptr;
         }
 
-        Dentry* RamFSDen::EntryCreate(eastl::string name, uint32 mode) {
+        Dentry* RamFSDen::EntryCreate(eastl::string name, uint32 mode ) {
             if (name.empty()) {
                 log_error("RamFSDen::EntryCreate: name is empty");
                 return nullptr;
@@ -47,13 +48,15 @@ namespace fs{
                 return nullptr;
             }
 
-            RamInode* inode = new RamInode(nodefs, k_ramfs.alloc_ino(), S_ISDIR(mode));
+            RamInode* inode = new RamInode(nodefs, k_ramfs.alloc_ino(), mode );
             if (inode == nullptr) {
                 log_error("RamFSDen::EntryCreate: Failed to create RamInode");
                 return nullptr;
             }
 
-            RamFSDen* dentry = new RamFSDen( name, inode, this);
+            //RamFSDen* dentry = new RamFSDen( name, inode, this);
+            RamFSDen *dentry = static_cast<RamFSDen *> (fs::dentrycache::k_dentryCache.alloDentry( DentryType::RAMFS_DENTRY ) );
+            dentry->init( name, inode, this );
             if (dentry == nullptr) {
                 log_error("RamFSDen::EntryCreate: Failed to create RamFSDen");
                 delete inode; // 避免内存泄漏
@@ -75,7 +78,7 @@ namespace fs{
             node = new RamInode( fs, fs->alloc_ino(), true );
             //node->init( 0, fs, true );
             name = "/";
-
+            isroot = true;
             // init device dentry
             // EntryCreate( "dev", 1 ); // 暂时把第二个参数为正数认为是目录
             // EntryCreate( "proc", 1 );
@@ -99,13 +102,27 @@ namespace fs{
             //Did = 0;
         }
 
-        void RamFSDen::printChildrenInfo(){
-            log_info("RamFSDen::printChildrenInfo: %s", name.c_str());
-            for( auto &p : children )
-            {
-                p.second->printChildrenInfo();
+        void RamFSDen::printChildrenInfo() {
+            eastl::queue<Dentry*> current;
+            Dentry *den;
+            current.push(this); // 将当前节点添加到队列
+            
+            while (!current.empty()) {
+                den = current.front(); // 获取队列前端的节点
+                current.pop(); 
+        
+                log_info("  %s", den->rName().c_str());
+                
+                eastl::unordered_map<eastl::string, Dentry*> children = den->getChildren();
+                for (auto &child : children) {
+                    current.push(child.second); // 将子节点添加到队列中以便后续处理
+                }
             }
-            return;
+        }
+
+        eastl::unordered_map< eastl::string, Dentry * >& RamFSDen::getChildren()
+        {
+            return children;
         }
     }
 }

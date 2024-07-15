@@ -5,6 +5,8 @@
 #include "fs/buffer.hh"
 #include "fs/dentrycache.hh"
 
+#include "fs/path.hh"
+
 namespace fs
 {
 	namespace fat
@@ -18,7 +20,7 @@ namespace fs
 			delete _root;
 		}
 
-		void Fat32FS::init( int dev, uint64 start_lba, bool is_root )
+		void Fat32FS::init( int dev, uint64 start_lba, eastl::string fstype, eastl::string rootname, bool is_root )
 		{
 			/// @todo 1. load super block
 			Buffer buf = k_bufm.read_sync( dev, start_lba );
@@ -28,18 +30,26 @@ namespace fs
 			_super_block = new Fat32SuperBlock( this, dbr, true );
 
 			/// @todo 2. set _start_lba, _fat_lba, _device
-			_fstype = "fat32";
+			_fstype = fstype;
 			_device = dev;
 			_start_lba = start_lba;
 			_fat_lba = _start_lba + _super_block->get_bpb()->reserved_sector_count;
 			_isroot = is_root;
 
 			/// @todo 3. init rootEntry, and it's fat32inode.
-			_root = new Fat32Dentry();
-			_root->init( _device, _super_block, this );
-			_mnt = _root;
+			_root = static_cast<Fat32Dentry *>( fs::dentrycache::k_dentryCache.alloDentry( DentryType::FAT32_DENTRY ) );
+			_root->init( _device, _super_block, this, rootname );
+			_mnt = nullptr;
 
 			_root->EntryCreate( "test_unlink", 0 );
+
+			/// @todo 4. try to mount fat to ramfs's /mnt/fat
+			//fs::mnt_table[ "/mnt/fat" ] = this;
+		}
+
+		Dentry *Fat32FS::getRoot () const
+		{
+			return _root;
 		}
 
 	}

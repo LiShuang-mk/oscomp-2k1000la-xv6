@@ -69,6 +69,7 @@ namespace fs
 		Dentry *pathHitTable();
 		Dentry *pathSearch( bool parent = false );
 		Dentry *pathCreate( uint32 mode );
+		int mount( Path &dev, eastl::string fstype , uint64 flags, uint64 data);
 	};
 
 	extern eastl::unordered_map<eastl::string, FileSystem *> mnt_table;

@@ -29,18 +29,18 @@ namespace fs
 			bool _isroot;
 
 			Fat32Dentry *_root;
-			Fat32Dentry *_mnt;
+			Dentry *_mnt;
 			//eastl::string key;			// map key for fs when mounts
 		public:
 			Fat32FS() = default;
 			Fat32FS( const Fat32FS &fs ) = default;
 			Fat32FS( bool isroot_, eastl::string key_ ) : _isroot( isroot_ ) {};
-
+			Fat32FS( bool isroot_, Dentry *mnt ) : _isroot( isroot_ ), _mnt( mnt ) {};
 			~Fat32FS();
-			void init( int dev, uint64 start_lba, bool is_root = false );
+			void init( int dev, uint64 start_lba, eastl::string fstype, eastl::string rootname, bool is_root = false );
 
 			Fat32Dentry * get_root() { return _root; }
-			Fat32Dentry * get_mnt() { return _mnt; }
+			//Fat32Dentry * get_mnt() { return _mnt; }
 			Fat32Dentry * get_dir_entry( Fat32DirInfo &dir_info );
 
 			Fat32FS & operator= ( const Fat32FS &fs ) = default;
@@ -58,8 +58,10 @@ namespace fs
 			eastl::string rFStype() const override { return _fstype; } 
 			size_t rNamelen() const override { return Fat32MaxPathLength; }
 			//void unInstall() override {  } /// @todo FAT32 uninstall file system
-			Dentry *getRoot() const override { return nullptr; };
-			Dentry *getMntPoint() const override { return nullptr; };
+			Dentry *getRoot() const override ;
+			Dentry *getMntPoint() const override { return _mnt; };
+			int mount( Dentry *dev, Dentry *&mnt, eastl::string fstype )  override { return 0; }	
+		
 		public:
 			uint owned_device() { return _device; }
 			uint64 start_lba() { return _start_lba; }

@@ -5,12 +5,13 @@
 // | Contact Author: lishuang.mk@whu.edu.cn 
 // --------------------------------------------------------------
 //
+#include "pm/process_manager.hh"
 
 #include "fs/path.hh"
 #include "fs/file.hh"
-#include "pm/process_manager.hh"
 #include "fs/dentry.hh"
 #include "fs/fs_defs.hh"
+#include "fs/fat/fat32fs.hh"
 
 #include <EASTL/unordered_map.h>
 
@@ -40,10 +41,12 @@ namespace fs
 
 	void Path::pathbuild()
 	{
-		if ( pathname.size() < 1 ) { base = pm::k_pm.get_cur_pcb()->get_cwd(); return; }
-		else if ( pathname[ 0 ] == '/' ) { base = mnt_table[ "/" ]->getSuperBlock()->getRoot(); }
+		//[[maybe_unused]]Dentry *root = mnt_table[ "/" ]->getRoot();
+		if ( pathname.size() < 1 ) { base = pm::k_pm.get_cur_pcb()->get_cwd(); return; }	
+		else if ( pathname[ 0 ] == '/' ) { base = mnt_table[ "/" ]->getRoot(); }
 		else if ( base == nullptr ) { base = pm::k_pm.get_cur_pcb()->get_cwd(); }
-
+		
+		log_info("base name is %s ", base->rName());
 		size_t len = pathname.size();
 		if ( len > 0 )
 		{  // 保证数组长度不为0
@@ -148,12 +151,12 @@ namespace fs
 
 		for(int i=0; i < dirsize; i++)
 		{
-			log_trace( "pathSearch: dirname[{}]: {}", i, dirname[i] );
+			log_trace( "pathSearch: dirname[%d]: %s", i, dirname[i] );
 			while(entry->isMntPoint()) 
 				log_panic("pathSearch: entry is a mount point"); 
-			
-			if( !( entry->getNode()->rMode() & (fs::File_dir << fs::FileAttrs::File_dir_s ) ) )
-				return nullptr; // 不是目录
+			/// @todo 这里随后检查 是否是目录，文件的结构不完善
+			// if( !( entry->getNode()->rMode() & (fs::File_dir << fs::FileAttrs::File_dir_s ) ) )
+			// 	return nullptr; // 不是目录
 			if( parent && i == dirsize - 1 ) return entry; // 返回父目录
 			if( dirname[i] == "." ) next = entry;
 			else if( dirname[i] == ".." ) next = entry->getParent();
@@ -166,4 +169,16 @@ namespace fs
 		return entry;
 	}
 
+	int Path::mount( Path &dev, eastl::string fstype , uint64 flags, uint64 data)
+	{
+		fs::Dentry *mntEnt = pathSearch();
+		fs::Dentry *devEnt = dev.pathSearch();
+		
+		if( mntEnt->getNode( )->getFS()->mount( devEnt, mntEnt, fstype ) == 0)
+		{
+			mnt_table[ pathname ] = mntEnt->getNode()->getFS();
+			return 0;
+		}
+		return -1;
+	}
 } // namespace fs

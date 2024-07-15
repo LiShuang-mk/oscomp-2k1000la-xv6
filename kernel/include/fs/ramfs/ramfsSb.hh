@@ -22,7 +22,7 @@ namespace fs{
                 ~RamFSSb() = default;
 			    Dentry *getRoot() const override { return fs->getRoot(); };
                 Dentry *getMntPoint() const override { log_panic("RamFS getMntPoint is forbidden!"); return nullptr; }
-                FileSystem *getFileSystem() const override { return nullptr; }
+                FileSystem *getFileSystem() const override { return fs; }
                 bool isValid() const override { return true; }
                 uint32 rDefaultMod() const override { return 0644; } 
                 size_t rBlockSize() const override { return 0; }

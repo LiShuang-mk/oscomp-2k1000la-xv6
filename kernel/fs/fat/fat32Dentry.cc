@@ -1,10 +1,10 @@
-#include "fs/fat/fat32Dentry.hh"
+//#include "fs/fat/fat32Dentry.hh"
 #include "fs/fat/fat32Sb.hh"
 #include "fs/buffer.hh"
 #include "fs/buffer_manager.hh"
 #include "fs/fat/fat32Sb.hh"
 #include "fs/fat/fat32fs.hh"
-//#include "fs/dentrycache.hh"
+#include "fs/dentrycache.hh"
 
 #include <EASTL/vector.h>
 namespace fs
@@ -20,7 +20,7 @@ namespace fs
 			}
 		}
 
-		void Fat32Dentry::init( uint32 dev, Fat32SuperBlock *sb, Fat32FS *fs )
+		void Fat32Dentry::init( uint32 dev, Fat32SuperBlock *sb, Fat32FS *fs, eastl::string rootname )
 		{
 			_node = new Fat32Inode();
 			_node->init(
@@ -30,7 +30,7 @@ namespace fs
 				0
 			);
 
-			rootInit( _node );
+			rootInit( _node, rootname );
 		}
 
 		Dentry * Fat32Dentry::EntrySearch( eastl::string name )
@@ -47,13 +47,12 @@ namespace fs
 			{
 				log_trace( "Fat32Dentry::EntrySearch: found inode" );
 				/// TODO: return local viriable?
-				Fat32Dentry * subdentry = new Fat32Dentry( this, ( Fat32Inode * ) subnod, name );
+				//Fat32Dentry * subdentry = new Fat32Dentry( this, ( Fat32Inode * ) subnod, name );
+				Fat32Dentry * subdentry = static_cast<Fat32Dentry *>(fs::dentrycache::k_dentryCache.alloDentry( DentryType::FAT32_DENTRY ));
+				subdentry->init( this, ( Fat32Inode * ) subnod, name );
 				_dentry_children[ name ] = subdentry;
 				return subdentry;
 
-				// delete _sub_dir_cache;
-				// _sub_dir_cache = new Fat32Dentry( this, ( Fat32Inode* ) subnod, name );
-				// return _sub_dir_cache;
 			}
 			return nullptr;
 
@@ -61,7 +60,10 @@ namespace fs
 
 		Dentry * Fat32Dentry::EntryCreate( eastl::string name, uint32 mode )
 		{
-			_dentry_children[ name ] = new Fat32Dentry( this, nullptr, name );
+			//_dentry_children[ name ] = new Fat32Dentry( this, nullptr, name );
+			Fat32Dentry * entry = static_cast<Fat32Dentry *>(fs::dentrycache::k_dentryCache.alloDentry( DentryType::FAT32_DENTRY ));
+			entry->init( this, nullptr, name );
+			_dentry_children[ name ] = entry;
 			return nullptr;
 		}
 
@@ -81,16 +83,11 @@ namespace fs
 			//Did = 0;
 		}
 	
-		// void Fat32Dentry::dentrycachetest( )
-		// {
-		// 	log_info( "Fat32Dentry::dentrycachetest" );
-		// 	fs::dentrycache::dentryCache &dc = fs::dentrycache::k_dentryCache;
-		// 	Dentry *dentry = dc.alloDentry( DentryType::FAT32_DENTRY );
-			
-		// 	Fat32Dentry *f32dentry = static_cast<Fat32Dentry *>( dentry );
-		// 	f32dentry->init( this, nullptr, "Level_1_Entry_1" );
-		// 	chil
-			
-		// }
+
+		eastl::unordered_map<eastl::string , fs::Dentry *>& Fat32Dentry::getChildren()
+		{
+			return _dentry_children;
+		}
+
 	}
 }

@@ -190,16 +190,23 @@ int main()
 		// while ( 1 );
 		new ( &fs::dentrycache::k_dentryCache ) fs::dentrycache::dentryCache;
 		fs::dentrycache::k_dentryCache.init();
+		new ( &fs::mnt_table ) eastl::unordered_map<eastl::string, fs::FileSystem*>;
 		fs::mnt_table.clear(); // clean mnt_Table
 		new ( &fs::ramfs::k_ramfs ) fs::ramfs::RamFS;
 		fs::ramfs::k_ramfs.initfd();
-		fs::ramfs::k_ramfs.dentryCacheTest();
-		//fs::mnt_table[ fs::ramfs::k_ramfs.rFStype() ] = &fs::ramfs::k_ramfs;
+		//fs::ramfs::k_ramfs.dentryCacheTest();
+		fs::mnt_table[ "/" ] = &fs::ramfs::k_ramfs;
 		log_info( "ramfs init" );
-		new ( &fs::fat::k_fatfs ) fs::fat::Fat32FS;
-		fs::fat::k_fatfs.init( 1, 0, true );		
+		fs::Path mnt = fs::Path("/mnt");
+		fs::Path dev = fs::Path("/dev/vda2");
+		mnt.mount( dev, "fat32", 0, 0 );
+		// new ( &fs::fat::k_fatfs ) fs::fat::Fat32FS;
+		// fs::fat::k_fatfs.init( 1, 0, "fat32");		
 		//fs::mnt_table[ fs::fat::k_fatfs.rFStype() ] = &fs::fat::k_fatfs;
 		log_info( " fat32 fs init" );
+		// now is try to mount concrate fs to ramfs
+		//fs::ramfs::k_ramfs.mount( &fs::fat::k_fatfs );
+		//fs::ramfs::k_ramfs.traversal();
 		//new ( &fs::fat::k_testcase_fs ) fs::fat::Fat32FileSystem;
 		//fs::fat::k_testcase_fs.init( 1, 0 );
 		//log_info( "testcase fs init" );
