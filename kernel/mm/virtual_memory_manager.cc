@@ -33,6 +33,8 @@ namespace mm
 	{
 		_lock.init( lock_name );
 
+		new ( &k_pagetable ) PageTable;
+		
 		k_pagetable.set_global();
 
 		uint64 addr = ( uint64 ) k_pmm.alloc_page();

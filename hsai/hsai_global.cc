@@ -8,6 +8,7 @@
 
 #include "hsai_global.hh"
 #include "virtual_cpu.hh"
+#include "device_manager.hh"
 
 namespace hsai
 {
@@ -22,5 +23,10 @@ namespace hsai
 	VirtualMemory * k_mem = nullptr;
 
 	VirtualInterruptManager * k_im = nullptr;
+
+	void hsai_internal_init()
+	{
+		new ( &k_devm ) DeviceManager;
+	}
 
 } // namespace hsai

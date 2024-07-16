@@ -61,6 +61,8 @@ extern "C" {
 	{
 		if ( hsai::get_cpu()->get_cpu_id() == 0 )
 		{
+			hsai::hsai_internal_init();
+
 			// console init 
 			dev::k_console.init( "console", true );
 
@@ -76,7 +78,7 @@ extern "C" {
 
 			log_info( "xn6_start_kernel addr: %p", &xn6_start_kernel );
 
-			while ( 1 );
+			
 
 			// physical memory init 
 			mm::k_pmm.init( "physical memory manager" );
@@ -107,7 +109,7 @@ extern "C" {
 			tmm::k_tm.init( "timer manager" );
 			log_info( "tm init" );
 
-			// while ( 1 );
+			while ( 1 );
 
 			// sharemem init
 			// pm::k_shmManager.init( "shm lock" );

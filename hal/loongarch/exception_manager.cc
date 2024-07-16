@@ -34,7 +34,7 @@
 #include <process_interface.hh>
 #include <timer_interface.hh>
 #include <mem/page.hh>
-#include <mem/page_table.hh>
+#include <mem/virtual_page_table.hh>
 #include <intr/virtual_interrupt_manager.hh>
 
 extern "C" {

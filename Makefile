@@ -28,10 +28,10 @@ export OBJCOPY = ${TOOLPREFIX}objcopy
 export OBJDUMP = ${TOOLPREFIX}objdump
 export AR  = ${TOOLPREFIX}ar
 
-export ASFLAGS = -march=loongarch64 -mabi=lp64d -g -nostdlib
+export ASFLAGS = -ggdb -march=loongarch64 -mabi=lp64d -O0
 export ASFLAGS += -I ./include
-export ASFLAGS += -MD 
-export CFLAGS = -g -Wall -Werror -O0 -fno-omit-frame-pointer
+export ASFLAGS += -MD
+export CFLAGS = -ggdb -Wall -Werror -O0 -fno-omit-frame-pointer
 export CFLAGS += -I ./include
 export CFLAGS += -MD 
 export CFLAGS += -DNUMCPU=$(CONF_CPU_NUM)
@@ -67,15 +67,13 @@ COMPILE_START_TIME := $(shell cat /proc/uptime | awk -F '.' '{print $$1}')
 
 
 # .PHONY 是一个伪规则，其后面依赖的规则目标会成为一个伪目标，使得规则执行时不会实际生成这个目标文件
-.PHONY: all clean test initdir probe_host compile_all load_kernel EASTL EASTL_test config_platform print_compile_time
+.PHONY: all clean test initdir probe_host compile_all load_kernel cp_to_bin EASTL EASTL_test config_platform print_compile_time
 
 # rules define 
 
-all: probe_host compile_all load_kernel
-	$(OBJCOPY) -O binary ./build/kernel.elf ./kernel.bin
+all: probe_host compile_all load_kernel cp_to_bin
 	@current_time=`cat /proc/uptime | awk -F '.' '{print $$1}'`; \
 	echo "######## 生成结束时间戳: $${current_time} ########"; \
-	echo "生成结束时间戳: $${current_time}"; \
 	time_interval=`expr $${current_time} - $(COMPILE_START_TIME)`; \
 	runtime=`date -u -d @$${time_interval} "+%Mm %Ss"`; \
 	echo "######## 生成用时 : $${runtime} ########"
@@ -100,6 +98,11 @@ load_kernel: $(BUILDPATH)/kernel.elf
 
 $(BUILDPATH)/kernel.elf: $(STATIC_MODULE) $(LD_SCRIPT)
 	$(LD) $(LDFLAGS) -T $(LD_SCRIPT) -o $@ -Wl,--whole-archive $(STATIC_MODULE) -Wl,--no-whole-archive
+
+cp_to_bin: kernel.bin
+
+kernel.bin: $(BUILDPATH)/kernel.elf
+	$(OBJCOPY) -O binary ./build/kernel.elf ./kernel.bin
 
 test:
 	@echo $(COMPILE_START_TIME); sleep 3; \

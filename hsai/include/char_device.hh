@@ -1,5 +1,5 @@
 //
-// Created by Li Shuang ( pseudonym ) on 2024-07-12
+// Created by Li Shuang ( pseudonym ) on 2024-07-15 
 // --------------------------------------------------------------
 // | Note: This code file just for study, not for commercial use 
 // | Contact Author: lishuang.mk@whu.edu.cn 
@@ -8,20 +8,15 @@
 
 #pragma once
 
-#include "mem/page.hh"
-
 namespace hsai
 {
-	class PageTable __hsai_kernel
+	class CharDevice
 	{
-	protected:
-		ulong _pt_base = 0;
-
 	public:
-		virtual Pte walk( ulong va, bool alloc ) = 0;
-		virtual ulong walk_addr( ulong va ) = 0;
-
-
+		virtual uint8 get_char_sync() = 0;
+		virtual uint8 get_char() = 0;
+		virtual uint8 put_char_sync() = 0;
+		virtual uint8 put_char() = 0;
 	};
 
 } // namespace hsai

@@ -13,7 +13,7 @@
 
 ## 模块概览
 
-- [hsai_defs.h]()
+- [hsai_defs.h](#hsai_defsh)
 - [hsai_global.hh]()
 - [hsai_log.hh]()
 - [process_interface.hh]()
@@ -34,4 +34,18 @@
 
 ## 正文
 
-no content
+### hsai_defs.h
+
+#### 宏 `__hsai_kernel`
+
+这个宏是一个单纯的标签，用于提示内核应当实现其逻辑。
+
+#### 宏 `__hsai_hal`
+
+这个宏是一个单纯的标签，用于提示硬件抽象层应当实现其逻辑。
+
+#### 宏 `NUMCPU`
+
+这个宏用于配置架构CPU核心数。
+
+### hsai_global.hh

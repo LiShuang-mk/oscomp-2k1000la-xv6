@@ -30,7 +30,7 @@ namespace hsai
 		pte_t *_data_addr = nullptr;
 	public:
 		Pte() = default;
-		Pte( pte_t *addr ) : _data_addr( addr ) {};
+		Pte( pte_t *addr );
 		void set_addr( pte_t *addr ) { _data_addr = addr; }
 		bool is_null() { return _data_addr == nullptr; }
 

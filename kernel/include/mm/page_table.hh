@@ -10,12 +10,12 @@
 
 #include "types.hh"
 
-#include <mem/page_table.hh>
+#include <mem/virtual_page_table.hh>
 
 namespace mm
 {
 	extern bool debug_trace_walk;
-	class PageTable : public hsai::PageTable
+	class PageTable : public hsai::VirtualPageTable
 	{
 	private:
 		uint64 _base_addr;

@@ -15,13 +15,13 @@
 .globl kernelvec
 .align 4
 kernelvec:
-	// make room to save registers.
+	# make room to save registers.
 	addi.d $sp, $sp, -256
 
 	csrwr	$t0, 0x8b
 	csrrd	$t0, 0x05
 
-	// save the registers.
+	# save the registers.
 	st.d $ra, $sp, 0
 	st.d $tp, $sp, 8
 	st.d $sp, $sp, 16
@@ -54,12 +54,13 @@ kernelvec:
 	st.d $s7, $sp, 232
 	st.d $s8, $sp, 240
 
-	// call the C trap handler in trap.c
+_kernel_vec_call_trap:
+	# call the C trap handler in trap.c
 	bl _wrp_kernel_trap
 
-	// restore register
+	# restore register
 	ld.d $ra, $sp, 0
-	// not this, in case we moved CPUs: ld.d $tp, $sp, 8
+	# not this, in case we moved CPUs: ld.d $tp, $sp, 8
 	ld.d $sp, $sp, 16
 	ld.d $a0, $sp, 24
 	ld.d $a1, $sp, 32
@@ -92,5 +93,5 @@ kernelvec:
 
 	addi.d $sp, $sp, 256
 
-	// return to whatever we were doing in the kernel.
+	# return to whatever we were doing in the kernel.
 	ertn

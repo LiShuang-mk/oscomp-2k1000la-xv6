@@ -87,7 +87,9 @@ initdir:
 compile_platform:
 	$(MAKE) all -C $(plat_name)
 
-add_libcpu: $(objs)
+add_libcpu: $(BUILDPATH)/$(target_name).a
+
+$(BUILDPATH)/$(target_name).a: $(objs)
 	$(AR) rc $(BUILDPATH)/$(target_name).a $(objs)
 
 $(cc_obj): $(BUILDPATH)/hal/$(arch_name)/%.o: %.cc 
@@ -97,7 +99,7 @@ $(c_obj): $(BUILDPATH)/hal/$(arch_name)/%.o: %.c
 	$(CC) -c $(CFLAGS) -MF $(BUILDPATH)/hal/$(arch_name)/$*.d -o $@ $<
 
 $(s_obj): $(BUILDPATH)/hal/$(arch_name)/%.o: %.S 
-	$(CC) -c $(ASFLAGS) -MF $(BUILDPATH)/hal/$(arch_name)/$*.d -o $@ $<
+	$(AS) -c $(ASFLAGS) -MF $(BUILDPATH)/hal/$(arch_name)/$*.d -o $@ $<
 
 -include $(depends)
 

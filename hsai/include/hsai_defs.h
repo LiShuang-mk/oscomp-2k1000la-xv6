@@ -14,4 +14,7 @@
 
 #define NUMCPU 1
 
+#define BLK_DEV_TBL_LEN 64		// block device register table length
+#define CHA_DEV_TBL_LEN 64		// char device register table length
+
 #endif // _HSAI_DEFS_H_

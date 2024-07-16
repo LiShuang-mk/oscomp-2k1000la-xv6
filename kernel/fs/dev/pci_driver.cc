@@ -88,7 +88,7 @@ namespace dev
 			// 	}
 			// }
 
-			// // 读取 PCI 配置头
+			// 读取 PCI 配置头
 			// dev::pci::PciCfgHeader *pciHead = ( dev::pci::PciCfgHeader * ) loongarch::qemuls2k::PciCfgDevAddr::pci_cfg_sata;
 			// if ( pciHead->vendor_id != 0x0014 )
 			// 	log_panic( "PCI SATA配置头不合规 - vendor id is not 0x0014" );

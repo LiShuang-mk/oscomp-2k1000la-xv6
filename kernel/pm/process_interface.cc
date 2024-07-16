@@ -63,9 +63,9 @@ namespace hsai
 		pm::k_pm.exit_proc( ( pm::Pcb * ) proc, state );
 	}
 
-	PageTable * get_pt_from_proc( void * proc )
+	VirtualPageTable * get_pt_from_proc( void * proc )
 	{
-		return ( PageTable * ) ( ( pm::Pcb * ) proc )->get_pagetable();
+		return ( VirtualPageTable * ) ( ( pm::Pcb * ) proc )->get_pagetable();
 	}
 
 } // namespace hsai

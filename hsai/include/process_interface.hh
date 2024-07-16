@@ -12,7 +12,7 @@
 
 namespace hsai
 {
-	class PageTable;
+	class VirtualPageTable;
 
 	constexpr uint proc_pool_size = PROC_POOL_SIZE;
 
@@ -36,7 +36,7 @@ namespace hsai
 
 	extern __hsai_kernel ulong get_pgd_addr( void * proc );
 
-	extern __hsai_kernel PageTable * get_pt_from_proc( void * proc );
+	extern __hsai_kernel VirtualPageTable * get_pt_from_proc( void * proc );
 
 
 	extern __hsai_hal void user_proc_init( void * proc );

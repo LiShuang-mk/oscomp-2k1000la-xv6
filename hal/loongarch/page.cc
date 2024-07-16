@@ -7,6 +7,8 @@
 //
 
 #include <mem/page.hh>
+#include <hsai_global.hh>
+#include <mem/virtual_memory.hh>
 
 #include "loongarch.hh"
 
@@ -14,6 +16,8 @@ using namespace loongarch;
 
 namespace hsai
 {
+	Pte::Pte( pte_t * addr ) { _data_addr = ( pte_t* ) k_mem->to_vir( ( ulong ) addr ); }
+
 	bool Pte::is_valid() { return *_data_addr & pte_valid_m; }
 	bool Pte::is_dirty() { return *_data_addr & pte_dirty_m; }
 	bool Pte::is_present() { return *_data_addr & pte_present_m; }

@@ -37,10 +37,14 @@ namespace loongarch
 		hsai_info( "tlbm init" );
 	}
 
+} // namespace loongarch
+
+namespace hsai
+{
 	void hardware_secondary_init()
 	{
 		// 1. 异常管理初始化
-		k_em.init( "exception manager" );
+		loongarch::k_em.init( "exception manager" );
 	}
+} // namespace hsai
 
-} // namespace loongarch

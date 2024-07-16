@@ -47,7 +47,7 @@ plat_name = $(CONF_PLATFORM)
 lib_name = hal_$(arch_name)_$(plat_name)
 
 # card sub-module
-sub_mod = $(call card_dir,) # $1 = null
+sub_mod := $(call card_dir,) # $1 = null
 
 # card source
 c_src = $(foreach d, $(sub_mod), $(wildcard $(d)*.c)) $(wildcard *.c)

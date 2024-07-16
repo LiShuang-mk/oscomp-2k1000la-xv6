@@ -115,7 +115,7 @@ namespace syscall
 
 	uint64 SyscallHandler::_arg_raw( int arg_n )
 	{
-		return hsai::get_arg_from_trap_frame( hsai::get_cur_proc(), ( uint ) arg_n );
+		return hsai::get_arg_from_trap_frame( hsai::get_trap_frame_from_proc( hsai::get_cur_proc() ), ( uint ) arg_n );
 	}
 
 	int SyscallHandler::_arg_fd( int arg_n, int *out_fd, fs::xv6_file **out_f )

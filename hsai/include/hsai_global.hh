@@ -16,30 +16,37 @@
 
 namespace hsai
 {
-	/*****************************************************************
-	 * > HSAI 全局函数
-	 * > 这个部分的函数由 HAL 来实现
-	 *****************************************************************/
-
 	void __hsai_hal hardware_abstract_init( void );
 
 	void __hsai_hal hardware_secondary_init( void );
 
-
+	void hsai_internal_init( void );
 	
+
+	// about CPU
 
 	class VirtualCpu;
 
 	extern VirtualCpu * k_cpus[ NUMCPU ];
 	VirtualCpu * get_cpu();
 
+	// about Memory
+	
 	class VirtualMemory;
 
 	extern VirtualMemory * k_mem;
 
+	// about interrupt
+	
 	class VirtualInterruptManager;
 
 	extern VirtualInterruptManager * k_im;
 
+
+	// about device management
+
+	class DeviceManager;
+
+	extern DeviceManager k_devm;
 
 } // namespace hsai
