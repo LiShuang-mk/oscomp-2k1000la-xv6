@@ -122,7 +122,7 @@ namespace pm
 		Shm *shmem = &Shmtabs[ key ];
 		for ( int i = 0; i < shmem->pagenum; i++ )
 		{
-			mm::k_pmm.free_page( shmem->phyaddr[ i ] );
+			mm::k_pmm.free_pages( shmem->phyaddr[ i ] );
 		}
 		shmem->refcnt = 0;
 		return 0;

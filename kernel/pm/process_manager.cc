@@ -170,7 +170,7 @@ namespace pm
 	void ProcessManager::freeproc( Pcb * p )
 	{
 		if ( p->_trapframe )
-			mm::k_pmm.free_page( ( void * ) p->_trapframe );
+			mm::k_pmm.free_pages( ( void * ) p->_trapframe );
 		p->_trapframe = 0;
 		if ( !p->_pt.is_null() )
 		{

@@ -100,15 +100,15 @@ namespace loongarch
 		// {
 		// 	// hsai_info( "handle time intr" );
 		// 	// hsai_trace( "read isr : %p", qemuls2k::read_itr_cfg( qemuls2k::ItrCfg::itr_isr_l ) );
-		// 	tmm::k_tm.handle_clock_intr();
+		// 	// tmm::k_tm.handle_clock_intr();
 		// 	cpu->write_csr( csr::ticlr, cpu->read_csr( csr::ticlr ) | 1 );
 		// 	// return;
 		// }
 
-		// if ( estat & ecfg & csr::itr_hwi_m )
-		// {
-		// 	hsai::k_im->handle_dev_intr();
-		// }
+		if ( estat & ecfg & ( csr::itr_hwi_m | csr::itr_ti_m ) )
+		{
+			dev_intr();
+		}
 
 		if ( estat & csr::Estat::estat_ecode_m )
 		{

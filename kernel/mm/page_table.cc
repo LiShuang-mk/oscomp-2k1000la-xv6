@@ -130,7 +130,7 @@ namespace mm
 				log_panic( "freewalk: leaf" );
 			}
 		}
-		k_pmm.free_page( ( void * ) _base_addr );
+		k_pmm.free_pages( ( void * ) _base_addr );
 	}
 
 

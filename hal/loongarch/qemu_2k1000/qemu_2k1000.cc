@@ -11,6 +11,7 @@
 #include "qemu_2k1000.hh"
 #include "trap_frame.hh"
 #include "exception_manager.hh"
+#include "interrupt_manager.hh"
 #include "context.hh"
 
 #include <hsai_global.hh>
@@ -18,6 +19,7 @@
 #include <timer_interface.hh>
 #include <process_interface.hh>
 #include <uart/uart_ns16550.hh>
+#include <intr/virtual_interrupt_manager.hh>
 
 namespace loongarch
 {
@@ -99,6 +101,10 @@ namespace hsai
 		// 	( loongarch::csr::Tcfg::tcfg_en_m );
 
 		lacpu->write_csr( csr::tcfg, tcfg_data );
+
+		// 5. 中断管理初始化
+
+		VirtualInterruptManager::register_interrupt_manager( &loongarch::qemu2k1000::k_im );
 	}
 
 	void user_proc_init( void * proc )

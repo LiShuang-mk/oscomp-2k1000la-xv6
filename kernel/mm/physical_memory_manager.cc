@@ -7,9 +7,10 @@
 //
 
 #include "mm/physical_memory_manager.hh"
-#include "klib/common.hh"
-#include "mm/page.hh"
 #include "mm/physical_memory_manager.hh"
+#include "mm/buddy_algorithmn/buddy_allocator.hh"
+
+#include "klib/common.hh"
 
 #include <hsai_global.hh>
 #include <mem/virtual_memory.hh>
@@ -17,16 +18,19 @@
 
 namespace mm
 {
-	/// @brief This struct just be used to unused physical page;
-	/// @details A simple link list connect all unused page;
-	struct PageHead
-	{
-		struct PageHead *_next;
-	};
+	// /// @brief This struct just be used to unused physical page;
+	// /// @details A simple link list connect all unused page;
+	// struct PageHead
+	// {
+	// 	struct PageHead *_next;
+	// };
 
 	PhysicalMemoryManager k_pmm;
 
-	void PhysicalMemoryManager::init( const char *name )
+	static BuddyAllocator k_phy_alloc;
+
+	PhysicalMemoryManager::PhysicalMemoryManager( const char *name )
+		: PhysicalMemoryManager()
 	{
 		_lock.init( name );
 		_ram_base = hsai::k_mem->mem_start();
@@ -34,7 +38,47 @@ namespace mm
 		_free_list = nullptr;
 		_trace_page_cnt = 0;
 		_free_range( ( void* ) _ram_base, ( void * ) _ram_end );
+
+		new ( &k_phy_alloc ) BuddyAllocator( "buddy alloc", _ram_base, _ram_end - _ram_base );
+		_allocator = ( VirtualPageAllocator * ) &k_phy_alloc;
 	}
+
+	void * PhysicalMemoryManager::alloc_pages( uint cnt )
+	{
+		void * pgs = _allocator->alloc_pages( cnt );
+		if ( pgs == nullptr )
+			return pgs;
+		_fill_pages( pgs, cnt, alloc_junk );
+		return pgs;
+	}
+
+	int PhysicalMemoryManager::free_pages( void *pa )
+	{
+		// _free_page( pa );
+		if ( pa == nullptr )
+			return -1;
+		int free_cnt = _allocator->free_pages( pa );
+		_fill_pages( pa, free_cnt, freed_junk );
+		return 0;
+	}
+
+	void *PhysicalMemoryManager::alloc_page()
+	{
+		// return _alloc_page();
+		void * pg = _allocator->alloc_pages( 1 );
+		if ( pg == nullptr )
+			return pg;
+		_fill_junk( pg, alloc_junk );
+		return pg;
+	}
+
+	void PhysicalMemoryManager::clear_page( void *pa )
+	{
+		_fill_junk( pa, MemJunk::null_junk );
+	}
+
+////////////////////// private helper functions /////////////////////////////////
+
 
 	void PhysicalMemoryManager::_free_range( void *pa_start, void *pa_end )
 	{
@@ -43,7 +87,7 @@ namespace mm
 		int page_cnt = 0;
 		for ( ; p + hsai::page_size <= ( char * ) pa_end; p += hsai::page_size )
 		{
-			_free_page( p );
+			_fill_junk( p, freed_junk );
 			page_cnt++;
 		}
 		log_trace(
@@ -56,46 +100,6 @@ namespace mm
 		);
 	}
 
-	void PhysicalMemoryManager::_free_page( void *pa )
-	{
-		struct PageHead *r;
-
-		if ( ( ( uint64 ) pa % hsai::page_size ) != 0 || ( uint64 ) pa < _ram_base || ( uint64 ) pa >= _ram_end )
-			log_panic( "free page" );
-
-		  // Fill with junk to catch dangling refs.
-		// memset( pa, 1, hsai::page_size );
-		_fill_junk( pa, MemJunk::freed_junk );
-
-		r = ( struct PageHead* ) pa;
-
-		_lock.acquire();
-		r->_next = _free_list;
-		_free_list = r;
-		_trace_page_cnt++;
-		_lock.release();
-	}
-
-	void *PhysicalMemoryManager::_alloc_page()
-	{
-		struct PageHead *r;
-
-		_lock.acquire();
-		r = _free_list;
-		if ( r )
-		{
-			_free_list = r->_next;
-			_trace_page_cnt--;
-		}
-		_lock.release();
-
-		if ( r )
-			_fill_junk( ( void* ) r, MemJunk::alloc_junk );
-
-		return ( void * ) r;
-	}
-
-
 	void PhysicalMemoryManager::_fill_junk( void * pa, MemJunk mj )
 	{
 		uint64 *p = ( uint64 * ) pa;
@@ -104,18 +108,73 @@ namespace mm
 			p[ i ] = mj;
 	}
 
-	void PhysicalMemoryManager::free_page( void *pa )
+	void PhysicalMemoryManager::_fill_pages( void * pages, uint cnt, MemJunk mj )
 	{
-		_free_page( pa );
+		MemJunk * end_unit = ( MemJunk * ) ( ( ulong ) pages + cnt * hsai::page_size );
+		for ( MemJunk * unit = ( MemJunk * ) pages; unit < end_unit; ++unit )
+			*unit = mj;
 	}
 
-	void *PhysicalMemoryManager::alloc_page()
+// debug function
+
+	void PhysicalMemoryManager::debug_test_buddy()
 	{
-		return _alloc_page();
+		BuddyAllocator * ba = ( BuddyAllocator * ) _allocator;
+		ba->debug_print_node_list();
+
+		uint pgcnt;
+		void * pg;
+
+		pgcnt = 1;
+		pg = alloc_pages( pgcnt );
+		log_trace( "test alloc %d pages : %p", pgcnt, pg );
+		ba->debug_print_node_list();
+		free_pages( pg );
+		log_trace( "test free  %d pages : %p", pgcnt, pg );
+		ba->debug_print_node_list();
+
+		pgcnt = 10;
+		pg = alloc_pages( pgcnt );
+		log_trace( "test alloc %d pages : %p", pgcnt, pg );
+		ba->debug_print_node_list();
+		free_pages( pg );
+		log_trace( "test free  %d pages : %p", pgcnt, pg );
+		ba->debug_print_node_list();
+
+		pgcnt = 100;
+		pg = alloc_pages( pgcnt );
+		log_trace( "test alloc %d pages : %p", pgcnt, pg );
+		ba->debug_print_node_list();
+		free_pages( pg );
+		log_trace( "test free  %d pages : %p", pgcnt, pg );
+		ba->debug_print_node_list();
+
+		pgcnt = 1000;
+		pg = alloc_pages( pgcnt );
+		log_trace( "test alloc %d pages : %p", pgcnt, pg );
+		ba->debug_print_node_list();
+		free_pages( pg );
+		log_trace( "test free  %d pages : %p", pgcnt, pg );
+		ba->debug_print_node_list();
+
+		void * ps[ 1000 ];
+
+		pgcnt = 10;
+		int i = 0;
+		for ( auto & p : ps )
+		{
+			p = alloc_pages( pgcnt );
+			printf( "%d ", i );
+			++i;
+		}
+		printf( "\n" );
+		log_trace( "test alloc %d * 1000 pages : [0]=%p", pgcnt, ps[ 0 ] );
+		ba->debug_print_node_list();
+		for ( auto & p : ps )
+			free_pages( p );
+		log_trace( "test free  %d * 1000 pages : [0]=%p", pgcnt, ps[ 0 ] );
+		ba->debug_print_node_list();
+
 	}
 
-	void PhysicalMemoryManager::clear_page( void *pa )
-	{
-		_fill_junk( pa, MemJunk::null_junk );
-	}
-}
+} // namespace mm

@@ -59,10 +59,10 @@ namespace loongarch
 extern "C" {
 	void _cpu_init()
 	{
-		for ( int i = 0; i < NUMCPU; i++ )
-		{
-			new ( &loongarch::k_la_cpus[ i ] ) loongarch::Cpu;
-			loongarch::Cpu::register_cpu( loongarch::k_la_cpus + i, i );
-		}
+		int i;
+		asm volatile( "addi.d %0, $tp, 0" : "=r" ( i ) );
+		new ( &loongarch::k_la_cpus[ i ] ) loongarch::Cpu;
+		loongarch::Cpu::register_cpu( loongarch::k_la_cpus + i, i );
+		
 	}
 }

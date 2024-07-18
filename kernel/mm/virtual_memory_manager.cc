@@ -101,7 +101,7 @@ namespace mm
 			k_pmm.clear_page( mem );
 			if ( !map_data_pages( pt, a, hsai::page_size, ( ulong ) mem, true ) )
 			{
-				k_pmm.free_page( mem );
+				k_pmm.free_pages( mem );
 				vmdealloc( pt, a, old_sz );
 				return 0;
 			}
@@ -350,7 +350,7 @@ namespace mm
 				log_panic( "vmunmap: not a leaf" );
 			if ( do_free )
 			{
-				k_pmm.free_page( ( void* ) pte.to_pa() );
+				k_pmm.free_pages( ( void* ) pte.to_pa() );
 			}
 			pte.clear_data();
 		}
@@ -393,7 +393,7 @@ namespace mm
 			memmove( mem, ( const char * ) pa, hsai::page_size );
 			if ( map_pages( new_pt, va, hsai::page_size, ( uint64 ) mem, flags ) == false )
 			{
-				mm::k_pmm.free_page( mem );
+				mm::k_pmm.free_pages( mem );
 				vmunmap( new_pt, 0, va / hsai::page_size, 1 );
 				return -1;
 			}
@@ -434,7 +434,7 @@ namespace mm
 			}
 			if ( !map_data_pages( pt, a, hsai::page_size, pa, true ) )
 			{
-				k_pmm.free_page( ( void * ) pa );
+				k_pmm.free_pages( ( void * ) pa );
 				uvmdealloc( pt, a, oldsz );
 				return 0;
 			}

@@ -25,7 +25,7 @@ _entry:
         # sp = entry_stack + (hartid * 4096)
      
         la          $sp, entry_stack
-        li.d        $a0, 1024*8
+        li.d        $a0, LOONGARCH_ENTRY_STACK_SIZE
 		csrrd       $a1, LOONGARCH_CSR_CPUID
         addi.d      $tp, $a1, 0
         addi.d      $a1, $a1, 1

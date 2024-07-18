@@ -78,11 +78,15 @@ extern "C" {
 
 			log_info( "xn6_start_kernel addr: %p", &xn6_start_kernel );
 
-			
+
 
 			// physical memory init 
-			mm::k_pmm.init( "physical memory manager" );
+			new ( &mm::k_pmm ) mm::PhysicalMemoryManager( "physical memory manager" );
 			log_info( "pmm init" );
+
+			mm::k_pmm.debug_test_buddy();
+
+			while ( 1 );
 
 			// process init 
 			pm::k_pm.init( "next pid", "wait lock" );
@@ -103,11 +107,12 @@ extern "C" {
 			// 	mm::k_pmm.trace_free_pages_count()
 			// );
 
-			hsai::hardware_secondary_init();
-
 			// timer init 
 			tmm::k_tm.init( "timer manager" );
 			log_info( "tm init" );
+
+			hsai::hardware_secondary_init();
+
 
 			while ( 1 );
 

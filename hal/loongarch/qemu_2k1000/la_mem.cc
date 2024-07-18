@@ -16,6 +16,10 @@
 #include <hsai_log.hh>
 #include <mem/page.hh>
 
+extern "C" {
+	extern ulong xn6_end;
+}
+
 namespace loongarch
 {
 	namespace qemu2k1000
@@ -77,8 +81,19 @@ namespace loongarch
 				( loongarch::qemu2k1000::sec_win_en_m );
 		}
 
-		ulong Memory::mem_start() { return memory::mem_start; }
-		ulong Memory::mem_size() { return memory::mem_size; }
+		ulong Memory::mem_start()
+		{
+			ulong end_addr = ( ulong ) &xn6_end;
+			end_addr += _1M - 1;
+			end_addr &= ~( _1M - 1 );
+			return end_addr;
+		}
+		ulong Memory::mem_size()
+		{
+			ulong mem_end_addr = ( 0x90000000 | win_0 ) + _1G;
+			return mem_end_addr - mem_start();
+			// return memory::mem_size;
+		}
 
 		ulong Memory::to_vir( ulong addr )
 		{

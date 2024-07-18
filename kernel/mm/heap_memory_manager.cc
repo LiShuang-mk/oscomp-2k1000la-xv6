@@ -7,6 +7,7 @@
 //
 
 #include "mm/heap_memory_manager.hh"
+#include "mm/physical_memory_manager.hh"
 #include "mm/page_table.hh"
 #include "mm/memlayout.hh"
 
@@ -19,16 +20,16 @@ namespace mm
 	{
 		_lock.init( lock_name );
 
-		_k_allocator_coarse.init(
-			"kernel heap allocator - buddy",
-			&k_pagetable,
-			( void* ) vml::vm_kernel_heap_start,
-			vml::vm_kernel_heap_size
-		);
+		// _k_allocator_coarse.init(
+		// 	"kernel heap allocator - buddy",
+		// 	&k_pagetable,
+		// 	( void* ) vml::vm_kernel_heap_start,
+		// 	vml::vm_kernel_heap_size
+		// );
 
-		_k_allocator_fine.init(
+		_allocator.init(
 			"kernel heap allocator - liballoc",
-			&_k_allocator_coarse
+			&k_pmm
 		);
 	}
 
@@ -45,12 +46,12 @@ namespace mm
 		// }
 		// log_trace( "申请内存分配 %d bytes", size );
 		// return _k_allocator_coarse.allocate_pages( ( size + pg_size - 1 ) / pg_size );
-		return _k_allocator_fine.malloc( size );
+		return _allocator.malloc( size );
 	}
 
 	void HeapMemoryManager::free( void *p )
 	{
 		// log_trace( "内存释放" );
-		_k_allocator_fine.free( p );
+		_allocator.free( p );
 	}
 } // namespace mm

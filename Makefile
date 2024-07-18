@@ -32,7 +32,7 @@ export ASFLAGS = -ggdb -march=loongarch64 -mabi=lp64d -O0
 export ASFLAGS += -I ./include
 export ASFLAGS += -MD
 export CFLAGS = -ggdb -Wall -Werror -O0 -fno-omit-frame-pointer
-export CFLAGS += -I ./include
+export CFLAGS += -I ./include -I ./
 export CFLAGS += -MD 
 export CFLAGS += -DNUMCPU=$(CONF_CPU_NUM)
 export CFLAGS += -DARCH=$(CONF_ARCH)

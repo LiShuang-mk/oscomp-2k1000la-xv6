@@ -17,7 +17,7 @@ extern "C" {
 
 namespace loongarch
 {
-	constexpr uint entry_stack_size = LOONGARCH_STACK_SIZE;
+	constexpr uint entry_stack_size = LOONGARCH_ENTRY_STACK_SIZE;
 
 	void loongarch_init();
 
