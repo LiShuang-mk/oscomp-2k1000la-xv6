@@ -7,11 +7,15 @@
 //
 
 #include "qemu_2k1000.hh"
-// #include "fs/dev/console.hh"
 #include "interrupt_manager.hh"
+#include "la_cpu.hh"
 
+#include <hsai_global.hh>
+#include <hsai_defs.h>
+#include <device_manager.hh>
+#include <uart/uart_ns16550.hh>
+#include <ata/ahci_driver.hh>
 #include <hsai_log.hh>
-// #include <kernel/klib/common.hh>
 
 namespace loongarch
 {
@@ -19,7 +23,7 @@ namespace loongarch
 	{
 		InterruptManager k_im;
 
-		void InterruptManager::intr_init( const char *lock_name )
+		InterruptManager::InterruptManager( const char * lock_name )
 		{
 			_lock.init( lock_name );
 
@@ -54,6 +58,26 @@ namespace loongarch
 			{
 				hsai_panic( "register interrupt manager fail." );
 			}
+
+			intr_init();
+
+			Cpu * cpu = Cpu::get_la_cpu();
+			cpu->intr_on();
+		}
+
+		void InterruptManager::intr_init()
+		{
+			_uart0 = ( hsai::UartNs16550 * ) hsai::k_devm.get_char_device( DEFAULT_DEBUG_CONSOLE_NAME );
+			if ( _uart0 == nullptr )
+			{
+				hsai_panic( "couldn't find console device" );
+			}
+
+			_sata = ( hsai::AhciDriver * ) hsai::k_devm.get_device( "AHCI driver" );
+			if ( _sata == nullptr )
+			{
+				hsai_panic( "couldn't find AHCI device" );
+			}
 		}
 
 		void InterruptManager::clear_uart0_intr()
@@ -81,23 +105,30 @@ namespace loongarch
 			);
 		}
 
+
+
 		int InterruptManager::handle_dev_intr()
 		{
 
 			uint32 irq = *( volatile uint32 * ) ( itr_isr_l );
 
-			if ( irq & ( ItrCfg::itr_bit_uart0_m ) )
+			if ( irq & itr_bit_uart0_m )
 			{
 				// uartintr();
-				hsai_warn( "uart intr not implement" );
+				// hsai_warn( "uart intr not implement" );
+				_uart0->handle_intr();
 			}
-			else if ( irq )
+			if ( irq & itr_bit_sata_m )
 			{
-				hsai_error( "unexpected interrupt irq=%d\n", irq );
-
-				// apic_complete( irq );
-				// extioi_complete( irq );
+				_sata->handle_intr();
 			}
+			// if ( irq )
+			// {
+			// 	hsai_error( "unexpected interrupt irq=%d\n", irq );
+
+			// 	// apic_complete( irq );
+			// 	// extioi_complete( irq );
+			// }
 
 			return 1;
 		}

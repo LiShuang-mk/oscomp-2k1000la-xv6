@@ -68,9 +68,10 @@ namespace hsai
 		return uint8();
 	}
 
-	void UartNs16550::handle_interrupt()
+	int UartNs16550::handle_intr()
 	{
 		hsai_panic( "handle intr not implement" );
+		return -1;
 	}
 
 } // namespace hsai

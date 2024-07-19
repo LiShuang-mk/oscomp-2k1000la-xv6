@@ -9,11 +9,12 @@
 #pragma once
 
 #include "smp/spin_lock.hh"
+#include "virtual_device.hh"
 #include "ahci_port_driver.hh"
 
 namespace hsai
 {
-	class AhciDriver
+	class AhciDriver : public VirtualDevice
 	{
 	private:
 		SpinLock _lock;
@@ -25,6 +26,8 @@ namespace hsai
 	public:
 		AhciDriver() = default;
 		AhciDriver( const char * lock_name, void * base_addr );
+		virtual DeviceType type() override { return DeviceType::dev_other; }
+		virtual int handle_intr() override;
 	};
 
 } // namespace hsai

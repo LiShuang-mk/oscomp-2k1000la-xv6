@@ -42,6 +42,7 @@ namespace mm
 
 		void *alloc_page();
 		void clear_page( void *pa );
+		void clear_pages( void *pa, uint cnt );
 
 		inline uint64 trace_free_pages_count() { return _trace_page_cnt; }
 

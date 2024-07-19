@@ -21,7 +21,7 @@ namespace hsai
 		// virtual u8 get_char( int c ) = 0;
 		// virtual u8 get_char_sync( int c ) = 0;
 		
-		virtual void handle_interrupt() = 0;
+		// virtual void handle_interrupt() = 0;
 	};
 
 	void register_debug_uart( VirtualUartController * uart_port );

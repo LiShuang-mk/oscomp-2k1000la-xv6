@@ -16,5 +16,8 @@
 
 #define BLK_DEV_TBL_LEN 64		// block device register table length
 #define CHA_DEV_TBL_LEN 64		// char device register table length
+#define DEV_TBL_LEN 64			// 设备管理表最大长度
+
+#define DEFAULT_DEBUG_CONSOLE_NAME "console"
 
 #endif // _HSAI_DEFS_H_

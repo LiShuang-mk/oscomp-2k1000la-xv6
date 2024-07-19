@@ -8,16 +8,21 @@
 
 #pragma once
 
+#include "virtual_device.hh"
+
 namespace hsai
 {
-	class BlockDevice
+	class BlockDevice : public VirtualDevice
 	{
 	public:
+		BlockDevice() = default;
+		virtual DeviceType type() override { return DeviceType::dev_block; }
 		virtual long get_block_size() = 0;
 		virtual int read_blocks_sync( long start_block, long block_count, void * buf_list, int buf_count ) = 0;
 		virtual int read_blocks( long start_block, long block_count, void * buf_list, int buf_count ) = 0;
 		virtual int write_blocks_sync( long start_block, long block_count, void * buf_list, int buf_count ) = 0;
 		virtual int write_blocks( long start_block, long block_count, void * buf_list, int buf_count ) = 0;
+		virtual int handle_intr() = 0;
 	};
 
 } // namespace hsai

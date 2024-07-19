@@ -1,13 +1,14 @@
 //
-// Created by Li Shuang ( pseudonym ) on 2024-07-16 
+// Created by Li Shuang ( pseudonym ) on 2024-07-16
 // --------------------------------------------------------------
-// | Note: This code file just for study, not for commercial use 
-// | Contact Author: lishuang.mk@whu.edu.cn 
+// | Note: This code file just for study, not for commercial use
+// | Contact Author: lishuang.mk@whu.edu.cn
 // --------------------------------------------------------------
 //
 
 #include "device_manager.hh"
 #include "hsai_global.hh"
+#include "virtual_device.hh"
 
 #include <kernel/klib/klib.hh>
 
@@ -15,112 +16,124 @@ namespace hsai
 {
 	DeviceManager k_devm;
 
-	const char * DeviceManager::_device_default_name = "(null device)";
+	const char *DeviceManager::_device_default_name = "(null device)";
 
 	DeviceManager::DeviceManager()
 	{
-		for ( auto & te : _block_device_table )
-			_reset_device_table_entry( &te );
-		for ( auto & te : _char_device_table )
+		for ( auto &te : _device_table )
 			_reset_device_table_entry( &te );
 	}
 
-	int DeviceManager::register_block_device( BlockDevice * bd, const char * name )
+	int DeviceManager::register_device( VirtualDevice *dev, const char *name )
 	{
-		int dtei = _search_null_block_device();
-		if ( dtei < 0 )
-			return -1;
-		DeviceTableEntry * dte = &_block_device_table[ dtei ];
-		dte->type = DeviceTableEntry::block_dev;
-		dte->device_ptr = ( void * ) bd;
-		dte->device_name = name;
-		return dtei;
+		int tei = _search_null_device();
+		if ( tei < 0 )
+			return tei;
+		DeviceTableEntry &te = _device_table[ tei ];
+		te.device_ptr = dev;
+		te.device_name = name;
+		return tei;
 	}
 
-	int DeviceManager::register_char_device( CharDevice * cd, const char * name )
+	int DeviceManager::register_block_device( BlockDevice *bd, const char *name )
 	{
-		int dtei = _search_null_char_device();
-		if ( dtei < 0 )
-			return -1;
-		DeviceTableEntry * dte = &_char_device_table[ dtei ];
-		dte->type = DeviceTableEntry::char_dev;
-		dte->device_ptr = ( void * ) cd;
-		dte->device_name = name;
-		return dtei;
+		return register_device( ( VirtualDevice * ) bd, name );
 	}
 
-	BlockDevice * DeviceManager::get_block_device( const char * dev_name )
+	int DeviceManager::register_char_device( CharDevice *cd, const char *name )
+	{
+		return register_device( ( VirtualDevice * ) cd, name );
+	}
+
+	VirtualDevice *DeviceManager::get_device( const char *dev_name )
+	{
+		int dev_num = search_device( dev_name );
+		if ( dev_num < 0 ) return nullptr;
+		return _device_table[ dev_num ].device_ptr;
+	}
+
+	BlockDevice *DeviceManager::get_block_device( const char *dev_name )
 	{
 		int dev_num = search_block_device( dev_name );
-		if ( dev_num < 0 )
-			return nullptr;
-		return get_block_device( dev_num );
+		if ( dev_num < 0 ) return nullptr;
+		return ( BlockDevice * ) _device_table[ dev_num ].device_ptr;
 	}
 
-	CharDevice * DeviceManager::get_char_device( const char * dev_name )
+	CharDevice *DeviceManager::get_char_device( const char *dev_name )
 	{
 		int dev_num = search_char_device( dev_name );
-		if ( dev_num < 0 )
-			return nullptr;
-		return get_char_device( dev_num );
+		if ( dev_num < 0 ) return nullptr;
+		return ( CharDevice * ) _device_table[ dev_num ].device_ptr;
 	}
 
-	int DeviceManager::search_block_device( const char * name )
+	int DeviceManager::search_device( const char * name )
 	{
-		for ( int i = 0; i < BLK_DEV_TBL_LEN; ++i )
+		for ( int i = 0; i < DEV_TBL_LEN; ++i )
 		{
-			if ( _block_device_table[ i ].type == DeviceTableEntry::unknown_dev )
-				continue;
-			if ( strcmp( name, _block_device_table[ i ].device_name ) == 0 )
-				return i;
+			DeviceTableEntry &te = _device_table[ i ];
+			if ( te.device_ptr == nullptr ) 				continue;
+			if ( te.device_ptr->type() == dev_unknown ) 	continue;
+			if ( strcmp( name, te.device_name ) == 0 )		return i;
 		}
 		return -1;
 	}
 
-	int DeviceManager::search_char_device( const char * name )
+	int DeviceManager::search_block_device( const char *name )
 	{
-		for ( int i = 0; i < BLK_DEV_TBL_LEN; ++i )
+		for ( int i = 0; i < DEV_TBL_LEN; ++i )
 		{
-			if ( _char_device_table[ i ].type == DeviceTableEntry::unknown_dev )
-				continue;
-			if ( strcmp( name, _char_device_table[ i ].device_name ) == 0 )
-				return i;
+			DeviceTableEntry &te = _device_table[ i ];
+			if ( te.device_ptr == nullptr ) 			continue;
+			if ( te.device_ptr->type() != dev_block ) 	continue;
+			if ( strcmp( name, te.device_name ) == 0 )	return i;
 		}
 		return -1;
 	}
 
-	int DeviceManager::remove_block_device( const char * name )
+	int DeviceManager::search_char_device( const char *name )
 	{
-		for ( int i = 0; i < BLK_DEV_TBL_LEN; ++i )
+		for ( int i = 0; i < DEV_TBL_LEN; ++i )
 		{
-			if ( _block_device_table[ i ].type == DeviceTableEntry::unknown_dev )
-				continue;
-			if ( strcmp( name, _block_device_table[ i ].device_name ) == 0 )
+			DeviceTableEntry &te = _device_table[ i ];
+			if ( te.device_ptr == nullptr ) 			continue;
+			if ( te.device_ptr->type() != dev_char ) 	continue;
+			if ( strcmp( name, te.device_name ) == 0 )	return i;
+		}
+		return -1;
+	}
+
+	int DeviceManager::remove_block_device( const char *name )
+	{
+		for ( int i = 0; i < DEV_TBL_LEN; ++i )
+		{
+			DeviceTableEntry &te = _device_table[ i ];
+			if ( te.device_ptr == nullptr ) 			continue;
+			if ( te.device_ptr->type() != dev_char ) 	continue;
+			if ( strcmp( name, te.device_name ) == 0 )
 			{
-				_reset_device_table_entry( &_block_device_table[ i ] );
+				_reset_device_table_entry( &te );
 				return i;
 			}
 		}
 		return -1;
 	}
 
-	int DeviceManager::remove_char_device( const char * name )
+	int DeviceManager::remove_char_device( const char *name )
 	{
 		for ( int i = 0; i < BLK_DEV_TBL_LEN; ++i )
 		{
-			if ( _char_device_table[ i ].type == DeviceTableEntry::unknown_dev )
-				continue;
-			if ( strcmp( name, _char_device_table[ i ].device_name ) == 0 )
+			DeviceTableEntry &te = _device_table[ i ];
+			if ( te.device_ptr == nullptr ) 			continue;
+			if ( te.device_ptr->type() != dev_char ) 	continue;
+			if ( strcmp( name, te.device_name ) == 0 )
 			{
-				_reset_device_table_entry( &_char_device_table[ i ] );
+				_reset_device_table_entry( &te );
 				return i;
 			}
 		}
 		return -1;
 	}
 
-// **************** private helper fuctions ****************
-
-
+	// **************** private helper fuctions ****************
 
 } // namespace hsai

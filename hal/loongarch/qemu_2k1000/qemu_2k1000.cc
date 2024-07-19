@@ -19,6 +19,8 @@
 #include <hsai_log.hh>
 #include <timer_interface.hh>
 #include <process_interface.hh>
+#include <memory_interface.hh>
+#include <device_manager.hh>
 #include <uart/uart_ns16550.hh>
 #include <intr/virtual_interrupt_manager.hh>
 #include <ata/ahci_driver.hh>
@@ -105,10 +107,6 @@ namespace hsai
 		// 	( loongarch::csr::Tcfg::tcfg_en_m );
 
 		lacpu->write_csr( csr::tcfg, tcfg_data );
-
-		// 5. 中断管理初始化
-
-		VirtualInterruptManager::register_interrupt_manager( &loongarch::qemu2k1000::k_im );
 	}
 
 	void hardware_secondary_init()
@@ -123,12 +121,40 @@ namespace hsai
 			loongarch::qemu2k1000::sata_fun
 		);
 		pci_sata_base |= loongarch::qemu2k1000::win_1;
-		ulong sata_base = loongarch::qemu2k1000::pci_type0_bar(
-			pci_sata_base,
-			0
-		);
+		ulong sata_base = loongarch::qemu2k1000::pci_type0_bar( pci_sata_base, 0 );
 		sata_base |= loongarch::qemu2k1000::win_1;
 		new ( &loongarch::qemu2k1000::ahci_driver ) AhciDriver( "AHCI", ( void * ) sata_base );
+
+		// 3. 中断管理初始化
+		new ( &loongarch::qemu2k1000::k_im ) loongarch::qemu2k1000::InterruptManager( "intr manager" );
+
+		// debug
+		AhciPortDriver * ahpd = ( AhciPortDriver * ) k_devm.get_block_device( "AHCI port 01" );
+		if ( ahpd == nullptr )
+		{
+			hsai_panic( "no such device" );
+		}
+		char * buf = ( char * ) alloc_pages( 1 );
+		auto cb = [ buf ] () -> int
+		{
+			hsai_info( "调试 identify 命令回调" );
+			hsai_printf( "\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
+			for ( uint i = 0; i < 512; ++i )
+			{
+				if ( i % 0x10 == 0 )
+					hsai_printf( "%B%B\t", i >> 8, i );
+				hsai_printf( "%B ", buf[ i ] );
+				if ( i % 0x10 == 0xF )
+					hsai_printf( "\n" );
+			}
+			return 0;
+		};
+		ahpd->isu_cmd_identify( ( void * ) buf, page_size, cb );
+		// for ( int i = 0x10000000; i > 0; i-- );
+		while ( 1 )
+		{
+			// ahpd->debug_print_register();
+		}
 	}
 
 	void user_proc_init( void * proc )

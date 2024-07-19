@@ -6,22 +6,24 @@
 // --------------------------------------------------------------
 //
 
-#include <memory_interface.hh>
-
-#include "mm/physical_memory_manager.hh"
+#pragma once
 
 namespace hsai
 {
-	void * alloc_pages( uint cnt )
+	enum DeviceType
 	{
-		void * p = mm::k_pmm.alloc_pages( cnt );
-		mm::k_pmm.clear_pages( p, cnt );
-		return p;
-	}
+		dev_unknown,
+		dev_block,
+		dev_char,
+		dev_other
+	};
 
-	int free_pages( void * ptr )
+	class VirtualDevice
 	{
-		return mm::k_pmm.free_pages( ptr );
-	}
+	public:
+		VirtualDevice() = default;
+		virtual DeviceType type() { return DeviceType::dev_unknown; };
+		virtual int handle_intr() = 0;
+	};
 
 } // namespace hsai

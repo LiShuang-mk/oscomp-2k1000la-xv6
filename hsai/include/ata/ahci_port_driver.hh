@@ -51,9 +51,7 @@ namespace hsai
 		ulong _block_size = 0;
 		int _is_idtf = false;
 
-		std::function<void( void )> _call_back;
-
-		std::function<void( void )> _call_back_function[ ahci_max_port_num ][ ahci_max_cmd_slot ];
+		std::function<int( void )> _call_back;
 
 	public:
 		virtual long get_block_size() override;
@@ -61,6 +59,7 @@ namespace hsai
 		virtual int read_blocks( long start_block, long block_count, void * buf_list, int buf_count ) override;
 		virtual int write_blocks_sync( long start_block, long block_count, void * buf_list, int buf_count ) override;
 		virtual int write_blocks( long start_block, long block_count, void * buf_list, int buf_count ) override;
+		virtual int handle_intr() override;
 
 	public:
 		AhciPortDriver() = default;
@@ -71,7 +70,6 @@ namespace hsai
 			void * cmd_list,
 			void * fis_base
 		);
-		void init( const char *lock_name );
 
 		/// @brief 发送identify命令
 		/// @details 这个函数可以作为AHCI给SATA发送命令的编程模板
@@ -89,7 +87,7 @@ namespace hsai
 		/// @param buffer 接受数据的缓存基地址，请注意buffer由调用者来管理
 		/// @param len buffer缓存的大小（不小于512byte）
 		/// @param callback_handler 回调函数指针，为空指针时使用默认回调函数
-		void isu_cmd_identify( uint port, void *buffer, uint len, std::function<void( void )> callback_handler );
+		void isu_cmd_identify( void *buffer, uint len, std::function<int( void )> callback_handler );
 
 		/// @brief 向SATA设备发送read DMA命令
 		/// @param port 端口号
@@ -125,9 +123,14 @@ namespace hsai
 
 	// for debugging 
 	public:
+		void debug_print_register();
 
 	private:
 		void fill_fis_h2d_lba( SataFisRegH2D *fis, uint64 lba );
+
+		int _default_callback();
+
+		void _issue_command_slot( uint i );
 	};
 
 } // namespace hsai

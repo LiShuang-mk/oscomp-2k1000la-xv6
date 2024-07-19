@@ -91,20 +91,35 @@ namespace hsai
 				&rev_fis_space[ i ]
 			);
 
-		// <to register port driver into HSAI>
-			// char c;
-			// c = ( char ) ( i / 10 ) + '0';
-			// dev_name[ sizeof dev_name - 3 ] = c;
-			// c = ( char ) ( i % 10 ) + '0';
-			// dev_name[ sizeof dev_name - 2 ] = c;
-			// k_devm.register_block_device( &_port_drivers[ i ], ( const char * ) dev_name );
-
 			++_port_num;
+			_port_bitmap |= l;
 		}
 
 		// 打开中断
 
 		_regs->generic.ghc |= ahci_ghc_ie_m;
+
+		// 注册到 HSAI
+		k_devm.register_device( this, "AHCI driver" );
+	}
+
+	int AhciDriver::handle_intr()
+	{
+		int i = 0, res = 0;
+		u32 tmp = _regs->generic.is;
+		for ( u32 l = 1; l != 0; l <<= 1, i++ )
+		{
+			if ( ( l & _port_bitmap ) == 0 ) continue;
+			if ( l & tmp )
+			{
+				int rc = _port_drivers[ i ].handle_intr();
+				if ( rc < 0 )
+					return rc;
+				res++;
+			}
+		}
+		_regs->generic.is = tmp;
+		return res;
 	}
 
 } // namespace hsai

@@ -12,18 +12,19 @@
 
 namespace hsai
 {
+	class VirtualDevice;
 	class BlockDevice;
 	class CharDevice;
 
 	struct DeviceTableEntry
 	{
-		enum DeviceTableEntryType
-		{
-			unknown_dev,
-			block_dev,
-			char_dev,
-		} type;
-		void * device_ptr;
+		// enum DeviceTableEntryType
+		// {
+		// 	unknown_dev,
+		// 	block_dev,
+		// 	char_dev,
+		// } type;
+		VirtualDevice * device_ptr;
 		const char * device_name;
 	};
 
@@ -32,78 +33,60 @@ namespace hsai
 	private:
 		DeviceTableEntry _block_device_table[ BLK_DEV_TBL_LEN ] = { };
 		DeviceTableEntry _char_device_table[ CHA_DEV_TBL_LEN ] = { };
+		DeviceTableEntry _device_table[ DEV_TBL_LEN ] = {};
+
 		static const char * _device_default_name;
 
 	public:
 		DeviceManager();
+		int register_device( VirtualDevice * dev, const char * name );
 		int register_block_device( BlockDevice * bd, const char * name );
 		int register_char_device( CharDevice * cd, const char * name );
+		VirtualDevice * get_device( const char * dev_name );
 		BlockDevice * get_block_device( const char * dev_name );
 		CharDevice * get_char_device( const char * dev_name );
+		int search_device( const char * name );
 		int search_block_device( const char * name );
 		int search_char_device( const char * name );
 		int remove_block_device( const char * name );
 		int remove_char_device( const char * name );
 
 	public:
-		
-		BlockDevice * get_block_device( int dev_num )
+
+		VirtualDevice * get_device( uint dev_num )
 		{
-			if ( dev_num < 0 || dev_num >= BLK_DEV_TBL_LEN )
-				return nullptr;
-			return ( BlockDevice * ) _block_device_table[ dev_num ].device_ptr;
+			if ( dev_num >= DEV_TBL_LEN ) return nullptr;
+			return _device_table[ dev_num ].device_ptr;
 		}
 
-		CharDevice * get_char_device( int dev_num )
+		int remove_device( VirtualDevice * dev )
 		{
-			if ( dev_num < 0 || dev_num >= BLK_DEV_TBL_LEN )
-				return nullptr;
-			return ( CharDevice * ) _char_device_table[ dev_num ].device_ptr;
-		}
-
-		int remove_block_device( BlockDevice * bd )
-		{
-			for ( int i = 0; i < BLK_DEV_TBL_LEN; ++i )
-				if ( _block_device_table[ i ].device_ptr == ( void * ) bd )
+			for ( int i = 0; i < DEV_TBL_LEN; ++i )
+			{
+				DeviceTableEntry &te = _device_table[ i ];
+				if ( te.device_ptr ==  dev )
 				{
-					_reset_device_table_entry( &_block_device_table[ i ] );
-					return 0;
+					_reset_device_table_entry( &te );
+					return i;
 				}
-			return -1;
-		}
-
-		int remove_char_device( CharDevice * cd )
-		{
-			for ( int i = 0; i < CHA_DEV_TBL_LEN; ++i )
-				if ( _char_device_table[ i ].device_ptr == ( void * ) cd )
-				{
-					_reset_device_table_entry( &_char_device_table[ i ] );
-					return 0;
-				}
+			}
 			return -1;
 		}
 
 	private:
 
-		int _search_null_block_device()
+		int _search_null_device()
 		{
-			for ( int i = 0; i < BLK_DEV_TBL_LEN; ++i )
-				if ( _block_device_table[ i ].type == DeviceTableEntry::unknown_dev )
-					return i;
-			return -1;
-		}
-
-		int _search_null_char_device()
-		{
-			for ( int i = 0; i < CHA_DEV_TBL_LEN; ++i )
-				if ( _char_device_table[ i ].type == DeviceTableEntry::unknown_dev )
-					return i;
+			for ( int i = 0; auto & te : _device_table )
+			{
+				if ( te.device_ptr == nullptr ) return i;
+				++i;
+			}
 			return -1;
 		}
 
 		void _reset_device_table_entry( DeviceTableEntry * dte )
 		{
-			dte->type = DeviceTableEntry::unknown_dev;
 			dte->device_ptr = nullptr;
 			dte->device_name = _device_default_name;
 		}

@@ -40,7 +40,7 @@ namespace dev
 
 	void Console::handle_uart_intr()
 	{
-		_debug_uart->handle_interrupt();
+		_debug_uart->handle_intr();
 	}
 
 	int Console::write( int from_user, uint64 src, uint64 n )

@@ -11,6 +11,13 @@
 #include <smp/spin_lock.hh>
 #include <intr/virtual_interrupt_manager.hh>
 
+namespace hsai
+{
+	class UartNs16550;
+	class AhciDriver;
+} // namespace hsai
+
+
 namespace loongarch
 {
 	namespace qemu2k1000
@@ -19,10 +26,13 @@ namespace loongarch
 		{
 		private:
 			hsai::SpinLock _lock;
+			hsai::UartNs16550 * _uart0 = nullptr;
+			hsai::AhciDriver * _sata = nullptr;
 
 		public:
 			InterruptManager() = default;
-			void intr_init( const char *lock_name );
+			InterruptManager( const char *lock_name );
+			void intr_init();
 
 			void clear_uart0_intr();
 
@@ -30,7 +40,7 @@ namespace loongarch
 		};
 
 		extern InterruptManager k_im;
-		
+
 	} // namespace qemu2k1000
 
 } // namespace loongarch

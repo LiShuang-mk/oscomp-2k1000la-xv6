@@ -7,6 +7,7 @@
 //
 
 #include "ata/ahci_port_driver.hh"
+#include "ata/ata.hh"
 #include "memory_interface.hh"
 #include "hsai_global.hh"
 #include "device_manager.hh"
@@ -41,6 +42,23 @@ namespace hsai
 		return 0;
 	}
 
+	int AhciPortDriver::handle_intr()
+	{
+		u32 tmp = _regs->is;
+		// hsai_trace( "AHCI port %d intr %p", _port_id, tmp );
+		if ( tmp & ahci_port_is_dhrs_m )
+		{
+			_regs->is = tmp;
+			return _call_back();
+		}
+		else
+		{
+			hsai_error( "AHCI : unknown intr (is=%p)", tmp );
+			_regs->is = tmp;
+			return -100;
+		}
+	}
+
 	AhciPortDriver::AhciPortDriver(
 		const char * lock_name,
 		int port_id,
@@ -52,6 +70,7 @@ namespace hsai
 		_cmd_ls = ( AhciCmdList * ) cmd_list;
 		_rev_fis = ( AhciRevFis * ) fis_base;
 		_port_id = port_id;
+		_call_back = std::bind( &AhciPortDriver::_default_callback, this );
 
 		char * pname = ( char * ) _dev_name;
 		for ( int i = 0; i < ( int ) sizeof _dev_name; i++ )
@@ -78,11 +97,13 @@ namespace hsai
 
 		_regs->clb = ( u32 ) ( u64 ) k_mem->to_dma( ( ulong ) _cmd_ls );
 		_regs->clbu = ( u32 ) ( ( u64 ) k_mem->to_dma( ( ulong ) _cmd_ls ) >> 32 );
+		// hsai_trace( "AHCI trace CLB %p", *( u64 * ) &_regs->clb );
 
 		// 配置 received FIS 地址
 
 		_regs->fb = ( u32 ) ( u64 ) k_mem->to_dma( ( ulong ) _rev_fis );
 		_regs->fbu = ( u32 ) ( ( u64 ) k_mem->to_dma( ( ulong ) _rev_fis ) >> 32 );
+		// hsai_trace( "AHCI trace FB  %p", *( u64 * ) &_regs->fb );
 
 		// 清除中断
 
@@ -105,6 +126,103 @@ namespace hsai
 
 		ahci_port_change_name_number( ( char * ) _dev_name, _port_id );
 		k_devm.register_block_device( this, _dev_name );
+	}
+
+	/****************************************************
+	 * ！！！此处一定注意避坑！！！
+	 * 在协议规范里面定义的数据结构，会包含大量 reserve
+	 * 字段，这些字段是保留的，通常情况下置为0，否则可能
+	 * 发生未知的例外情况
+	 * 例如，中断可能无法正常产生。当然，这也有可能和具体
+	 * 实现有关，至少在 loongarch qemu 2k1000 中是无法产生
+	 * 中断的。
+	 ****************************************************/
+	
+	void AhciPortDriver::isu_cmd_identify( void *buffer, uint len, std::function<int( void )> callback_handler )
+	{
+		if ( len < 512 )
+		{
+			hsai_warn(
+				"buffer size is not enough.\n"
+				"identify command would not be issue" );
+			return;
+		}
+
+		// 配置命令头
+
+		int cmd_slot = 0;	// 仅使用 0 号命令槽
+
+		AhciCmdHeader& head = _cmd_ls->headers[ cmd_slot ];
+
+		head.prdtl = 1;
+		head.pmp = 0;
+		head.c = 1;			// 传输结束清除忙状态
+		head.b = 0;
+		head.r = 0;
+		head.p = 0;
+		head.w = 0;
+		head.a = 0;
+		head.cfl = 5;		// identify 命令长 5 dwords
+		head.prdbc = 0;		// 硬件用于记录已传输的字节数，软件应复位为0
+		head.ctba = ( u32 ) ( u64 ) k_mem->to_dma( ( u64 ) _cmd_tbl );					// 配置命令表地址
+		head.ctbau = ( u32 ) ( ( u64 ) k_mem->to_dma( ( u64 ) _cmd_tbl ) >> 32 );		// 命令表由硬件通过DMA读取
+		// hsai_trace( "AHCI port %d cmd table %p", _port_id, *( u64 * ) &head.ctba );
+
+		// 配置 FIS
+
+		SataFisRegH2D * fis_h2d = ( SataFisRegH2D * ) _cmd_tbl->cmd_fis;
+		fis_h2d->fis_type = sata_fis_reg_h2d;
+		fis_h2d->pm_port = 0;									// 端口复用使用的值，这里写0就可以了，不涉及端口复用
+		fis_h2d->c = 1;											// 表示这是一个主机发给设备的命令帧
+		fis_h2d->command = ata_cmd_identify_device;				// 配置为 identify 命令
+		fis_h2d->features = fis_h2d->features_exp = 0;			// refer to ATA8-ACS, this field should be N/A ( or 0 ) when the command is 'indentify' 
+		fis_h2d->device = 0;									// similar to above 
+		fis_h2d->lba_low = fis_h2d->lba_low_exp = 0;
+		fis_h2d->lba_mid = fis_h2d->lba_mid_exp = 0;
+		fis_h2d->lba_high = fis_h2d->lba_high_exp = 0;
+		fis_h2d->sector_cnt = fis_h2d->sector_cnt_exp = 0;
+		fis_h2d->control = 0;
+
+		// 设置数据区
+
+		void *pr = ( void * ) hsai::k_mem->to_dma( ( ulong ) buffer );
+		AhciPrd *prd0 = &_cmd_tbl->prdt[ 0 ];
+		prd0->dba = ( u64 ) pr;
+		prd0->interrupt = 1;
+		prd0->dbc = len - 1;
+		// hsai_trace( "AHCI port %d dba %p", _port_id, prd0->dba );
+
+		// 设置中断回调函数
+
+		if ( callback_handler != nullptr )
+			_call_back = callback_handler;
+		else
+			_call_back = std::bind( &AhciPortDriver::_default_callback, this );
+
+		// 发布命令
+
+		_issue_command_slot( cmd_slot );
+	}
+
+////////////////////////// private helper function ///////////////////////////////////////
+
+	int AhciPortDriver::_default_callback()
+	{
+		hsai_warn( "%s : 引发了一个中断，但是没有配置中断回调函数", _dev_name );
+		return -1;
+	}
+
+	void AhciPortDriver::_issue_command_slot( uint i )
+	{
+		hsai_assert( i < ahci_max_cmd_slot, "命令槽id号太大" );
+		_regs->ci |= 0x1U << i;
+	}
+
+// >>>> debug
+
+	void AhciPortDriver::debug_print_register()
+	{
+		hsai_printf( "ci %p\ntfd %p\n", _regs->ci, _regs->tfd );
 	}
 
 } // namespace hsai

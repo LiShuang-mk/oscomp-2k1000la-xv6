@@ -77,6 +77,13 @@ namespace mm
 		_fill_junk( pa, MemJunk::null_junk );
 	}
 
+	void PhysicalMemoryManager::clear_pages( void *pa, uint cnt )
+	{
+		ulong a = ( ulong ) pa;
+		for ( ; cnt > 0; a += hsai::page_size, cnt-- )
+			_fill_junk( ( void* ) a, MemJunk::null_junk );
+	}
+
 ////////////////////// private helper functions /////////////////////////////////
 
 

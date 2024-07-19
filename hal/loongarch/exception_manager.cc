@@ -83,7 +83,7 @@ namespace loongarch
 
 		// syscall::k_syscall_handler.init();
 
-		cpu->intr_on();
+		// cpu->intr_on();
 	}
 
 	void ExceptionManager::kernel_trap()

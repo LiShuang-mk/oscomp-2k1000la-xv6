@@ -30,6 +30,7 @@
 
 #include <bit>
 
+#include <hsai_defs.h>
 #include <hsai_global.hh>
 #include <virtual_cpu.hh>
 
@@ -69,7 +70,7 @@ extern "C" {
 			kernellib::k_printer.init( &dev::k_console, "printer" );
 
 			// console init 
-			new ( &dev::k_console ) dev::Console( "console" );
+			new ( &dev::k_console ) dev::Console( DEFAULT_DEBUG_CONSOLE_NAME );
 
 			printf( "hello world\n" );
 			log_info( "Hello World!\n" );
