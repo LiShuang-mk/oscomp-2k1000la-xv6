@@ -63,30 +63,26 @@ extern "C" {
 		{
 			hsai::hsai_internal_init();
 
-			// console init 
-			dev::k_console.init( "console", true );
+			hsai::hardware_abstract_init();
 
 			// printf init 
 			kernellib::k_printer.init( &dev::k_console, "printer" );
 
-			hsai::hardware_abstract_init();
-
-
+			// console init 
+			new ( &dev::k_console ) dev::Console( "console" );
 
 			printf( "hello world\n" );
 			log_info( "Hello World!\n" );
 
 			log_info( "xn6_start_kernel addr: %p", &xn6_start_kernel );
 
-
-
 			// physical memory init 
 			new ( &mm::k_pmm ) mm::PhysicalMemoryManager( "physical memory manager" );
 			log_info( "pmm init" );
 
-			mm::k_pmm.debug_test_buddy();
+			// mm::k_pmm.debug_test_buddy();
 
-			while ( 1 );
+			// while ( 1 );
 
 			// process init 
 			pm::k_pm.init( "next pid", "wait lock" );

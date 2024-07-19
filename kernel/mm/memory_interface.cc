@@ -1,20 +1,25 @@
 //
-// Created by Li Shuang ( pseudonym ) on 2024-06-26 
+// Created by Li Shuang ( pseudonym ) on 2024-07-19 
 // --------------------------------------------------------------
 // | Note: This code file just for study, not for commercial use 
 // | Contact Author: lishuang.mk@whu.edu.cn 
 // --------------------------------------------------------------
 //
 
-#include "uart/virtual_uart.hh"
+#include <memory_interface.hh>
 
-#include "device_manager.hh"
-#include "hsai_global.hh"
+#include "mm/physical_memory_manager.hh"
 
 namespace hsai
 {
-	void register_debug_uart( VirtualUartController * uart_port )
+	void * alloc_pages( uint cnt )
 	{
-		k_devm.register_char_device( ( CharDevice * ) uart_port, "console" );
+		return mm::k_pmm.alloc_pages( cnt );
 	}
+
+	int free_pages( void * ptr )
+	{
+		return mm::k_pmm.free_pages( ptr );
+	}
+
 } // namespace hsai

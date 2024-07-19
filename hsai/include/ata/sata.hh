@@ -6,7 +6,7 @@
 // --------------------------------------------------------------
 //
 
-#pragma ocne
+#pragma once
 
 #include "ata_types.hh"
 
@@ -16,6 +16,15 @@ namespace hsai
 	 * SATA 协议相关定义
 	 * 参考：Serial ATA Revision 2.6
 	 *****************************************/
+
+	/// @brief refer to https://wiki.osdev.org/AHCI#Detect_attached_SATA_devices
+	enum SataSig : u32
+	{
+		sata_sig_ata = 0x00000101,
+		sata_sig_atapi = 0xeb140101,
+		sata_sig_semb = 0xc33c0101,
+		sata_sig_pm = 0x96690101,
+	};
 
 	/// @brief FIS type value enum.
 	/// refer to SerialATA revision 2.6 - 10.3.1 FIS Type Values 
@@ -36,7 +45,7 @@ namespace hsai
 	{
 		// Dword 0
 
-		byte fis_type = fis_reg_h2d;
+		byte fis_type = sata_fis_reg_h2d;
 		byte pm_port : 4;
 		byte rsv0 : 3;					// [x] reserve 
 		byte c : 1;
@@ -74,7 +83,7 @@ namespace hsai
 	{
 		// Dword 0
 
-		byte fis_type = fis_pio_d2h;
+		byte fis_type = sata_fis_pio_d2h;
 		byte pm_port : 4;
 		byte rsv0 : 1;					// [x] reserve 
 		byte d : 1;

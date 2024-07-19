@@ -29,6 +29,7 @@ namespace kernellib
 
 		hsai::p_hsai_logout = &level_log_out;
 		hsai::p_hsai_assert = &assert_log_out;
+		hsai::p_hsai_printf = &printf_log_out;
 	}
 
 	void Printer::printint( int xx, int base, int sign )

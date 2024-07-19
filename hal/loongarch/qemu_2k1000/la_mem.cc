@@ -90,9 +90,9 @@ namespace loongarch
 		}
 		ulong Memory::mem_size()
 		{
-			ulong mem_end_addr = ( 0x90000000 | win_0 ) + _1G;
-			return mem_end_addr - mem_start();
-			// return memory::mem_size;
+			// ulong mem_end_addr = ( 0x90000000 | win_0 ) + _1G;
+			// return mem_end_addr - mem_start();
+			return memory::mem_size;
 		}
 
 		ulong Memory::to_vir( ulong addr )

@@ -8,19 +8,22 @@
 
 #pragma once 
 
+#include "char_device.hh"
+
 namespace hsai
 {
-	class VirtualUartController __hsai_hal
+	class VirtualUartController __hsai_hal : public CharDevice
 	{
 	public:
 		virtual void init() = 0;
-		virtual void put_char_sync( int c ) = 0;
-		virtual void put_char( int c ) = 0;
-		// virtual int get_char( int c ) = 0;
+		// virtual int put_char_sync( u8 c ) = 0;
+		// virtual int put_char( u8 c ) = 0;
+		// virtual u8 get_char( int c ) = 0;
+		// virtual u8 get_char_sync( int c ) = 0;
+		
 		virtual void handle_interrupt() = 0;
 	};
 
-	extern VirtualUartController * k_debug_uart;
 	void register_debug_uart( VirtualUartController * uart_port );
 
 } // namespace hsai

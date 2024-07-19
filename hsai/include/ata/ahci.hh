@@ -19,8 +19,8 @@ namespace hsai
 	 *       Interface Revision 1.3.1
 	 *****************************************/
 
-	constexpr uint max_port_num = 32;
-	constexpr uint max_cmd_slot = 32;
+	constexpr uint ahci_max_port_num = 32;
+	constexpr uint ahci_max_cmd_slot = 32;
 
 	///////////////////////////////////////////////////////////////////////////////////
 	// HBA 内部寄存器相关定义
@@ -116,9 +116,6 @@ namespace hsai
 
 	}__attribute__( ( __packed__ ) );
 	static_assert( sizeof( AhciPortReg ) == 0x80 );
-
-	constexpr uint ahci_cmd_lst_len = 0x400U;
-	constexpr uint ahci_rec_fis_len = 0x100U;
 
 #define _build_is_bit_( name, mask, shift ) \
 	ahci_port_is_##name##_s = shift, \
@@ -291,7 +288,8 @@ namespace hsai
 		// from A0h to FFh
 		byte vendor_reg[ 0x100 - 0x0A0 ];
 
-		AhciPortReg ports[ max_port_num ];
+		AhciPortReg ports[ ahci_max_port_num ];
+
 	}__attribute__( ( __packed__ ) );
 	// static_assert( ( uint64 )( ( ( HbaMemReg* ) 0x0UL )->ports ) == 0x100 );
 
@@ -299,6 +297,9 @@ namespace hsai
 
 	///////////////////////////////////////////////////////////////////////////////////
 	// 系统内存结构相关定义
+
+	constexpr uint ahci_cmd_lst_size = 0x400U;
+	constexpr uint ahci_rec_fis_size = 0x100U;
 
 	/// @brief refer to AHCI 1.3.1 - 4.2.2 Command List Structure 
 	struct AhciCmdHeader
@@ -338,9 +339,9 @@ namespace hsai
 	constexpr uint ahci_cmd_list_length = 32;
 
 	/// @brief refer to AHCI - 4.2.2 Command List Structure
-	struct HbaCmdList
+	struct AhciCmdList
 	{
-		AhciCmdHeader headers[ ahci_cmd_list_length ];
+		AhciCmdHeader headers[ ahci_max_cmd_slot ];
 	}__attribute__( ( __packed__ ) );
 
 	/// @brief physical region descriptor
@@ -358,8 +359,8 @@ namespace hsai
 	constexpr uint ahci_prd_max_cnt = ( hsai::page_size - 0x80U ) / sizeof( struct AhciPrd );
 	/// @brief refer to AHCI - 4.2.3 Command Table 
 	/// @details 注意虽然文档中说明了PRD最多有65535个item
-	///          但此处使item填满一个物理页剩下的空间
-	///          计算得出一个物理页（4K）可以填下248个PRD
+	///          但此处使item填满一个物理页剩下的空间计
+	///          算得出一个物理页（4K）可以填下248个PRD
 	struct AhciCmdTbl
 	{
 		byte cmd_fis[ 0x40U ];
@@ -368,5 +369,38 @@ namespace hsai
 		struct AhciPrd prdt[ ahci_prd_max_cnt ];
 	}__attribute__( ( __packed__ ) );
 	static_assert( sizeof( AhciCmdTbl ) == hsai::page_size, "AHCI command table size must equal to page size." );
+
+
+	/// @brief Received FIS 在系统内存的大小为 0x100 Bytes
+	constexpr uint ahci_rev_siz = 0x100;
+
+	/// @brief Received FIS 结构排布
+	enum AhciRevOrg : uint
+	{
+		ahci_fis_dma_beg = 0x00,
+		ahci_fis_dma_end = 0x1C,
+		ahci_fis_pio_beg = 0x20,
+		ahci_fis_pio_end = 0x34,
+		ahci_fis_d2h_beg = 0x40,
+		ahci_fis_d2h_end = 0x54,
+		ahci_fis_sdb_beg = 0x58,
+		ahci_fis_sdb_end = 0x60,
+		ahci_fis_unk_beg = 0x60,
+		ahci_fis_unk_end = 0xA0,
+	};
+
+	/// @brief refer to AHCI 1.3.1 - 4.2.1 Received FIS Structure
+	struct AhciRevFis
+	{
+		byte dsfis[ ahci_fis_dma_end - ahci_fis_dma_beg ];
+		byte rsv0[ ahci_fis_pio_beg - ahci_fis_dma_end ];
+		byte psfis[ ahci_fis_pio_end - ahci_fis_pio_beg ];
+		byte rsv1[ ahci_fis_d2h_beg - ahci_fis_pio_end ];
+		byte rfis[ ahci_fis_d2h_end - ahci_fis_d2h_beg ];
+		byte rsv2[ ahci_fis_sdb_beg - ahci_fis_d2h_end ];
+		byte sdbfis[ ahci_fis_sdb_end - ahci_fis_sdb_beg ];
+		byte ufis[ ahci_fis_unk_end - ahci_fis_unk_beg ];
+		byte rsv3[ ahci_rev_siz - ahci_fis_unk_end ];
+	}__attribute__( ( __packed__ ) );
 
 } // namespace hsai

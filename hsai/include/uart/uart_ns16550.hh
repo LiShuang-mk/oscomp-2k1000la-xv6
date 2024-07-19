@@ -30,8 +30,10 @@ namespace hsai
 		UartNs16550( void * reg_base );
 
 		virtual void init() override;
-		virtual void put_char_sync( int c ) override;
-		virtual void put_char( int c ) override;
+		virtual int put_char_sync( u8 c ) override;
+		virtual int put_char( u8 c ) override;
+		virtual uint8 get_char_sync() override;
+		virtual uint8 get_char() override;
 		virtual void handle_interrupt() override;
 
 	private:

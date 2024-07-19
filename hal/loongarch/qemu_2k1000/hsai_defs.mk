@@ -13,9 +13,13 @@
 # >>>> change these viriable to control what to be compiled
 # >>>>
 
-HASI_DEF_UART = \
+HSAI_DEF_UART = \
 	virtual_uart.cc \
 	uart_ns16550.cc
+
+HSAI_DEF_ATA = \
+	ahci_driver.cc \
+	ahci_port_driver.cc
 
 # >>>>
 # **************************************************************

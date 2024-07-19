@@ -45,6 +45,11 @@ hsai_src += $(wildcard *.cc)
 hsai_src += $(wildcard *.S)
 
 # ------------------------------------------------
+# | target module : ata
+
+hsai_src += $(foreach obj,$(HSAI_DEF_ATA),ata/$(obj))
+
+# ------------------------------------------------
 # | target module : intr
 
 hsai_src += $(call card_src,intr,%.cc)
@@ -62,7 +67,7 @@ hsai_src += $(call card_src,smp,%.cc)
 # ------------------------------------------------
 # | target module : uart
 
-hsai_src += $(foreach obj,$(HASI_DEF_UART),uart/$(obj))
+hsai_src += $(foreach obj,$(HSAI_DEF_UART),uart/$(obj))
 
 # ------------------------------------------------
 

@@ -41,10 +41,6 @@ namespace loongarch
 
 namespace hsai
 {
-	void hardware_secondary_init()
-	{
-		// 1. 异常管理初始化
-		loongarch::k_em.init( "exception manager" );
-	}
+	
 } // namespace hsai
 

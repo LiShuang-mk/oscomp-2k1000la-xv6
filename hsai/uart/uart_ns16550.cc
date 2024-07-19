@@ -7,7 +7,6 @@
 //
 
 #include "uart/uart_ns16550.hh"
-
 #include "hsai_log.hh"
 
 namespace hsai
@@ -42,7 +41,7 @@ namespace hsai
 		_lock.init( "UART" );
 	}
 
-	void UartNs16550::put_char_sync( int c )
+	int UartNs16550::put_char_sync( u8 c )
 	{
 		_lock.acquire();
 		regLSR * lsr = ( regLSR* ) ( _reg_base + LSR );
@@ -50,16 +49,28 @@ namespace hsai
 			;
 		_write_reg( THR, ( u8 ) c );
 		_lock.release();
+		return 0;
 	}
 
-	void UartNs16550::put_char( int c )
+	int UartNs16550::put_char( u8 c )
 	{
 		hsai_panic( "put char not implement" );
+		return -1;
+	}
+
+	uint8 UartNs16550::get_char_sync()
+	{
+		return uint8();
+	}
+
+	uint8 UartNs16550::get_char()
+	{
+		return uint8();
 	}
 
 	void UartNs16550::handle_interrupt()
 	{
-		
+		hsai_panic( "handle intr not implement" );
 	}
 
 } // namespace hsai

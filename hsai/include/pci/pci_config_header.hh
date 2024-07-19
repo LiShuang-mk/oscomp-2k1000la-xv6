@@ -35,6 +35,7 @@ namespace hsai
 		uint8  min_gnt;
 		uint8  max_lat;
 	};
-	static_assert( sizeof( PciType0ConfigHeader ) == 256, "PCI Confg Header size shall be 256 Bytes" );
+	static_assert( sizeof( PciType0ConfigHeader ) == 0x40, "PCI Confg Header size shall be 256 Bytes" );
+	int i = sizeof( PciType0ConfigHeader );
 
 } // namespace hsai

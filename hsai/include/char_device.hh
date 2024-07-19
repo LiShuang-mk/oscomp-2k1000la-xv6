@@ -15,8 +15,8 @@ namespace hsai
 	public:
 		virtual uint8 get_char_sync() = 0;
 		virtual uint8 get_char() = 0;
-		virtual uint8 put_char_sync() = 0;
-		virtual uint8 put_char() = 0;
+		virtual int put_char_sync( u8 c ) = 0;
+		virtual int put_char( u8 c ) = 0;
 	};
 
 } // namespace hsai

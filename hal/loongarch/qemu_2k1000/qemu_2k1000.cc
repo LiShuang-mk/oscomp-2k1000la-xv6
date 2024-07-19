@@ -13,6 +13,7 @@
 #include "exception_manager.hh"
 #include "interrupt_manager.hh"
 #include "context.hh"
+#include "pci/pci.hh"
 
 #include <hsai_global.hh>
 #include <hsai_log.hh>
@@ -20,12 +21,15 @@
 #include <process_interface.hh>
 #include <uart/uart_ns16550.hh>
 #include <intr/virtual_interrupt_manager.hh>
+#include <ata/ahci_driver.hh>
 
 namespace loongarch
 {
 	namespace qemu2k1000
 	{
 		hsai::UartNs16550 debug_uart;
+
+		hsai::AhciDriver ahci_driver;
 	} // namespace qemu2k1000
 
 } // namespace loongarch
@@ -105,6 +109,26 @@ namespace hsai
 		// 5. 中断管理初始化
 
 		VirtualInterruptManager::register_interrupt_manager( &loongarch::qemu2k1000::k_im );
+	}
+
+	void hardware_secondary_init()
+	{
+		// 1. 异常管理初始化
+		loongarch::k_em.init( "exception manager" );
+
+		// 2. AHCI 初始化 (debug)
+		ulong pci_sata_base = loongarch::qemu2k1000::pci_type0_config_address(
+			loongarch::qemu2k1000::sata_bus,
+			loongarch::qemu2k1000::sata_dev,
+			loongarch::qemu2k1000::sata_fun
+		);
+		pci_sata_base |= loongarch::qemu2k1000::win_1;
+		ulong sata_base = loongarch::qemu2k1000::pci_type0_bar(
+			pci_sata_base,
+			0
+		);
+		sata_base |= loongarch::qemu2k1000::win_1;
+		new ( &loongarch::qemu2k1000::ahci_driver ) AhciDriver( "AHCI", ( void * ) sata_base );
 	}
 
 	void user_proc_init( void * proc )
