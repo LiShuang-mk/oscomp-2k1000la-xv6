@@ -21,7 +21,7 @@ namespace fs
 	{
 	public:
 		Inode() = default;
-		Inode( const Inode& inode ) = delete;
+		Inode( const Inode& inode ) = default;
 		virtual ~Inode() = default;
 		Inode& operator=( const Inode& inode );
 

@@ -13,7 +13,7 @@ namespace fs
 	class Dentry;
 	class FileSystem;
 	class Inode;
-
+	class dentry;
 	class SuperBlock
 	{
 	public:
@@ -21,14 +21,14 @@ namespace fs
 		SuperBlock( const SuperBlock& sb ) = delete;
 		virtual ~SuperBlock() = default;
 		SuperBlock & operator=( const SuperBlock& sb );
-		virtual Dentry* getRoot() const = 0;     // get root dentry  
-		virtual Dentry* getMntPoint() const = 0; // get mount point dentry
+		virtual dentry* getRoot() const = 0;     // get root dentry  
+		virtual dentry* getMntPoint() const = 0; // get mount point dentry
 		virtual FileSystem* getFileSystem() const = 0; // get file system
 		virtual bool isValid() const = 0; // check if super block is valid
 		virtual uint32 rDefaultMod() const = 0; // get default mode
 		virtual size_t rBlockSize() const = 0; // get block size
 		virtual size_t rBlockNum() const = 0; // get block number
-		//virtual Inode *allocInode() = 0; // allocate inode
+		virtual Inode *allocInode( mode_t mode ) = 0; // allocate inode
 		//virtual void destroyInode( Inode *inode ) = 0; // destroy inode
 	};
 

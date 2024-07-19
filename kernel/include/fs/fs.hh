@@ -40,9 +40,11 @@ namespace fs
 		virtual long rFreeFile() const = 0; // max file num when read free block
 		virtual eastl::string rFStype() const = 0; // get filesystem type
 		virtual size_t rNamelen() const = 0; // get max name length
-		virtual Dentry *getRoot() const = 0; // get root dentry
-		virtual Dentry *getMntPoint() const = 0; // get mount point dentry
-		virtual int mount( Dentry *dev, Dentry *&mnt, eastl::string fstype ) = 0 ;
+		virtual dentry *getRoot() const = 0; // get root dentry
+		virtual dentry *getMntPoint() const = 0; // get mount point dentry
+		virtual mode_t 	rDefaultMod() const = 0;
+		virtual int mount( dentry *dev, dentry *mnt, eastl::string fstype ) = 0 ;
+		virtual int umount( dentry *mnt ) = 0;
 
 	};
 

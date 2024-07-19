@@ -10,7 +10,8 @@ namespace fs
 {
 
 	namespace fat
-	{
+	{	
+
 		void Fat32Inode::init( uint32 first_cluster, Fat32FS *belong_fs, Fat32NodeType node_type, mode_t attr, size_t size )
 		{
 			_first_cluster = first_cluster;
@@ -224,7 +225,11 @@ namespace fs
 			else
 				return nullptr;
 		}
-
+		
+		Inode *Fat32Inode::mknode(eastl::string name, mode_t mode)
+		{
+			return _belong_fs->getSuperBlock()->allocInode( ISDIR(mode) );
+		}
 // ================ private helper function ================
 
 		int Fat32Inode::_read_sub_dir( void * &sub_desc, eastl::string &out_dir_name, Fat32DirectryShort &out_dir_info )

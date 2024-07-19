@@ -220,7 +220,7 @@ namespace fs
 		_lock.acquire();
 		for ( auto &f : _files )
 		{
-			if ( f.dentry && f.dentry->getName() == path )
+			if ( f.dentry && f.dentry->rName() == path )
 			{
 				_lock.release();
 				return &f;

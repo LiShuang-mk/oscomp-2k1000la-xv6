@@ -1,7 +1,6 @@
 #include "types.hh"
 #include "smp/lock.hh"
-#include "fs/fat/fat32Dentry.hh"
-#include "fs/ramfs/ramfsDentry.hh"
+#include "fs/dentry.hh"
 
 #include <EASTL/string.h>
 #include <EASTL/list.h>
@@ -17,8 +16,7 @@ using eastl::string;
 
 namespace fs
 {
-    class Dentry;
-
+    class dentry;
     namespace dentrycache
     {
 
@@ -35,10 +33,9 @@ namespace fs
         class dentryCache
         {
             smp::Lock _lock;
-            list<Dentry *> _active_list;
-            list<Dentry *> _inactive_list;
-            fat::Fat32Dentry _fatDentryPool[MAX_DENTRY_NUM / DENTRY_TYPES];
-            ramfs::RamFSDen _ramDentryPool[MAX_DENTRY_NUM / DENTRY_TYPES];
+            list<dentry *> _active_list;
+            list<dentry *> _inactive_list;
+            fs::dentry *_dentryPool[ MAX_DENTRY_NUM ];
             vector<int> bitmap;
             
         public:
@@ -46,13 +43,13 @@ namespace fs
             ~dentryCache() = default;
 
             void init();
-            Dentry *getDentry();
-            void putDentry(Dentry *dentry);
-            Dentry *alloDentry(DentryType type);
-            void releaseDentry(Dentry *dentry);  // who will call this function apparently? , OOOO, it should be releaseInactiveDentry
-            void touchDentry(Dentry *dentry);
-            void touchDentryInternal(Dentry *dentry);
-            Dentry *releaseInactiveDentry( DentryType type );
+            dentry *getDentry();
+            void putDentry(dentry *dentry);
+            dentry *alloDentry();
+            void releaseDentry(dentry *dentry);  // who will call this function apparently? , OOOO, it should be releaseInactiveDentry
+            void touchDentry(dentry *dentry);
+            void touchDentryInternal(dentry *dentry);
+            dentry *releaseInactiveDentry( );
 
         };
 

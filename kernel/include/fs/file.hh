@@ -23,7 +23,7 @@ namespace pm
 namespace fs
 {	
 	class Dentry;
-
+	class dentry;
 	class File
 	{
 	public:
@@ -36,14 +36,14 @@ namespace fs
 		private:
 			struct { const FileTypes type_; Kstat kst_; } dv_;
 			//struct {const FileTypes type_; Pipe *pipe_} pp_;
-			struct { const FileTypes type_; Kstat kst_; Dentry *dentry_; uint64 off_; } en_;
+			struct { const FileTypes type_; Kstat kst_; dentry *dentry_; uint64 off_; } en_;
 			inline bool ensureDev() const { return dv_.type_ == FT_NONE || dv_.type_ == FT_STDIN || dv_.type_ == FT_STDOUT || dv_.type_ == FT_DEVICE; };
 			inline bool ensureEntry() const { return en_.type_ == FT_ENTRY; };
 		public:
 			Data( FileTypes type ) : dv_( { type, type } ) { ensureDev(); }
-			Data( Dentry *de_ ) : en_( { FT_ENTRY,de_, de_, 0 } ) { ensureEntry(); }
+			Data( dentry *de_ ) : en_( { FT_ENTRY,de_, de_, 0 } ) { ensureEntry(); }
 			~Data() = default;
-			inline Dentry* get_Entry() const { ensureEntry(); return en_.dentry_; }
+			inline dentry* get_Entry() const { ensureEntry(); return en_.dentry_; }
 			inline Kstat & get_Kstat()
 			{ //if(ensureEntry()) 
 				return en_.kst_;
@@ -58,7 +58,7 @@ namespace fs
 		File( FileTypes type_ ) : data( type_ ) {}
 		File( FileTypes type_, FileOps ops_ = FileOp::fileop_none ) : ops( ops_ ), data( type_ ) {}
 		File( FileTypes type_, int flags_ ) : ops( flags_ ), data( type_ ) {}
-		File( Dentry *de_, int flags_ ) : flags( flags_ ), ops( flags_ ), data( de_ ) {}
+		File( dentry *de_, int flags_ ) : flags( flags_ ), ops( flags_ ), data( de_ ) {}
 		~File() = default;
 
 		int write( void *buf, size_t len );
@@ -80,7 +80,7 @@ namespace fs
 		int ref; // reference count
 		char readable;
 		char writable;
-		Dentry * dentry;
+		fs::dentry * dentry;
 		pm::ipc::Pipe *pipe; // FD_PIPE
 		// struct inode *ip;  // FD_INODE and FD_DEVICE
 		uint off;          // FD_INODE

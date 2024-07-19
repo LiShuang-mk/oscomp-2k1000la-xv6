@@ -9,7 +9,7 @@
 namespace fs{
     
     class Kstat;
-
+    class FileSystem;
     namespace ramfs{
         
         class RamFSSb;
@@ -26,11 +26,12 @@ namespace fs{
                 mode_t mode;
             public:
                 RamInode() = default;
-                RamInode( RamFS *fs_, uint ino_, mode_t mode_, bool is_dir_ = false ) : belong_fs( fs_ ), ino( ino_ ), is_dir( is_dir_ ), mode(mode_) {}
+                RamInode( RamFS *fs_, uint ino_, mode_t mode_, bool isDir = false ) : belong_fs( fs_ ), ino( ino_ ), is_dir( isDir ), mode(mode_) {}
+                RamInode( RamFS *fs_, uint ino_, bool isDir) : belong_fs( fs_ ), ino( ino_ ), is_dir( isDir ), mode( 0 ) {}
                 ~RamInode() = default;
                 
                 Inode *lookup( eastl::string dirname, off_t off_ = 0 ) override { return nullptr ; } ;
-                Inode *mknode( eastl::string dirname, uint32 mode ) override { return nullptr ; } ;
+                Inode *mknode( eastl::string dirname, uint32 mode ) override  ;
                 size_t nodeRead( uint64 dst_, size_t off_, size_t len_ ) override { return 0 ; } ;
                 size_t nodeWrite( uint64 src_, size_t off_, size_t len_ ) override { return  0; } ;
 

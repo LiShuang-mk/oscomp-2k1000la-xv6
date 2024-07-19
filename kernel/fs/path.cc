@@ -84,11 +84,11 @@ namespace fs
 	eastl::string Path::AbsolutePath() const
 	{
 		eastl::vector<eastl::string> absname = dirname;
-		for ( Dentry * entry = base;
+		for ( dentry * entry = base;
 			!( entry->isRoot() && entry->getNode()->getSb()->getFileSystem()->isRootFS() );
 			entry = entry->getParent() )
 		{
-			absname.emplace( absname.begin(), entry->getName() );
+			absname.emplace( absname.begin(), entry->rName() );
 		}
 		eastl::string path_abs = "";
 		for ( auto name = absname.begin(); name != absname.end();)
@@ -106,7 +106,7 @@ namespace fs
 		return path_abs;
 	}
 
-	Dentry * Path::pathHitTable()
+	dentry * Path::pathHitTable()
 	{
 		eastl::string path_abs = AbsolutePath();
 		size_t len = path_abs.size();
@@ -125,7 +125,7 @@ namespace fs
 
 		if ( longest > 0 )
 		{
-			Dentry * root = mnt_table[ longest_prefix ]->getSuperBlock()->getRoot();
+			dentry * root = mnt_table[ longest_prefix ]->getSuperBlock()->getRoot();
 			base = root;
 			pathname = path_abs.substr( longest );
 			if ( pathname.empty() )
@@ -137,12 +137,12 @@ namespace fs
 		else return nullptr;
 	}
 
-	Dentry * Path::pathSearch( bool parent )
+	dentry * Path::pathSearch( bool parent )
 	{
 		/// @todo 1: 通过路径名查找文件
 		
 		if( pathname == "/" ) return mnt_table[ "/" ]->getSuperBlock()->getRoot();
-		Dentry * entry, * next;
+		dentry * entry, * next;
 		if ( base == nullptr ) { return nullptr; }	// 无效路径
 		else if( ( entry = pathHitTable()) != nullptr) { }// 查询挂载表，找到对应根目录
 		else { entry = base; }	// 未找到对应根目录，使用当前目录
@@ -171,8 +171,8 @@ namespace fs
 
 	int Path::mount( Path &dev, eastl::string fstype , uint64 flags, uint64 data)
 	{
-		fs::Dentry *mntEnt = pathSearch();
-		fs::Dentry *devEnt = dev.pathSearch();
+		fs::dentry *mntEnt = pathSearch();
+		fs::dentry *devEnt = dev.pathSearch();
 		
 		if( mntEnt->getNode( )->getFS()->mount( devEnt, mntEnt, fstype ) == 0)
 		{
@@ -181,4 +181,16 @@ namespace fs
 		}
 		return -1;
 	}
+
+	int Path::umount( uint64 flags )
+	{
+		fs::dentry *mnt = pathSearch();
+		if( mnt->getParent()->getNode()->getFS()->umount( mnt ) == 0 )
+		{
+			mnt_table.erase( pathname );
+            return 0;
+		}
+		return -1;
+	}
+
 } // namespace fs

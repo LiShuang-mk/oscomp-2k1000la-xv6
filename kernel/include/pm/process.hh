@@ -18,7 +18,7 @@
 namespace fs
 {
 	class Dentry;
-
+	class dentry;
 	struct xv6_file;
 }
 namespace pm
@@ -54,7 +54,7 @@ namespace pm
 		smp::Lock _lock;
 		int _gid = num_process;					// global ID in pool 
 
-		fs::Dentry *_cwd;				// current working directory
+		fs::dentry *_cwd;				// current working directory
 		eastl::string _cwd_name;
 		// p->lock must be held when using these:
 		enum ProcState _state;        // Process state
@@ -110,7 +110,8 @@ namespace pm
 																		// 外部需要申请这个类的资源时应当在类中实现一个返回资源的接口,
 																		// 而lock的使用应当在接口中由类内部来决定
 	public:
-		fs::Dentry *get_cwd() { return _cwd; }
+		//fs::Dentry *get_cwd() { return _cwd; }
+		fs::dentry *get_cwd() { return _cwd;}
 		void kill() { _killed = 1; }
 		Pcb * get_parent() { return parent; }
 		void set_state( ProcState state ) { _state = state; }

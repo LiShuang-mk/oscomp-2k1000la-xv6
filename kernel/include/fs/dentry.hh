@@ -18,6 +18,10 @@ using eastl::vector;
 namespace fs
 {
 	class Inode;
+	namespace dentrycache
+	{
+		class dentryCache;
+	}
 
 	enum DentryType
     {
@@ -25,28 +29,60 @@ namespace fs
             FAT32_DENTRY = 1,
     };
 
-	class Dentry
-	{               // Directory Entry， 目录项，存在于缓存，不用交由下层FS实现
-	public:
-		Dentry() = default;
-		Dentry( const Dentry& dentry ) = delete;
-		Dentry & operator=( const Dentry& dentry ) = default;
-		virtual ~Dentry() = default;
-		//Dentry( Dentry *parent_, Inode *node_, eastl::string name_ ) : parent( parent_ ), node( node_ ), name( name_ ), isMountPoint( false ) {};
-		virtual Dentry * EntrySearch( eastl::string name ) = 0;
-		virtual Dentry * EntryCreate( eastl::string name, uint32 mode ) = 0;
-		virtual Inode * getNode() = 0;
-		virtual bool isRoot() = 0;
-		virtual Dentry *getParent() = 0;
-		virtual eastl::string getName() = 0;
-		virtual bool isMntPoint() = 0;
-		virtual DentryType dentry_type() = 0;
-		virtual uint getDid() = 0;
-		virtual eastl::string rName() = 0; // get dentry' name
-		virtual void reset( vector<int> &bitmap ) = 0; // reset dentry, used by dentrycache
-		virtual void delete_child( eastl::string name ) = 0;
-		virtual eastl::unordered_map<eastl::string, Dentry*>& getChildren() = 0;
-		uint Did; // dentry id
-	};
+	namespace fat
+	{
+		class Fat32SuperBlock;
+		class Fat32FS;	
+	}
 
+	namespace ramfs
+	{
+		class RamFS;
+		class RamInode;
+		class RamFSSb;
+	}
+
+	class dentry
+	{
+		friend class dentrycache::dentryCache;
+		private:
+			eastl::string name;
+			eastl::unordered_map<eastl::string, dentry *> children;
+			Inode *node;
+
+			dentry *parent;
+			uint Did; // dentry id
+			bool isroot;
+
+		public:
+			dentry() = default; //{ name.clear(); children.clear(); node = nullptr;  parent = nullptr; isroot = false; };
+			dentry( const dentry& ) = default;
+			dentry & operator=( const dentry& ) = default;
+			dentry( eastl::string name, Inode* node, dentry* parent ) : name( name ), node( node ), parent( parent ) {}
+			dentry( uint did ) : Did( did ) {}
+			~dentry() = default;
+
+			dentry *EntrySearch( eastl::string name );
+			dentry *EntryCreate( eastl::string name, uint32 mode );
+			Inode *getNode();	
+			bool isRoot();
+			dentry *getParent() { return parent == nullptr ? nullptr : parent ;};
+			eastl::string rName() { return name; };
+			uint getDid() { return Did; };
+			void reset( vector<int> &bitmap );
+			eastl::unordered_map<eastl::string, dentry*> &getChildren() { return children; };
+			//bool is_root();
+			bool isMntPoint();
+			void delete_child( eastl::string name ) { children.erase( name ); };
+			void setParent( dentry *parent ) { this->parent = parent; };
+		
+		public:
+			void init( uint32 dev, ramfs::RamFS *fs );	
+			void init( uint32 dev, fat::Fat32SuperBlock *sb, fat::Fat32FS* fs, eastl::string rootname );
+			void init( eastl::string name_, Inode *node_, dentry *parent_ ) ;
+			void rootInit( Inode *node, eastl::string rootname );
+
+			void printChildrenInfo();
+
+	};
 } // namespace fs

@@ -32,12 +32,12 @@ namespace fs
 			// eastl::unordered_map<eastl::string, Fat32DirectryShort> _children;
 			mode_t _attr;
 			size_t _size;
-
+			uint _ino;
 			Fat32Inode * _sub_inode_cache = nullptr;
 
 		public:
 			Fat32Inode() = default;
-
+			Fat32Inode( Fat32FS *fs_, uint ino_ ) : _belong_fs(fs_), _ino(ino_) { };
 			void init( uint32 first_cluster, Fat32FS *belong_fs, Fat32NodeType node_type, mode_t attr, size_t size = 0);
 
 			void read_content( void *buf, uint64 read_len, uint64 offset, bool async_read = false );
@@ -60,7 +60,7 @@ namespace fs
 			 **************************************************/
 			Inode* lookup( eastl::string dirname, off_t off_ = 0 ) override;
 
-			Inode* mknode( eastl::string name, mode_t mode ) override { return nullptr; };
+			Inode* mknode( eastl::string name, mode_t mode ) override ;
 			size_t nodeRead( uint64 dst_, size_t off_, size_t len_ ) override { read_content( ( void * ) dst_, len_, off_ ); return len_; };
 			size_t nodeWrite( uint64 src_, size_t off_, size_t len_ ) override { return 0; };
 			mode_t rMode() const override { return _attr; };

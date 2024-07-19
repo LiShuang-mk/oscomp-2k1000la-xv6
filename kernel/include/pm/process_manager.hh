@@ -65,7 +65,7 @@ namespace pm
 
 		int exec( eastl::string path, eastl::vector<eastl::string> args );
 		int wait( int child_pid, uint64 addr );
-		int load_seg( mm::PageTable &pt, uint64 va, fs::Dentry *de, uint offset, uint size );
+		int load_seg( mm::PageTable &pt, uint64 va, fs::dentry *de, uint offset, uint size );
 
 		void sleep( void *chan, smp::Lock *lock );
 		void wakeup( void *chan );

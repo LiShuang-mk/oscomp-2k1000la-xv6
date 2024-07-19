@@ -37,9 +37,9 @@ namespace fs
 			_isroot = is_root;
 
 			/// @todo 3. init rootEntry, and it's fat32inode.
-			_root = static_cast<Fat32Dentry *>( fs::dentrycache::k_dentryCache.alloDentry( DentryType::FAT32_DENTRY ) );
+			_root = fs::dentrycache::k_dentryCache.alloDentry();
 			_root->init( _device, _super_block, this, rootname );
-			_mnt = nullptr;
+			//_mnt = nullptr;
 
 			_root->EntryCreate( "test_unlink", 0 );
 
@@ -47,9 +47,14 @@ namespace fs
 			//fs::mnt_table[ "/mnt/fat" ] = this;
 		}
 
-		Dentry *Fat32FS::getRoot () const
+		dentry *Fat32FS::getRoot () const
 		{
 			return _root;
+		}
+
+		int Fat32FS::umount ( dentry *mount )
+		{
+			return 0;
 		}
 
 	}

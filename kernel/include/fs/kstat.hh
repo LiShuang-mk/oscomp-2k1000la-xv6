@@ -48,7 +48,7 @@ namespace fs
 			size( ks_.size ), blksize( ks_.blksize ),__pad2( ks_.__pad2 ), blocks( ks_.blocks ) 
 		{
 		};
-		Kstat( Dentry *dentry )   //@TODO: 通过De初始化kstat不完全
+		Kstat( dentry *dentry )   //@TODO: 通过De初始化kstat不完全
 		{
 			if( dentry )
 			{

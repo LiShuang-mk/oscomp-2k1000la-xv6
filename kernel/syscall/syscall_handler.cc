@@ -551,7 +551,7 @@ namespace syscall
 		if ( _arg_int( 2, buf_len ) < 0 )
 			return -1;
 
-		eastl::string name = f->dentry->getName();
+		eastl::string name = f->dentry->rName();
 		for ( uint i = 0; i < name.size(); ++i )
 			dirent.d_name[ i ] = name[ i ];
 
@@ -618,7 +618,23 @@ namespace syscall
 
 	uint64 SyscallHandler::_sys_umount()
 	{
-		return 0;
+		uint64 specialaddr;
+		eastl::string special;
+		int flags;
+
+		pm::Pcb * cur = pm::k_pm.get_cur_pcb();
+		mm::PageTable pt = cur->get_pagetable();
+
+		if( _arg_addr( 0, specialaddr ) < 0 )
+			return -1;
+		if( _arg_int( 1, flags ) < 0 )
+			return -1;
+		
+		if( mm::k_vmm.copy_str_in( pt, special, specialaddr, 100 ) < 0 )
+			return -1;
+		
+		fs::Path specialpath( special );
+		return specialpath.umount( flags );
 	}
 
 	uint64 SyscallHandler::_sys_mmap()

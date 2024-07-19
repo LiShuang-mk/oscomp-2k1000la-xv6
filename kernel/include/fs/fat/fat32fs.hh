@@ -1,6 +1,7 @@
 #include "types.hh"
 #include "fs/fat/fat32.hh"  
 #include "fs/fat/fat32Sb.hh"
+#include "fs/file.hh"
 
 #include <EASTL/vector.h>
 #include <EASTL/string.h>
@@ -8,8 +9,8 @@
 namespace fs
 {
 
-	class Dentry;
 	class SuperBlock;
+	class dentry;
 	namespace fat
 	{
 
@@ -17,7 +18,7 @@ namespace fs
 
 		constexpr size_t Fat32MaxFileNameLength = 255;
 		constexpr uint64 Fat32MaxPathLength = 255;
-
+		constexpr mode_t Fat32_DEFALUT_MOD = FileAttrs::File_dir << FileAttrs::File_dir_s;
 		class Fat32FS : public FileSystem
 		{
 		private:
@@ -28,20 +29,19 @@ namespace fs
 			fat::Fat32SuperBlock *_super_block;
 			bool _isroot;
 
-			Fat32Dentry *_root;
-			Dentry *_mnt;
+			dentry *_root;
+			dentry *_mnt;
 			//eastl::string key;			// map key for fs when mounts
 		public:
 			Fat32FS() = default;
 			Fat32FS( const Fat32FS &fs ) = default;
 			Fat32FS( bool isroot_, eastl::string key_ ) : _isroot( isroot_ ) {};
-			Fat32FS( bool isroot_, Dentry *mnt ) : _isroot( isroot_ ), _mnt( mnt ) {};
+			Fat32FS( bool isroot_, dentry *mnt ) : _isroot( isroot_ ), _mnt( mnt ) {};
 			~Fat32FS();
 			void init( int dev, uint64 start_lba, eastl::string fstype, eastl::string rootname, bool is_root = false );
 
-			Fat32Dentry * get_root() { return _root; }
-			//Fat32Dentry * get_mnt() { return _mnt; }
-			Fat32Dentry * get_dir_entry( Fat32DirInfo &dir_info );
+			dentry * get_root() { return _root; }
+			dentry * get_dir_entry( Fat32DirInfo &dir_info );
 
 			Fat32FS & operator= ( const Fat32FS &fs ) = default;
 			//inline eastl::string rFSType() const override { return _fstype; }
@@ -57,11 +57,12 @@ namespace fs
 			long rFreeFile() const override { return rBlockFree() / _super_block->rSectorPClu(); } /// @todo FAT32 free file number
 			eastl::string rFStype() const override { return _fstype; } 
 			size_t rNamelen() const override { return Fat32MaxPathLength; }
+			mode_t rDefaultMod() const override { return Fat32_DEFALUT_MOD; }
 			//void unInstall() override {  } /// @todo FAT32 uninstall file system
-			Dentry *getRoot() const override ;
-			Dentry *getMntPoint() const override { return _mnt; };
-			int mount( Dentry *dev, Dentry *&mnt, eastl::string fstype )  override { return 0; }	
-		
+			dentry *getRoot() const override ;
+			dentry *getMntPoint() const override { return _mnt; };
+			int mount( dentry *dev, dentry *mnt, eastl::string fstype )  override { return 0; }	
+			int umount( dentry *mnt ) override ; // uncomplated
 		public:
 			uint owned_device() { return _device; }
 			uint64 start_lba() { return _start_lba; }
@@ -74,7 +75,7 @@ namespace fs
 			uint64 get_sectors_per_cluster() { return _super_block->get_bpb()->sectors_per_cluster; }
 			uint64 get_bytes_per_sector() { return _super_block->get_bpb()->bytes_per_sector; }
 
-			Fat32Dentry * get_root_dir() { return _root; }
+			dentry * get_root_dir() { return _root; }
 
 			//void DentryCacheTest();
 		};

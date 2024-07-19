@@ -200,6 +200,7 @@ int main()
 		fs::Path mnt = fs::Path("/mnt");
 		fs::Path dev = fs::Path("/dev/vda2");
 		mnt.mount( dev, "fat32", 0, 0 );
+		//mnt.umount( 0 );
 		// new ( &fs::fat::k_fatfs ) fs::fat::Fat32FS;
 		// fs::fat::k_fatfs.init( 1, 0, "fat32");		
 		//fs::mnt_table[ fs::fat::k_fatfs.rFStype() ] = &fs::fat::k_fatfs;

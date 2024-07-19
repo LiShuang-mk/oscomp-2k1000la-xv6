@@ -27,7 +27,7 @@
 
 #include "fs/elf.hh"
 //#include "fs/fat/fat32_dir_entry.hh"
-#include "fs/fat/fat32Dentry.hh"
+//#include "fs/fat/fat32Dentry.hh"
 //#include "fs/fat/fat32_file_system.hh"
 #include "fs/fat/fat32fs.hh"
 #include "fs/file.hh"
@@ -285,7 +285,7 @@ namespace pm
 		//p->_cwd = fs::fat::k_fatfs.get_root();
 		/// @todo 这里暂时修改进程的工作目录为fat的挂载点
 		p->_cwd = fs::ramfs::k_ramfs.getRoot()->EntrySearch( "mnt" );
-		p->_cwd_name = p->_cwd->getName();
+		p->_cwd_name = p->_cwd->rName();
 
 
 		/// TODO:
@@ -453,7 +453,7 @@ namespace pm
 		elf::elfhdr elf;
 		elf::proghdr ph = {} ;
 		//fs::fat::Fat32DirInfo dir_;
-		fs::Dentry *de;
+		fs::dentry *de;
 		int i, off;
 
 		// proc->_pt.freewalk();
@@ -625,7 +625,7 @@ namespace pm
 		return argc;
 	}
 
-	int ProcessManager::load_seg( mm::PageTable &pt, uint64 va, fs::Dentry *de, uint offset, uint size )
+	int ProcessManager::load_seg( mm::PageTable &pt, uint64 va, fs::dentry *de, uint offset, uint size )
 	{	//好像没有机会返回 -1, pa失败的话会panic，de的read也没有返回值
 		uint i, n;
 		uint64 pa;
@@ -847,7 +847,7 @@ namespace pm
 		if( fs::k_file_table.has_unlinked( path ) )
 			return -5;  //
  		
-		fs::Dentry *dentry;
+		fs::dentry *dentry;
 		if ( dir_fd <= 2 )
 		{
 			if ( path == "." )
@@ -910,7 +910,7 @@ namespace pm
 	{
 		Pcb *p = get_cur_pcb();
 
-		fs::Dentry *dentry;
+		fs::dentry *dentry;
 
 		dentry = p->_cwd->EntrySearch( path );
 		if ( dentry == nullptr )
@@ -942,7 +942,7 @@ namespace pm
 		if ( fd <= 2 || fd >= ( int ) max_open_files || map_size < 0 )
 			return -1;
 
-		fs::Dentry * dent = p->_ofile[ fd ]->dentry;
+		fs::dentry * dent = p->_ofile[ fd ]->dentry;
 		if ( dent == nullptr )
 			return -1;
 
