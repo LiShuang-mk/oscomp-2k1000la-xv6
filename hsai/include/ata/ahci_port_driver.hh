@@ -38,8 +38,10 @@ namespace hsai
 		name[ sizeof ahci_port_driver_name_template - 2 ] = c;
 	}
 
+	class AhciDriver;
 	class AhciPortDriver : public BlockDevice
 	{
+		friend AhciDriver;
 	private:
 		hsai::SpinLock _lock;
 		const char _dev_name[ sizeof ahci_port_driver_name_template ] = "";
@@ -54,11 +56,11 @@ namespace hsai
 		std::function<int( void )> _call_back;
 
 	public:
-		virtual long get_block_size() override;
-		virtual int read_blocks_sync( long start_block, long block_count, void * buf_list, int buf_count ) override;
-		virtual int read_blocks( long start_block, long block_count, void * buf_list, int buf_count ) override;
-		virtual int write_blocks_sync( long start_block, long block_count, void * buf_list, int buf_count ) override;
-		virtual int write_blocks( long start_block, long block_count, void * buf_list, int buf_count ) override;
+		virtual long get_block_size() override { return ( long ) _block_size; };
+		virtual int read_blocks_sync( long start_block, long block_count, BufferDescriptor * buf_list, int buf_count ) override;
+		virtual int read_blocks( long start_block, long block_count, BufferDescriptor * buf_list, int buf_count ) override;
+		virtual int write_blocks_sync( long start_block, long block_count, BufferDescriptor * buf_list, int buf_count ) override;
+		virtual int write_blocks( long start_block, long block_count, BufferDescriptor * buf_list, int buf_count ) override;
 		virtual int handle_intr() override;
 
 	public:
@@ -97,20 +99,18 @@ namespace hsai
 		/// @param set_prd_handler 设置PRD的回调函数
 		/// @param callback_handler 命令结束后中断的回调函数
 		void isu_cmd_read_dma(
-			uint port,
 			uint64 lba,
-			uint64 len,
+			uint64 blk_cnt,
 			uint prd_cnt,
 			std::function<void( uint prd_i, uint64 &pr_base, uint32 &pr_size )> set_prd_handler,
-			std::function<void( void )> callback_handler );
+			std::function<int( void )> callback_handler );
 
 		void isu_cmd_write_dma(
-			uint port,
 			uint64 lba,
-			uint64 len,
+			uint64 blk_cnt,
 			uint prd_cnt,
 			std::function<void( uint prd_i, uint64 &pr_base, uint32 &pr_size )> set_prd_handler,
-			std::function<void( void )> callback_handler );
+			std::function<int( void )> callback_handler );
 
 		/// @brief 尽管当前这个中断处理函数仍在测试中使用，但这个函数在
 		///        正式的代码中应该被废弃
@@ -126,11 +126,28 @@ namespace hsai
 		void debug_print_register();
 
 	private:
+
 		void fill_fis_h2d_lba( SataFisRegH2D *fis, uint64 lba );
 
 		int _default_callback();
 
 		void _issue_command_slot( uint i );
+
+		void _wait_while_busy( uint cmd_slot )
+		{
+			while ( _regs->ci & ( 1U << cmd_slot ) );
+			while ( _regs->tfd & ( ahci_port_tfd_sts_bsy_m | ahci_port_tfd_sts_drq_m ) );
+		}
+
+		void _fill_fis_h2d_lba( SataFisRegH2D *fis, uint64 lba )
+		{
+			fis->lba_low = ( u8 ) ( ( lba >> 0 ) & 0xFF );
+			fis->lba_mid = ( u8 ) ( ( lba >> 8 ) & 0xFF );
+			fis->lba_high = ( u8 ) ( ( lba >> 16 ) & 0xFF );
+			fis->lba_low_exp = ( u8 ) ( ( lba >> 24 ) & 0xFF );
+			fis->lba_mid_exp = ( u8 ) ( ( lba >> 32 ) & 0xFF );
+			fis->lba_high_exp = ( u8 ) ( ( lba >> 40 ) & 0xFF );
+		}
 	};
 
 } // namespace hsai

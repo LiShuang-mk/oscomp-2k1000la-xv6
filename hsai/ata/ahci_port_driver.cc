@@ -16,30 +16,64 @@
 
 namespace hsai
 {
-	long AhciPortDriver::get_block_size()
+	int AhciPortDriver::read_blocks_sync( long start_block, long block_count, BufferDescriptor * buf_list, int buf_count )
 	{
+		if ( buf_count <= 0 )
+		{
+			hsai_warn( "不合法的缓冲区数量(%d)", buf_count );
+			return -1;
+		}
+		bool finish = false;
+		isu_cmd_read_dma( start_block, block_count, buf_count,
+			/*set pr*/[ & ] ( uint i, u64 &addr, u32 &size ) -> void
+		{
+			if ( i >= ( uint ) buf_count ) return;
+			addr = ( u64 ) buf_list[ i ].buf_addr;
+			size = ( u32 ) buf_list[ i ].buf_size;
+		},
+			/*call back*/[ & ] () -> int
+		{
+			finish = true;
+			return 0;
+		} );
+		while ( !finish );
 		return 0;
-
 	}
 
-	int AhciPortDriver::read_blocks_sync( long start_block, long block_count, void * buf_list, int buf_count )
+	int AhciPortDriver::read_blocks( long start_block, long block_count, BufferDescriptor * buf_list, int buf_count )
 	{
+		hsai_panic( "not implement" );
+		while ( 1 );
+	}
+
+	int AhciPortDriver::write_blocks_sync( long start_block, long block_count, BufferDescriptor * buf_list, int buf_count )
+	{
+		if ( buf_count <= 0 )
+		{
+			hsai_warn( "不合法的缓冲区数量(%d)", buf_count );
+			return -1;
+		}
+		bool finish = false;
+		isu_cmd_write_dma( start_block, block_count, buf_count,
+			/*set pr*/[ & ] ( uint i, u64 &addr, u32 &size ) -> void
+		{
+			if ( i >= ( uint ) buf_count ) return;
+			addr = ( u64 ) buf_list[ i ].buf_addr;
+			size = ( u32 ) buf_list[ i ].buf_size;
+		},
+			/*call back*/[ & ] () -> int
+		{
+			finish = true;
+			return 0;
+		} );
+		while ( !finish );
 		return 0;
 	}
 
-	int AhciPortDriver::read_blocks( long start_block, long block_count, void * buf_list, int buf_count )
+	int AhciPortDriver::write_blocks( long start_block, long block_count, BufferDescriptor * buf_list, int buf_count )
 	{
-		return 0;
-	}
-
-	int AhciPortDriver::write_blocks_sync( long start_block, long block_count, void * buf_list, int buf_count )
-	{
-		return 0;
-	}
-
-	int AhciPortDriver::write_blocks( long start_block, long block_count, void * buf_list, int buf_count )
-	{
-		return 0;
+		hsai_panic( "not implement" );
+		while ( 1 );
 	}
 
 	int AhciPortDriver::handle_intr()
@@ -137,7 +171,7 @@ namespace hsai
 	 * 实现有关，至少在 loongarch qemu 2k1000 中是无法产生
 	 * 中断的。
 	 ****************************************************/
-	
+
 	void AhciPortDriver::isu_cmd_identify( void *buffer, uint len, std::function<int( void )> callback_handler )
 	{
 		if ( len < 512 )
@@ -201,10 +235,168 @@ namespace hsai
 
 		// 发布命令
 
+		_wait_while_busy( cmd_slot );
 		_issue_command_slot( cmd_slot );
 	}
 
-////////////////////////// private helper function ///////////////////////////////////////
+	void AhciPortDriver::isu_cmd_read_dma(
+		uint64 lba,
+		uint64 blk_cnt,
+		uint prd_cnt,
+		std::function<void( uint prd_i, uint64 &pr_base, uint32 &pr_size )> set_prd_handler,
+		std::function<int( void )> callback_handler )
+	{
+		// 配置命令头
+
+		int cmd_slot = 0;	// 仅使用 0 号命令槽
+
+		AhciCmdHeader& head = _cmd_ls->headers[ cmd_slot ];
+
+		head.prdtl = prd_cnt;
+		head.pmp = 0;
+		head.c = 1;			// 传输结束清除忙状态
+		head.b = 0;
+		head.r = 0;
+		head.p = 0;
+		head.w = 0;
+		head.a = 0;
+		head.cfl = 5;		// 命令类帧长 5 dwords
+		head.prdbc = 0;		// 硬件用于记录已传输的字节数，软件应复位为0
+		head.ctba = ( u32 ) ( u64 ) k_mem->to_dma( ( u64 ) _cmd_tbl );					// 配置命令表地址
+		head.ctbau = ( u32 ) ( ( u64 ) k_mem->to_dma( ( u64 ) _cmd_tbl ) >> 32 );		// 命令表由硬件通过DMA读取
+		// hsai_trace( "AHCI port %d cmd table %p", _port_id, *( u64 * ) &head.ctba );
+
+		// 配置 FIS
+
+		SataFisRegH2D * fis_h2d = ( SataFisRegH2D * ) _cmd_tbl->cmd_fis;
+		fis_h2d->fis_type = sata_fis_reg_h2d;
+		fis_h2d->pm_port = 0;									// 端口复用使用的值，这里写0就可以了，不涉及端口复用
+		fis_h2d->c = 1;											// 表示这是一个主机发给设备的命令帧
+		fis_h2d->command = ata_cmd_read_dma;					// 配置为 read(DMA) 命令
+		fis_h2d->features = fis_h2d->features_exp = 0;			// refer to ATA8-ACS, this field should be N/A ( or 0 ) when the command is 'read dma' 
+		fis_h2d->device = 1 << 6;									// refer to ATA8-ACS, bit 6 of this field should be set when the command is 'read dma' 
+		_fill_fis_h2d_lba( fis_h2d, lba );
+		fis_h2d->sector_cnt = ( u32 ) ( blk_cnt >> 0 );
+		fis_h2d->sector_cnt_exp = ( u32 ) ( blk_cnt >> 32 );
+		fis_h2d->control = 0;
+
+		// 设置数据区
+
+		AhciPrd *prd;
+		uint64 dba;
+		uint32 dbc;
+		for ( uint i = 0; i < prd_cnt; i++ )
+		{
+			prd = &_cmd_tbl->prdt[ i ];
+			dba = dbc = 0;
+			set_prd_handler( i, dba, dbc );
+			if ( dba == 0 || dbc == 0 )
+			{
+				hsai_error( "AHCI : 无效的DBA或DBC" );
+				return;
+			}
+			if ( dbc > _1M * 4 )
+			{
+				hsai_warn( "AHCI : PR长度超过4MiB, read DMA命令将不会被发送" );
+				return;
+			}
+			prd->dba = hsai::k_mem->to_dma( dba );
+			prd->dbc = dbc - 1;
+			prd->interrupt = 1;
+		}
+
+		// 设置中断回调函数
+
+		if ( callback_handler != nullptr )
+			_call_back = callback_handler;
+		else
+			_call_back = std::bind( &AhciPortDriver::_default_callback, this );
+
+		// 发布命令
+
+		_wait_while_busy( cmd_slot );
+		_issue_command_slot( cmd_slot );
+	}
+
+	void AhciPortDriver::isu_cmd_write_dma(
+		uint64 lba,
+		uint64 blk_cnt,
+		uint prd_cnt,
+		std::function<void( uint prd_i, uint64&pr_base, uint32&pr_size )> set_prd_handler,
+		std::function<int( void )> callback_handler )
+	{
+		// 配置命令头
+
+		int cmd_slot = 0;	// 仅使用 0 号命令槽
+
+		AhciCmdHeader& head = _cmd_ls->headers[ cmd_slot ];
+
+		head.prdtl = prd_cnt;
+		head.pmp = 0;
+		head.c = 1;			// 传输结束清除忙状态
+		head.b = 0;
+		head.r = 0;
+		head.p = 0;
+		head.w = 1;		// 本命令是一个写命令（数据方向从host到device）
+		head.a = 0;
+		head.cfl = 5;		// 命令类帧长 5 dwords
+		head.prdbc = 0;		// 硬件用于记录已传输的字节数，软件应复位为0
+		head.ctba = ( u32 ) ( u64 ) k_mem->to_dma( ( u64 ) _cmd_tbl );					// 配置命令表地址
+		head.ctbau = ( u32 ) ( ( u64 ) k_mem->to_dma( ( u64 ) _cmd_tbl ) >> 32 );		// 命令表由硬件通过DMA读取
+
+		// 配置 FIS
+
+		SataFisRegH2D * fis_h2d = ( SataFisRegH2D * ) _cmd_tbl->cmd_fis;
+		fis_h2d->fis_type = sata_fis_reg_h2d;
+		fis_h2d->pm_port = 0;									// 端口复用使用的值，这里写0就可以了，不涉及端口复用
+		fis_h2d->c = 1;											// 表示这是一个主机发给设备的命令帧
+		fis_h2d->command = ata_cmd_write_dma;					// 配置为 read(DMA) 命令
+		fis_h2d->features = fis_h2d->features_exp = 0;			// refer to ATA8-ACS, this field should be N/A ( or 0 ) when the command is 'read dma' 
+		fis_h2d->device = 1 << 6;									// refer to ATA8-ACS, bit 6 of this field should be set when the command is 'read dma' 
+		_fill_fis_h2d_lba( fis_h2d, lba );
+		fis_h2d->sector_cnt = ( u32 ) ( blk_cnt >> 0 );
+		fis_h2d->sector_cnt_exp = ( u32 ) ( blk_cnt >> 32 );
+		fis_h2d->control = 0;
+
+		// 设置数据区
+
+		AhciPrd *prd;
+		uint64 dba;
+		uint32 dbc;
+		for ( uint i = 0; i < prd_cnt; i++ )
+		{
+			prd = &_cmd_tbl->prdt[ i ];
+			dba = dbc = 0;
+			set_prd_handler( i, dba, dbc );
+			if ( dba == 0 || dbc == 0 )
+			{
+				hsai_error( "AHCI : 无效的DBA或DBC" );
+				return;
+			}
+			if ( dbc > _1M * 4 )
+			{
+				hsai_warn( "AHCI : PR长度超过4MiB, read DMA命令将不会被发送" );
+				return;
+			}
+			prd->dba = hsai::k_mem->to_dma( dba );
+			prd->dbc = dbc - 1;
+			prd->interrupt = 1;
+		}
+
+		// 设置中断回调函数
+
+		if ( callback_handler != nullptr )
+			_call_back = callback_handler;
+		else
+			_call_back = std::bind( &AhciPortDriver::_default_callback, this );
+
+		// 发布命令
+
+		_wait_while_busy( cmd_slot );
+		_issue_command_slot( cmd_slot );
+	}
+
+///////////////////////// private helper function ///////////////////////////////////////
 
 	int AhciPortDriver::_default_callback()
 	{

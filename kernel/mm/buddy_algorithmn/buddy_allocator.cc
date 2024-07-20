@@ -26,10 +26,10 @@ namespace mm
 	BuddyAllocator::BuddyAllocator( const char * lock_name, ulong mem_start, ulong mem_size )
 		: BuddyAllocator()
 	{
-		assert( ( ( uint64 ) mem_start % hsai::page_size ) == 0, ""  );
-		assert( mem_size >= buddy_mem_min_size, ""  );
-		assert( ( mem_size % buddy_mem_min_size ) == 0, ""  );
-		assert( mem_size <= buddy_mem_max_size, ""  );
+		assert( ( ( uint64 ) mem_start % hsai::page_size ) == 0, "" );
+		assert( mem_size >= buddy_mem_min_size, "" );
+		assert( ( mem_size % buddy_mem_min_size ) == 0, "" );
+		assert( mem_size <= buddy_mem_max_size, "" );
 
 		_mem_start = ( void * ) mem_start;
 		_mem_size = mem_size;
@@ -127,9 +127,13 @@ namespace mm
 	}
 
 	static int debug_cnt = 0;
-
+#ifndef COLOR_PRINT
+#define COLOR_PRINT
+	
 #define BLUE_COLOR_PRINT "\033[36m"
 #define CLEAR_COLOR_PRINT "\033[0m"
+	
+#endif 
 
 	void BuddyAllocator::debug_print_node_list()
 	{

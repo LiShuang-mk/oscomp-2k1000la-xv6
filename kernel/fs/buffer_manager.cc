@@ -7,7 +7,6 @@
 //
 
 #include "fs/buffer_manager.hh"
-#include "fs/dev/ahci_controller.hh"
 #include "mm/physical_memory_manager.hh"
 
 namespace fs
@@ -32,41 +31,42 @@ namespace fs
 
 	Buffer BufferManager::read( int dev, uint64 lba )
 	{
-		log_panic( "buffer : asynchronous read not implement" );
-		Buffer buf = _get_buffer_async( dev, lba );
-		if ( bit_test( ( void* ) &_buffer_pool[ buf._block_number ]._valid_map, buf._buffer_index ) == false )
-		{
-			// log_warn( "sleep not implement, so read disk will utilize synchronous way." );
+		// log_panic( "buffer : asynchronous read not implement" );
+		// Buffer buf = _get_buffer_async( dev, lba );
+		// if ( bit_test( ( void* ) &_buffer_pool[ buf._block_number ]._valid_map, buf._buffer_index ) == false )
+		// {
+		// 	// log_warn( "sleep not implement, so read disk will utilize synchronous way." );
 
-			uint blk = buf._block_number;
-			uint idx = buf._buffer_index;
+		// 	uint blk = buf._block_number;
+		// 	uint idx = buf._buffer_index;
 
-			bool dma_finish = false;
+		// 	bool dma_finish = false;
 
-			auto lam1 = [ & ] ( uint i, uint64& prb, uint32& prs ) -> void
-			{
-				if ( i > 0 )
-					return;
-				prb = ( uint64 ) _buffer_pool[ blk ]._buffer_base[ idx ];
-				prs = default_buffer_size;
-			};
+		// 	auto lam1 = [ & ] ( uint i, uint64& prb, uint32& prs ) -> void
+		// 	{
+		// 		if ( i > 0 )
+		// 			return;
+		// 		prb = ( uint64 ) _buffer_pool[ blk ]._buffer_base[ idx ];
+		// 		prs = default_buffer_size;
+		// 	};
 
-			auto lam2 = [ & ] () -> void
-			{
-				log_trace( "buffer : read from disk. LBA : %x", lba );
-				dma_finish = true;
-			};
+		// 	auto lam2 = [ & ] () -> void
+		// 	{
+		// 		log_trace( "buffer : read from disk. LBA : %x", lba );
+		// 		dma_finish = true;
+		// 	};
 
-			dev::ahci::k_ahci_ctl.isu_cmd_read_dma(
-				_dev_to_sata_port( dev ), lba, default_buffer_size, 1,
-				lam1,
-				lam2
-			);
+		// 	dev::ahci::k_ahci_ctl.isu_cmd_read_dma(
+		// 		_dev_to_sata_port( dev ), lba, default_buffer_size, 1,
+		// 		lam1,
+		// 		lam2
+		// 	);
 
-			while ( !dma_finish );
-			bit_set( ( void* ) &_buffer_pool[ buf._block_number ]._valid_map, buf._buffer_index );
-		}
-		return buf;
+		// 	while ( !dma_finish );
+		// 	bit_set( ( void* ) &_buffer_pool[ buf._block_number ]._valid_map, buf._buffer_index );
+		// }
+		// return buf;
+		return Buffer();
 	}
 
 	Buffer BufferManager::read_sync( int dev, uint64 lba )
@@ -140,132 +140,133 @@ namespace fs
 
 	Buffer BufferManager::_get_buffer( int dev, uint64 lba, bool need_sleep_lock )
 	{
-		_lock.acquire();
+	// 	_lock.acquire();
 
-		uint blk = _blk_num_from_lba( lba );
-		uint tag = _tag_num_from_lba( lba );
-		lba = _lba_blk_align( lba );
-		BufferNode *node = nullptr;
-		uint64 buf_base;
-		bool dma_finish;
+	// 	uint blk = _blk_num_from_lba( lba );
+	// 	uint tag = _tag_num_from_lba( lba );
+	// 	lba = _lba_blk_align( lba );
+	// 	BufferNode *node = nullptr;
+	// 	uint64 buf_base;
+	// 	bool dma_finish;
 
-		// used for AHCI to set PRD
-		auto set_prd = [ & ] ( uint i, uint64& prb, uint32& prs ) -> void
-		{
-			if ( i > 0 )
-				return;
-			prb = ( uint64 ) buf_base;
-			prs = default_buffer_size;
-		};
+	// 	// used for AHCI to set PRD
+	// 	auto set_prd = [ & ] ( uint i, uint64& prb, uint32& prs ) -> void
+	// 	{
+	// 		if ( i > 0 )
+	// 			return;
+	// 		prb = ( uint64 ) buf_base;
+	// 		prs = default_buffer_size;
+	// 	};
 
-		node = _buffer_pool[ blk ].search_buffer( dev, blk, tag );
-		if ( node != nullptr )
-		{ // 命中 buffer
-			log_info( "BufferManager : 命中buffer ([%d][%d])", blk, node->_buf_index );
+	// 	node = _buffer_pool[ blk ].search_buffer( dev, blk, tag );
+	// 	if ( node != nullptr )
+	// 	{ // 命中 buffer
+	// 		log_info( "BufferManager : 命中buffer ([%d][%d])", blk, node->_buf_index );
 
-			if ( _buf_is_disk_own( blk, node->_buf_index ) )
-			{ // 虽然命中 buffer，但是这个 buffer 被硬盘占用，应当等待硬盘解除占用
-				assert( need_sleep_lock == true,
-					"synchronously get buffer but disk occupies this buffer\n"
-					">> maybe it is asynchronously getting buffer here?"
-				);
+	// 		if ( _buf_is_disk_own( blk, node->_buf_index ) )
+	// 		{ // 虽然命中 buffer，但是这个 buffer 被硬盘占用，应当等待硬盘解除占用
+	// 			assert( need_sleep_lock == true,
+	// 				"synchronously get buffer but disk occupies this buffer\n"
+	// 				">> maybe it is asynchronously getting buffer here?"
+	// 			);
 
-				log_panic(
-					"BufferManager : hit buffer but buffer is occupied by disk\n"
-					">> it should sleep here but sleep not imlement"
-				);
-			}
+	// 			log_panic(
+	// 				"BufferManager : hit buffer but buffer is occupied by disk\n"
+	// 				">> it should sleep here but sleep not imlement"
+	// 			);
+	// 		}
 
-			_buffer_pool[ blk ]._ref_cnt[ node->_buf_index ]++;
-		}
-		else // 没有命中 buffer，需要分配新的buffer
-		{
-			node = _buffer_pool[ blk ].alloc_buffer( dev, blk, tag );
-			assert( node != nullptr,
-				"BufferManager : try to get buffer fail\n"
-				"  it shall sleep to wait buffer to use\n"
-				"  but sleep not implement"
-			);
+	// 		_buffer_pool[ blk ]._ref_cnt[ node->_buf_index ]++;
+	// 	}
+	// 	else // 没有命中 buffer，需要分配新的buffer
+	// 	{
+	// 		node = _buffer_pool[ blk ].alloc_buffer( dev, blk, tag );
+	// 		assert( node != nullptr,
+	// 			"BufferManager : try to get buffer fail\n"
+	// 			"  it shall sleep to wait buffer to use\n"
+	// 			"  but sleep not implement"
+	// 		);
 
-			if ( _buf_is_dirty( blk, node->_buf_index ) )
-			{	// 这个buffer有脏数据，需要回写
-				_lock.release();
+	// 		if ( _buf_is_dirty( blk, node->_buf_index ) )
+	// 		{	// 这个buffer有脏数据，需要回写
+	// 			_lock.release();
 
-				dma_finish = false;
+	// 			dma_finish = false;
 
-				auto call_back = [ & ] () -> void
-				{
-					log_trace( "buffer : write disk. LBA : 0x%x", lba );
+	// 			auto call_back = [ & ] () -> void
+	// 			{
+	// 				log_trace( "buffer : write disk. LBA : 0x%x", lba );
 
-					if ( need_sleep_lock )
-						log_panic( "BufferManager : sleep not implement" );
-					else
-						dma_finish = true;
-				};
+	// 				if ( need_sleep_lock )
+	// 					log_panic( "BufferManager : sleep not implement" );
+	// 				else
+	// 					dma_finish = true;
+	// 			};
 
-				_buf_set_disk_own( blk, node->_buf_index );
-				buf_base = ( uint64 ) _buffer_pool[ blk ]._buffer_base[ node->_buf_index ];
-				dev::ahci::k_ahci_ctl.isu_cmd_write_dma(
-					_dev_to_sata_port( dev ), lba, default_buffer_size, 1,
-					set_prd,
-					call_back
-				);
+	// 			_buf_set_disk_own( blk, node->_buf_index );
+	// 			buf_base = ( uint64 ) _buffer_pool[ blk ]._buffer_base[ node->_buf_index ];
+	// 			dev::ahci::k_ahci_ctl.isu_cmd_write_dma(
+	// 				_dev_to_sata_port( dev ), lba, default_buffer_size, 1,
+	// 				set_prd,
+	// 				call_back
+	// 			);
 
-				if ( need_sleep_lock )
-					log_panic( "BufferManager : sleep not implement" );
-				else
-					while ( !dma_finish );
+	// 			if ( need_sleep_lock )
+	// 				log_panic( "BufferManager : sleep not implement" );
+	// 			else
+	// 				while ( !dma_finish );
 
-				_lock.acquire();
-				_buf_reset_dirty( blk, node->_buf_index );
-				_buf_reset_disk_own( blk, node->_buf_index );
-			} // buffer is dirty
+	// 			_lock.acquire();
+	// 			_buf_reset_dirty( blk, node->_buf_index );
+	// 			_buf_reset_disk_own( blk, node->_buf_index );
+	// 		} // buffer is dirty
 
-			_buffer_pool[ blk ]._device[ node->_buf_index ] = dev;
-			_buffer_pool[ blk ]._tag_number[ node->_buf_index ] = tag;
-			_buffer_pool[ blk ]._ref_cnt[ node->_buf_index ] = 1;
-			_buf_reset_valid( blk, node->_buf_index );
+	// 		_buffer_pool[ blk ]._device[ node->_buf_index ] = dev;
+	// 		_buffer_pool[ blk ]._tag_number[ node->_buf_index ] = tag;
+	// 		_buffer_pool[ blk ]._ref_cnt[ node->_buf_index ] = 1;
+	// 		_buf_reset_valid( blk, node->_buf_index );
 
-		} // >> end if ( node == nullptr )
+	// 	} // >> end if ( node == nullptr )
 
-		if ( !_buf_is_valid( blk, node->_buf_index ) )
-		{	// 这个块没有有效的数据，需要从硬盘读入
-			_lock.release();
+	// 	if ( !_buf_is_valid( blk, node->_buf_index ) )
+	// 	{	// 这个块没有有效的数据，需要从硬盘读入
+	// 		_lock.release();
 
-			dma_finish = false;
+	// 		dma_finish = false;
 
-			auto call_back = [ & ] () -> void
-			{
-				log_trace( "buffer : read from disk. LBA : 0x%x", lba );
+	// 		auto call_back = [ & ] () -> void
+	// 		{
+	// 			log_trace( "buffer : read from disk. LBA : 0x%x", lba );
 
-				if ( need_sleep_lock )
-					log_panic( "BufferManager : sleep not implement" );
-				else
-					dma_finish = true;
-			};
+	// 			if ( need_sleep_lock )
+	// 				log_panic( "BufferManager : sleep not implement" );
+	// 			else
+	// 				dma_finish = true;
+	// 		};
 
-			_buf_set_disk_own( blk, node->_buf_index );
-			buf_base = ( uint64 ) _buffer_pool[ blk ]._buffer_base[ node->_buf_index ];
-			dev::ahci::k_ahci_ctl.isu_cmd_read_dma(
-				_dev_to_sata_port( dev ), lba, default_buffer_size, 1,
-				set_prd,
-				call_back
-			);
+	// 		_buf_set_disk_own( blk, node->_buf_index );
+	// 		buf_base = ( uint64 ) _buffer_pool[ blk ]._buffer_base[ node->_buf_index ];
+	// 		dev::ahci::k_ahci_ctl.isu_cmd_read_dma(
+	// 			_dev_to_sata_port( dev ), lba, default_buffer_size, 1,
+	// 			set_prd,
+	// 			call_back
+	// 		);
 
-			if ( need_sleep_lock )
-				log_panic( "BufferManager : sleep not implement" );
-			else
-				while ( !dma_finish );
+	// 		if ( need_sleep_lock )
+	// 			log_panic( "BufferManager : sleep not implement" );
+	// 		else
+	// 			while ( !dma_finish );
 
-			_lock.acquire();
-			_buf_reset_disk_own( blk, node->_buf_index );
-			_buf_set_valid( blk, node->_buf_index );
-		}
+	// 		_lock.acquire();
+	// 		_buf_reset_disk_own( blk, node->_buf_index );
+	// 		_buf_set_valid( blk, node->_buf_index );
+	// 	}
 
-		_lock.release();
-		if ( need_sleep_lock )
-			_buffer_pool[ blk ]._sleep_lock[ node->_buf_index ].acquire();
-		return _buffer_pool[ blk ].get_buffer( node );
+	// 	_lock.release();
+	// 	if ( need_sleep_lock )
+	// 		_buffer_pool[ blk ]._sleep_lock[ node->_buf_index ].acquire();
+	// 	return _buffer_pool[ blk ].get_buffer( node );
+		return Buffer();
 	}
 
 	void BufferManager::_release_buffer( Buffer &buf, bool used_sleep_lock )

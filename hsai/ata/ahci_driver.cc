@@ -122,4 +122,55 @@ namespace hsai
 		return res;
 	}
 
+	void AhciDriver::identify_device()
+	{
+		word * id_data = ( word * ) alloc_pages( 1 );
+		bool cmd_finish;
+		auto call_back = [ & ] () -> int
+		{
+			cmd_finish = true;
+			return 0;
+		};
+		int i = 0;
+		for ( u32 l = 1; l != 0; l <<= 1, i++ )
+		{
+			if ( ( l & _port_bitmap ) == 0 ) continue;
+			cmd_finish = false;
+			_port_drivers[ i ].isu_cmd_identify( ( void* ) id_data, page_size, call_back );
+			while ( cmd_finish == false );
+			_analyze_identify_data( i, id_data );
+		}
+	}
+
+///////////////////////////////// private helper function /////////////////////////////////
+
+	int AhciDriver::_analyze_identify_data( uint port_id, word * id_data )
+	{
+		if ( port_id > ahci_max_port_num )
+		{
+			hsai_error( "AHCI : invalid port id" );
+			return -100;
+		}
+		word w106 = id_data[ 106 ];
+		if ( ( w106 & ( 1U << 14 ) ) == 0
+			|| ( w106 & ( 1U << 15 ) ) != 0 )
+		{
+			hsai_error( "identify AHCI port %d not valid", port_id );
+			return -1;
+		}
+		if ( w106 & ( 1U << 12 ) )	// 逻辑扇区大小超过 256 words
+		{
+			word w117 = id_data[ 117 ], w118 = id_data[ 118 ];
+			ulong logc_size = ( ulong ) ( w117 ) +( ( ulong ) w118 << 16 ) /*words*/;
+			logc_size *= 2;		/*bytes*/
+			_port_drivers[ port_id ]._block_size = logc_size;
+		}
+		else						// 逻辑扇区大小恰为 256 words
+		{
+			_port_drivers[ port_id ]._block_size = 512;
+		}
+		hsai_trace( "AHCI port %d block size is %d <Bytes>", port_id, _port_drivers[ port_id ]._block_size );
+		return 0;
+	}
+
 } // namespace hsai

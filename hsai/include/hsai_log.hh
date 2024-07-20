@@ -66,4 +66,12 @@ namespace hsai
 		(hsai::p_hsai_printf)?(hsai::p_hsai_printf(fmt,##args)):((void)0); \
 	}while(0)
 
-// #define hsai_assert(expr,detail,args...) ((expr)? (void)0 : kernellib::k_printer.assrt( __FILE__, __LINE__, #expr, detail,##args ))
+#ifndef COLOR_PRINT
+#define COLOR_PRINT
+
+#define BLUE_COLOR_PRINT "\033[34m"
+#define CYAN_COLOR_PINRT "\033[36m"
+#define RED_COLOR_PINRT "\033[31m"
+#define CLEAR_COLOR_PRINT "\033[0m"
+
+#endif

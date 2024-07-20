@@ -28,6 +28,14 @@ namespace hsai
 		AhciDriver( const char * lock_name, void * base_addr );
 		virtual DeviceType type() override { return DeviceType::dev_other; }
 		virtual int handle_intr() override;
+
+	public:
+		
+		/// @brief 向设备发送idnetify命令，获取设备元信息
+		void identify_device();
+
+	private:
+		int _analyze_identify_data( uint port_id, word * id_data );
 	};
 
 } // namespace hsai

@@ -96,7 +96,7 @@ namespace pm
 
 		assert( p->_lock.is_held(), "sched: proc lock not held" );
 		assert( cpu->get_num_off() == 1, "sched: proc locks" );
-		assert( p->_state != ProcState::running, "sched: proc is running" );
+		assert( p->_state != ProcState::running, "sched: proc is not running" );
 		assert( cpu->is_interruptible() == false, "sched: interruptible" );
 
 		intena = cpu->get_int_ena();
