@@ -31,8 +31,6 @@ namespace hsai
 	class DeviceManager
 	{
 	private:
-		DeviceTableEntry _block_device_table[ BLK_DEV_TBL_LEN ] = { };
-		DeviceTableEntry _char_device_table[ CHA_DEV_TBL_LEN ] = { };
 		DeviceTableEntry _device_table[ DEV_TBL_LEN ] = {};
 
 		static const char * _device_default_name;
