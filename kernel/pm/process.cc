@@ -13,6 +13,8 @@
 #include "mm/page.hh"
 #include "klib/common.hh"
 #include "pm/sharemem.hh"
+
+#include <process_interface.hh>
 namespace pm
 {
 	Pcb k_proc_pool[ num_process ];
@@ -30,18 +32,15 @@ namespace pm
 		_kstack = mm::VirtualMemoryManager::kstack_vm_from_gid( _gid );
 		for ( auto &of : _ofile )
 			of = nullptr;
+		_context = hsai::get_context_address( _gid );
+		if ( _context == nullptr )
+			log_panic( "process %d : context set fail", _gid );
 	}
 
 	void Pcb::map_kstack( mm::PageTable &pt )
 	{
 		if ( _kstack == 0 )
 			log_panic( "pcb was not init" );
-
-		flag_t pg_flag = loongarch::PteEnum::nx_m
-			| loongarch::PteEnum::presence_m
-			| loongarch::PteEnum::writable_m
-			| ( loongarch::MatEnum::mat_cc << loongarch::PteEnum::mat_s )
-			| loongarch::PteEnum::dirty_m;
 
 		char *pa;
 
@@ -50,7 +49,7 @@ namespace pm
 		if ( pa == 0 )
 			log_panic( "pcb map kstack: no memory" );
 		mm::k_pmm.clear_page( ( void* ) pa );
-		if ( !mm::k_vmm.map_pages( pt, _kstack, mm::pg_size, ( uint64 ) pa, pg_flag ) )
+		if ( !mm::k_vmm.map_data_pages( pt, _kstack, hsai::page_size, ( uint64 ) pa, false ) )
 			log_panic( "kernel vm map failed" );
 
 		// // map the second page
@@ -61,7 +60,7 @@ namespace pm
 		// if ( !mm::k_vmm.map_pages( pt, _kstack + mm::pg_size, mm::pg_size, ( uint64 ) pa, pg_flag ) )
 		// 	log_panic( "kernel vm map failed" );
 
-		printf( "map kstack : %p => %p (gid=%d)\n", _kstack, pt.walk( _kstack, 0 ).pa(), _gid );
+		printf( "map kstack : %p => %p (gid=%d)\n", _kstack, pt.walk( _kstack, 0 ).to_pa(), _gid );
 		// uint64 tmp = *( uint64* ) _kstack;
 		// printf( "read kstack %p : %d", _kstack, tmp );
 	}

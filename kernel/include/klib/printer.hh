@@ -10,7 +10,9 @@
 
 #include <stdarg.h>
 
-#include "smp/lock.hh"
+#include <smp/spin_lock.hh>
+#include <hsai_log.hh>
+
 namespace dev
 {
 	class Console;
@@ -18,6 +20,15 @@ namespace dev
 
 namespace kernellib
 {
+	enum OutputLevel
+	{
+		out_trace,
+		out_info,
+		out_warn,
+		out_error,
+		out_panic,
+	};
+
 	class Printer
 	{
 	private:
@@ -28,7 +39,7 @@ namespace kernellib
 			device,
 		} _type;
 		dev::Console *_console = nullptr;
-		smp::Lock _lock;
+		hsai::SpinLock _lock;
 		int _locking = 1;
 		int _panicked = 0;
 		static int _trace_flag;
@@ -51,7 +62,17 @@ namespace kernellib
 		static void info( const char *f, uint l, const char *info, ... );
 		static void trace( const char *f, uint l, const char *info, ... );
 		static void assrt( const char *f, uint l, const char *expr, const char *detail, ... );
+		static void assrt_va( const char *f, uint l, const char *expr, const char *detail, va_list ap );
+
+		static void log_out( OutputLevel level, const char * f, uint l, const char * info, ... );
+		static void log_out_va( OutputLevel level, const char * f, uint l, const char * info, va_list ap );
+		static void log_output_info( const char * f, uint l, const char * info, va_list ap );
 	};
 
 	extern Printer k_printer;
+
+	void level_log_out( hsai::HsaiLogLevel level, const char * fn, uint ln, const char * info, ... );
+	void assert_log_out( const char *f, uint l, const char *expr, const char *detail, ... );
+	void printf_log_out( const char *fmt, ... );
+
 } // namespace kernellib

@@ -4,13 +4,13 @@
 
 -------------------------------------------------------------
 
-# xv6-qemu-Loongarch-ls2k 
+# XN6 - Xn6 is Not XV6
 
 ## [** <!重要!> 自2024年4月25日起本仓库迁移至gitlab进行开发 **](https://gitlab.eduxiji.net/T202410486992576/OSKernel2024-2k1000la-xv6.git)
 
-俺争取不掉队设计的基于qemu-ls2k的os是基于xv6-ls3A5000修改而来的。
+俺争取不掉队设计的 XV6 OS 是基于 xv6-ls3A5000 修改而来的。
 
-### 搭建开发环境
+### 搭建开发环境 (Ubuntu+VSCode+GCC+QEMU+GDB)
 
 `声明：本文档只适合在x86-64架构主机上搭建开发环境`
 
@@ -33,18 +33,20 @@
 
 ### 文档 
 
-#### 1. [=> Makefile工程](./doc/project.md)
+#### 1. [=> 工程架构](./doc/project.md)
 
-#### 2. [=> 关于HAL与CSR](./doc/hal.md)
+#### 2. [=> 硬件接口设计](./doc/hsai.md)
 
-#### 3. [=> ls2k的IO方式](./doc/ls2k_io.md)
+#### 3. [=> HSAI 参考](./doc/hsai_reference.md)
 
-#### 4. [=> qemu-ls2k + gdb 调试方式](./doc/qemu_debug.md)
+#### 4. [=> ls2k的IO方式](./doc/ls2k_io.md)
 
-#### 5. [=> 文件系统](./doc/fs.md)
+#### 5. [=> qemu-ls2k + gdb 调试方式](./doc/qemu_debug.md)
 
-#### 6. [=> 动态内存](./doc/dyn_mem.md)
+#### 6. [=> 文件系统](./doc/fs.md)
 
-#### 7. [=> 空间地址划分](./doc/memlayout.md)
+#### 7. [=> 动态内存](./doc/dyn_mem.md)
 
-#### 8. [=> uboot启动与调试](./doc/how_to_uboot.md)
+#### 8. [=> 空间地址划分](./doc/memlayout.md)
+
+#### 9. [=> uboot启动与调试](./doc/how_to_uboot.md)

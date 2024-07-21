@@ -6,12 +6,8 @@
 // --------------------------------------------------------------
 //
 
-#include "hal/cpu.hh"
-#include "hal/qemu_ls2k.hh"
-
 #include "pm/process_manager.hh"
 #include "pm/process.hh"
-#include "pm/trap_frame.hh"
 #include "pm/scheduler.hh"
 #include "pm/ipc/pipe.hh"
 
@@ -21,9 +17,6 @@
 #include "mm/memlayout.hh"
 
 #include "tm/timer_manager.hh"
-
-#include "im/trap_wrapper.hh"
-#include "im/exception_manager.hh"
 
 #include "fs/elf.hh"
 //#include "fs/fat/fat32_dir_entry.hh"
@@ -40,6 +33,11 @@
 #include <EASTL/string.h>
 #include <EASTL/map.h>
 #include <EASTL/hash_map.h>
+
+#include <hsai_global.hh>
+#include <process_interface.hh>
+#include <virtual_cpu.hh>
+#include <mem/virtual_memory.hh>
 
 #include "klib/common.hh"
 
@@ -81,10 +79,8 @@ namespace pm
 
 	Pcb *ProcessManager::get_cur_pcb()
 	{
-		loongarch::Cpu::push_intr_off();
-		loongarch::Cpu *c_cpu = loongarch::Cpu::get_cpu();
-		pm::Pcb *pcb = c_cpu->get_cur_proc();
-		loongarch::Cpu::pop_intr_off();
+		hsai::VirtualCpu * cpu = hsai::get_cpu();
+		pm::Pcb *pcb = cpu->get_cur_proc();
 		return pcb;
 	}
 
@@ -110,7 +106,7 @@ namespace pm
 				p->_slot = default_proc_slot;
 				p->_priority = default_proc_prio;
 
-				//p->_shm = mm::vml::vm_trap_frame - 64 * 2 * mm::PageEnum::pg_size;
+				//p->_shm = mm::vml::vm_trap_frame - 64 * 2 * hsai::page_size;
 				//p->_shmkeymask = 0;
 				//pm::k_pm.set_vma( p );
 
@@ -131,11 +127,11 @@ namespace pm
 
 				p->_mqmask = 0;
 
-				memset( &p->_context, 0, sizeof( p->_context ) );
+				memset( p->_context, 0, hsai::context_size );
 
-				p->_context.ra = ( uint64 ) _wrp_fork_ret;
+				hsai::set_context_entry( p->_context, ( void* ) _wrp_fork_ret );
 
-				p->_context.sp = p->_kstack + mm::pg_size;
+				hsai::set_context_sp( p->_context, p->_kstack + hsai::page_size );
 
 				p->_lock.release();
 
@@ -156,30 +152,30 @@ namespace pm
 	{
 		k_pm._pid_lock.acquire();
 		p->_lock.acquire();
-		p->_shm = mm::vml::vm_trap_frame - 64 * 2 * mm::PageEnum::pg_size;
+		p->_shm = mm::vml::vm_trap_frame - 64 * 2 * hsai::page_size;
 		p->_shmkeymask = 0;
 		p->_lock.release();
 		k_pm._pid_lock.release();
 	}
 
-	void ProcessManager::set_vma( Pcb * p )
-	{
-		for ( int i = 1; i < 10; i++ )
-		{
-			p->vm[ i ]->next = -1;
-			p->vm[ i ]->length = 0;
-		}
-		p->vm[ 0 ]->next = 1;
-	}
+	// void ProcessManager::set_vma( Pcb * p )
+	// {
+	// 	for ( int i = 1; i < 10; i++ )
+	// 	{
+	// 		p->vm[ i ]->next = -1;
+	// 		p->vm[ i ]->length = 0;
+	// 	}
+	// 	p->vm[ 0 ]->next = 1;
+	// }
 
 	void ProcessManager::freeproc( Pcb * p )
 	{
 		if ( p->_trapframe )
-			mm::k_pmm.free_page( ( void * ) p->_trapframe );
+			mm::k_pmm.free_pages( ( void * ) p->_trapframe );
 		p->_trapframe = 0;
 		if ( !p->_pt.is_null() )
 		{
-			// mm::k_vmm.vmunmap( p->_pt, mm::PageEnum::pg_size, 1, 0 );
+			// mm::k_vmm.vmunmap( p->_pt, hsai::page_size, 1, 0 );
 			mm::k_vmm.vmfree( p->_pt, p->_sz );
 		}
 		p->_pt.set_base( 0 );
@@ -232,48 +228,30 @@ namespace pm
 		//p->_sz = 0;
 
 		// map user init stack
-		mm::k_vmm.map_pages(
+		mm::k_vmm.map_data_pages(
 			p->_pt,
 			0,
 			( uint64 ) &_u_init_stke - ( uint64 ) &_u_init_stks,
 			( uint64 ) &_u_init_stks,
-			loongarch::PteEnum::presence_m |
-			loongarch::PteEnum::writable_m |
-			loongarch::PteEnum::dirty_m |
-			( 0x3 << loongarch::PteEnum::plv_s ) |
-			( loongarch::mat_cc << loongarch::PteEnum::mat_s )
+			true
 		);
 
-		// map user init function
-		mm::k_vmm.map_pages(
+		mm::k_vmm.map_code_pages(
 			p->_pt,
 			( uint64 ) &_u_init_txts - ( uint64 ) &_start_u_init,
 			( uint64 ) &_u_init_txte - ( uint64 ) &_u_init_txts,
 			( uint64 ) &_u_init_txts,
-			loongarch::PteEnum::presence_m |
-			loongarch::PteEnum::writable_m |
-			( 0x3 << loongarch::PteEnum::plv_s ) |
-			( loongarch::mat_cc << loongarch::PteEnum::mat_s )
+			true
 		);
 
 		// map user init data
-		mm::k_vmm.map_pages(
+		mm::k_vmm.map_data_pages(
 			p->_pt,
 			( uint64 ) &_u_init_dats - ( uint64 ) &_start_u_init,
 			( uint64 ) &_u_init_date - ( uint64 ) &_u_init_dats,
 			( uint64 ) &_u_init_dats,
-			loongarch::PteEnum::presence_m |
-			loongarch::PteEnum::writable_m |
-			loongarch::PteEnum::dirty_m |
-			( 0x3 << loongarch::PteEnum::plv_s ) |
-			( loongarch::mat_cc << loongarch::PteEnum::mat_s )
+			true
 		);
-
-
-		p->_trapframe->era = ( uint64 ) &init_main - ( uint64 ) &_start_u_init;
-		log_info( "user init: era = %p", p->_trapframe->era );
-		p->_trapframe->sp = ( uint64 ) &_u_init_stke - ( uint64 ) &_start_u_init;
-		log_info( "user init: sp  = %p", p->_trapframe->sp );
 
 		fs::xv6_file *f = fs::k_file_table.alloc_file();
 		assert( f != nullptr, "pm: alloc file fail while user init." );
@@ -300,7 +278,8 @@ namespace pm
 
 		inited = 1;
 
-		loongarch::Cpu::get_cpu()->set_cur_proc( p );
+		hsai::VirtualCpu * cpu = hsai::get_cpu();
+		cpu->set_cur_proc( p );
 
 	}
 
@@ -334,10 +313,10 @@ namespace pm
 		np->_lock.acquire();
 
 		// Copy user memory from parent to child.
-		mm::PageTable curpt, newpt;
+		mm::PageTable *curpt, *newpt;
 		curpt = p->get_pagetable();
 		newpt = np->get_pagetable();
-		if ( mm::k_vmm.vm_copy( curpt, newpt, p->_sz ) < 0 )
+		if ( mm::k_vmm.vm_copy( *curpt, *newpt, p->_sz ) < 0 )
 		{
 			freeproc( np );
 			np->_lock.release();
@@ -359,13 +338,13 @@ namespace pm
 		// }
 
 		// copy saved user registers.
-		*( np->get_trapframe() ) = *( p->get_trapframe() );
+		hsai::copy_trap_frame( p->get_trapframe(), np->get_trapframe() );
 
 		// Cause fork to return 0 in the child.
-		np->get_trapframe()->a0 = 0;
+		hsai::set_trap_frame_return_value( np->get_trapframe(), 0 );
 
 		if ( usp != 0 )
-			np->get_trapframe()->sp = usp;
+			hsai::set_trap_frame_user_sp( np->get_trapframe(), usp );
 
 		/// TODO: >> Message Queue Copy
 		// addmqcount( p->mqmask );
@@ -406,9 +385,10 @@ namespace pm
 	void ProcessManager::fork_ret()
 	{
 		// Still holding p->lock from scheduler.
-		loongarch::Cpu::get_cpu()->get_cur_proc()->_lock.release();
+		pm::Pcb * proc = get_cur_pcb();
+		proc->_lock.release();
 
-		im::k_em.user_trap_ret();
+		hsai::user_trap_return();
 	}
 
 
@@ -421,14 +401,14 @@ namespace pm
 			return pt;
 		pt.set_base( pa );
 
-		// if(!mm::k_vmm.map_pages(pt, mm::vm_trap_frame, mm::PageEnum::pg_size, (uint64)p->_trapframe,
+		// if(!mm::k_vmm.map_pages(pt, mm::vm_trap_frame, hsai::page_size, (uint64)p->_trapframe,
 		// 	( loongarch::PteEnum::presence_m ) |
 		// 	( loongarch::PteEnum::writable_m ) |
 		// 	( loongarch::PteEnum::plv_m ) |
 		// 	( loongarch::PteEnum::mat_m ) |
 		// 	( loongarch::PteEnum::dirty_m )))
 		// {
-		// 	mm::k_vmm.vmfree(pt, mm::PageEnum::pg_size);
+		// 	mm::k_vmm.vmfree(pt, hsai::page_size);
 		// 	return pt;
 		// }
 		return pt;
@@ -436,7 +416,7 @@ namespace pm
 
 	void ProcessManager::proc_freepagetable( mm::PageTable pt, uint64 sz )
 	{
-		mm::k_vmm.vmunmap( pt, mm::PageEnum::pg_size, 1, 0 );
+		mm::k_vmm.vmunmap( pt, hsai::page_size, 1, 0 );
 		mm::k_vmm.vmfree( pt, sz );
 	}
 
@@ -515,7 +495,7 @@ namespace pm
 				return -1;
 			}
 			sz = sz1;
-			if ( ( ph.vaddr % mm::pg_size ) != 0 )
+			if ( ( ph.vaddr % hsai::page_size ) != 0 )
 			{
 				log_error( "exec: vaddr not aligned" );
 				proc_freepagetable( proc->_pt, sz );
@@ -532,12 +512,12 @@ namespace pm
 
 		proc = k_pm.get_cur_pcb();
 
-		sz = mm::page_round_up( sz );
+		sz = hsai::page_round_up( sz );
 
 		//allocate two pages , the second is used for the user stack
 		uint64 sz1;
 
-		if ( ( sz1 = mm::k_vmm.uvmalloc( proc->_pt, sz, sz + 2 * mm::PageEnum::pg_size ) ) == 0 )
+		if ( ( sz1 = mm::k_vmm.uvmalloc( proc->_pt, sz, sz + 2 * hsai::page_size ) ) == 0 )
 		{
 			log_error( "exec: vmalloc when allocating stack" );
 			proc_freepagetable( proc->_pt, sz );
@@ -545,9 +525,9 @@ namespace pm
 		}
 
 		sz = sz1;
-		mm::k_vmm.uvmclear( proc->_pt, sz - 2 * mm::PageEnum::pg_size );
+		mm::k_vmm.uvmclear( proc->_pt, sz - 2 * hsai::page_size );
 		sp = sz;
-		stackbase = sp - mm::PageEnum::pg_size;
+		stackbase = sp - hsai::page_size;
 
 		//push argument strings, prepare rest of stack in ustack.
 		for ( argc = 0; argc < argv.size(); argc++ )
@@ -598,7 +578,7 @@ namespace pm
 		// arguments to user main(argc, argv)
 		// argc is returned via the system call return
 		// value, which is in a0.
-		proc->_trapframe->a1 = sp;
+		hsai::set_trap_frame_arg( proc->_trapframe, 1, sp );
 
 		// save program name for debugging.
 		for ( uint i = 0; i < 16; i++ )
@@ -619,8 +599,8 @@ namespace pm
 // commit to the user image.
 		proc->_sz = sz;
 		proc->_hp = sz;
-		proc->_trapframe->era = elf.entry;
-		proc->_trapframe->sp = sp;
+		hsai::set_trap_frame_return_value( proc->_trapframe, elf.entry );
+		hsai::set_trap_frame_user_sp( proc->_trapframe, sp );
 		proc->_state = ProcState::runnable;
 		return argc;
 	}
@@ -630,16 +610,16 @@ namespace pm
 		uint i, n;
 		uint64 pa;
 
-		for ( i = 0; i < size; i += mm::PageEnum::pg_size )
+		for ( i = 0; i < size; i += hsai::page_size )
 		{
-			pa = ( uint64 ) pt.walk( va + i, 0 ).pa();
+			pa = ( uint64 ) pt.walk( va + i, 0 ).to_pa();
 			if ( pa == 0 )
 				log_panic( "load_seg: walk" );
-			if ( size - i < mm::PageEnum::pg_size )
+			if ( size - i < hsai::page_size )
 				n = size - i;
 			else
-				n = mm::PageEnum::pg_size;
-			de->getNode()->nodeRead( reinterpret_cast<uint64>( ( void * ) ( pa | loongarch::qemuls2k::dmwin::win_0 ) ), offset + i, n );
+				n = hsai::page_size;
+			de->getNode()->nodeRead(  hsai::k_mem->to_vir( pa ), offset + i, n );
 		}
 		return 0;
 	}
@@ -711,11 +691,9 @@ namespace pm
 		}
 	}
 
-	void ProcessManager::exit( int state )
+	void ProcessManager::exit_proc( Pcb * p, int state )
 	{
-
-		Pcb *p = get_cur_pcb();
-		log_info( "exit proc %d", p->_pid );
+		// log_info( "exit proc %d", p->_pid );
 
 		/// @todo close opened file, set proc's pwd
 
@@ -734,7 +712,13 @@ namespace pm
 
 		k_scheduler.call_sched(); // jump to schedular, never return
 		log_panic( "zombie exit" );
+	}
 
+	void ProcessManager::exit( int state )
+	{
+		Pcb *p = get_cur_pcb();
+
+		exit_proc( p, state );
 	}
 
 	void ProcessManager::wakeup( void *chan )
@@ -754,7 +738,7 @@ namespace pm
 		}
 	}
 
-	void ProcessManager::sleep( void *chan, smp::Lock *lock )
+	void ProcessManager::sleep( void *chan, hsai::SpinLock *lock )
 	{
 		Pcb *proc = k_pm.get_cur_pcb();
 
@@ -773,9 +757,9 @@ namespace pm
 	}
 
 	int ProcessManager::brk( int n )
-	{	
+	{
 		//这里是一个假的brk，维护了一个假的堆指针 _hp
-		
+
 		// if ( n < 0 )
 		// 	return -1;
 
@@ -797,7 +781,7 @@ namespace pm
 		mm::PageTable pt = p->_pt;
 		uint64 differ = newhp - oldhp;
 
-		if( n == 0 )		// get current heap size
+		if ( n == 0 )		// get current heap size
 			return p->_hp;
 
 		if ( differ < 0 && newhp >= sz )   //shrink
@@ -809,7 +793,7 @@ namespace pm
 		}
 		else if ( differ > 0 )
 		{
-			if ( newhp > ( static_cast< uint64 >( mm::vml::vm_end ) - static_cast< uint64 >( mm::PageEnum::pg_size ) ) )
+			if ( newhp > ( static_cast< uint64 >( mm::vml::vm_end ) - static_cast< uint64 >( hsai::page_size ) ) )
 				return -1;
 
 			if ( mm::k_vmm.vmalloc( pt, oldhp, newhp ) == 0 )
@@ -818,7 +802,7 @@ namespace pm
 
 		log_info( "brk: newsize%d, oldsize%d", newhp, oldhp );
 		p->_hp = newhp;
-		return newhp ; // 返回堆的大小
+		return newhp; // 返回堆的大小
 	}
 
 	int ProcessManager::open( int dir_fd, eastl::string path, uint flags )
@@ -844,7 +828,7 @@ namespace pm
 		if ( f == nullptr )
 			return -2;
 
-		if( fs::k_file_table.has_unlinked( path ) )
+		if ( fs::k_file_table.has_unlinked( path ) )
 			return -5;  //
  		
 		fs::dentry *dentry;
@@ -968,24 +952,26 @@ namespace pm
 		return fst;
 	}
 
-	int ProcessManager::unlink(int fd, eastl::string path, int flags )
+	int ProcessManager::unlink( int fd, eastl::string path, int flags )
 	{
-		
-		if( fd == -100 ){  //atcwd
-			if( path == "")  //empty path
+
+		if ( fd == -100 )
+		{  //atcwd
+			if ( path == "" )  //empty path
 				return -1;
 
-			if( path[0] == '.' && path[1] == '/' )
-				path = path.substr(2);
-			
-			return fs::k_file_table.unlink(path);
+			if ( path[ 0 ] == '.' && path[ 1 ] == '/' )
+				path = path.substr( 2 );
+
+			return fs::k_file_table.unlink( path );
 		}
-		else{
+		else
+		{
 			return -1; //current not support other dir, only for cwd
 		}
 	}
 
-	int ProcessManager::pipe( int *fd, int flags)
+	int ProcessManager::pipe( int *fd, int flags )
 	{
 		fs::xv6_file *rf, *wf;
 		rf = nullptr;
@@ -998,19 +984,19 @@ namespace pm
 		if ( pipe_->alloc( rf, wf ) < 0 )
 			return -1;
 		fd0 = -1;
-		if ( ( ( fd0 = alloc_fd ( p, rf ) ) < 0) 
-				|| ( fd1 = alloc_fd ( p, wf ) ) < 0 )
+		if ( ( ( fd0 = alloc_fd( p, rf ) ) < 0 )
+			|| ( fd1 = alloc_fd( p, wf ) ) < 0 )
 		{
-			if( fd0 >= 0)
-				p->_ofile[fd0] = 0;
-			fs::k_file_table.free_file(rf);
-			fs::k_file_table.free_file(wf);
+			if ( fd0 >= 0 )
+				p->_ofile[ fd0 ] = 0;
+			fs::k_file_table.free_file( rf );
+			fs::k_file_table.free_file( wf );
 			return -1;
 		}
-		p->_ofile[fd0] = rf;
-		p->_ofile[fd1] = wf;
-		fd[0] = fd0;
-		fd[1] = fd1;
+		p->_ofile[ fd0 ] = rf;
+		p->_ofile[ fd1 ] = wf;
+		fd[ 0 ] = fd0;
+		fd[ 1 ] = fd1;
 		return 0;
 	}
 
@@ -1069,17 +1055,7 @@ namespace pm
 			return;
 		}
 
-		if ( mm::k_vmm.map_pages(
-			pt,
-			mm::vml::vm_trap_frame,
-			mm::pg_size,
-			( uint64 ) ( p->_trapframe ),
-			loongarch::PteEnum::nx_m |
-			loongarch::PteEnum::presence_m |
-			loongarch::PteEnum::writable_m |
-			loongarch::PteEnum::dirty_m |
-			( loongarch::mat_cc << loongarch::PteEnum::mat_s )
-		) == false )
+		if ( !mm::k_vmm.map_data_pages( pt, mm::vml::vm_trap_frame, hsai::page_size, ( uint64 ) ( p->_trapframe ), true ) )
 		{
 			mm::k_vmm.vmfree( pt, 0 );
 			log_panic( "proc create vm but no mem." );
@@ -1095,8 +1071,8 @@ namespace pm
 		// }
 		// if ( mm::k_vmm.map_pages(
 		// 	pt,
-		// 	( uint64 ) mm::vml::vm_trap_frame - mm::pg_size,
-		// 	mm::pg_size,
+		// 	( uint64 ) mm::vml::vm_trap_frame - hsai::page_size,
+		// 	hsai::page_size,
 		// 	pa,
 		// 	loongarch::PteEnum::nx_m |
 		// 	loongarch::PteEnum::presence_m |

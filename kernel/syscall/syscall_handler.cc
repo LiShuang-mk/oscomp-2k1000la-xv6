@@ -14,13 +14,15 @@
 #include "fs/kstat.hh"
 #include "fs/path.hh"
 #include "pm/process.hh"
-#include "pm/trap_frame.hh"
+// #include "pm/trap_frame.hh"
 #include "pm/process_manager.hh"
 #include "pm/scheduler.hh"
 #include "mm/virtual_memory_manager.hh"
 #include "mm/physical_memory_manager.hh"
 #include "tm/timer_manager.hh"
 #include "klib/klib.hh"
+
+#include <process_interface.hh>
 
 
 namespace syscall
@@ -83,20 +85,20 @@ namespace syscall
 
 	int SyscallHandler::_fetch_addr( uint64 addr, uint64 &out_data )
 	{
-		pm::Pcb *p = loongarch::Cpu::get_cpu()->get_cur_proc();
+		pm::Pcb *p = ( pm::Pcb * ) hsai::get_cur_proc();
 		if ( addr >= p->get_size() || addr + sizeof( uint64 ) > p->get_size() )
 			return -1;
-		mm::PageTable pt = p->get_pagetable();
-		if ( mm::k_vmm.copy_in( pt, &out_data, addr, sizeof( out_data ) ) < 0 )
+		mm::PageTable *pt = p->get_pagetable();
+		if ( mm::k_vmm.copy_in( *pt, &out_data, addr, sizeof( out_data ) ) < 0 )
 			return -1;
 		return 0;
 	}
 
 	int SyscallHandler::_fetch_str( uint64 addr, void *buf, uint64 max )
 	{
-		pm::Pcb *p = loongarch::Cpu::get_cpu()->get_cur_proc();
-		mm::PageTable pt = p->get_pagetable();
-		int err = mm::k_vmm.copy_str_in( pt, buf, addr, max );
+		pm::Pcb *p = ( pm::Pcb * ) hsai::get_cur_proc();
+		mm::PageTable *pt = p->get_pagetable();
+		int err = mm::k_vmm.copy_str_in( *pt, buf, addr, max );
 		if ( err < 0 )
 			return err;
 		return strlen( ( const char * ) buf );
@@ -104,9 +106,9 @@ namespace syscall
 
 	int SyscallHandler::_fetch_str( uint64 addr, eastl::string &str, uint64 max )
 	{
-		pm::Pcb *p = loongarch::Cpu::get_cpu()->get_cur_proc();
-		mm::PageTable pt = p->get_pagetable();
-		int err = mm::k_vmm.copy_str_in( pt, str, addr, max );
+		pm::Pcb *p = ( pm::Pcb * ) hsai::get_cur_proc();
+		mm::PageTable *pt = p->get_pagetable();
+		int err = mm::k_vmm.copy_str_in( *pt, str, addr, max );
 		if ( err < 0 )
 			return err;
 		return str.size();
@@ -114,24 +116,7 @@ namespace syscall
 
 	uint64 SyscallHandler::_arg_raw( int arg_n )
 	{
-		pm::Pcb *p = loongarch::Cpu::get_cpu()->get_cur_proc();
-		switch ( arg_n )
-		{
-			case 0:
-				return p->get_trapframe()->a0;
-			case 1:
-				return p->get_trapframe()->a1;
-			case 2:
-				return p->get_trapframe()->a2;
-			case 3:
-				return p->get_trapframe()->a3;
-			case 4:
-				return p->get_trapframe()->a4;
-			case 5:
-				return p->get_trapframe()->a5;
-		}
-		log_panic( "arg raw" );
-		return -1;
+		return hsai::get_arg_from_trap_frame( hsai::get_trap_frame_from_proc( hsai::get_cur_proc() ), ( uint ) arg_n );
 	}
 
 	int SyscallHandler::_arg_fd( int arg_n, int *out_fd, fs::xv6_file **out_f )
@@ -141,7 +126,7 @@ namespace syscall
 
 		if ( _arg_int( arg_n, fd ) < 0 )
 			return -1;
-		pm::Pcb *p = loongarch::Cpu::get_cpu()->get_cur_proc();
+		pm::Pcb *p = ( pm::Pcb * ) hsai::get_cur_proc();
 		f = p->get_open_file( fd );
 		if ( f == nullptr )
 			return -1;
@@ -190,13 +175,13 @@ namespace syscall
 			return -5;
 
 		pm::Pcb * p = pm::k_pm.get_cur_pcb();
-		mm::PageTable pt = p->get_pagetable();
+		mm::PageTable *pt = p->get_pagetable();
 
 		char * k_buf = new char[ n + 1 ];
 		int ret = f->read( ( uint64 ) k_buf, n );
 		if ( ret < 0 )
 			return -6;
-		if ( mm::k_vmm.copyout( pt, buf, k_buf, ret ) < 0 )
+		if ( mm::k_vmm.copyout( *pt, buf, k_buf, ret ) < 0 )
 			return -7;
 
 		delete[] k_buf;
@@ -245,7 +230,7 @@ namespace syscall
 		uint64 uargv, uarg;
 
 		_path.clear();
-		if ( _arg_str( 0, _path, mm::pg_size ) < 0 || _arg_addr( 1, uargv ) < 0 )
+		if ( _arg_str( 0, _path, hsai::page_size ) < 0 || _arg_addr( 1, uargv ) < 0 )
 		{
 			return -1;
 		}
@@ -270,7 +255,7 @@ namespace syscall
 				break;
 			}
 			_argv.emplace_back( eastl::string() );
-			if ( _fetch_str( uarg, _argv[ i ], mm::pg_size ) < 0 )
+			if ( _fetch_str( uarg, _argv[ i ], hsai::page_size ) < 0 )
 			{
 				is_bad = true;
 				break;
@@ -353,9 +338,9 @@ namespace syscall
 			return -1;
 
 		pm::Pcb * p = pm::k_pm.get_cur_pcb();
-		mm::PageTable pt = p->get_pagetable();
+		mm::PageTable *pt = p->get_pagetable();
 		uint len = pm::k_pm.getcwd( cwd );
-		if ( mm::k_vmm.copyout( pt, buf, ( const void * ) cwd, len ) < 0 )
+		if ( mm::k_vmm.copyout( *pt, buf, ( const void * ) cwd, len ) < 0 )
 			return -1;
 
 		return buf;
@@ -372,8 +357,8 @@ namespace syscall
 		tv = tmm::k_tm.get_time_val();
 
 		pm::Pcb * p = pm::k_pm.get_cur_pcb();
-		mm::PageTable pt = p->get_pagetable();
-		if ( mm::k_vmm.copyout( pt, tv_addr, ( const void * ) &tv, sizeof( tv ) ) < 0 )
+		mm::PageTable *pt = p->get_pagetable();
+		if ( mm::k_vmm.copyout( *pt, tv_addr, ( const void * ) &tv, sizeof( tv ) ) < 0 )
 			return -1;
 
 		return 0;
@@ -394,8 +379,8 @@ namespace syscall
 			return -1;
 
 		pm::Pcb * p = pm::k_pm.get_cur_pcb();
-		mm::PageTable pt = p->get_pagetable();
-		if ( mm::k_vmm.copy_in( pt, &tv, tv_addr, sizeof( tv ) ) < 0 )
+		mm::PageTable *pt = p->get_pagetable();
+		if ( mm::k_vmm.copy_in( *pt, &tv, tv_addr, sizeof( tv ) ) < 0 )
 			return -1;
 
 		return tmm::k_tm.sleep_from_tv( tv );
@@ -412,8 +397,8 @@ namespace syscall
 		pm::k_pm.get_cur_proc_tms( &tms_val );
 
 		pm::Pcb * p = pm::k_pm.get_cur_pcb();
-		mm::PageTable pt = p->get_pagetable();
-		if ( mm::k_vmm.copyout( pt, tms_addr, &tms_val, sizeof( tms_val ) ) < 0 )
+		mm::PageTable *pt = p->get_pagetable();
+		if ( mm::k_vmm.copyout( *pt, tms_addr, &tms_val, sizeof( tms_val ) ) < 0 )
 			return -1;
 
 		return tmm::k_tm.get_ticks();
@@ -450,19 +435,19 @@ namespace syscall
 
 
 		pm::Pcb * p = pm::k_pm.get_cur_pcb();
-		mm::PageTable pt = p->get_pagetable();
+		mm::PageTable *pt = p->get_pagetable();
 
-		if ( mm::k_vmm.copyout( pt, sysa, _SYSINFO_sysname, sizeof( _SYSINFO_sysname ) ) < 0 )
+		if ( mm::k_vmm.copyout( *pt, sysa, _SYSINFO_sysname, sizeof( _SYSINFO_sysname ) ) < 0 )
 			return -1;
-		if ( mm::k_vmm.copyout( pt, noda, _SYSINFO_nodename, sizeof( _SYSINFO_nodename ) ) < 0 )
+		if ( mm::k_vmm.copyout( *pt, noda, _SYSINFO_nodename, sizeof( _SYSINFO_nodename ) ) < 0 )
 			return -1;
-		if ( mm::k_vmm.copyout( pt, rlsa, _SYSINFO_release, sizeof( _SYSINFO_release ) ) < 0 )
+		if ( mm::k_vmm.copyout( *pt, rlsa, _SYSINFO_release, sizeof( _SYSINFO_release ) ) < 0 )
 			return -1;
-		if ( mm::k_vmm.copyout( pt, vsna, _SYSINFO_version, sizeof( _SYSINFO_version ) ) < 0 )
+		if ( mm::k_vmm.copyout( *pt, vsna, _SYSINFO_version, sizeof( _SYSINFO_version ) ) < 0 )
 			return -1;
-		if ( mm::k_vmm.copyout( pt, mcha, _SYSINFO_machine, sizeof( _SYSINFO_machine ) ) < 0 )
+		if ( mm::k_vmm.copyout( *pt, mcha, _SYSINFO_machine, sizeof( _SYSINFO_machine ) ) < 0 )
 			return -1;
-		if ( mm::k_vmm.copyout( pt, dmna, _SYSINFO_domainname, sizeof( _SYSINFO_domainname ) ) < 0 )
+		if ( mm::k_vmm.copyout( *pt, dmna, _SYSINFO_domainname, sizeof( _SYSINFO_domainname ) ) < 0 )
 			return -1;
 
 		return 0;
@@ -482,9 +467,9 @@ namespace syscall
 			return -1;
 
 		pm::Pcb * p = pm::k_pm.get_cur_pcb();
-		mm::PageTable pt = p->get_pagetable();
+		mm::PageTable *pt = p->get_pagetable();
 		eastl::string path;
-		if ( mm::k_vmm.copy_str_in( pt, path, path_addr, 100 ) < 0 )
+		if ( mm::k_vmm.copy_str_in( *pt, path, path_addr, 100 ) < 0 )
 			return -1;
 
 		int res = pm::k_pm.open( dir_fd, path, flags );
@@ -513,8 +498,8 @@ namespace syscall
 			return -1;
 
 		pm::k_pm.fstat( fd, &kst );
-		mm::PageTable pt = pm::k_pm.get_cur_pcb()->get_pagetable();
-		if ( mm::k_vmm.copyout( pt, kst_addr, &kst, sizeof( kst ) ) < 0 )
+		mm::PageTable *pt = pm::k_pm.get_cur_pcb()->get_pagetable();
+		if ( mm::k_vmm.copyout( *pt, kst_addr, &kst, sizeof( kst ) ) < 0 )
 			return -1;
 
 		return 0;
@@ -555,8 +540,8 @@ namespace syscall
 		for ( uint i = 0; i < name.size(); ++i )
 			dirent.d_name[ i ] = name[ i ];
 
-		mm::PageTable pt = pm::k_pm.get_cur_pcb()->get_pagetable();
-		if ( mm::k_vmm.copyout( pt, buf_addr, &dirent, sizeof( dirent ) ) < 0 )
+		mm::PageTable *pt = pm::k_pm.get_cur_pcb()->get_pagetable();
+		if ( mm::k_vmm.copyout( *pt, buf_addr, &dirent, sizeof( dirent ) ) < 0 )
 			return -1;
 
 		return sizeof( dirent );
@@ -571,7 +556,7 @@ namespace syscall
 	{
 		eastl::string path;
 
-		if ( _arg_str( 0, path, mm::pg_size ) < 0 )
+		if ( _arg_str( 0, path, hsai::page_size ) < 0 )
 			return -1;
 
 		return pm::k_pm.chdir( path );
@@ -588,7 +573,7 @@ namespace syscall
 		int flags;
 		uint64 data;
 		pm::Pcb *p = pm::k_pm.get_cur_pcb();
-		mm::PageTable pt = p->get_pagetable();
+		mm::PageTable *pt = p->get_pagetable();
 
 		if ( _arg_addr( 0, dev_addr ) < 0 )
 			return -1;
@@ -596,19 +581,19 @@ namespace syscall
 			return -1;
 		if ( _arg_addr( 2, fstype_addr ) < 0 )
 			return -1;
-		
-		if( mm::k_vmm.copy_str_in( pt, dev, dev_addr, 100 ) < 0 )
+
+		if ( mm::k_vmm.copy_str_in( *pt, dev, dev_addr, 100 ) < 0 )
 			return -1;
-		if( mm::k_vmm.copy_str_in( pt, mnt, mnt_addr, 100 ) < 0 )
+		if ( mm::k_vmm.copy_str_in( *pt, mnt, mnt_addr, 100 ) < 0 )
 			return -1;
-		if( mm::k_vmm.copy_str_in( pt, fstype, fstype_addr, 100 ) < 0 )
+		if ( mm::k_vmm.copy_str_in( *pt, fstype, fstype_addr, 100 ) < 0 )
 			return -1;
 
 		if ( _arg_int( 3, flags ) < 0 )
 			return -1;
 		if ( _arg_addr( 4, data ) < 0 )
 			return -1;
-		
+
 		//return pm::k_pm.mount( dev, mnt, fstype, flags, data );
 		fs::Path devpath( dev );
 		fs::Path mntpath( mnt );
@@ -623,16 +608,16 @@ namespace syscall
 		int flags;
 
 		pm::Pcb * cur = pm::k_pm.get_cur_pcb();
-		mm::PageTable pt = cur->get_pagetable();
+		mm::PageTable *pt = cur->get_pagetable();
 
-		if( _arg_addr( 0, specialaddr ) < 0 )
+		if ( _arg_addr( 0, specialaddr ) < 0 )
 			return -1;
-		if( _arg_int( 1, flags ) < 0 )
+		if ( _arg_int( 1, flags ) < 0 )
 			return -1;
-		
-		if( mm::k_vmm.copy_str_in( pt, special, specialaddr, 100 ) < 0 )
+
+		if ( mm::k_vmm.copy_str_in( *pt, special, specialaddr, 100 ) < 0 )
 			return -1;
-		
+
 		fs::Path specialpath( special );
 		return specialpath.umount( flags );
 	}
@@ -725,8 +710,8 @@ namespace syscall
 		if ( fd > 0 )
 		{
 			pm::k_pm.fstat( fd, &kst );
-			mm::PageTable pt = pm::k_pm.get_cur_pcb()->get_pagetable();
-			if ( mm::k_vmm.copyout( pt, kst_addr, &kst, sizeof( kst ) ) < 0 )
+			mm::PageTable *pt = pm::k_pm.get_cur_pcb()->get_pagetable();
+			if ( mm::k_vmm.copyout( *pt, kst_addr, &kst, sizeof( kst ) ) < 0 )
 				return -1;
 			return 0;
 		}
@@ -739,8 +724,8 @@ namespace syscall
 			pm::k_pm.fstat( ffd, &kst );
 			pm::k_pm.close( ffd );
 			stx.stx_size = kst.size;
-			mm::PageTable pt = pm::k_pm.get_cur_pcb()->get_pagetable();
-			if ( mm::k_vmm.copyout( pt, kst_addr, &stx, sizeof( stx ) ) < 0 )
+			mm::PageTable *pt = pm::k_pm.get_cur_pcb()->get_pagetable();
+			if ( mm::k_vmm.copyout( *pt, kst_addr, &stx, sizeof( stx ) ) < 0 )
 				return -1;
 			return 0;
 		}
@@ -759,8 +744,8 @@ namespace syscall
 			return -1;
 		eastl::string path;
 		pm::Pcb * p = pm::k_pm.get_cur_pcb();
-		mm::PageTable pt = p->get_pagetable();
-		if ( mm::k_vmm.copy_str_in( pt, path, path_addr, 100 ) < 0 )
+		mm::PageTable *pt = p->get_pagetable();
+		if ( mm::k_vmm.copy_str_in( *pt, path, path_addr, 100 ) < 0 )
 			return -1;
 
 		int res = pm::k_pm.unlink( fd, path, flags );
@@ -769,21 +754,21 @@ namespace syscall
 
 	uint64 SyscallHandler::_sys_pipe()
 	{
-		int fd[2];
+		int fd[ 2 ];
 		uint64 addr;
 
-		if(_arg_addr(0, addr) < 0)
+		if ( _arg_addr( 0, addr ) < 0 )
 			return -1;
 
 		pm::Pcb *p = pm::k_pm.get_cur_pcb();
-		mm::PageTable pt = p->get_pagetable();
-		if (mm::k_vmm.copy_in(pt, &fd, addr, 2 * sizeof(fd[0])) < 0)
+		mm::PageTable *pt = p->get_pagetable();
+		if ( mm::k_vmm.copy_in( *pt, &fd, addr, 2 * sizeof( fd[ 0 ] ) ) < 0 )
 			return -1;
 
-		if (pm::k_pm.pipe(fd, 0) < 0)
+		if ( pm::k_pm.pipe( fd, 0 ) < 0 )
 			return -1;
 
-		if (mm::k_vmm.copyout(pt, addr, &fd, 2 * sizeof(fd[0])) < 0)
+		if ( mm::k_vmm.copyout( *pt, addr, &fd, 2 * sizeof( fd[ 0 ] ) ) < 0 )
 			return -1;
 
 		return 0;

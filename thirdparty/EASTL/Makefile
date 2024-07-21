@@ -2,6 +2,7 @@ CXXFLAGS += -I include
 CXXFLAGS += -I test/packages/EABase/include/Common
 CXXFLAGS += -I ../../kernel/include/
 CXXFLAGS += -I ../../kernel/include/klib
+CXXFLAGS += -I $(WORKPATH)/hsai/include
 CXXFLAGS += -Wno-deprecated-declarations
 
 #cc_src = $(filter-out source/thread_support.cpp, $(wildcard source/*.cpp))
@@ -12,7 +13,7 @@ cc_obj = $(patsubst %.cpp,$(BUILDPATH)/thirdparty/EASTL/%.o,$(cc_src))
 
 .PHONY: all clean initdir test
 
-all: $(BUILDPATH)/thirdparty/EASTL/libeastl.a
+all: initdir $(BUILDPATH)/thirdparty/EASTL/libeastl.a
 	@echo "libeastl.a is created..."
 
 initdir:

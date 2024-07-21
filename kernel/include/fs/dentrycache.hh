@@ -1,5 +1,4 @@
 #include "types.hh"
-#include "smp/lock.hh"
 #include "fs/dentry.hh"
 
 #include <EASTL/string.h>
@@ -7,6 +6,8 @@
 #include <EASTL/vector.h>
 #include <EASTL/unique_ptr.h>
 #include <EASTL/tuple.h>
+
+#include <smp/spin_lock.hh>
 
 using eastl::tuple;
 using eastl::vector;
@@ -32,7 +33,7 @@ namespace fs
          */
         class dentryCache
         {
-            smp::Lock _lock;
+            hsai::SpinLock _lock;
             list<dentry *> _active_list;
             list<dentry *> _inactive_list;
             fs::dentry *_dentryPool[ MAX_DENTRY_NUM ];

@@ -8,11 +8,16 @@
 
 #include "mm/physical_memory_manager.hh"
 #include "mm/page_table.hh"
-#include "mm/pte.hh"
 #include "mm/memlayout.hh"
 #include "mm/page.hh"
 #include "klib/common.hh"
 
+#include <hsai_global.hh>
+#include <mem/virtual_memory.hh>
+
+#if PT_LEVEL != 4
+#error "只支持4级页表遍历"
+#endif
 namespace mm
 {
 	PageTable k_pagetable;
@@ -25,81 +30,81 @@ namespace mm
 
 	}
 
-	Pte PageTable::walk( uint64 va, bool alloc )
+	hsai::Pte PageTable::walk( uint64 va, bool alloc )
 	{
 		if ( !_is_global )
 		{
 			log_warn( "walk: pagetable not global" );
-			return Pte();
+			return hsai::Pte();
 		}
 		if ( va >= vml::vm_end )
 			log_panic( "va out of bounds" );
 
 		PageTable pt;
 		pt.set_base( _base_addr );
-		Pte pte;
+		hsai::Pte pte;
 
 		if ( debug_trace_walk )
 			printf( "[walk trace] 0x%x : ", va );
 		uint64 pg_num;
 
 		// search in level-3 
-		pg_num = pt.dir3_num( va );
+		pg_num = hsai::pgd_num( va );
 		pte = pt.get_pte( pg_num );
 		if ( debug_trace_walk )
 			printf( "0x%x->", pte.get_data() );
 		if ( !_walk_to_next_level( pte, alloc, pt ) )
 		{
 			log_warn( "walk fail" );
-			return Pte();
+			return hsai::Pte();
 		}
 		// search in level-2 
-		pg_num = pt.dir2_num( va );
+		pg_num = hsai::pud_num( va );
 		pte = pt.get_pte( pg_num );
 		if ( debug_trace_walk )
 			printf( "0x%x->", pte.get_data() );
 		if ( !_walk_to_next_level( pte, alloc, pt ) )
 		{
 			log_warn( "walk fail" );
-			return Pte();
+			return hsai::Pte();
 		}
 		// search in level-1 
-		pg_num = pt.dir1_num( va );
+		pg_num = hsai::pmd_num( va );
 		pte = pt.get_pte( pg_num );
 		if ( debug_trace_walk )
 			printf( "0x%x->", pte.get_data() );
 		if ( !_walk_to_next_level( pte, alloc, pt ) )
 		{
 			log_warn( "walk fail" );
-			return Pte();
+			return hsai::Pte();
 		}
 
-		pg_num = pt.pt_num( va );
+		pg_num = hsai::pt_num( va );
 		pte = pt.get_pte( pg_num );
 		if ( debug_trace_walk )
 			printf( "0x%x\n", pte.get_data() );
 		return pte;
 	}
 
-	void * PageTable::walk_addr( uint64 va )
+	ulong PageTable::walk_addr( uint64 va )
 	{
 		uint64 pa;
 
 		if ( va >= vml::vm_end )
 			return 0;
 
-		Pte pte = walk( va, false/* alloc */ );
-		if ( pte._data_addr == nullptr )
-			return nullptr;
+		hsai::Pte pte = walk( va, false/* alloc */ );
+		if ( pte.is_null() )
+			return 0;
 		if ( !pte.is_valid() )
-			return nullptr;
-		if ( pte.plv() == 0 )
+			return 0;
+		if ( pte.is_super_plv() )
 		{
 			log_warn( "try to walk-addr( k-pt, %p ). nullptr will be return.", va );
-			return nullptr;
+			return 0;
 		}
-		pa = ( uint64 ) pte.pa();
-		return ( void * ) pa;
+		pa = ( uint64 ) pte.to_pa();
+		return pa;
 	}
 
 
@@ -107,16 +112,16 @@ namespace mm
 	{ // pte num is 4096 / 8 = 512 in pgtable
 		for ( uint i = 0; i < 512; i++ )
 		{
-			Pte next_level = get_pte( i );
-			Pte _pte( ( pte_t * ) next_level.pa() );
+			hsai::Pte next_level = get_pte( i );
+			hsai::Pte _pte( ( pte_t * ) next_level.to_pa() );
 			bool pte_valid = _pte.is_valid();
-			bool pte_leaf = _pte.is_leaf();
+			bool pte_leaf = !_pte.is_dir_page();
 			// if ( _pte.is_valid() && !_pte.is_leaf() )      // PGT -> PTE -> _pte
 			if ( pte_valid && !pte_leaf )
 			{																							//  get_pte_addr
 				// this PTE is points to a lower-level page table
 				PageTable child;
-				child.set_base( ( uint64 ) _pte.pa() );
+				child.set_base( ( uint64 ) _pte.to_pa() );
 				child.freewalk();
 				reset_pte_data( i );
 			}
@@ -125,34 +130,17 @@ namespace mm
 				log_panic( "freewalk: leaf" );
 			}
 		}
-		k_pmm.free_page( ( void * ) _base_addr );
-	}
-
-	uint64 PageTable::dir3_num( uint64 va )
-	{
-		return ( va & PageEnum::dir3_vpn_mask ) >> PageEnum::dir3_vpn_shift;
-	}
-	uint64 PageTable::dir2_num( uint64 va )
-	{
-		return ( va & PageEnum::dir2_vpn_mask ) >> PageEnum::dir2_vpn_shift;
-	}
-	uint64 PageTable::dir1_num( uint64 va )
-	{
-		return ( va & PageEnum::dir1_vpn_mask ) >> PageEnum::dir1_vpn_shift;
-	}
-	uint64 PageTable::pt_num( uint64 va )
-	{
-		return ( va & PageEnum::pt_vpn_mask ) >> PageEnum::pt_vpn_shift;
+		k_pmm.free_pages( ( void * ) _base_addr );
 	}
 
 
 // ---------------- private helper functions ----------------
 
-	bool PageTable::_walk_to_next_level( Pte pte, bool alloc, PageTable &pt )
+	bool PageTable::_walk_to_next_level( hsai::Pte pte, bool alloc, PageTable &pt )
 	{
 		if ( pte.is_valid() )
 		{
-			pt.set_base( ( uint64 ) pte.pa() );
+			pt.set_base( ( uint64 ) pte.to_pa() );
 		}
 		else
 		{
@@ -169,9 +157,7 @@ namespace mm
 			}
 			k_pmm.clear_page( page_addr );
 			pt.set_base( ( uint64 ) page_addr );
-			pte.set_data( page_round_down(
-				loongarch::qemuls2k::virt_to_phy_address( ( uint64 ) page_addr ) )
-				| loongarch::PteEnum::valid_m );
+			pte.set_data( hsai::page_round_down( hsai::k_mem->to_phy( ( ulong ) page_addr ) ) | hsai::Pte::map_dir_page_flags() );
 		}
 		return true;
 	}

@@ -1,4 +1,5 @@
 #include "klib/klib.hh"
+
 void *memset( void *s, int c, size_t n ) noexcept( true )
 {
 	for ( char *b = ( char* ) s; ( size_t ) ( b - ( char* ) s ) < n; b++ )

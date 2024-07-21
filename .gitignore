@@ -3,6 +3,7 @@
 **/kernel.asm
 **/kernel.dis
 **/kernel.elf
+**.dis
 debug.sh
 ls2k_debug.sh
 ls2k_release.sh

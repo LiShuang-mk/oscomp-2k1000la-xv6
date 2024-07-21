@@ -9,7 +9,7 @@
 #pragma once 
 
 #include "types.hh"
-#include "page.hh"
+#include <mem/page.hh>
 
 // virtual memory layout 
 
@@ -19,10 +19,10 @@ namespace mm
 	{
 		vm_page_cnt_shift = 15,
 		vm_start = 0x0,
-		vm_end = ( 0x1UL << pg_size_shift ) << vm_page_cnt_shift,	// 128 MiB
+		vm_end = hsai::page_size << vm_page_cnt_shift,	// 128 MiB
 
 		vm_kernel_start = vm_end >> 2,								// 32 MiB
-		vm_trap_frame = ( vm_end >> 1 ) - pg_size,					// 64 MiB - 1 page
+		vm_trap_frame = ( vm_end >> 1 ) - hsai::page_size,					// 64 MiB - 1 page
 
 		// vm_kernel_heap_start = vm_kernel_start >> 1,
 		// vm_kernel_heap_start = _1M * 8,

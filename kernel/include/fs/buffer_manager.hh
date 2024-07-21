@@ -8,9 +8,10 @@
 
 #pragma once 
 
-#include "smp/lock.hh"
 #include "fs/buffer.hh"
 #include "klib/common.hh"
+
+#include <smp/spin_lock.hh>
 
 namespace fs
 {
@@ -40,7 +41,7 @@ namespace fs
 	class BufferManager
 	{
 	private:
-		smp::Lock _lock;
+		hsai::SpinLock _lock;
 		BufferBlock _buffer_pool[ block_per_pool ];
 
 	public:
@@ -54,6 +55,10 @@ namespace fs
 		void write( int dev, uint64 lba );
 
 		void write_sync( int dev, uint64 lba );
+
+		/// @brief 将一块Buffer标记为有脏数据，在合适的时候会进行回写
+		/// @return 标记失败返回负值
+		int dirt_buffer( Buffer &buf );
 
 		/// @brief 同步方法，比较费时，应当在调度开始前供内核使用
 		void release_buffer_sync( Buffer &buf )
@@ -100,6 +105,9 @@ namespace fs
 		/// @brief 每次 get buffer 并使用完后，应当将其释放
 		/// @param used_sleep_lock 是否使用了 sleep-lock，这与 _get_buffer() 方法是一致的
 		void _release_buffer( Buffer &buf, bool used_sleep_lock );
+
+		/// @brief 检查该设备是否是块设备
+		int _check_block_device( uint dev_num );
 
 
 		/// @brief 同步方法，比较费时，应当在调度开始前供内核使用
@@ -149,6 +157,12 @@ namespace fs
 		uint64 _blk_num_from_lba( uint64 lba ) { return ( lba & lba_blk_num_mask ) >> lba_blk_num_shift; }
 		uint64 _tag_num_from_lba( uint64 lba ) { return ( lba & lba_tag_num_mask ) >> lba_tag_num_shift; }
 		uint64 _lba_blk_align( uint64 lba ) { return lba & ~lba_offset_mask; }
+		uint64 _lba_from_tag_blk_off( u64 tag, u64 block_num, u64 offset )
+		{
+			return ( ( tag << lba_tag_num_shift ) & lba_tag_num_mask )
+				| ( ( block_num << lba_blk_num_shift ) & lba_blk_num_mask )
+				| ( ( offset << lba_offset_shift ) & lba_offset_mask );
+		}
 	};
 
 	extern BufferManager k_bufm;

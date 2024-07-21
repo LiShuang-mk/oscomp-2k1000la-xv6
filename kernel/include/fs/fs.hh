@@ -1,7 +1,9 @@
 #pragma once
 #include "types.hh"
-#include "smp/lock.hh"
 #include "fs/fs_defs.hh"
+
+#include <smp/spin_lock.hh>
+
 #include <EASTL/string.h>
 #include <EASTL/vector.h>
 #include <EASTL/unordered_map.h>

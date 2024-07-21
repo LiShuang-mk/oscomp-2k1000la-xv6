@@ -9,7 +9,7 @@
 #pragma once 
 
 #include "types.hh"
-#include "klib/printer.hh"
+#include "./printer.hh"
 
 void printf( const char *fmt, ... );
 // void *memset( void *dst, int c, uint n );

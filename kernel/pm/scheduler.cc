@@ -1,12 +1,15 @@
 #include "hal/cpu.hh"
-#include "smp/lock.hh"
 #include "pm/scheduler.hh"
 #include "pm/process_manager.hh"
 #include "tm/timer_manager.hh"
 #include "klib/common.hh"
 
+#include <hsai_global.hh>
+#include <virtual_cpu.hh>
+#include <process_interface.hh>
+
 extern "C" {
-	extern void swtch( pm::Context *to_store, pm::Context *to_switch );
+	extern void swtch( void *to_store, void *to_switch );
 }
 
 namespace pm
@@ -15,7 +18,7 @@ namespace pm
 	Scheduler k_scheduler;
 
 	void Scheduler::init( const char *name )
-	{ 
+	{
 		_sche_lock.init( name );
 	}
 
@@ -37,7 +40,7 @@ namespace pm
 	void Scheduler::start_schedule()
 	{
 		pm::Pcb *p;
-		loongarch::Cpu *cpu = loongarch::Cpu::get_cpu();
+		hsai::VirtualCpu * cpu = hsai::get_cpu();
 		int priority;
 		int needed = 1;
 
@@ -45,7 +48,7 @@ namespace pm
 
 		for ( ;;)
 		{
-			cpu->interrupt_on();
+			cpu->_interrupt_on();
 
 			for ( p = pm::k_proc_pool; p < &pm::k_proc_pool[ pm::num_process ]; p++ )
 			{
@@ -66,7 +69,7 @@ namespace pm
 					p->_state = pm::ProcState::running;
 					// printf( "sche proc %d\n", p->_gid );
 					cpu->set_cur_proc( p );
-					swtch( cpu->get_context(), &p->_context );
+					swtch( cpu->get_context(), p->_context );
 					cpu->set_cur_proc( nullptr );
 				}
 				p->_lock.release();
@@ -77,7 +80,7 @@ namespace pm
 
 	void Scheduler::yield()
 	{
-		Pcb *p = loongarch::Cpu::get_cpu()->get_cur_proc();
+		Pcb * p = ( Pcb * ) hsai::get_cur_proc();
 		p->_lock.acquire();
 		p->_state = ProcState::runnable;
 		call_sched();
@@ -88,16 +91,16 @@ namespace pm
 	void Scheduler::call_sched()
 	{
 		int intena;
-		loongarch::Cpu * cpu = loongarch::Cpu::get_cpu();
-		Pcb *p = cpu->get_cur_proc();
+		hsai::VirtualCpu * cpu = hsai::get_cpu();
+		Pcb *p = ( Pcb * ) hsai::get_cur_proc();
 
 		assert( p->_lock.is_held(), "sched: proc lock not held" );
 		assert( cpu->get_num_off() == 1, "sched: proc locks" );
-		assert( p->_state != ProcState::running, "sched: proc is running" );
-		assert( cpu->get_intr_stat() == false, "sched: interruptible" );
+		assert( p->_state != ProcState::running, "sched: proc is not running" );
+		assert( cpu->is_interruptible() == false, "sched: interruptible" );
 
 		intena = cpu->get_int_ena();
-		swtch( &p->_context, cpu->get_context() );
+		swtch( p->_context, cpu->get_context() );
 		cpu->set_int_ena( intena );
 	}
 

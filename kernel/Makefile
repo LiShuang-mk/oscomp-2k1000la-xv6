@@ -1,3 +1,5 @@
+CFLAGS += -I $(WORKPATH)/hsai/include
+CXXFLAGS += -I $(WORKPATH)/hsai/include
 CXXFLAGS += -I ../thirdparty/EASTL/include
 # CXXFLAGS += -I ../kernel/include/klib
 CXXFLAGS += -Wno-deprecated-declarations
@@ -41,7 +43,7 @@ depends = \
 
 .PHONY: all clean test initdir
 
-all: $(BUILDPATH)/kernel.a
+all: initdir $(BUILDPATH)/kernel.a
 # all: $(BUILDPATH)/kernel.elf
 
 initdir:

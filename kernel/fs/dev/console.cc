@@ -8,37 +8,39 @@
 
 #include "fs/dev/console.hh"
 #include "mm/virtual_memory_manager.hh"
-#include "hal/qemu_ls2k.hh"
+
+#include <uart/virtual_uart.hh>
+#include <hsai_global.hh>
+#include <device_manager.hh>
 
 namespace dev
 {
-
 	Console k_console;
 
-	Console::Console() {}
-
-	void Console::init( const char *name )
+	Console::Console( const char *name )
 	{
 		_lock.init( name );
-		_uart_m.init( loongarch::qemuls2k::InterAddr::uart0 );
+		_debug_uart = ( hsai::VirtualUartController * ) hsai::k_devm.get_char_device( name );
 	}
 
 	void Console::putc( char c )
 	{
-		if ( c == _backspace )
+		if ( _debug_uart )
 		{
-			_uart_m.putc_sync( '\b' );
-			_uart_m.putc_sync( ' ' );
-			_uart_m.putc_sync( '\b' );
+			if ( c == _backspace )
+			{
+				_debug_uart->put_char_sync( '\b' );
+				_debug_uart->put_char_sync( ' ' );
+				_debug_uart->put_char_sync( '\b' );
+			}
+			else
+				_debug_uart->put_char_sync( c );
 		}
-		else
-			_uart_m.putc_sync( c );
 	}
 
 	void Console::handle_uart_intr()
 	{
-		_uart_m.read_lsr();
-		_uart_m.read_rhr();
+		_debug_uart->handle_intr();
 	}
 
 	int Console::write( int from_user, uint64 src, uint64 n )
@@ -50,7 +52,7 @@ namespace dev
 		{
 			if ( mm::k_vmm.either_copy_in( &c, user_src, src + i, 1 ) < 0 )
 				break;
-			_uart_m.putc( c );
+			_debug_uart->put_char( c );
 		}
 		return i;
 	}

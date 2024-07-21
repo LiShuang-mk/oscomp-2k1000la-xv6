@@ -8,9 +8,9 @@
 
 #include "tm/timer_manager.hh"
 #include "pm/process_manager.hh"
-#include "hal/cpu.hh"
-#include "hal/csr.hh"
 #include "klib/klib.hh"
+
+#include <timer_interface.hh>
 
 namespace tmm
 {
@@ -20,66 +20,51 @@ namespace tmm
 	{
 		_lock.init( lock_name );
 
-		// 自动循环
-		_tcfg_data =
-			( ( ( uint64 ) div_fre ) << loongarch::csr::Tcfg::tcfg_initval_s ) |
-			( loongarch::csr::Tcfg::tcfg_en_m ) |
-			( loongarch::csr::Tcfg::tcfg_periodic_m );
-
-		// 非自动循环
-		// _tcfg_data =
-		// 	( ( ( uint64 ) div_fre ) << loongarch::csr::Tcfg::tcfg_initval_s ) |
-		// 	( loongarch::csr::Tcfg::tcfg_en_m );
 		_ticks = 0;
-
-		loongarch::Cpu::write_csr( loongarch::csr::CsrAddr::tcfg, _tcfg_data );
-		// asm volatile( "csrwr %0, 0x41" : : "r" ( tcfg_data ) );
-
 
 		// close_ti_intr();
 	}
 
-	void TimerManager::open_ti_intr()
-	{
-		_lock.acquire();
-		_tcfg_data |= ( loongarch::csr::Tcfg::tcfg_en_m );
-		loongarch::Cpu::write_csr( loongarch::csr::CsrAddr::tcfg, _tcfg_data );
-		_lock.release();
-	}
+	// void TimerManager::open_ti_intr()
+	// {
+	// 	_lock.acquire();
+	// 	_tcfg_data |= ( loongarch::csr::Tcfg::tcfg_en_m );
+	// 	loongarch::Cpu::write_csr( loongarch::csr::CsrAddr::tcfg, _tcfg_data );
+	// 	_lock.release();
+	// }
 
-	void TimerManager::close_ti_intr()
-	{
-		_lock.acquire();
-		_tcfg_data &= ~( loongarch::csr::Tcfg::tcfg_en_m );
-		loongarch::Cpu::write_csr( loongarch::csr::CsrAddr::tcfg, _tcfg_data );
-		_lock.release();
-	}
+	// void TimerManager::close_ti_intr()
+	// {
+	// 	_lock.acquire();
+	// 	_tcfg_data &= ~( loongarch::csr::Tcfg::tcfg_en_m );
+	// 	loongarch::Cpu::write_csr( loongarch::csr::CsrAddr::tcfg, _tcfg_data );
+	// 	_lock.release();
+	// }
 
 	int TimerManager::handle_clock_intr()
 	{
 		_lock.acquire();
 		_ticks++;
 		// loongarch::Cpu::write_csr( loongarch::csr::CsrAddr::tcfg, _tcfg_data );
-		/// TODO: wakeup(&ticks)
 		pm::k_pm.wakeup( &_ticks );
 		_lock.release();
-		return 2;
+		return 0;
 	}
 
 	timeval TimerManager::get_time_val()
 	{
 		uint64 t_val;
-		uint64 cycles_per_tick = ( div_fre << 2 );
+		uint64 cpt = hsai::cycles_per_tick();
 
 		_lock.acquire();
-		t_val = cycles_per_tick - loongarch::Cpu::read_csr( loongarch::csr::tval );
-		t_val += _ticks * cycles_per_tick;
+		t_val = cpt - hsai::get_hw_time_stamp();
+		t_val += _ticks * cpt;
 		_lock.release();
 
 		timeval tv;
-		tv.tv_sec = t_val / qemu_fre;
-		tv.tv_usec = t_val % qemu_fre;
-		tv.tv_usec = qemu_fre_cal_usec( tv.tv_usec );
+		tv.tv_sec = t_val / hsai::get_main_frequence();
+		tv.tv_usec = t_val % hsai::get_main_frequence();
+		tv.tv_usec = hsai::time_stamp_to_usec( tv.tv_usec );
 
 		// tv.tv_sec = _ticks * ms_per_tick / 1000;
 		// tv.tv_usec = ( ( _ticks * ms_per_tick ) % 1000 ) * 1000;
@@ -113,12 +98,13 @@ namespace tmm
 
 	int TimerManager::sleep_from_tv( timeval tv )
 	{
-		uint64 n = tv.tv_sec * qemu_fre;
-		uint64 cycles_per_tick = ( div_fre << 2 );
-		n += qemu_fre_cal_cycles( tv.tv_usec );
-		n /= cycles_per_tick;
+		uint64 n = tv.tv_sec * hsai::get_main_frequence();
+		uint64 cpt = hsai::cycles_per_tick();
+		n += hsai::usec_to_time_stamp( tv.tv_usec );
+		n /= cpt;
 
 		return sleep_n_ticks( n );
 	}
 
 } // namespace tm
+
