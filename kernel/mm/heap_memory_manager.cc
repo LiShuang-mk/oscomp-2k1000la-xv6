@@ -11,6 +11,8 @@
 #include "mm/page_table.hh"
 #include "mm/memlayout.hh"
 
+#include "klib/common.hh"
+
 
 namespace mm
 {
@@ -53,5 +55,26 @@ namespace mm
 	{
 		// log_trace( "内存释放" );
 		_allocator.free( p );
+	}
+
+#ifndef COLOR_PRINT
+#define COLOR_PRINT
+
+#define RED_COLOR_PINRT "\033[31m"
+#define GREEN_COLOR_PRINT "\033[32m"
+#define BLUE_COLOR_PRINT "\033[34m"
+#define CYAN_COLOR_PINRT "\033[36m"
+#define CLEAR_COLOR_PRINT "\033[0m"
+
+#endif
+
+	void HeapMemoryManager::print_heap_usage()
+	{
+		printf( GREEN_COLOR_PRINT "[heap usage]:\n" CLEAR_COLOR_PRINT );
+		printf( BLUE_COLOR_PRINT );
+		printf( "\tcached : %d Bytes\n", _allocator.get_cached_size() );
+		printf( "\tused   : %d Bytes\n", _allocator.get_used_size() );
+		printf( "\tmeta   : %d Bytes\n", _allocator.get_meta_size() );
+		_allocator.debug_print();
 	}
 } // namespace mm

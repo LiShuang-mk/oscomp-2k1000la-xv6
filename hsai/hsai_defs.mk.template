@@ -13,7 +13,9 @@
 # >>>> change these viriable to control what to be compiled
 # >>>>
 
-HASI_DEF_UART = 
+HSAI_DEF_UART =
+
+HSAI_DEF_ATA =
 
 # >>>>
 # **************************************************************

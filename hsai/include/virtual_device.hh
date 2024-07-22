@@ -22,6 +22,7 @@ namespace hsai
 	{
 	public:
 		VirtualDevice() = default;
+		virtual ~VirtualDevice() = default;
 		virtual DeviceType type() { return DeviceType::dev_unknown; };
 		virtual int handle_intr() = 0;
 	};

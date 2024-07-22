@@ -30,6 +30,9 @@ namespace mm
 		void *allocate( uint64 size );
 
 		void free( void *p );
+
+	public:
+		void print_heap_usage();
 	};
 
 	extern HeapMemoryManager k_hmm;

@@ -21,13 +21,14 @@ namespace hsai	// hardware service abstract interface
 	class VirtualCpu __hsai_hal
 	{
 	protected:
-		int _num_off;		// number of interrupt's off
-		int _int_ena;		// interrupt enable status before push-off()
-		pm::Pcb * _cur_proc;
-		void * _context;
+		int _num_off = 0;		// number of interrupt's off
+		int _int_ena = 0;		// interrupt enable status before push-off()
+		pm::Pcb * _cur_proc = nullptr;
+		void * _context = nullptr;
 
 	public:
-		VirtualCpu();
+		VirtualCpu() = default;
+
 		static int register_cpu( VirtualCpu * p_cpu, int cpu_id );
 
 		virtual uint get_cpu_id() = 0;

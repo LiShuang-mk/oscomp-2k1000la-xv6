@@ -23,27 +23,27 @@ namespace mm
 		_base_allocator = base_alloc;
 
 		_mem_root = _best_bet = nullptr;
-		_cach_size = _used_size = 0;
+		_cach_size = _used_size = _meta_size = 0;
 		_page_per_chunk = _default_page_per_chunk;
 	}
 
 // -------- public interface --------
 
-	void *L_Allocator::malloc( uint64 req_size )
+	void *L_Allocator::malloc( i64 req_size )
 	{
-		int64 size = ( int64 ) req_size;
+		int64 size = req_size;
 		if ( size <= 0 )
 		{
-			log_warn( "L-allocator : Try to allocate 0 byte memory. Null will be returned." );
+			printf( "L-allocator : Try to allocate 0 byte memory. Null will be returned." );
 			return nullptr;
 		}
 		if ( size >= ( int64 ) mm::vml::vm_kernel_heap_size )
 		{
-			log_warn( "L-allocator : request size too big : %d Bytes", size );
+			printf( "L-allocator : request size too big : %d Bytes", size );
 			return nullptr;
 		}
 		if ( _use_align_ )
-			size += _alignment_ + _align_info_length_;
+			size = _size_align( size );
 
 		_lock.acquire();
 
@@ -52,15 +52,15 @@ namespace mm
 			_mem_root = _allocate_new_chunk( size );
 			if ( _mem_root == nullptr )
 			{
+				printf( "L-allocator : init the root cache failed due to no memory." );
 				_lock.release();
-				log_warn( "L-allocator : init the root cache failed due to no memory." );
 				return nullptr;
 			}
 		}
 
 		// Now to find enough space 
 
-		L_TagMajor * maj = _mem_root;
+		L_TagMajor *maj = _mem_root;
 		bool started_bet = false;
 		int64 best_size = 0;
 
@@ -110,7 +110,7 @@ namespace mm
 				maj->next = _allocate_new_chunk( size );
 				if ( maj->next == nullptr )
 				{
-					log_warn( "L-allocator : no memory to allocate for the major chunk" );
+					printf( "L-allocator : no memory to allocate for the major chunk" );
 					break;
 				}
 				maj->next->prev = maj;
@@ -123,7 +123,7 @@ namespace mm
 			// CASE 2 : It's a brand new chunk
 			if ( maj->first == nullptr )
 			{
-				maj->first = ( L_TagMinor* ) ( ( uint64 ) maj + sizeof( L_TagMajor ) );
+				maj->first = ( L_TagMinor * ) ( ( uint64 ) maj + sizeof( L_TagMajor ) );
 
 				maj->first->magic = _liballoc_magic_;
 				maj->first->prev = nullptr;
@@ -133,11 +133,10 @@ namespace mm
 				maj->first->req_size = req_size;
 				maj->usage += size + sizeof( L_TagMinor );
 
-				_used_size += size;
+				_used_size += size + sizeof( L_TagMinor );
+				_meta_size += sizeof( L_TagMinor );
 
-				p = ( void* ) ( ( uint64 ) maj->first + sizeof( L_TagMinor ) );
-
-				_align( p );
+				p = ( void * ) ( ( uint64 ) maj->first + sizeof( L_TagMinor ) );
 
 				_lock.release();
 				return p;
@@ -147,7 +146,7 @@ namespace mm
 			diff = ( int64 ) ( ( uint64 ) maj->first - ( uint64 ) maj - sizeof( L_TagMajor ) );
 			if ( diff >= size + ( int64 ) sizeof( L_TagMinor ) )
 			{
-				maj->first->prev = ( L_TagMinor* ) ( ( uint64 ) maj + sizeof( L_TagMajor ) );
+				maj->first->prev = ( L_TagMinor * ) ( ( uint64 ) maj + sizeof( L_TagMajor ) );
 				maj->first->prev->next = maj->first;
 				maj->first = maj->first->prev;
 
@@ -158,18 +157,17 @@ namespace mm
 				maj->first->req_size = req_size;
 				maj->usage += size + sizeof( L_TagMinor );
 
-				_used_size += size;
+				_used_size += size + sizeof( L_TagMinor );
+				_meta_size += sizeof( L_TagMinor );
 
-				p = ( void* ) ( ( uint64 ) maj->first + sizeof( L_TagMinor ) );
-
-				_align( p );
+				p = ( void * ) ( ( uint64 ) maj->first + sizeof( L_TagMinor ) );
 
 				_lock.release();
 				return p;
 			}
 
 			// CASE 4 : There is enough space in this block, but not sure it's contiguous
-			L_TagMinor * min = maj->first;
+			L_TagMinor *min = maj->first;
 			while ( min )		// loop the chunk
 			{
 				// CASE 4.1 : End of minors in a chunk. 
@@ -179,7 +177,7 @@ namespace mm
 					diff = ( int64 ) ( ( uint64 ) maj + maj->size - ( uint64 ) min - sizeof( L_TagMinor ) - min->size );
 					if ( diff >= size + ( int64 ) sizeof( L_TagMinor ) )
 					{
-						min->next = ( L_TagMinor* ) ( ( uint64 ) min + sizeof( L_TagMinor ) + min->size );
+						min->next = ( L_TagMinor * ) ( ( uint64 ) min + sizeof( L_TagMinor ) + min->size );
 						min->next->prev = min;
 						min = min->next;
 
@@ -190,11 +188,10 @@ namespace mm
 						min->req_size = req_size;
 						maj->usage += size + sizeof( L_TagMinor );
 
-						_used_size += size;
+						_used_size += size + sizeof( L_TagMinor );
+						_meta_size += sizeof( L_TagMinor );
 
-						p = ( void* ) ( ( uint64 ) min + sizeof( L_TagMinor ) );
-
-						_align( p );
+						p = ( void * ) ( ( uint64 ) min + sizeof( L_TagMinor ) );
 
 						_lock.release();
 						return p;
@@ -207,7 +204,7 @@ namespace mm
 					diff = ( int64 ) ( ( uint64 ) min->next - ( uint64 ) min - sizeof( L_TagMinor ) - min->size );
 					if ( diff >= size + ( int64 ) sizeof( L_TagMinor ) )
 					{
-						L_TagMinor * new_min = ( L_TagMinor* ) ( ( uint64 ) min + sizeof( L_TagMinor ) + min->size );
+						L_TagMinor *new_min = ( L_TagMinor * ) ( ( uint64 ) min + sizeof( L_TagMinor ) + min->size );
 
 						new_min->magic = _liballoc_magic_;
 						new_min->next = min->next;
@@ -219,10 +216,10 @@ namespace mm
 						min->next = new_min;
 						maj->usage += size + sizeof( L_TagMinor );
 
-						_used_size += size;
+						_used_size += size + sizeof( L_TagMinor );
+						_meta_size += sizeof( L_TagMinor );
 
 						p = ( void * ) ( ( uint64 ) new_min + sizeof( L_TagMinor ) );
-						_align( p );
 
 						_lock.release();
 						return p;
@@ -247,7 +244,7 @@ namespace mm
 				maj->next = _allocate_new_chunk( size );
 				if ( maj->next == nullptr )
 				{
-					log_warn( "L-allocator : no memory to allocate for the major chunk" );
+					printf( "L-allocator : no memory to allocate for the major chunk" );
 					break;
 				}
 				maj->next->prev = maj;
@@ -256,9 +253,9 @@ namespace mm
 			maj = maj->next;
 		} // while ( maj )
 
-		_lock.release();
 
-		log_warn( "L-allocator : All cases exhausted. No memory available." );
+		printf( "L-allocator : All cases exhausted. No memory available." );
+		_lock.release();
 		return nullptr;
 	} // L_Allocator::malloc()
 
@@ -268,44 +265,47 @@ namespace mm
 		if ( ptr == nullptr )
 			return;
 
-		_unalign( ptr );
-
 		_lock.acquire();
 
-		L_TagMinor * min = ( L_TagMinor* ) ( ( uint64 ) ptr - sizeof( L_TagMinor ) );
+		L_TagMinor *min = ( L_TagMinor * ) ( ( uint64 ) ptr - sizeof( L_TagMinor ) );
 
 		if ( min->magic != _liballoc_magic_ )
 		{
 			// Check for overrun errors. For all bytes of _liballoc_magic_ 
 			if (
+				( ( min->magic & 0xFFFFFFFFFFFFFFUL ) == ( _liballoc_magic_ & 0xFFFFFFFFFFFFFFUL ) ) ||
+				( ( min->magic & 0xFFFFFFFFFFFFUL ) == ( _liballoc_magic_ & 0xFFFFFFFFFFFFUL ) ) ||
+				( ( min->magic & 0xFFFFFFFFFFUL ) == ( _liballoc_magic_ & 0xFFFFFFFFFFUL ) ) ||
+				( ( min->magic & 0xFFFFFFFFUL ) == ( _liballoc_magic_ & 0xFFFFFFFFUL ) ) ||
 				( ( min->magic & 0xFFFFFF ) == ( _liballoc_magic_ & 0xFFFFFF ) ) ||
 				( ( min->magic & 0xFFFF ) == ( _liballoc_magic_ & 0xFFFF ) ) ||
 				( ( min->magic & 0xFF ) == ( _liballoc_magic_ & 0xFF ) )
 				)
 			{
-				log_error( "L-allocator : Possible 1-3 byte overrun for magic %x != %x",
+				printf( "L-allocator : Possible 1-7 byte overrun for magic %x != %x",
 					min->magic,
 					_liballoc_magic_ );
 			}
 
-
 			if ( min->magic == _liballoc_dead )
 			{
-				log_error( "L-allocator : Multiple free() attempt on %x.", ptr );
+				printf( "L-allocator : Multiple free() attempt on %p.", ptr );
 			}
 			else
 			{
-				log_error( "L-allocator : Bad free( %x ).", ptr );
+				printf( "L-allocator : Bad free( %p ) or completely overrun for maigc %x != %x.",
+					ptr, min->magic, _liballoc_magic_ );
 			}
 
 			// being lied to...
-			_lock.release();		// release the lock
+			_lock.release();
 			return;
 		}
 
-		L_TagMajor * maj = min->chunk;
+		L_TagMajor *maj = min->chunk;
 
-		_used_size -= min->size;
+		_used_size -= ( min->size + sizeof( L_TagMinor ) );
+		_meta_size -= sizeof( L_TagMinor );
 		maj->usage -= ( min->size + sizeof( L_TagMinor ) );
 		min->magic = _liballoc_dead;
 
@@ -340,11 +340,10 @@ namespace mm
 		}
 
 		_lock.release();
-
 	} // L_Allocator::free()
 
 
-// -------- private helper function -------- 
+	// -------- private helper function -------- 
 
 	L_TagMajor * L_Allocator::_allocate_new_chunk( uint64 size )
 	{
@@ -370,42 +369,57 @@ namespace mm
 		}
 
 		maj->prev = maj->next = nullptr;
-		maj->pages = st;
 		maj->size = st * hsai::page_size;
-		maj->usage = sizeof( L_TagMajor );
+		maj->usage = sizeof( L_TagMajor);
 		maj->first = nullptr;
 
 		_cach_size += maj->size;
+		_used_size += sizeof( L_TagMajor );
+		_meta_size += sizeof( L_TagMajor );
 
 		return maj;
 	}
 
-	void L_Allocator::_align( void * &ptr )
+	/////////////// debug
+
+#ifndef COLOR_PRINT
+#define COLOR_PRINT
+
+#define RED_COLOR_PINRT "\033[31m"
+#define GREEN_COLOR_PRINT "\033[32m"
+#define BLUE_COLOR_PRINT "\033[34m"
+#define CYAN_COLOR_PINRT "\033[36m"
+#define CLEAR_COLOR_PRINT "\033[0m"
+
+#endif
+
+	static int debug_cnt = 1;
+
+	void L_Allocator::debug_print()
 	{
-		if ( _use_align_ )
+		printf( CYAN_COLOR_PINRT "\t%dth print\n" CLEAR_COLOR_PRINT, debug_cnt );
+		debug_cnt++;
+		if ( _mem_root == nullptr )
 		{
-			uint64 diff;
-			ptr = ( void* ) ( ( uint64 ) ptr + _align_info_length_ );
-			diff = ( uint64 ) ptr & ( _alignment_ - 1 );
-			if ( diff != 0 )
+			printf( "\t(null)\n" );
+			return;
+		}
+
+		printf( "\t<maj_i:maj_size,maj_usage>\t(min_size,min_reqsize)\n" );
+
+		int maj_i = 0;
+		L_TagMajor *pmaj = _mem_root;
+		L_TagMinor *pmin;
+		for ( ; pmaj != nullptr; pmaj = pmaj->next, maj_i++ )
+		{
+			printf( "\t<%d:%u,%u>", maj_i, pmaj->size, pmaj->usage );
+			pmin = pmaj->first;
+			for ( ; pmin != nullptr; pmin = pmin->next )
 			{
-				diff = _alignment_ - diff;
-				ptr = ( void* ) ( ( uint64 ) ptr + diff );
+				printf( "-->(%u,%u)", pmin->size, pmin->req_size );
 			}
-			*( ( _AlignType_ * ) ( ( uint64 ) ptr - _align_info_length_ ) ) =
-				diff + _align_info_length_;
+			printf( "\n" );
 		}
 	}
 
-	void L_Allocator::_unalign( void * &ptr )
-	{
-		if ( _use_align_ )
-		{
-			uint64 diff = *( ( _AlignType_* ) ( ( uint64 ) ptr - _align_info_length_ ) );
-			if ( diff < ( _alignment_ + _align_info_length_ ) )
-			{
-				ptr = ( void* ) ( ( uint64 ) ptr - diff );
-			}
-		}
-	}
 } // namespace mm

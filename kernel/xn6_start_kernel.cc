@@ -189,6 +189,10 @@ extern "C" {
 			//fs::ramfs::k_ramfs.dentryCacheTest();
 			fs::mnt_table[ "/" ] = &fs::ramfs::k_ramfs;
 			log_info( "ramfs init" );
+
+			mm::k_hmm.print_heap_usage();
+			while ( 1 );
+
 			fs::Path mnt = fs::Path( "/mnt" );
 			fs::Path dev = fs::Path( "/dev/vda2" );
 			mnt.mount( dev, "fat32", 0, 0 );
