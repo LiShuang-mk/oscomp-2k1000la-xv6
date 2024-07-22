@@ -7,9 +7,7 @@
 #include "fs/fat/fat32.hh"
 #include "fs/fat/fat32_file_system.hh"
 #include "fs/fat/fat32fs.hh"
-#include "fs/ext4/super_block.hh"
-#include "fs/ext4/block_group_descriptor.hh"
-#include "fs/ext4/index_node.hh"
+#include "fs/ext4/ext4_sb.hh"
 #include "fs/ramfs/ramfs.hh"
 #include "fs/jbd2/journal_super_block.hh"
 #include "fs/buffer_manager.hh"
@@ -191,6 +189,7 @@ extern "C" {
 			log_info( "ramfs init" );
 
 			mm::k_hmm.print_heap_usage();
+
 			while ( 1 );
 
 			fs::Path mnt = fs::Path( "/mnt" );
@@ -289,7 +288,7 @@ extern "C" {
 void* buffer1;
 void* buffer2;
 
-fs::ext4::SuperBlock ext4_super_block;
+// fs::ext4::SuperBlock ext4_super_block;
 
 
 void test_buffer()

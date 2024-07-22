@@ -80,3 +80,14 @@ namespace math
 #define log_trace(trace_info, args...) (void)(0)
 
 #endif
+
+#ifndef COLOR_PRINT
+#define COLOR_PRINT
+
+#define RED_COLOR_PINRT "\033[31m"
+#define GREEN_COLOR_PRINT "\033[32m"
+#define BLUE_COLOR_PRINT "\033[34m"
+#define CYAN_COLOR_PINRT "\033[36m"
+#define CLEAR_COLOR_PRINT "\033[0m"
+
+#endif
