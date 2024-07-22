@@ -7,12 +7,19 @@
 //
 
 #include "la_cpu.hh"
+#include "context.hh"
 
 #include <hsai_global.hh>
 
 namespace loongarch
 {
 	static Cpu k_la_cpus[ NUMCPU ];
+	static Context k_la_cpu_context[ NUMCPU ];
+
+	Cpu::Cpu() : VirtualCpu()
+	{
+		_context = &k_la_cpu_context[ get_cpu_id() ];
+	}
 
 	void Cpu::_interrupt_on()
 	{

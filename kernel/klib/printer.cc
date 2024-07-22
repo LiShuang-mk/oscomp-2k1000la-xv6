@@ -282,7 +282,7 @@ namespace kernellib
 	{
 		k_printer._locking = 0;
 #ifdef LINUX_BUILD
-		k_printer.printf( "\033[93m[ trace ] => " );
+		k_printer.printf( "\033[32m[ trace ] => " );
 #else 
 		k_printer.printf( "[ trace ] => " );
 #endif 
@@ -360,7 +360,7 @@ namespace kernellib
 			case OutputLevel::out_trace:
 			{
 #ifdef LINUX_BUILD
-				k_printer.printf( "\033[93m[ trace ] => " );
+				k_printer.printf( "\033[32m[ trace ] => " );
 #else 
 				k_printer.printf( "[ trace ] => " );
 #endif 

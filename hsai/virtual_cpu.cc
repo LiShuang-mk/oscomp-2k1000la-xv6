@@ -12,7 +12,6 @@
 
 namespace hsai
 {
-
 	int VirtualCpu::register_cpu( VirtualCpu * p_cpu, int cpu_id )
 	{
 		hsai_trace( "register cpu %d", cpu_id );
@@ -22,13 +21,6 @@ namespace hsai
 			return -2;
 		k_cpus[ cpu_id ] = p_cpu;
 		return cpu_id;
-	}
-
-	VirtualCpu::VirtualCpu()
-		: _num_off( 0 )
-		, _int_ena( 0 )
-		, _cur_proc( nullptr )
-	{
 	}
 
 	void VirtualCpu::push_interrupt_off()

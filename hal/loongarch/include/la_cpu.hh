@@ -26,7 +26,7 @@ namespace loongarch
 		virtual void _interrupt_off() override;
 
 	public:
-		Cpu() : VirtualCpu() {};
+		Cpu();
 		static Cpu * get_la_cpu();
 
 		virtual uint get_cpu_id() override;
