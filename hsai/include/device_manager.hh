@@ -48,7 +48,7 @@ namespace hsai
 		int search_char_device( const char * name );
 		int remove_block_device( const char * name );
 		int remove_char_device( const char * name );
-
+		void traversal_dev_table( char ** dev_table );
 	public:
 
 		VirtualDevice * get_device( uint dev_num )

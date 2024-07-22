@@ -134,6 +134,15 @@ namespace hsai
 		return -1;
 	}
 
+	void DeviceManager::traversal_dev_table( char **dev_table )
+	{
+		for ( int i = 0; i < DEV_TBL_LEN; ++i )
+		{
+			DeviceTableEntry &te = _device_table[ i ];
+			if ( te.device_ptr == nullptr ) continue;
+			dev_table[ i ] = ( char * ) te.device_name;
+		}
+	}
 	// **************** private helper fuctions ****************
 
 } // namespace hsai

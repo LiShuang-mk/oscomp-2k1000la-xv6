@@ -2,8 +2,11 @@
 #include "fs/dentrycache.hh"
 #include "fs/dentry.hh"
 #include "fs/file.hh"
-
 #include "fs/fat/fat32fs.hh"
+
+#include "device_manager.hh"
+#include "hsai_global.hh"
+#include <hsai_defs.h>
 #include "EASTL/queue.h"
 
 using namespace fs::dentrycache;
@@ -33,8 +36,8 @@ namespace fs{
             _mnt = nullptr;
             /// ramfs is temporary fs 
             _isroot = true;
-
-
+            
+        
             _root->EntryCreate( "dev", FileAttrs::File_dir << FileAttrs::File_dir_s ); // 暂时把第二个参数为正数认为是目录， 还要创建 /dev/sda1, 用来初始化ext4
             _root->EntryCreate( "proc", FileAttrs::File_dir << FileAttrs::File_dir_s );
             _root->EntryCreate( "sys", FileAttrs::File_dir << FileAttrs::File_dir_s );
@@ -43,6 +46,20 @@ namespace fs{
             
             // init fat
             dentry* dev = _root->EntrySearch( "dev" );
+            char ** dev_table = new char* [ DEV_TBL_LEN ];
+
+            for(int i = 0; i < DEV_TBL_LEN; i++)
+            {
+                dev_table[i] = nullptr;
+            }
+            
+            hsai::k_devm.traversal_dev_table( dev_table );
+            for( int i = 0; i < DEV_TBL_LEN; i++ )
+            {
+                if( dev_table[i] == nullptr )
+                    break;
+                dev->EntryCreate( dev_table[i], FileAttrs::File_dir << FileAttrs::File_dir_s );
+            }
             if( !dev )
             {
                 log_error("RamFS::initfd: mnt is nullptr");
