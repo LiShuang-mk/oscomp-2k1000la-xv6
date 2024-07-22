@@ -81,7 +81,7 @@ namespace hsai
 				continue;
 			hsai_trace( "port\t%d sig : %x", i, tmp );
 
-			// 初始化端口
+			// 初始化端口，端口设备依次被命名为 hda, hdb, hdc ...
 
 			new ( &_port_drivers[ i ] ) AhciPortDriver(
 				"AHCI port",

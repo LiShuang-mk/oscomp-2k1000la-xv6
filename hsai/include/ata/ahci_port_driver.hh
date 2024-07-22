@@ -28,14 +28,19 @@ namespace hsai
 	 * >> 各方法功能。
 	 *****************************************************************/
 
-	const char ahci_port_driver_name_template[] = "AHCI port xx";
-	constexpr void ahci_port_change_name_number( char * name, int num )
+	const char ahci_port_driver_name_template[] = "hd?";
+	constexpr int ahci_port_change_name_number( char * name, int num )
 	{
-		char c;
-		c = ( char ) ( num / 10 ) + '0';
-		name[ sizeof ahci_port_driver_name_template - 3 ] = c;
-		c = ( char ) ( num % 10 ) + '0';
-		name[ sizeof ahci_port_driver_name_template - 2 ] = c;
+		// char c;
+		// c = ( char ) ( num / 10 ) + '0';
+		// name[ sizeof ahci_port_driver_name_template - 3 ] = c;
+		// c = ( char ) ( num % 10 ) + '0';
+		// name[ sizeof ahci_port_driver_name_template - 2 ] = c;
+		char ch = 'a';
+		ch += ( char ) num & 0xFF;
+		if ( ch > 'z' ) return -1;
+		name[ 2 ] = ch;
+		return 0;
 	}
 
 	class AhciDriver;

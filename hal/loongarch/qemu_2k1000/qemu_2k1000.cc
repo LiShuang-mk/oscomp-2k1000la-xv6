@@ -133,20 +133,20 @@ namespace hsai
 		ahd->identify_device();
 
 		// debug
-		char * buf = ( char * ) alloc_pages( 1 );
-		AhciPortDriver * ahpd = ( AhciPortDriver * ) k_devm.get_block_device( "AHCI port 01" );
+		// char * buf = ( char * ) alloc_pages( 1 );
+		// AhciPortDriver * ahpd = ( AhciPortDriver * ) k_devm.get_block_device( "hdb" );
 
-		BufferDescriptor bd = { .buf_addr = ( u64 ) buf, .buf_size = page_size };
-		ahpd->read_blocks_sync( 0, 1, &bd, 1 );
-		hsai_printf( BLUE_COLOR_PRINT "buf0\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" CLEAR_COLOR_PRINT );
-		for ( uint i = 0; i < 512; ++i )
-		{
-			if ( i % 0x10 == 0 )
-				hsai_printf( "%B%B\t", i >> 8, i );
-			hsai_printf( "%B ", buf[ i ] );
-			if ( i % 0x10 == 0xF )
-				hsai_printf( "\n" );
-		}
+		// BufferDescriptor bd = { .buf_addr = ( u64 ) buf, .buf_size = page_size };
+		// ahpd->read_blocks_sync( 0, 1, &bd, 1 );
+		// hsai_printf( BLUE_COLOR_PRINT "buf0\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" CLEAR_COLOR_PRINT );
+		// for ( uint i = 0; i < 512; ++i )
+		// {
+		// 	if ( i % 0x10 == 0 )
+		// 		hsai_printf( "%B%B\t", i >> 8, i );
+		// 	hsai_printf( "%B ", buf[ i ] );
+		// 	if ( i % 0x10 == 0xF )
+		// 		hsai_printf( "\n" );
+		// }
 
 		// while ( 1 );
 	}

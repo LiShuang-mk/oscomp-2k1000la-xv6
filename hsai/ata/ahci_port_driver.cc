@@ -158,7 +158,13 @@ namespace hsai
 
 		// 注册到 HSAI
 
-		ahci_port_change_name_number( ( char * ) _dev_name, _port_id );
+		if ( ahci_port_change_name_number( ( char * ) _dev_name, _port_id ) < 0 )
+		{
+			hsai_error(
+				"unknown AHCI port driver init.\n"
+				"the port number is too big." );
+			return;
+		}
 		k_devm.register_block_device( this, _dev_name );
 	}
 
