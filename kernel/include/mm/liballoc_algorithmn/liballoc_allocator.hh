@@ -97,4 +97,4 @@ namespace mm
 		void debug_print();
 	};
 
-} // namespace kernellib
+} // namespace klib

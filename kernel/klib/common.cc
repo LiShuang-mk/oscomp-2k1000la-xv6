@@ -12,7 +12,7 @@ void printf( const char *fmt, ... )
 {
 	va_list ap;
 	va_start( ap, fmt );
-	kernellib::k_printer.vprintf( fmt, ap );
+	klib::k_printer.vprintf( fmt, ap );
 	va_end( ap );
 }
 
@@ -135,6 +135,6 @@ namespace math
 
 	// void panic( const char *s )
 	// {
-	// 	kernellib::k_printer.panic( s );
+	// 	klib::k_printer.panic( s );
 	// }
 

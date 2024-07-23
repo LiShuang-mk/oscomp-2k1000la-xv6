@@ -12,7 +12,7 @@
 
 #include <hsai_log.hh>
 
-namespace kernellib
+namespace klib
 {
 	Printer k_printer;
 

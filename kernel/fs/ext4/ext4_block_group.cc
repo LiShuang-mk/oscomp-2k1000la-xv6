@@ -36,9 +36,12 @@ namespace fs
 		{
 			long block_no = _cache_inode_table_block +
 				( index * _belong_fs->read_inode_size() / _belong_fs->rBlockSize() );
-			Ext4InodeRecord * inode_ptr = ( Ext4InodeRecord * ) _belong_fs->read_block( block_no );
+			
+			Ext4Buffer * blk_buf = _belong_fs->read_block( block_no, true ); // pin the buffer
+			Ext4InodeRecord * inode_ptr = ( Ext4InodeRecord * ) blk_buf->get_data_ptr();
 			inode_ptr += index;
 			node = inode_ptr->inode_data;
+			blk_buf->unpin();	// unpin the buffer
 		}
 
 		void Ext4BlockGroup::_read_block_bitmap()

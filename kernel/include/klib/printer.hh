@@ -18,7 +18,7 @@ namespace dev
 	class Console;
 } // namespace dev
 
-namespace kernellib
+namespace klib
 {
 	enum OutputLevel
 	{
@@ -75,4 +75,4 @@ namespace kernellib
 	void assert_log_out( const char *f, uint l, const char *expr, const char *detail, ... );
 	void printf_log_out( const char *fmt, ... );
 
-} // namespace kernellib
+} // namespace klib

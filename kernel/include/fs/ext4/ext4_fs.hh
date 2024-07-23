@@ -41,6 +41,10 @@ namespace fs
 
 			Ext4BufferPool _blocks_cacher;
 
+			long _s_indirect_block_start = 0;				// single indirect start block
+			long _d_indirect_block_start = 0;				// double indirect start block
+			long _t_indirect_block_start = 0;				// triple indirect start block
+
 		public:
 			Ext4FS() = default;
 			virtual ~Ext4FS() override = default;
@@ -63,13 +67,16 @@ namespace fs
 			virtual void init( int dev, u64 start_lba, eastl::string fstype, eastl::string rootname, bool is_root = false ) override;
 
 		public:
-			Ext4SuperBlock * get_ext4_superblock() const { return &_sb._super_block; }
+			Ext4SuperBlock * get_ext4_superblock() const { return ( Ext4SuperBlock * ) &_sb._super_block; }
 			bool support64bit() const { return _sb.support64bit(); }
 			int owned_device() const { return _owned_dev; }
 			ulong start_lba() const { return _start_lba; }
 			long read_inode_size() const { return _sb._super_block.inode_size; }
+			long get_sind_block_start() const { return _s_indirect_block_start; }
+			long get_dind_block_start() const { return _d_indirect_block_start; }
+			long get_tind_block_start() const { return _t_indirect_block_start; }
 
-			void * read_block( long block_no ) { return _blocks_cacher.request_block( block_no )->get_data_ptr(); }
+			Ext4Buffer * read_block( long block_no, bool pin = false ) { return _blocks_cacher.request_block( block_no, pin ); }
 
 			/// @brief 计算 inode 归属的块组
 			/// @param inode_no inode 号

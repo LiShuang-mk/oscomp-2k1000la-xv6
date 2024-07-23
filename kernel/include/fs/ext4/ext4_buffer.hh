@@ -73,7 +73,7 @@ namespace fs
 			Ext4BufferPool() = default;
 			Ext4BufferPool( long block_size, Ext4FS * fs );
 
-			Ext4Buffer * request_block( long block_no );
+			Ext4Buffer * request_block( long block_no, bool pin = false );
 
 		private:
 			void _insert_front( Ext4Buffer * buf )

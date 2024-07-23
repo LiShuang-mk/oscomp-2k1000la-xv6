@@ -10,7 +10,7 @@
 
 #include "types.hh"
 
-namespace kernellib
+namespace klib
 {
 	class PageAllocator
 	{
@@ -18,4 +18,4 @@ namespace kernellib
 		virtual void * alloc_pages( uint cnt ) = 0;
 		virtual void free_pages( void * ptr ) = 0;
 	};
-} // namespace kernellib
+} // namespace klib

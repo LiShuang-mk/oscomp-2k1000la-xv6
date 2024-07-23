@@ -93,6 +93,13 @@ namespace fs
 				p_desc += blk_gdt_off;
 				new ( &_bgs[ i ] ) Ext4BlockGroup( p_desc, this );
 			}
+
+			// 初始化 直接/间接索引块 起点
+
+			long idx_per_block = rBlockSize() / 4;
+			_s_indirect_block_start = 12;
+			_d_indirect_block_start = _s_indirect_block_start + idx_per_block;
+			_t_indirect_block_start = _d_indirect_block_start + idx_per_block * idx_per_block;
 		}
 
 		void Ext4FS::read_data( long block_no, void * dst, long size )
@@ -106,13 +113,16 @@ namespace fs
 			u8 * f;											// 数据源地址
 			long b_off;										// 块内偏移
 
+			Ext4Buffer * blk_buf = nullptr;
 			for ( long i = 0; i < size; i++ )
 			{
 				b_off = i % b_siz;
 				if ( b_off == 0 )
 				{
 					_lock.release();
-					f = ( u8* ) read_block( block_no + b_idx );
+					if ( blk_buf ) blk_buf->unpin();				// unpin the buffer last read
+					blk_buf = read_block( block_no + b_idx, true ); // pin the buffer
+					f = ( u8* ) blk_buf->get_data_ptr();
 					_lock.acquire();
 					b_idx++;
 				}

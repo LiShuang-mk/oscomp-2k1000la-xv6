@@ -41,7 +41,7 @@ namespace fs
 			}
 		}
 
-		Ext4Buffer * Ext4BufferPool::request_block( long block_no )
+		Ext4Buffer * Ext4BufferPool::request_block( long block_no, bool pin )
 		{
 			Ext4Buffer * pbuf = _search_buffer( block_no );
 
@@ -60,7 +60,7 @@ namespace fs
 
 				// 拷贝整个块到缓存
 
-				
+
 				long num_sector = _block_size / 512;
 				long block_lba = block_no * num_sector;
 				ulong buf_ptr = ( ulong ) pbuf->get_data_ptr();
@@ -81,6 +81,10 @@ namespace fs
 
 			_remove( pbuf );
 			_insert_front( pbuf );
+			
+			if ( pin )
+				pbuf->pin();
+			
 			_lock.release();
 			return pbuf;
 		}

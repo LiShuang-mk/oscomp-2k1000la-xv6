@@ -62,15 +62,15 @@ namespace math
 	uint64 power( uint64 x, uint64 y );
 } // namespace math
 
-#define assert(expr,detail,args...) ((expr)? (void)0 : kernellib::k_printer.assrt( __FILE__, __LINE__, #expr, detail,##args ))
-#define log_panic(panic_info,args...) kernellib::k_printer.panic( __FILE__, __LINE__, panic_info,##args )
+#define assert(expr,detail,args...) ((expr)? (void)0 : klib::k_printer.assrt( __FILE__, __LINE__, #expr, detail,##args ))
+#define log_panic(panic_info,args...) klib::k_printer.panic( __FILE__, __LINE__, panic_info,##args )
 
 #ifdef OS_DEBUG
 
-#define log_warn(warn__info,args...) kernellib::k_printer.warn( __FILE__, __LINE__, warn__info,##args )
-#define log_info(info__info,args...) kernellib::k_printer.info( __FILE__, __LINE__, info__info,##args )
-#define log_trace(trace_info, args...) kernellib::k_printer.trace( __FILE__, __LINE__, trace_info,##args )
-#define log_error(error_info,args...) kernellib::k_printer.error( __FILE__, __LINE__, error_info,##args )
+#define log_warn(warn__info,args...) klib::k_printer.warn( __FILE__, __LINE__, warn__info,##args )
+#define log_info(info__info,args...) klib::k_printer.info( __FILE__, __LINE__, info__info,##args )
+#define log_trace(trace_info, args...) klib::k_printer.trace( __FILE__, __LINE__, trace_info,##args )
+#define log_error(error_info,args...) klib::k_printer.error( __FILE__, __LINE__, error_info,##args )
 
 #else
 

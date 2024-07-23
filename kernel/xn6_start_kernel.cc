@@ -67,7 +67,7 @@ extern "C" {
 			hsai::hardware_abstract_init();
 
 			// printf init 
-			kernellib::k_printer.init( &dev::k_console, "printer" );
+			klib::k_printer.init( &dev::k_console, "printer" );
 
 			// console init 
 			new ( &dev::k_console ) dev::Console( DEFAULT_DEBUG_CONSOLE_NAME );
