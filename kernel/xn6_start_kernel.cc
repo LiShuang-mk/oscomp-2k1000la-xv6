@@ -204,6 +204,9 @@ extern "C" {
 			ext4fs.init( bdevi, 0, "ext4", "/test/" );
 			mm::k_hmm.print_heap_usage();
 
+			fs::ext4::Ext4Inode node;
+			ext4fs.read_inode( 2, node );
+
 
 // <<<< test ext4 fs
 

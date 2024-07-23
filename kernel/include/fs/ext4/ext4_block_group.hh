@@ -29,6 +29,11 @@ namespace fs
 			Ext4BlockGroup() = default;
 			Ext4BlockGroup( Ext4GroupDesc * gd, Ext4FS * fs );
 
+			/// @brief 读取 inode 结构体
+			/// @param index inode 在块组inode表中的下标
+			/// @param node 读取到的inode
+			void read_inode( long index, Ext4Inode &node );
+
 		private:
 			void _read_block_bitmap();
 			void _read_inode_bitmap();

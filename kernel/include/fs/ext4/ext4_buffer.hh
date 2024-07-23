@@ -15,6 +15,8 @@
  *        不一致的问题
  ******************************************/
 
+#include <smp/spin_lock.hh>
+
 namespace fs
 {
 	namespace ext4
@@ -39,6 +41,7 @@ namespace fs
 			long _block_no = -1;				// 在ext4中的块号
 			Ext4Buffer * _next = nullptr;
 			Ext4Buffer * _prev = nullptr;
+
 		public:
 			Ext4Buffer() = default;
 			Ext4Buffer( long buf_size );
@@ -59,6 +62,8 @@ namespace fs
 		class Ext4BufferPool
 		{
 		private:
+			hsai::SpinLock _lock;
+			
 			long _block_size = 0;
 			Ext4Buffer _list_head;
 			long _list_len = 0;

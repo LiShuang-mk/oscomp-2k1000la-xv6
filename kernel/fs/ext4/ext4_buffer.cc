@@ -28,6 +28,7 @@ namespace fs
 			{
 				log_panic( "bad block size (%d)", block_size );
 			}
+			_lock.init( "ext4 buffer pool" );
 			_block_size = block_size;
 			_list_head._next = &_list_head;
 			_list_head._prev = &_list_head;
@@ -44,6 +45,7 @@ namespace fs
 		{
 			Ext4Buffer * pbuf = _search_buffer( block_no );
 
+			_lock.acquire();
 			if ( pbuf == nullptr )		// 没有缓存，需要重新分配并读取
 			{
 				// 分配一个新buffer
@@ -52,17 +54,21 @@ namespace fs
 				if ( pbuf == nullptr )
 				{
 					log_warn( "ext4 buffer : no buffer to allocate" );
+					_lock.release();
 					return nullptr;
 				}
 
 				// 拷贝整个块到缓存
 
+				
 				long num_sector = _block_size / 512;
 				long block_lba = block_no * num_sector;
 				ulong buf_ptr = ( ulong ) pbuf->get_data_ptr();
 				for ( long i = 0; i < num_sector; ++i, buf_ptr += 512 )
 				{
+					_lock.release();
 					Buffer buf = k_bufm.read_sync( _belong_fs->owned_device(), _belong_fs->start_lba() + block_lba + i );
+					_lock.acquire();
 					buf.copy_data_to( ( void* ) buf_ptr );
 					k_bufm.release_buffer_sync( buf );
 				}
@@ -75,6 +81,7 @@ namespace fs
 
 			_remove( pbuf );
 			_insert_front( pbuf );
+			_lock.release();
 			return pbuf;
 		}
 
@@ -84,7 +91,9 @@ namespace fs
 			for ( ; p != &_list_head; p = p->_next )
 			{
 				if ( p->_flag.valid && p->_block_no == block_no )
+				{
 					return p;
+				}
 			}
 			return nullptr;
 		}
@@ -95,7 +104,9 @@ namespace fs
 			for ( ; p != &_list_head; p = p->_prev )
 			{
 				if ( p->_flag.pinned == 0 )
+				{
 					return p;
+				}
 			}
 			return nullptr;
 		}

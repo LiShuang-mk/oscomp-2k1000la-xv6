@@ -14,6 +14,8 @@
 #include "fs/ext4/ext4_block_group.hh"
 #include "fs/ext4/ext4_buffer.hh"
 
+#include <smp/spin_lock.hh>
+
 namespace fs
 {
 	namespace ext4
@@ -22,6 +24,7 @@ namespace fs
 		{
 			friend Ext4BlockGroup;
 		private:
+			hsai::SpinLock _lock;
 			bool _is_root = false;
 
 			int _owned_dev = -1;
@@ -34,7 +37,7 @@ namespace fs
 			int _cache_group_count = 0;
 			int _cache_blocks_per_group = 0;
 			int _cache_inodes_per_group = 0;
-			Ext4BlockGroup * _gdt = nullptr;				// block Group Descriptor Table
+			Ext4BlockGroup * _bgs = nullptr;				// block GroupS
 
 			Ext4BufferPool _blocks_cacher;
 
@@ -64,6 +67,12 @@ namespace fs
 			int owned_device() const { return _owned_dev; }
 			ulong start_lba() const { return _start_lba; }
 			void * read_block( long block_no ) { return _blocks_cacher.request_block( block_no )->get_data_ptr(); }
+			long read_inode_size() { return _sb._super_block.inode_size; }
+
+			/// @brief 计算 inode 归属的块组
+			/// @param inode_no inode 号
+			/// @return 块组号
+			long inode_bg_no( long inode_no ) { return ( inode_no - 1 ) / _cache_inodes_per_group; }
 
 		public:
 			/// @brief 从指定块号开始读取数据
@@ -71,6 +80,8 @@ namespace fs
 			/// @param dst 保存数据的地址
 			/// @param size 读取数据的长度（字节）
 			void read_data( long block_no, void * dst, long size );
+
+			void read_inode( long inode_no, Ext4Inode &node );
 		};
 
 	} // namespace ext4

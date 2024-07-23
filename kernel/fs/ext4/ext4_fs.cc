@@ -26,6 +26,8 @@ namespace fs
 				return;
 			}
 
+			_lock.init( "ext4 fs" );
+
 			// 获得 dev 设备的块大小
 
 			hsai::VirtualDevice * vd = hsai::k_devm.get_device( ( uint ) dev );
@@ -74,7 +76,7 @@ namespace fs
 
 			// 初始化块组描述符表
 
-			_gdt = new Ext4BlockGroup[ _cache_group_count ];
+			_bgs = new Ext4BlockGroup[ _cache_group_count ];
 			const int desc_per_block = _sb.rBlockSize() / sizeof( Ext4GroupDesc );
 			long blk_gdt_cnt = 0;
 			Ext4Buffer * pblk;
@@ -89,12 +91,14 @@ namespace fs
 
 				Ext4GroupDesc * p_desc = ( Ext4GroupDesc * ) pblk->get_data_ptr();
 				p_desc += blk_gdt_off;
-				new ( &_gdt[ i ] ) Ext4BlockGroup( p_desc, this );
+				new ( &_bgs[ i ] ) Ext4BlockGroup( p_desc, this );
 			}
 		}
 
 		void Ext4FS::read_data( long block_no, void * dst, long size )
 		{
+			_lock.acquire();
+
 			long b_siz = rBlockSize();						// 块大小
 
 			u8 * d = ( u8* ) dst;							// 目标地址
@@ -107,11 +111,22 @@ namespace fs
 				b_off = i % b_siz;
 				if ( b_off == 0 )
 				{
+					_lock.release();
 					f = ( u8* ) read_block( block_no + b_idx );
+					_lock.acquire();
 					b_idx++;
 				}
 				d[ i ] = f[ b_off ];
 			}
+
+			_lock.release();
+		}
+
+		void Ext4FS::read_inode( long inode_no, Ext4Inode &node )
+		{
+			long bg = ( inode_no - 1 ) / _cache_inodes_per_group;
+			long idx = ( inode_no - 1 ) % _cache_inodes_per_group;
+			_bgs[ bg ].read_inode( idx, node );
 		}
 
 	} // namespace ext4
