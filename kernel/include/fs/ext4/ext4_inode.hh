@@ -20,8 +20,8 @@ namespace fs
 			Ext4IndexNode() = default;
 			virtual ~Ext4IndexNode() override = default;
 
-			virtual Inode *lookup( eastl::string dirname, off_t off = 0 ) override { return nullptr; };
-			virtual Inode *mknode( eastl::string name, mode_t mode ) override { return nullptr; };
+			virtual Inode *lookup( eastl::string dirname ) override { return nullptr; };
+			virtual Inode *mknode( eastl::string name, mode_t mode, int dev = -1 ) override { return nullptr; };
 
 			virtual size_t nodeRead( u64 dst, size_t off, size_t len ) override { return 0; };
 			virtual size_t nodeWrite( u64 src, size_t off, size_t len ) override { return 0; };

@@ -25,7 +25,7 @@ namespace fs
 
         constexpr uint MAX_DENTRY_NUM = 70;
         constexpr uint DENTRY_TYPES = 2;
-        constexpr uint INACTIVE_LIST_MAX_SIZE = 40;  // tentative size
+        constexpr uint INACTIVE_LIST_MAX_SIZE = 35;  // tentative size
         constexpr uint ACTIVE_LIST_MAX_SIZE = 30;
         /**
          * @brief Dentry cache
@@ -36,7 +36,7 @@ namespace fs
             hsai::SpinLock _lock;
             list<dentry *> _active_list;
             list<dentry *> _inactive_list;
-            fs::dentry *_dentryPool[ MAX_DENTRY_NUM ];
+            fs::dentry _dentryPool[ MAX_DENTRY_NUM ];
             vector<int> bitmap;
             
         public:

@@ -1,9 +1,9 @@
 #include "fs/fat/fat32fs.hh"
-//#include "fs/fat/fat32Dentry.hh"
+#include "fs/fat/fat32inode.hh"
 #include "fs/dentry.hh"
 #include "fs/buffer_manager.hh"
 #include "fs/buffer.hh"
-#include "fs/dentrycache.hh"
+//#include "fs/dentrycache.hh"
 
 #include "fs/path.hh"
 
@@ -36,15 +36,15 @@ namespace fs
 			_fat_lba = _start_lba + _super_block->get_bpb()->reserved_sector_count;
 			_isroot = is_root;
 
-			/// @todo 3. init rootEntry, and it's fat32inode.
-			_root = fs::dentrycache::k_dentryCache.alloDentry();
-			_root->init( _device, _super_block, this, rootname );
+			// /// @todo 3. init rootEntry, and it's fat32inode.
+			// _root = fs::dentrycache::k_dentryCache.alloDentry();
+			// _root->init( _device, _super_block, this, rootname );
+			_root = new dentry(rootname, _super_block->allocInode( FileAttrs::File_dir<< FileAttrs::File_dir_s ), nullptr, false );
 			//_mnt = nullptr;
 
 			_root->EntryCreate( "test_unlink", 0 );
 
 			/// @todo 4. try to mount fat to ramfs's /mnt/fat
-			//fs::mnt_table[ "/mnt/fat" ] = this;
 		}
 
 		dentry *Fat32FS::getRoot () const

@@ -1,5 +1,5 @@
 #include "fs/ramfs/ramfs.hh"
-#include "fs/dentrycache.hh"
+//#include "fs/dentrycache.hh"
 #include "fs/dentry.hh"
 #include "fs/file.hh"
 #include "fs/fat/fat32fs.hh"
@@ -23,19 +23,19 @@ namespace fs{
         }
 
         void RamFS::initfd(){
-            /// @todo main purpose is init /device, init device and set it as root
-           
+
             /// set device num
-            _device = 0;
+            _device = 0; /// 这里设备号没什么用，ramfs是一个内存文件系统
             /// set file system type
             _fstype = "ramfs";  
             /// super block has been initialized in constructor
-            _root = fs::dentrycache::k_dentryCache.alloDentry();
-            _root->init( _device, this );
             _super_block = new RamFSSb( this );
+            _root = new fs::dentry( "/", _super_block->allocInode(
+                                FileAttrs::File_dir << FileAttrs::File_dir_s )
+                                , nullptr, true );
+            
             _mnt = nullptr;
-            /// ramfs is temporary fs 
-            _isroot = true;
+
             
         
             _root->EntryCreate( "dev", FileAttrs::File_dir << FileAttrs::File_dir_s ); // 暂时把第二个参数为正数认为是目录， 还要创建 /dev/sda1, 用来初始化ext4
@@ -52,20 +52,18 @@ namespace fs{
             {
                 dev_table[i] = nullptr;
             }
-            
             hsai::k_devm.traversal_dev_table( dev_table );
             for( int i = 0; i < DEV_TBL_LEN; i++ )
             {
                 if( dev_table[i] == nullptr )
                     break;
-                dev->EntryCreate( dev_table[i], FileAttrs::File_dir << FileAttrs::File_dir_s );
+                dev->EntryCreate( dev_table[i], FileAttrs::File_dir << FileAttrs::File_dir_s, i);
             }
             if( !dev )
             {
                 log_error("RamFS::initfd: mnt is nullptr");
                 return;
             }
-            dev->EntryCreate("vda2", FileAttrs::File_dir << FileAttrs::File_dir_s );
             _root->printChildrenInfo( );
 
             return;

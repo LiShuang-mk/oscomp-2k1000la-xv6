@@ -27,7 +27,7 @@ namespace fs{
                 uint32 rDefaultMod() const override { return fs->rDefaultMod(); } 
                 size_t rBlockSize() const override { return 0; }
                 size_t rBlockNum() const override { return 0; }
-                Inode*  allocInode( mode_t mode )  override;
+                Inode*  allocInode( mode_t mode, int dev = -1 )  override;
         };
     }
 }

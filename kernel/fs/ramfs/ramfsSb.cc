@@ -6,7 +6,7 @@ namespace fs
 {
     namespace ramfs
     {
-        Inode *RamFSSb::allocInode( mode_t mode )
+        Inode *RamFSSb::allocInode( mode_t mode , int dev)
         {
             return new RamInode( static_cast<RamFS *>(fs), ++ino, mode, ISDIR(mode) );
         }

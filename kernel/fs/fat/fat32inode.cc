@@ -162,7 +162,7 @@ namespace fs
 			return _belong_fs;
 		}
 		
-		Inode * Fat32Inode::lookup( eastl::string dirname, off_t off_ )
+		Inode * Fat32Inode::lookup( eastl::string dirname )
 		{
 			if ( !is_dir() ) return nullptr;
 
@@ -226,9 +226,9 @@ namespace fs
 				return nullptr;
 		}
 		
-		Inode *Fat32Inode::mknode(eastl::string name, mode_t mode)
+		Inode *Fat32Inode::mknode(eastl::string name, mode_t mode, int dev)
 		{
-			return _belong_fs->getSuperBlock()->allocInode( ISDIR(mode) );
+			return _belong_fs->getSuperBlock()->allocInode( ISDIR(mode), dev );
 		}
 // ================ private helper function ================
 

@@ -27,8 +27,8 @@ namespace fs
 
 		//virtual void link(const char *name,InodeRef nod) = 0;
 		//virtual int nodeHardUnlink() = 0;
-		virtual Inode* lookup( eastl::string dirname, off_t off_ = 0 ) = 0;
-		virtual Inode* mknode( eastl::string name, mode_t mode ) = 0;
+		virtual Inode* lookup( eastl::string dirname ) = 0;
+		virtual Inode* mknode( eastl::string name, mode_t mode, int dev ) = 0;
 		//virtual int entSymLink( const eastl::string arget ) = 0;
 
 		//virtual void nodeRemove() = 0;
