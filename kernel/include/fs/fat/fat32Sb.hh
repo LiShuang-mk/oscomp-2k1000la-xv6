@@ -38,7 +38,7 @@ namespace fs{
 				uint rSectorPClu() { return _dbr.bpb.sectors_per_cluster; }
 				uint rFatCnt() { return _dbr.bpb.table_count; }
 				size_t rBlockNum() const override { return _dbr.bpb.total_sectors_32; }
-				Inode *allocInode( mode_t mode ) override ;
+				Inode *allocInode( mode_t mode, int dev = -1 ) override ;
 		};
     }
 }

@@ -7,10 +7,10 @@ namespace fs
 {
     namespace fat
     {
-        Inode * Fat32SuperBlock::allocInode( mode_t mode )
+        Inode * Fat32SuperBlock::allocInode( mode_t mode, int dev )
         {
             return new Fat32Inode( static_cast<Fat32FS *>(_fs)
-                                                        , ++ino );
+                                                        , ++ino, dev );
         }
     }
 }//namespace fs

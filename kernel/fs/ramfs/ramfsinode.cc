@@ -14,9 +14,9 @@ namespace fs{
             return belong_fs;
         }
 
-        Inode *RamInode::mknode(eastl::string name, mode_t mode) 
+        Inode *RamInode::mknode(eastl::string name, mode_t mode, int dev ) 
         {
-            return belong_fs->getSuperBlock()->allocInode( mode );
+            return belong_fs->getSuperBlock()->allocInode( mode, dev );
         }
     }
 }

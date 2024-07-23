@@ -41,7 +41,7 @@ namespace fs
 			virtual u32 rDefaultMod() const override { return 0; };
 			virtual size_t rBlockSize() const override { return _cache_block_size; };
 			virtual size_t rBlockNum() const override { return _cache_block_count; };
-			virtual Inode *allocInode( mode_t mode ) override { return nullptr; };
+			virtual Inode *allocInode( mode_t mode, int dev = -1 ) override { return nullptr; };
 
 			size_t rBlockFree() const { return _cache_free_block_count; }
 

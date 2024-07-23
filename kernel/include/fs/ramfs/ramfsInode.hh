@@ -24,14 +24,15 @@ namespace fs{
                 bool is_dir;
                 eastl::vector<uint8> data;
                 mode_t mode;
+                int dev;
             public:
                 RamInode() = default;
-                RamInode( RamFS *fs_, uint ino_, mode_t mode_, bool isDir = false ) : belong_fs( fs_ ), ino( ino_ ), is_dir( isDir ), mode(mode_) {}
+                RamInode( RamFS *fs_, uint ino_, mode_t mode_, bool isDir = false, int dev_ = -1 ) : belong_fs( fs_ ), ino( ino_ ), is_dir( isDir ), mode(mode_), dev(dev_) {}
                 RamInode( RamFS *fs_, uint ino_, bool isDir) : belong_fs( fs_ ), ino( ino_ ), is_dir( isDir ), mode( 0 ) {}
                 ~RamInode() = default;
                 
-                Inode *lookup( eastl::string dirname, off_t off_ = 0 ) override { return nullptr ; } ;
-                Inode *mknode( eastl::string dirname, uint32 mode ) override  ;
+                Inode *lookup( eastl::string dirname ) override { return nullptr ; } ;
+                Inode *mknode( eastl::string dirname, mode_t mode, int dev = -1 ) override  ;
                 size_t nodeRead( uint64 dst_, size_t off_, size_t len_ ) override { return 0 ; } ;
                 size_t nodeWrite( uint64 src_, size_t off_, size_t len_ ) override { return  0; } ;
 

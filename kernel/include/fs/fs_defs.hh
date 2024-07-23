@@ -12,7 +12,6 @@
 
 namespace fs
 {
-	class Dentry;
 	class FileSystem;
 	class Inode;
 	class dentry;
@@ -30,7 +29,7 @@ namespace fs
 		virtual uint32 rDefaultMod() const = 0; // get default mode
 		virtual size_t rBlockSize() const = 0; // get block size
 		virtual size_t rBlockNum() const = 0; // get block number
-		virtual Inode *allocInode( mode_t mode ) = 0; // allocate inode
+		virtual Inode *allocInode( mode_t mode , int dev = -1) = 0; // allocate inode
 		//virtual void destroyInode( Inode *inode ) = 0; // destroy inode
 	};
 

@@ -19,8 +19,8 @@ namespace fs
 
             for( ; _index < MAX_DENTRY_NUM ; ++_index )
             {
-                _dentryPool[ _index ] = new dentry();
-                _dentryPool[ _index ]->Did = _index;
+                // _dentryPool[ _index ] =  dentry();
+                _dentryPool[ _index ].Did = _index;
             }
             _active_list.clear();
             _inactive_list.clear();
@@ -33,13 +33,13 @@ namespace fs
             dentry *dentry = nullptr;
             [[ maybe_unused ]]int found = 0;
  
-            for( auto it: _dentryPool )
+            for( auto &it: _dentryPool )
             {
-                if( bitmap[it->Did] == 0 )
+                if( bitmap[it.Did] == 0 )
                 {
                     found = 1;
-                    dentry = it;
-                    bitmap[it->Did] = 1;
+                    dentry = &it;
+                    bitmap[it.Did] = 1;
                     _active_list.push_back(dentry);
                     break;
                 }

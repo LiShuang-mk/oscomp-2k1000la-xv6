@@ -9,6 +9,7 @@
 #pragma once 
 
 #include "types.hh"
+#include "klib/common.hh"
 
 #include <EASTL/string.h>
 #include <EASTL/unordered_map.h>
@@ -58,12 +59,12 @@ namespace fs
 		dentry() = default; //{ name.clear(); children.clear(); node = nullptr;  parent = nullptr; isroot = false; };
 		dentry( const dentry& ) = default;
 		dentry & operator=( const dentry& ) = default;
-		dentry( eastl::string name, Inode* node, dentry* parent ) : name( name ), _node( node ), parent( parent ) {}
-		dentry( uint did ) : Did( did ) {}
+		dentry( eastl::string name, Inode* node, dentry* parent , bool isroot = false ) : name( name ), _node( node ), parent( parent ), isroot(isroot) {}
+		dentry( uint did ) : Did( did ) {} // only for dentrycache
 		~dentry();
 
 		dentry *EntrySearch( eastl::string name );
-		dentry *EntryCreate( eastl::string name, uint32 mode );
+		dentry *EntryCreate( eastl::string name, uint32 mode, int dev = -1 );
 		Inode *getNode();
 		bool isRoot();
 		dentry *getParent() { return parent == nullptr ? nullptr : parent; };
@@ -77,16 +78,10 @@ namespace fs
 		void setParent( dentry *parent ) { this->parent = parent; };
 
 	public:
-		void init( Inode *node );
 
-		// >>> ? 这么多init，功能还不一样？
-		void init( uint32 dev, ramfs::RamFS *fs );
-
+		// >>> ? 这么多init，功能还不一样？------已解决
 		// >>> dentry作为vfs层的类型，怎么知道底层的子类类型？
 		// >>> 难道每增加一种操作系统的支持就要再写一个init函数？
-		void init( uint32 dev, fat::Fat32SuperBlock *sb, fat::Fat32FS* fs, eastl::string rootname );
-		void init( eastl::string name_, Inode *node_, dentry *parent_ );
-		void rootInit( Inode *node, eastl::string rootname );
 
 		void printChildrenInfo();
 
