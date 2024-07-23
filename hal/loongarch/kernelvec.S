@@ -18,9 +18,6 @@ kernelvec:
 	# make room to save registers.
 	addi.d $sp, $sp, -256
 
-	csrwr	$t0, 0x8b
-	csrrd	$t0, 0x05
-
 	# save the registers.
 	st.d $ra, $sp, 0
 	st.d $tp, $sp, 8
