@@ -55,6 +55,7 @@ namespace mm
 
 	public:
 		void debug_test_buddy();
+		void debug_print();
 	};
 
 

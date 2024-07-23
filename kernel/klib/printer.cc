@@ -133,13 +133,13 @@ namespace kernellib
 			switch ( c )
 			{
 				case 'd':
-					printint( va_arg( ap, int ), 10, 1 );
+					printint( va_arg( ap, long ), 10, 1 );
 					break;
 				case 'u':
-					printint( va_arg( ap, int ), 10, 0 );
+					printint( va_arg( ap, long ), 10, 0 );
 					break;
 				case 'x':
-					printint( va_arg( ap, int ), 16, 0 );
+					printint( va_arg( ap, long ), 16, 0 );
 					break;
 				case 'p':
 					printptr( va_arg( ap, uint64 ) );

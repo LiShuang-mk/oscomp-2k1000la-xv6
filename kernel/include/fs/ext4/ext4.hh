@@ -16,6 +16,10 @@ namespace fs
 {
 	namespace ext4
 	{
+		struct Ext4_4kBlock
+		{
+			u8 data[ 4 * _1K ];
+		}ATTR_PACK;
 
 		struct Ext4SuperBlock
 		{

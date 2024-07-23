@@ -173,7 +173,7 @@ namespace fs
 		node = _buffer_pool[ blk ].search_buffer( dev, blk, tag );
 		if ( node != nullptr )
 		{ // 命中 buffer
-			log_info( "BufferManager : 命中buffer ([%d][%d])", blk, node->_buf_index );
+			// log_info( "BufferManager : 命中buffer ([%d][%d])", blk, node->_buf_index );
 
 			if ( _buf_is_disk_own( blk, node->_buf_index ) )
 			{ // 虽然命中 buffer，但是这个 buffer 被硬盘占用，应当等待硬盘解除占用

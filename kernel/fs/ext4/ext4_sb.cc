@@ -23,25 +23,35 @@ namespace fs
 				return;
 			}
 
-			_cache_block_count = _1K << _super_block.log_block_size;
+			_cache_block_size = _1K << _super_block.log_block_size;
+			log_info( "ext4 block size %d bytes", _cache_block_size );
 
-			if ( _super_block.feature_incompat.flags.enable_64bit )
+			_support_64bit = _super_block.feature_incompat.flags.enable_64bit;
+			
+			if ( _support_64bit )
 			{
-				_cache_block_size = _super_block.blocks_count_lo + ( ( ulong ) _super_block.blocks_count_hi << 32 );
+				_cache_block_count = _super_block.blocks_count_lo + ( ( ulong ) _super_block.blocks_count_hi << 32 );
 				_cache_free_block_count = _super_block.free_blocks_count_lo + ( ( ulong ) _super_block.free_blocks_count_hi << 32 );
 			}
 			else
 			{
-				_cache_block_size = _super_block.blocks_count_lo;
+				_cache_block_count = _super_block.blocks_count_lo;
 				_cache_free_block_count = _super_block.free_blocks_count_lo;
 			}
 
+			log_info(
+				"ext4\n"
+				"\tblock count = %d\n"
+				"\tbfree block = %d",
+				_cache_block_count,
+				_cache_free_block_count
+			);
 
 		}
 
 		Ext4SB::~Ext4SB()
 		{
-			
+			// log_info( "Ext4SB deconstructor" );
 		}
 
 

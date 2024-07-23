@@ -49,6 +49,15 @@ namespace fs
 			return ( const void * ) _buffer_base;
 		}
 
+		void copy_data_to( void * dst )
+		{
+			long * _from = ( long* ) _buffer_base;
+			long * _to = ( long* ) dst;
+			const long count = default_sector_size / sizeof( long );
+			for ( long i = 0; i < count; ++i )
+				_to[ i ] = _from[ i ];
+		}
+
 		const void * get_end_ptr()
 		{
 			return ( const void * ) ( ( uint64 ) _buffer_base + default_buffer_size );

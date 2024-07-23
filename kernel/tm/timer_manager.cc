@@ -45,6 +45,7 @@ namespace tmm
 	{
 		_lock.acquire();
 		_ticks++;
+		// printf( "t" );
 		// loongarch::Cpu::write_csr( loongarch::csr::CsrAddr::tcfg, _tcfg_data );
 		pm::k_pm.wakeup( &_ticks );
 		_lock.release();

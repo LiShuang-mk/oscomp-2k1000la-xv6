@@ -12,13 +12,18 @@
 
 namespace fs
 {
-    fs::dentry *dentry::EntrySearch(const eastl::string name)
+	dentry::~dentry()
+	{
+		delete _node;
+	}
+
+	fs::dentry *dentry::EntrySearch( const eastl::string name )
     {
         log_trace("dentry::EntrySearch: name = %s", name.c_str());
         auto it = children.find(name);
         if (it != children.end())
             return it->second;
-        if ( [[maybe_unused]] auto subnod = (node->lookup(name)))
+        if ( [[maybe_unused]] auto subnod = (_node->lookup(name)))
         {
             log_trace("dentry::EntrySearch: found inode");
             dentry *subdentry = fs::dentrycache::k_dentryCache.alloDentry();
@@ -44,7 +49,7 @@ namespace fs
             
         //[[maybe_unused]] FileSystem *fs = node->getFS();
 
-        Inode* node_ = this->node->mknode( name, mode );
+        Inode* node_ = this->_node->mknode( name, mode );
         if (node_ == nullptr) 
         {
             log_error("dentry::EntryCreate: nodefs is not RamFS");
@@ -70,7 +75,7 @@ namespace fs
         bitmap[ Did ] = 0;
 		parent->delete_child( name ); // delete from parent
 		parent = nullptr;
-		node = nullptr;
+		_node = nullptr;
 		name.clear();
 		for( auto &p : children )
 		{
@@ -82,17 +87,17 @@ namespace fs
 
     Inode *dentry::getNode()
     {
-        return node;
+        return _node;
     }
 
     bool dentry::isRoot()
     {
-        return this == node->getFS()->getRoot();
+        return this == _node->getFS()->getRoot();
     }
 
     bool dentry::isMntPoint()
     {
-        return this == node->getFS()->getMntPoint();
+        return this == _node->getFS()->getMntPoint();
     }
     void dentry::init( uint32 dev, fat::Fat32SuperBlock *sb, fat::Fat32FS* fs, eastl::string rootname )
     {
@@ -105,17 +110,25 @@ namespace fs
         );
         rootInit( node, rootname );
         isroot = true;
-    }
+	}
+
+
+	void dentry::init( Inode *node )
+	{
+		delete _node;
+		_node = node;
+	}
+
 
     void dentry::init( eastl::string name ,Inode *node , dentry *parent )
     {
-        this->node = node;
+        this->_node = node;
         this->parent = parent;
         this->name = name;
     }
     void dentry::rootInit( Inode *node, eastl::string rootname )
     {
-        this->node = node;
+        this->_node = node;
         name = rootname;
     }
 
@@ -141,7 +154,7 @@ namespace fs
     void dentry::init( uint32 dev, ramfs::RamFS *fs )
     {
         parent = nullptr; 
-        node = fs->getSuperBlock()->allocInode( true );
+        _node = fs->getSuperBlock()->allocInode( true );
         name = "/";
         isroot = true;  // ramfs 作为根FS进行初始化
     }

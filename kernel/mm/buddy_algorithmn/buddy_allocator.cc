@@ -79,9 +79,10 @@ namespace mm
 	{
 		if ( count == 0 )
 		{
-			// std::cout << "buddy-alloc : request ZERO pages. return null pointer.";
+			printf( "buddy-alloc : request ZERO pages. return null pointer." );
 			return nullptr;
 		}
+
 
 		// get the order of the node including 'count' pages
 		// 2^(order-1) < count <= 2^(order)
@@ -89,21 +90,25 @@ namespace mm
 			( uint16 ) lowest_bit( count ) :		// allocate a complete area
 			( uint16 ) highest_bit( count ) + 1;	// allocate an area a little bigger than the size requested 
 
+		_lock.acquire();
+
 
 		BuddyNode nd;
-		for ( auto &bm : _buddy_managers )
+		for ( uint i = 0; i < _buddy_managers_cnt; ++i )
 		{
+			auto &bm = _buddy_managers[ i ];
 			nd = bm.allocate_node( order );
 			if ( nd._area_size != 0 )
 			{
-				_lock.acquire();
 				_record_order( nd, order );
-				_lock.release();
 				break;
 			}
 		}
+		_lock.release();
 
-		return ( void * ) nd._area_start;
+		void * ptr = ( void * ) nd._area_start;
+
+		return ptr;
 	}
 
 	int BuddyAllocator::free_pages( void * ptr )
@@ -129,10 +134,10 @@ namespace mm
 	static int debug_cnt = 0;
 #ifndef COLOR_PRINT
 #define COLOR_PRINT
-	
+
 #define BLUE_COLOR_PRINT "\033[36m"
 #define CLEAR_COLOR_PRINT "\033[0m"
-	
+
 #endif 
 
 	void BuddyAllocator::debug_print_node_list()

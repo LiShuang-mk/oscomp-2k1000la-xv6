@@ -184,4 +184,9 @@ namespace mm
 
 	}
 
+	void PhysicalMemoryManager::debug_print()
+	{
+		k_phy_alloc.debug_print_node_list();
+	}
+
 } // namespace mm

@@ -7,7 +7,7 @@
 #include "fs/fat/fat32.hh"
 #include "fs/fat/fat32_file_system.hh"
 #include "fs/fat/fat32fs.hh"
-#include "fs/ext4/ext4_sb.hh"
+#include "fs/ext4/ext4_fs.hh"
 #include "fs/ramfs/ramfs.hh"
 #include "fs/jbd2/journal_super_block.hh"
 #include "fs/buffer_manager.hh"
@@ -31,6 +31,8 @@
 #include <hsai_defs.h>
 #include <hsai_global.hh>
 #include <virtual_cpu.hh>
+#include <device_manager.hh>
+#include <block_device.hh>
 
 #include <EASTL/string.h>
 #include <EASTL/unordered_map.h>
@@ -165,16 +167,19 @@ extern "C" {
 			// 使用前先备份2kfs.img或sdcard.img
 			// test_sata();
 
-			log_trace(
-				"bufm 初始化前跟踪空闲物理页 : %d",
-				mm::k_pmm.trace_free_pages_count()
-			);
+			mm::k_pmm.debug_print();
+
+			// log_trace(
+			// 	"bufm 初始化前跟踪空闲物理页 : %d",
+			// 	mm::k_pmm.trace_free_pages_count()
+			// );
 			fs::k_bufm.init( "buffer manager" );
 			log_info( "bufm init" );
-			log_trace(
-				"bufm 初始化后跟踪空闲物理页 : %d",
-				mm::k_pmm.trace_free_pages_count()
-			);
+			// log_trace(
+			// 	"bufm 初始化后跟踪空闲物理页 : %d",
+			// 	mm::k_pmm.trace_free_pages_count()
+			// );
+			mm::k_pmm.debug_print();
 
 			// test_buffer();
 			// while ( 1 );
@@ -189,6 +194,18 @@ extern "C" {
 			log_info( "ramfs init" );
 
 			mm::k_hmm.print_heap_usage();
+
+
+// >>>> test ext4 fs
+
+			int bdevi = hsai::k_devm.search_block_device( "hdb" );
+			assert( bdevi >= 0, "bad device number" );
+			fs::ext4::Ext4FS ext4fs;
+			ext4fs.init( bdevi, 0, "ext4", "/test/" );
+			mm::k_hmm.print_heap_usage();
+
+
+// <<<< test ext4 fs
 
 			while ( 1 );
 

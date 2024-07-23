@@ -44,7 +44,10 @@ namespace mm
 		BuddyNode res = { 0, 0 };
 
 		if ( order >= _node_list_length )
+		{
+			log_warn( "buddy order too big (%d)", order );
 			return res;
+		}
 
 		int i = ( int ) order;
 
@@ -59,6 +62,7 @@ namespace mm
 		if ( i >= ( int ) _node_list_length )
 		{
 			_lock.release();
+			log_warn( "no available buddy" );
 			return res;
 		}
 
@@ -68,7 +72,7 @@ namespace mm
 		// split node
 		for ( ; i > ( int ) order; i-- )
 			if ( [[maybe_unused]] int ret = _split_node( i, res ) < 0 )
-				assert( ret >= 0, "" );
+				assert( ret >= 0, "split buddy fail" );
 
 		_lock.release();
 

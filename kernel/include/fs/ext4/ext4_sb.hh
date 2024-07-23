@@ -16,13 +16,16 @@ namespace fs
 	namespace ext4
 	{
 		class Ext4FS;
+		class Ext4BlockGroup;
 
-		class Ext4SB : public fs::SuperBlock
+		class Ext4SB : public SuperBlock
 		{
 			friend Ext4FS;
+			friend Ext4BlockGroup;
 		private:
 			Ext4SuperBlock _super_block;
 			FileSystem * _belong_fs = nullptr;
+			bool _support_64bit = false;
 			size_t _cache_block_size = 0;
 			size_t _cache_block_count = 0;
 			size_t _cache_free_block_count = 0;
@@ -41,6 +44,8 @@ namespace fs
 			virtual Inode *allocInode( mode_t mode ) override { return nullptr; };
 
 			size_t rBlockFree() const { return _cache_free_block_count; }
+
+			bool support64bit() const { return _support_64bit; }
 		};
 
 	} // namespace ext4

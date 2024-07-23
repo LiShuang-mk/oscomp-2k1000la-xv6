@@ -24,15 +24,15 @@ namespace fs
 	}
 
 	enum DentryType
-    {
-            RAMFS_DENTRY = 0,
-            FAT32_DENTRY = 1,
-    };
+	{
+		RAMFS_DENTRY = 0,
+		FAT32_DENTRY = 1,
+	};
 
 	namespace fat
 	{
 		class Fat32SuperBlock;
-		class Fat32FS;	
+		class Fat32FS;
 	}
 
 	namespace ramfs
@@ -45,44 +45,50 @@ namespace fs
 	class dentry
 	{
 		friend class dentrycache::dentryCache;
-		private:
-			eastl::string name;
-			eastl::unordered_map<eastl::string, dentry *> children;
-			Inode *node;
+	private:
+		eastl::string name;
+		eastl::unordered_map<eastl::string, dentry *> children;
+		Inode *_node = nullptr;
 
-			dentry *parent;
-			uint Did; // dentry id
-			bool isroot;
+		dentry *parent;
+		uint Did; // dentry id
+		bool isroot;
 
-		public:
-			dentry() = default; //{ name.clear(); children.clear(); node = nullptr;  parent = nullptr; isroot = false; };
-			dentry( const dentry& ) = default;
-			dentry & operator=( const dentry& ) = default;
-			dentry( eastl::string name, Inode* node, dentry* parent ) : name( name ), node( node ), parent( parent ) {}
-			dentry( uint did ) : Did( did ) {}
-			~dentry() = default;
+	public:
+		dentry() = default; //{ name.clear(); children.clear(); node = nullptr;  parent = nullptr; isroot = false; };
+		dentry( const dentry& ) = default;
+		dentry & operator=( const dentry& ) = default;
+		dentry( eastl::string name, Inode* node, dentry* parent ) : name( name ), _node( node ), parent( parent ) {}
+		dentry( uint did ) : Did( did ) {}
+		~dentry();
 
-			dentry *EntrySearch( eastl::string name );
-			dentry *EntryCreate( eastl::string name, uint32 mode );
-			Inode *getNode();	
-			bool isRoot();
-			dentry *getParent() { return parent == nullptr ? nullptr : parent ;};
-			eastl::string rName() { return name; };
-			uint getDid() { return Did; };
-			void reset( vector<int> &bitmap );
-			eastl::unordered_map<eastl::string, dentry*> &getChildren() { return children; };
-			//bool is_root();
-			bool isMntPoint();
-			void delete_child( eastl::string name ) { children.erase( name ); };
-			void setParent( dentry *parent ) { this->parent = parent; };
-		
-		public:
-			void init( uint32 dev, ramfs::RamFS *fs );	
-			void init( uint32 dev, fat::Fat32SuperBlock *sb, fat::Fat32FS* fs, eastl::string rootname );
-			void init( eastl::string name_, Inode *node_, dentry *parent_ ) ;
-			void rootInit( Inode *node, eastl::string rootname );
+		dentry *EntrySearch( eastl::string name );
+		dentry *EntryCreate( eastl::string name, uint32 mode );
+		Inode *getNode();
+		bool isRoot();
+		dentry *getParent() { return parent == nullptr ? nullptr : parent; };
+		eastl::string rName() { return name; };
+		uint getDid() { return Did; };
+		void reset( vector<int> &bitmap );
+		eastl::unordered_map<eastl::string, dentry*> &getChildren() { return children; };
+		//bool is_root();
+		bool isMntPoint();
+		void delete_child( eastl::string name ) { children.erase( name ); };
+		void setParent( dentry *parent ) { this->parent = parent; };
 
-			void printChildrenInfo();
+	public:
+		void init( Inode *node );
+
+		// >>> ? 这么多init，功能还不一样？
+		void init( uint32 dev, ramfs::RamFS *fs );
+
+		// >>> dentry作为vfs层的类型，怎么知道底层的子类类型？
+		// >>> 难道每增加一种操作系统的支持就要再写一个init函数？
+		void init( uint32 dev, fat::Fat32SuperBlock *sb, fat::Fat32FS* fs, eastl::string rootname );
+		void init( eastl::string name_, Inode *node_, dentry *parent_ );
+		void rootInit( Inode *node, eastl::string rootname );
+
+		void printChildrenInfo();
 
 	};
 } // namespace fs
