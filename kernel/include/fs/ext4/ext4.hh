@@ -304,11 +304,37 @@ namespace fs
 		}ATTR_PACK;
 		static_assert( sizeof( Ext4ExtentLeafNode ) == 12 );
 
+#define _build_ext4imode_enum_( name, value ) \
+			ext4_imode_##name = value, 
+		enum Ext4InodeMode : u16
+		{
+			_build_ext4imode_enum_( xoth, 0x0001 )
+			_build_ext4imode_enum_( woth, 0x0002 )
+			_build_ext4imode_enum_( roth, 0x0004 )
+			_build_ext4imode_enum_( xgrp, 0x0008 )
+			_build_ext4imode_enum_( wgrp, 0x0010 )
+			_build_ext4imode_enum_( rgrp, 0x0020 )
+			_build_ext4imode_enum_( xusr, 0x0040 )
+			_build_ext4imode_enum_( wusr, 0x0080 )
+			_build_ext4imode_enum_( rusr, 0x0100 )
+			_build_ext4imode_enum_( svtx, 0x0200 )
+			_build_ext4imode_enum_( sgid, 0x0400 )
+			_build_ext4imode_enum_( suid, 0x0800 )
+			_build_ext4imode_enum_( fifo, 0x1000 )
+			_build_ext4imode_enum_( fchr, 0x2000 )
+			_build_ext4imode_enum_( fdir, 0x4000 )
+			_build_ext4imode_enum_( fblk, 0x6000 )
+			_build_ext4imode_enum_( freg, 0x8000 )
+			_build_ext4imode_enum_( flnk, 0xa000 )
+			_build_ext4imode_enum_( fsok, 0xc000 )
+		};
+#undef _build_ext4imode_enum_
+
 		struct Ext4Inode
 		{
 		// 0x000
 
-			uint16 mode;			/* File mode */
+			Ext4InodeMode mode;		/* File mode */
 			uint16 uid;				/* Low 16 bits of Owner Uid */
 			uint32 size_lo;			/* Size in bytes */
 			uint32 atime;			/* Access time */
@@ -324,7 +350,45 @@ namespace fs
 
 		// 0x020
 
-			uint32 flags;			/* File flags */
+			union
+			{
+				u32 value;
+				struct
+				{
+					u32 secrm : 1;
+					u32 unrm : 1;
+					u32 compr : 1;
+					u32 sync : 1;
+					u32 immutable : 1;
+					u32 append : 1;
+					u32 nodump : 1;
+					u32 noatime : 1;
+					u32 dirty : 1;
+					u32 comprblk : 1;
+					u32 nocompr : 1;
+					u32 encrypt : 1;
+					u32 index : 1;
+					u32 imagic : 1;
+					u32 journal_data : 1;
+					u32 notail : 1;
+					u32 dirsync : 1;
+					u32 topdir : 1;
+					u32 huge_file : 1;
+					u32 extents : 1;
+					u32 verity : 1;
+					u32 ea_inode : 1;
+					u32 eofblocks : 1;
+					u32 _rsv0 : 1;
+					u32 snapfile : 1;
+					u32 _rsv1 : 1;
+					u32 snapfile_deleted : 1;
+					u32 snapfile_shrunk : 1;
+					u32 inline_data : 1;
+					u32 projinherit : 1;
+					u32 _rsv2 : 1;
+					u32 reserved : 1;
+				}ATTR_PACK fl;
+			}ATTR_PACK flags;			/* File flags */
 
 			/* OS dependent 1 */
 			uint32 version;
@@ -343,6 +407,7 @@ namespace fs
 						Ext4ExtentLeafNode     leaf;
 					}ATTR_PACK tree_nodes[ 4 ];
 				}ATTR_PACK extents;
+				u8 inline_data[ 60 ];
 			}ATTR_PACK blocks;						/* Pointers to blocks */
 			static_assert( sizeof( _block_u_t_ ) == 60/*Bytes*/ );
 
