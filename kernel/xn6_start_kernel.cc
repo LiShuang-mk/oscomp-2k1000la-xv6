@@ -181,6 +181,17 @@ extern "C" {
 			// 	mm::k_pmm.trace_free_pages_count()
 			// );
 			mm::k_pmm.debug_print();
+			
+			mm::k_hmm.print_heap_usage();
+
+			
+			int bdevi = hsai::k_devm.search_block_device( "hdb" );
+			assert( bdevi >= 0, "bad device number" );
+			fs::ext4::Ext4FS ext4fs;
+			ext4fs.init( bdevi, 0, "ext4", "/test/" );
+			mm::k_hmm.print_heap_usage();
+
+			while ( 1 );
 
 			// test_buffer();
 			// while ( 1 );
@@ -204,21 +215,21 @@ extern "C" {
 
 // >>>> test ext4 fs
 
-			int bdevi = hsai::k_devm.search_block_device( "hdb" );
-			assert( bdevi >= 0, "bad device number" );
-			fs::ext4::Ext4FS ext4fs;
-			ext4fs.init( bdevi, 0, "ext4", "/test/" );
-			mm::k_hmm.print_heap_usage();
+			// int bdevi = hsai::k_devm.search_block_device( "hdb" );
+			// assert( bdevi >= 0, "bad device number" );
+			// fs::ext4::Ext4FS ext4fs;
+			// ext4fs.init( bdevi, 0, "ext4", "/test/" );
+			// mm::k_hmm.print_heap_usage();
 
-			fs::ext4::Ext4Inode node;
-			ext4fs.read_inode( 2, node );
+			// fs::ext4::Ext4Inode node;
+			// ext4fs.read_inode( 2, node );
 
-			fs::ext4::Ext4IndexNode ram_node( node, &ext4fs );
-			fs::ext4::Ext4IndexNode * sub_node = ( fs::ext4::Ext4IndexNode * ) ram_node.lookup( "sdcard" );
-			if ( sub_node == nullptr )
-				log_trace( "ext4-inode lookup fail" );
-			else
-				log_trace( "ext4-inode lookup success" );
+			// fs::ext4::Ext4IndexNode ram_node( node, &ext4fs );
+			// fs::ext4::Ext4IndexNode * sub_node = ( fs::ext4::Ext4IndexNode * ) ram_node.lookup( "sdcard" );
+			// if ( sub_node == nullptr )
+			// 	log_trace( "ext4-inode lookup fail" );
+			// else
+			// 	log_trace( "ext4-inode lookup success" );
 
 			// ram_node.debug_hash( "sdcard" );
 

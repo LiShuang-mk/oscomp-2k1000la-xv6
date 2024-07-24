@@ -8,6 +8,8 @@
 
 #include "fs/ext4/ext4_fs.hh"
 #include "fs/buffer_manager.hh"
+#include "fs/dentrycache.hh"
+#include "fs/dentry.hh"
 #include "klib/common.hh"
 
 #include <hsai_global.hh>
@@ -18,6 +20,14 @@ namespace fs
 {
 	namespace ext4
 	{
+		Ext4FS::~Ext4FS()
+		{
+			delete _root_inode;
+			delete[] _bgs;
+
+			/// @todo how to release root dentry?
+		}
+
 		void Ext4FS::init( int dev, u64 start_lba, eastl::string fstype, eastl::string rootname, bool is_root )
 		{
 			if ( fstype != "ext4" )
@@ -100,6 +110,28 @@ namespace fs
 			_s_indirect_block_start = 12;
 			_d_indirect_block_start = _s_indirect_block_start + idx_per_block;
 			_t_indirect_block_start = _d_indirect_block_start + idx_per_block * idx_per_block;
+
+			// 初始化根节点
+
+			long root_ino = ino_root;
+			log_trace( "ext4-fs : init inode %d as root", root_ino );
+			Ext4Inode node;
+			if ( read_inode( root_ino, node ) < 0 )
+			{
+				log_panic( "ext4-fs : read inode failure while init root" );
+				return;
+			}
+			_root_inode = new Ext4IndexNode( node, this );
+
+			// 初始化根dentry
+
+			_root_dir = dentrycache::k_dentryCache.alloDentry();
+			if ( _root_dir == nullptr )
+			{
+				log_panic( "ext4-fs : init root dentry fail" );
+				return;
+			}
+			new ( _root_dir ) fs::dentry( rootname, ( Inode * ) _root_inode, nullptr, true );
 		}
 
 		void Ext4FS::read_data( long block_no, void * dst, long size )

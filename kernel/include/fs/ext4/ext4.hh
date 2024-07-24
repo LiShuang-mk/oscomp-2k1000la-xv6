@@ -449,6 +449,23 @@ namespace fs
 		static_assert( sizeof( Ext4Inode ) == 0xA0/*160 Bytes*/,
 			"Current version's Inode size is 160 bytes, but Inode structure size isn't." );
 
+		// refer to https://ext4.wiki.kernel.org/index.php/Ext4_Disk_Layout#Special_inodes
+		enum Ext4SpecialInodeNumber
+		{
+			ino_null = 0,
+			ino_bad_blocks = 1,
+			ino_root = 2,
+			ino_user_quota = 3,
+			ino_group_quota = 4,
+			ino_boot_loader = 5,
+			ino_undelete_dir = 6,
+			ino_reserve_gd = 7,
+			ino_journal = 8,
+			ino_snapshots = 9,
+			ino_replica = 10,
+			ino_lost_fount = 11
+		};
+
 		struct Ext4InodeRecord
 		{
 			Ext4Inode inode_data;

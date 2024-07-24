@@ -30,7 +30,7 @@ namespace fs
 			int _owned_dev = -1;
 			ulong _start_lba = 0;
 			Ext4SB _sb;
-			Ext4IndexNode _root_inode;
+			Ext4IndexNode *_root_inode = nullptr;
 
 			dentry * _root_dir = nullptr;
 
@@ -47,7 +47,7 @@ namespace fs
 
 		public:
 			Ext4FS() = default;
-			virtual ~Ext4FS() override = default;
+			virtual ~Ext4FS() override;
 			virtual size_t rBlockSize() const override { return _sb.rBlockSize(); };
 			virtual long rBlockNum() const override { return _sb.rBlockNum(); };
 			virtual long rBlockFree() const override { return _sb.rBlockFree(); };
