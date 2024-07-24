@@ -63,6 +63,9 @@ namespace fs
 			long _cal_dind_index( long target_block, long start_block );
 			long _cal_sind_index( long target_block, long start_block );
 
+			Inode * _htree_lookup( eastl::string &dir_name );
+			Inode * _linear_lookup( eastl::string &dir_name, void * block );
+
 		public: // debug
 			void debug_hash( eastl::string dir_name );
 

@@ -12,11 +12,71 @@
 #include "klib/klib.hh"
 
 
+
+
 // <<<<<<<< hash tree 相关 
 namespace fs
 {
 	namespace ext4
 	{
+
+/*
+ * The following notice applies to the code in this region ( hash
+ * tree ) except fs::ext4::ext4_half_md4() :
+ *
+ * Copyright (c) 2013 Grzegorz Kostka (kostka.grzegorz@gmail.com)
+ *
+ * FreeBSD:
+ * Copyright (c) 2010, 2013 Zheng Liu <lz@freebsd.org>
+ * Copyright (c) 2012, Vyacheslav Matyushin
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ */
+
+/*
+ * The following notice applies to the code in fs::ext4::ext4_half_md4():
+ *
+ * Copyright (C) 1990-2, RSA Data Security, Inc. All rights reserved.
+ *
+ * License to copy and use this software is granted provided that it
+ * is identified as the "RSA Data Security, Inc. MD4 Message-Digest
+ * Algorithm" in all material mentioning or referencing this software
+ * or this function.
+ *
+ * License is also granted to make and use derivative works provided
+ * that such works are identified as "derived from the RSA Data
+ * Security, Inc. MD4 Message-Digest Algorithm" in all material
+ * mentioning or referencing the derived work.
+ *
+ * RSA Data Security, Inc. makes no representations concerning either
+ * the merchantability of this software or the suitability of this
+ * software for any particular purpose. It is provided "as is"
+ * without express or implied warranty of any kind.
+ *
+ * These notices must be retained in any copies of any part of this
+ * documentation and/or software.
+ */
 
 #define EXT4_HASH_FUNCTION(name) ext4_hash_##name
 #define EXT4_HTREE_EOF 0x7FFFFFFFUL
@@ -323,16 +383,16 @@ namespace fs
 				return nullptr;
 			}
 
+			if ( dirname == "." ) return this;
+
 			if ( _inode.flags.fl.index )		// 当前目录使用 hash tree
 			{
-				log_error( "hash tree not implement" );
-				return nullptr;
+				return _htree_lookup( dirname );
 			}
 			else								// 当前目录使用 linear 结构
 			{
 				Ext4Buffer * dirent_buf;
-				u8 * idx;					// 块内字节索引
-				Ext4DirEntry2 * dirent;
+				Inode * res_node;
 
 				for ( long i = 0; i < _has_blocks; ++i )			// 顺序遍历 linear 目录项
 				{
@@ -346,52 +406,16 @@ namespace fs
 						return nullptr;
 					}
 
-					idx = ( u8 * ) dirent_buf->get_data_ptr();
-					dirent = ( Ext4DirEntry2 * ) idx;
-
-					while ( 1 )
-					{
-						// 无效目录项，已到达当前块末尾
-						if ( dirent->inode == 0 )
-							break;
-
-						// 长度相等，可能是匹配项
-						if ( dirname.size() == dirent->name_len )
-						{
-							if ( strncmp( dirname.c_str(), ( const char * ) dirent->name, dirent->name_len ) == 0 )
-							{	// 匹配到目录项
-
-								Ext4Inode dirent_inode;
-								if ( _belong_fs->read_inode( dirent->inode, dirent_inode ) < 0 )
-								{	// 读取子目录项inode失败
-									log_error(
-										"ext4-inode : read sub-inode fail\n"
-										"             sub-inode-no=%d", dirent->inode
-									);
-									dirent_buf->unpin();
-									return nullptr;
-								}
-
-								// 读取inode成功，返回inode
-
-								Ext4IndexNode * sub_inode = new Ext4IndexNode( dirent_inode, _belong_fs );
-								if ( sub_inode == nullptr ) log_warn( "ext4-inode : no mem to create sub-inode" );
-								dirent_buf->unpin();
-								return sub_inode;
-							}
-						}
-
-						// 不匹配目录项，移动到下一个目录项进行匹配
-
-						idx += dirent->rec_len;
-						dirent = ( Ext4DirEntry2 * ) idx;
-					}
+					res_node = _linear_lookup( dirname, dirent_buf->get_data_ptr() );
+					dirent_buf->unpin();
+					
+					if ( res_node != nullptr )
+						return res_node;
 
 					// 当前块内不包含目标目录项，准备读取下一个块
 
 					dirent_buf->unpin();
 				}
-
 				// 遍历所有块均不包含目录项
 			}
 
@@ -641,6 +665,149 @@ namespace fs
 		{
 			long unit = _belong_fs->rBlockSize();
 			return ( target_block - start_block ) / unit;
+		}
+
+		Inode * Ext4IndexNode::_htree_lookup( eastl::string &dir_name )
+		{
+			if ( dir_name == ".." )
+			{
+				log_error(
+					"ext4-inode : lookup parent directory?\n"
+					"             but vfs-inode didn't known how to find parent\n"
+					"             maybe it should be found in Dentry."
+				);
+				return nullptr;
+			}
+
+			Ext4Buffer * block_buf = read_logical_block( 0, true );			// read root of htree
+			Ext4DxRoot * dxroot = ( Ext4DxRoot * ) block_buf->get_data_ptr();
+
+			if ( block_buf == nullptr )
+			{
+				log_error( "ext4-inode : read logical block 0 fail" );
+				return nullptr;
+			}
+
+			// 计算 dir_name 的 hash value
+
+			u32 hash_seed[ 4 ];							// 哈希种子在超级块中
+			_belong_fs->get_hash_seed( hash_seed );
+			u32 hash_major;
+			u32 hahs_minor;
+			if ( ext4_htree_hash(
+				dir_name.c_str(), dir_name.size(),
+				hash_seed, ( int ) dxroot->info.hash_version,
+				&hash_major, &hahs_minor
+			) < 0 )
+			{
+				log_error( "ext4-hash fail for dir-name : %s", dir_name.c_str() );
+				block_buf->unpin();
+				return nullptr;
+			}
+
+			// 搜索 Hash Tree
+
+			int ind_lvl = dxroot->info.indirect_levels;		// 间接搜索等级（树深度）
+			Ext4DxEntry * st, * ed;
+			Ext4DxNode * nd;
+			st = dxroot->entries;
+			ed = st + dxroot->count - 2;					// count 比实际上的数组长度多一，因为包含 header
+
+			// 二分查找比较函数
+			auto comp = [ & ] ( Ext4DxEntry * mid, u32 * tar ) -> int
+			{
+				u32 hash = *tar;
+				if ( hash < mid->hash )	return -1;
+				if ( mid == ed )		return 0;
+				else if ( mid < ed )
+				{
+					if ( hash >= ( mid + 1 )->hash ) return 1;
+					else return 0;
+				}
+				else
+				{
+					log_panic( "binary search : bad mid beyond the end of array" );
+					return 0;
+				}
+			};
+
+			for ( ; ind_lvl >= 0; ind_lvl-- )
+			{
+				// 二分查找
+
+				Ext4DxEntry * target_ent = klib::binary_search<Ext4DxEntry, u32>(
+					st, ed, &hash_major, comp
+				);
+				if ( target_ent == nullptr )
+				{
+					log_error( "binary search fail" );
+					block_buf->unpin();
+					return nullptr;
+				}
+
+				// 目标子树块号
+				long target_block = target_ent->block;
+				block_buf->unpin();
+
+				block_buf = _belong_fs->read_block( target_block, true );
+				nd = ( Ext4DxNode * ) block_buf->get_data_ptr();
+				st = nd->entries;
+				ed = st + nd->count - 2;
+			}
+
+			// 达到叶子节点（数据节点），采用 linear 搜索
+
+			Inode * res_node = _linear_lookup( dir_name, block_buf->get_data_ptr() );
+			block_buf->unpin();
+
+			return res_node;
+		}
+
+		Inode * Ext4IndexNode::_linear_lookup( eastl::string &dir_name, void * block )
+		{
+			u8 * idx;										// 块内字节索引
+			Ext4DirEntry2 * dirent;
+
+			idx = ( u8 * ) block;
+			dirent = ( Ext4DirEntry2 * ) idx;
+
+			while ( 1 )
+			{
+				// 无效目录项，已到达当前块末尾
+				if ( dirent->inode == 0 )
+					break;
+
+				// 长度相等，可能是匹配项
+				if ( dir_name.size() == dirent->name_len )
+				{
+					if ( strncmp( dir_name.c_str(), ( const char * ) dirent->name, dirent->name_len ) == 0 )
+					{	// 匹配到目录项
+
+						Ext4Inode dirent_inode;
+						if ( _belong_fs->read_inode( dirent->inode, dirent_inode ) < 0 )
+						{	// 读取子目录项inode失败
+							log_error(
+								"ext4-inode : read sub-inode fail\n"
+								"             sub-inode-no=%d", dirent->inode
+							);
+							return nullptr;
+						}
+
+						// 读取inode成功，返回inode
+
+						Ext4IndexNode * sub_inode = new Ext4IndexNode( dirent_inode, _belong_fs );
+						if ( sub_inode == nullptr ) log_warn( "ext4-inode : no mem to create sub-inode" );
+						return sub_inode;
+					}
+				}
+
+				// 不匹配目录项，移动到下一个目录项进行匹配
+
+				idx += dirent->rec_len;
+				dirent = ( Ext4DirEntry2 * ) idx;
+			}
+			// 没有匹配到目录项
+			return nullptr;
 		}
 
 		void Ext4IndexNode::debug_hash( eastl::string dir_name )

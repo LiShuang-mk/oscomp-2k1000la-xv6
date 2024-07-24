@@ -549,9 +549,11 @@ namespace fs
 				u8 name_len;
 				u8 file_type;
 			}ATTR_PACK fake;
+			u16 limit;
+			u16 count;
+			u32 block;
 			Ext4DxEntry entries[];
 		}ATTR_PACK;
-
 
 	} // namespace ext4
 
