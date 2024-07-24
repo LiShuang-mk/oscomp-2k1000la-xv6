@@ -54,7 +54,7 @@ namespace fs
 			virtual long rMaxFile() const override { return -1; };
 			virtual long rFreeFile() const override { return -1; };
 			virtual size_t rNamelen() const override { return -1; };
-			virtual dentry *getRoot() const override { return _sb.getRoot(); };
+			virtual dentry *getRoot() const override { return _root_dir; };
 			virtual dentry *getMntPoint() const override { return _sb.getMntPoint(); };
 			virtual mode_t rDefaultMod() const override { return _sb.rDefaultMod(); };
 			virtual int mount( dentry *dev, dentry *mnt, eastl::string fstype ) override { return -1; };

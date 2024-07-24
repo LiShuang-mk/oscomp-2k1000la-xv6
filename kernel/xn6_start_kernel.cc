@@ -191,8 +191,20 @@ extern "C" {
 			ext4fs.init( bdevi, 0, "ext4", "/test/" );
 			mm::k_hmm.print_heap_usage();
 
+			fs::dentry * ext4_rootdent = ext4fs.getRoot();
+			fs::dentry * dent1 = ext4_rootdent->EntrySearch( "sdcard" );
+			if ( dent1 == nullptr ) log_panic( "search sdcard fail" );
+			fs::dentry * dent2 = dent1->EntrySearch( "busybox_testcode.sh" );
+			if ( dent2 == nullptr ) log_panic( "search busybox_testcode.sh fail" );
+			fs::Inode * inod2 = dent2->getNode();
+			char * read_buf = new char[ 4000 ];
+			size_t read_len = inod2->nodeRead( ( ulong ) read_buf, 0, 4000 );
+			read_buf[ read_len ] = 0;
+			printf( CYAN_COLOR_PINRT "cat busybox_testcode.sh :\n" CLEAR_COLOR_PRINT );
+			printf( "%s", read_buf );
+
 // <<<< test ext4 fs
-			
+
 			while ( 1 );
 
 			// test_buffer();
@@ -206,12 +218,12 @@ extern "C" {
 			//fs::ramfs::k_ramfs.dentryCacheTest();
 			fs::mnt_table[ "/" ] = &fs::ramfs::k_ramfs;
 			log_info( "ramfs init" );
-			fs::Path mnt ( "/mnt" );
-			fs::Path dev ( "/dev/hdb");
-			mnt.mount( dev, "fat32", 0 , 0 );  // for test mount fat32	
-			fs::Path test_unlink("/mnt/read");
-			[[maybe_unused]]fs::File* file = new fs::File( test_unlink.pathSearch(), 7);
-			
+			fs::Path mnt( "/mnt" );
+			fs::Path dev( "/dev/hdb" );
+			mnt.mount( dev, "fat32", 0, 0 );  // for test mount fat32	
+			fs::Path test_unlink( "/mnt/read" );
+			[[maybe_unused]] fs::File* file = new fs::File( test_unlink.pathSearch(), 7 );
+
 			mm::k_hmm.print_heap_usage();
 
 
