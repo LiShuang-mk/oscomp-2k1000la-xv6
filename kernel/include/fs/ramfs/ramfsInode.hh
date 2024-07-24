@@ -37,7 +37,7 @@ namespace fs{
                 size_t nodeWrite( uint64 src_, size_t off_, size_t len_ ) override { return  0; } ;
 
                 mode_t rMode() const override { return mode; };
-                dev_t rDev() const override { return 0; } ;
+                dev_t rDev() const override { return dev; } ;
                 uint64 rFileSize() const override { return data.size(); };
                 uint64 rIno() const override { return ino; };
                 SuperBlock *getSb() const override;

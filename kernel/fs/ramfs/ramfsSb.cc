@@ -8,7 +8,7 @@ namespace fs
     {
         Inode *RamFSSb::allocInode( mode_t mode , int dev)
         {
-            return new RamInode( static_cast<RamFS *>(fs), ++ino, mode, ISDIR(mode) );
+            return new RamInode( static_cast<RamFS *>(fs), ++ino, mode, ISDIR(mode), dev );
         }
     }
 }// namespace fs

@@ -13,7 +13,7 @@
 
 namespace fs
 {
-	int File::write( void *buf, size_t len )
+	int File::write( uint64 buf, size_t len )
 	{
 		int RC = -1;
 		if ( !ops.fields.w )
@@ -30,11 +30,17 @@ namespace fs
 				printf( "%s", ( char * ) buf );
 				RC = len;
 				break;
+			case FileTypes::FT_PIPE:
+			{
+				if ( static_cast<size_t>( data.get_Pipe()->write( buf, len ) ) == len )
+				{
+					RC = len;
+				}
+				break;
+			}
 			case FileTypes::FT_ENTRY:
 			{
-				uint64* buf_uint64 = static_cast< uint64* >( buf );
-				uint64 buffer = *buf_uint64;
-				if ( data.get_Entry()->getNode()->nodeWrite( buffer, data.get_off(), len ) == len )
+				if ( data.get_Entry()->getNode()->nodeWrite( buf, data.get_off(), len ) == len )
 				{
 					data.get_off() += len;
 					RC = len;
@@ -49,7 +55,7 @@ namespace fs
 		return RC;
 	}
 
-	int File::read( void *buf, size_t len, int off_, bool update )
+	int File::read( uint64 buf, size_t len, int off_, bool update )
 	{
 		int RC = -1;
 		if ( !ops.fields.r )
@@ -65,13 +71,19 @@ namespace fs
 			case FileTypes::FT_DEVICE:
 				log_error( "Device is not allowed to read!\n" );
 				break;
+			case FileTypes::FT_PIPE:
+			{
+				if ( auto read_len = data.get_Pipe()->read( buf, len ) )
+				{
+					RC = read_len;
+				}
+				break;
+			}
 			case FileTypes::FT_ENTRY:
 			{
 				if ( off_ < 0 )
 					off_ = data.get_off();
-				uint64* buf_uint64 = static_cast< uint64* >( buf );
-				uint64 buffer = *buf_uint64;
-				if ( auto read_len = data.get_Entry()->getNode()->nodeRead( buffer, off_, len ) )
+				if ( auto read_len = data.get_Entry()->getNode()->nodeRead( buf, off_, len ) )
 				{
 					if ( update )
 						data.get_off() += read_len;

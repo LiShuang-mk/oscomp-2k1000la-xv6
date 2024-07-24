@@ -11,6 +11,7 @@
 #include "fs/ramfs/ramfs.hh"
 #include "fs/jbd2/journal_super_block.hh"
 #include "fs/buffer_manager.hh"
+#include "fs/file.hh"
 #include "fs/path.hh"
 
 #include "tm/timer_manager.hh"
@@ -192,7 +193,12 @@ extern "C" {
 			//fs::ramfs::k_ramfs.dentryCacheTest();
 			fs::mnt_table[ "/" ] = &fs::ramfs::k_ramfs;
 			log_info( "ramfs init" );
-
+			fs::Path mnt ( "/mnt" );
+			fs::Path dev ( "/dev/hdb");
+			mnt.mount( dev, "fat32", 0 , 0 );  // for test mount fat32	
+			fs::Path test_unlink("/mnt/read");
+			[[maybe_unused]]fs::File* file = new fs::File( test_unlink.pathSearch(), 7);
+			
 			mm::k_hmm.print_heap_usage();
 
 
@@ -219,10 +225,6 @@ extern "C" {
 // <<<< test ext4 fs
 
 			while ( 1 );
-
-			fs::Path mnt = fs::Path( "/mnt" );
-			fs::Path dev = fs::Path( "/dev/vda2" );
-			mnt.mount( dev, "fat32", 0, 0 );
 			//mnt.umount( 0 );
 			// new ( &fs::fat::k_fatfs ) fs::fat::Fat32FS;
 			// fs::fat::k_fatfs.init( 1, 0, "fat32");		

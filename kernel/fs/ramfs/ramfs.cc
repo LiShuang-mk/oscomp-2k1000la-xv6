@@ -33,7 +33,7 @@ namespace fs{
             _root = new fs::dentry( "/", _super_block->allocInode(
                                 FileAttrs::File_dir << FileAttrs::File_dir_s )
                                 , nullptr, true );
-            
+            _isroot = true;
             _mnt = nullptr;
 
             
@@ -105,7 +105,7 @@ namespace fs{
                 // fs'_mnt 保存原挂载点信息
                 fs::fat::Fat32FS *fatfs = new fs::fat::Fat32FS( false, mount );
                 //fatfs->init( dev->getNode()->rDev(), 0, fstype );
-                fatfs->init( 1, 0, fstype, mount->rName() );
+                fatfs->init( dev->getNode()->rDev(), 0, fstype, mount->rName() );
 
                 dentry *root = fatfs->getRoot();
                 [[maybe_unused]]dentry *parent = mount->getParent();
