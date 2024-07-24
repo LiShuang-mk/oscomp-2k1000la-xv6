@@ -181,16 +181,18 @@ extern "C" {
 			// 	mm::k_pmm.trace_free_pages_count()
 			// );
 			mm::k_pmm.debug_print();
-			
-			mm::k_hmm.print_heap_usage();
 
-			
+// >>>> test ext4 fs
+
+			mm::k_hmm.print_heap_usage();
 			int bdevi = hsai::k_devm.search_block_device( "hdb" );
 			assert( bdevi >= 0, "bad device number" );
 			fs::ext4::Ext4FS ext4fs;
 			ext4fs.init( bdevi, 0, "ext4", "/test/" );
 			mm::k_hmm.print_heap_usage();
 
+// <<<< test ext4 fs
+			
 			while ( 1 );
 
 			// test_buffer();
