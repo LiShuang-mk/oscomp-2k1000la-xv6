@@ -120,7 +120,8 @@ namespace fs
 				if ( b_off == 0 )
 				{
 					_lock.release();
-					if ( blk_buf ) blk_buf->unpin();				// unpin the buffer last read
+					if ( blk_buf != nullptr )
+						blk_buf->unpin();				// unpin the buffer last read
 					blk_buf = read_block( block_no + b_idx, true ); // pin the buffer
 					f = ( u8* ) blk_buf->get_data_ptr();
 					_lock.acquire();
@@ -128,6 +129,9 @@ namespace fs
 				}
 				d[ i ] = f[ b_off ];
 			}
+
+			if ( blk_buf != nullptr )
+				blk_buf->unpin();
 
 			_lock.release();
 		}

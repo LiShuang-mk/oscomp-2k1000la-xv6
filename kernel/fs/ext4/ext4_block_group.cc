@@ -35,8 +35,8 @@ namespace fs
 		void Ext4BlockGroup::read_inode( long index, Ext4Inode &node )
 		{
 			long block_no = _cache_inode_table_block +
-				( index * _belong_fs->read_inode_size() / _belong_fs->rBlockSize() );
-			
+				( index * ( _belong_fs->read_inode_size() / _belong_fs->rBlockSize() ) );
+
 			Ext4Buffer * blk_buf = _belong_fs->read_block( block_no, true ); // pin the buffer
 			Ext4InodeRecord * inode_ptr = ( Ext4InodeRecord * ) blk_buf->get_data_ptr();
 			inode_ptr += index;

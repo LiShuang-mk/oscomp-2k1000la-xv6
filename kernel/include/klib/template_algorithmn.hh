@@ -24,7 +24,7 @@ namespace klib
 	/// @param comp 比较函数，返回值 -x,0,+x 三种情况分别对应匹配，目标位于左侧，目标位于右侧
 	/// @return 匹配target的数组元素
 	template<typename T, typename S>
-	T * binary_search( T * first, T * last, S * target, std::function<int( T * middle, S * target ) comp )
+	T * binary_search( T * first, T * last, S * target, std::function<int( T * middle, S * target )> comp )
 	{
 		long len;
 		T *mid;

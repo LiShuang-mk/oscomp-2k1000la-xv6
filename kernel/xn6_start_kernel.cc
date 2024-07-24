@@ -207,6 +207,10 @@ extern "C" {
 			fs::ext4::Ext4Inode node;
 			ext4fs.read_inode( 2, node );
 
+			fs::ext4::Ext4IndexNode ram_node( node, &ext4fs );
+			[[maybe_unused]] fs::ext4::Ext4Buffer * buf = ram_node.read_logical_block( 0, true );
+
+
 
 // <<<< test ext4 fs
 
