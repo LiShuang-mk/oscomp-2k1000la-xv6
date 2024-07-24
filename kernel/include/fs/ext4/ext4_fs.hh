@@ -90,7 +90,7 @@ namespace fs
 			/// @param size 读取数据的长度（字节）
 			void read_data( long block_no, void * dst, long size );
 
-			void read_inode( long inode_no, Ext4Inode &node );
+			int read_inode( long inode_no, Ext4Inode &node );
 		};
 
 	} // namespace ext4

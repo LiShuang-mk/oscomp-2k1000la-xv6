@@ -136,11 +136,11 @@ namespace fs
 			_lock.release();
 		}
 
-		void Ext4FS::read_inode( long inode_no, Ext4Inode &node )
+		int Ext4FS::read_inode( long inode_no, Ext4Inode &node )
 		{
 			long bg = ( inode_no - 1 ) / _cache_inodes_per_group;
 			long idx = ( inode_no - 1 ) % _cache_inodes_per_group;
-			_bgs[ bg ].read_inode( idx, node );
+			return _bgs[ bg ].read_inode( idx, node );
 		}
 
 	} // namespace ext4

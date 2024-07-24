@@ -32,16 +32,23 @@ namespace fs
 			if ( _belong_fs->support64bit() ) _cache_inode_table_block |= ( long ) _gd.inode_table_hi << 32;
 		}
 
-		void Ext4BlockGroup::read_inode( long index, Ext4Inode &node )
+		int Ext4BlockGroup::read_inode( long index, Ext4Inode &node )
 		{
-			long block_no = _cache_inode_table_block +
-				( index * ( _belong_fs->read_inode_size() / _belong_fs->rBlockSize() ) );
+			long inode_per_block = _belong_fs->rBlockSize() / _belong_fs->read_inode_size();
+			long block_no = _cache_inode_table_block + ( index / inode_per_block );
+			long block_idx = index % inode_per_block;
 
 			Ext4Buffer * blk_buf = _belong_fs->read_block( block_no, true ); // pin the buffer
+			if ( blk_buf == nullptr )
+			{
+				log_error( "ext4-blockgroup : read inode fail" );
+				return -1;
+			}
 			Ext4InodeRecord * inode_ptr = ( Ext4InodeRecord * ) blk_buf->get_data_ptr();
-			inode_ptr += index;
+			inode_ptr += block_idx;
 			node = inode_ptr->inode_data;
 			blk_buf->unpin();	// unpin the buffer
+			return 0;
 		}
 
 		void Ext4BlockGroup::_read_block_bitmap()

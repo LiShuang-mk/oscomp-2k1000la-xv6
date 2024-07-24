@@ -32,7 +32,8 @@ namespace fs
 			/// @brief 读取 inode 结构体
 			/// @param index inode 在块组inode表中的下标
 			/// @param node 读取到的inode
-			void read_inode( long index, Ext4Inode &node );
+			/// @return 成功返回 0
+			int read_inode( long index, Ext4Inode &node );
 
 		private:
 			void _read_block_bitmap();

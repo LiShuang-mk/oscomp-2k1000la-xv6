@@ -9,6 +9,7 @@
 #include "fs/ext4/ext4_inode.hh"
 #include "fs/ext4/ext4_fs.hh"
 #include "klib/template_algorithmn.hh"
+#include "klib/klib.hh"
 
 namespace fs
 {
@@ -28,6 +29,78 @@ namespace fs
 			{
 				log_warn( "try to lookup an inode that's not dir" );
 				return nullptr;
+			}
+
+			if ( _inode.flags.fl.index )		// 当前目录使用 hash tree
+			{
+				log_error( "hash tree not implement" );
+				return nullptr;
+			}
+			else								// 当前目录使用 linear 结构
+			{
+				Ext4Buffer * dirent_buf;
+				u8 * idx;					// 块内字节索引
+				Ext4DirEntry2 * dirent;
+
+				for ( long i = 0; i < _has_blocks; ++i )			// 顺序遍历 linear 目录项
+				{
+					dirent_buf = read_logical_block( i, true );		// pin the buffer
+					if ( dirent_buf == nullptr )
+					{
+						log_error(
+							"ext4-inode : 访问目录\"%s\"失败\n"
+							"             访问失败的逻辑块号 %d",
+							dirname.c_str(), i );
+						return nullptr;
+					}
+
+					idx = ( u8 * ) dirent_buf->get_data_ptr();
+					dirent = ( Ext4DirEntry2 * ) idx;
+
+					while ( 1 )
+					{
+						// 无效目录项，已到达当前块末尾
+						if ( dirent->inode == 0 )
+							break;
+
+						// 长度相等，可能是匹配项
+						if ( dirname.size() == dirent->name_len )
+						{
+							if ( strncmp( dirname.c_str(), ( const char * ) dirent->name, dirent->name_len ) == 0 )
+							{	// 匹配到目录项
+								
+								Ext4Inode dirent_inode;
+								if ( _belong_fs->read_inode( dirent->inode, dirent_inode ) < 0 )
+								{	// 读取子目录项inode失败
+									log_error(
+										"ext4-inode : read sub-inode fail\n"
+										"             sub-inode-no=%d", dirent->inode
+									);
+									dirent_buf->unpin();
+									return nullptr;
+								}
+
+								// 读取inode成功，返回inode
+
+								Ext4IndexNode * sub_inode = new Ext4IndexNode( dirent_inode, _belong_fs );
+								if ( sub_inode == nullptr ) log_warn( "ext4-inode : no mem to create sub-inode" );
+								dirent_buf->unpin();
+								return sub_inode;
+							}
+						}
+
+						// 不匹配目录项，移动到下一个目录项进行匹配
+
+						idx += dirent->rec_len;
+						dirent = ( Ext4DirEntry2 * ) idx;
+					}
+
+					// 当前块内不包含目标目录项，准备读取下一个块
+
+					dirent_buf->unpin();
+				}
+
+				// 遍历所有块均不包含目录项
 			}
 
 			return nullptr;
@@ -83,6 +156,8 @@ namespace fs
 						if ( dst_node == nullptr )		// 查找失败
 						{
 							log_error( "ext4-inode : extents leaf binary search error" );
+							if ( internal_block )			// 返回前先将前一个块释放
+								internal_block->unpin();
 							return nullptr;
 						}
 
@@ -106,6 +181,8 @@ namespace fs
 						if ( next_node == nullptr )		// 查找失败
 						{
 							log_error( "ext4-inode : extents internal biary search error" );
+							if ( internal_block )			// 返回前先将前一个块释放
+								internal_block->unpin();
 							return nullptr;
 						}
 
