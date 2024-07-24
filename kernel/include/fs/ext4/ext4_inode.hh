@@ -55,7 +55,6 @@ namespace fs
 			void _cal_size();
 			void _cal_blocks();
 
-
 			Ext4Buffer * _search_direct_block( long target_block_no, long start_block_no, void * index_block, bool pin = false );
 			Ext4Buffer * _search_sindirect_block( long target_block_no, long start_block_no, void * index_block, bool pin = false );
 			Ext4Buffer * _search_dindirect_block( long target_block_no, long start_block_no, void * index_block, bool pin = false );
@@ -64,7 +63,9 @@ namespace fs
 			long _cal_dind_index( long target_block, long start_block );
 			long _cal_sind_index( long target_block, long start_block );
 
-		private:
+		public: // debug
+			void debug_hash( eastl::string dir_name );
+
 		};
 
 	} // namespace ext4
