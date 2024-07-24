@@ -12,8 +12,6 @@
 #include "klib/klib.hh"
 
 
-
-
 // <<<<<<<< hash tree 相关 
 namespace fs
 {
@@ -408,7 +406,7 @@ namespace fs
 
 					res_node = _linear_lookup( dirname, dirent_buf->get_data_ptr() );
 					dirent_buf->unpin();
-					
+
 					if ( res_node != nullptr )
 						return res_node;
 
@@ -420,6 +418,60 @@ namespace fs
 			}
 
 			return nullptr;
+		}
+
+		size_t fs::ext4::Ext4IndexNode::nodeRead( u64 dst, size_t off, size_t len )
+		{
+			if ( !( _inode.mode & ext4_imode_freg ) )
+			{
+				log_warn(
+					"ext4-inode:\n"
+					"\ttry to read inode that's not regular file\n"
+					"\tnone to read out" );
+				return 0;
+			}
+			if ( off >= ( size_t ) _has_size )
+				return 0;
+
+			long b_siz = _belong_fs->rBlockSize();			// 块大小
+			size_t read_len =								// 需要读取的长度
+				( off + len <= ( size_t ) _has_size ) ? len : ( ( size_t ) _has_size - off );
+
+			u8 * d = ( u8* ) dst;							// 目标地址
+			long block_no = off / b_siz;					// 起始数据块
+			long b_idx = 0;									// 数据块索引
+			u8 * f;											// 数据源地址
+			long b_off;										// 块内偏移
+
+			Ext4Buffer * blk_buf = read_logical_block( block_no, true );
+			if ( blk_buf == nullptr )
+			{
+				log_warn( "ext4-inode : read logical block %d fail", block_no );
+				return 0;
+			}
+			for ( size_t i = 0; i < read_len; i++ )
+			{
+				b_off = ( off + i ) % b_siz;
+				if ( b_off == 0 )
+				{
+					if ( blk_buf != nullptr )
+						blk_buf->unpin();				// unpin the buffer last read
+					blk_buf = read_logical_block( block_no + b_idx, true ); // pin the buffer
+					if ( blk_buf == nullptr )
+					{
+						log_warn( "ext4-inode : read logical block %d fail", block_no + b_idx );
+						return 0;
+					}
+					f = ( u8* ) blk_buf->get_data_ptr();
+					b_idx++;
+				}
+				d[ i ] = f[ b_off ];
+			}
+
+			if ( blk_buf != nullptr )
+				blk_buf->unpin();
+
+			return read_len;
 		}
 
 		Ext4Buffer * Ext4IndexNode::read_logical_block( long block, bool pin )

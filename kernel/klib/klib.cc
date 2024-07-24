@@ -1,42 +1,83 @@
 #include "klib/klib.hh"
 
-void *memset( void *s, int c, size_t n ) noexcept( true )
-{
-	for ( char *b = ( char* ) s; ( size_t ) ( b - ( char* ) s ) < n; b++ )
-		*b = c;
-	return s;
-}
+extern "C" {
 
-
-void *memmove( void *dst, const void *src, size_t n ) noexcept( true )
-{
-// may overlap
-	if ( n <= 0 )return dst;
-	const char *i = ( const char* ) src;
-	char *j = ( char* ) dst;
-	for ( i += n - 1, j += n - 1; i >= ( const char* ) src; i--, j-- )*j = *i;
-	return dst;
-}
-
-
-void *memcpy( void *out, const void *in, size_t n ) noexcept( true )
-{
-	const char *i = ( const char* ) in;
-	char *j = ( char* ) out;
-	for ( ; static_cast< size_t >( j - ( ( char* ) out ) ) < n; i++, j++ )*j = *i;
-	return out;
-}
-
-int memcmp( const void *s1, const void *s2, size_t n ) noexcept( true )
-{
-	size_t cnt = 1;
-	const unsigned char *i = ( const unsigned char* ) s1, *j = ( const unsigned char* ) s2;
-	if ( n == 0 )return 0;
-	for ( ; *i == *j; i++, j++, cnt++ )
+	void *memset( void *s, int c, size_t n ) noexcept( true )
 	{
-		if ( !*i || cnt >= n )return 0;
+		for ( char *b = ( char* ) s; ( size_t ) ( b - ( char* ) s ) < n; b++ )
+			*b = c;
+		return s;
 	}
-	return *i < *j ? -1 : 1;
+
+
+	void *memmove( void *dst, const void *src, size_t n ) noexcept( true )
+	{
+	// may overlap
+		if ( n <= 0 )return dst;
+		const char *i = ( const char* ) src;
+		char *j = ( char* ) dst;
+		for ( i += n - 1, j += n - 1; i >= ( const char* ) src; i--, j-- )*j = *i;
+		return dst;
+	}
+
+
+	void *memcpy( void *out, const void *in, size_t n ) noexcept( true )
+	{
+		const char *i = ( const char* ) in;
+		char *j = ( char* ) out;
+		for ( ; static_cast< size_t >( j - ( ( char* ) out ) ) < n; i++, j++ )*j = *i;
+		return out;
+	}
+
+	int memcmp( const void *s1, const void *s2, size_t n ) noexcept( true )
+	{
+		size_t cnt = 1;
+		const unsigned char *i = ( const unsigned char* ) s1, *j = ( const unsigned char* ) s2;
+		if ( n == 0 )return 0;
+		for ( ; *i == *j; i++, j++, cnt++ )
+		{
+			if ( !*i || cnt >= n )return 0;
+		}
+		return *i < *j ? -1 : 1;
+	}
+
+	char *strncpy( char *dst, const char *src, size_t n ) noexcept( true )
+	{
+		char *j;
+		size_t cnt = 0;
+		for ( j = dst; *src && cnt < n; src++, j++, cnt++ )*j = *src;
+		for ( ; cnt < n; j++, cnt++ )*j = '\0';
+		return dst;
+	}
+
+	char *strcat( char *dst, const char *src ) noexcept( true )
+	{
+		char *j = dst;
+		while ( *j )j++;
+		for ( ; *src; src++, j++ )*j = *src;
+		*j = '\0';
+		return dst;
+	}
+
+	int strcmp( const char *s1, const char *s2 ) noexcept( true )
+	{
+		for ( ; *s1 == *s2; s1++, s2++ )
+		{
+			if ( !*s1 )return 0;
+		}
+		return *s1 < *s2 ? -1 : 1;
+	}
+
+	int strncmp( const char *s1, const char *s2, size_t n ) noexcept( true )
+	{
+		size_t cnt = 1;
+		if ( n == 0 )return 0;
+		for ( ; *s1 == *s2; s1++, s2++, cnt++ )
+		{
+			if ( !*s1 || cnt == n )return 0;
+		}
+		return *s1 < *s2 ? -1 : 1;
+	}
 }
 
 const void *
@@ -67,44 +108,6 @@ void snstr( char *dst, wchar const *src, int len )
 	}
 	while ( len-- > 0 )
 		*dst++ = 0;
-}
-
-char *strncpy( char *dst, const char *src, size_t n ) noexcept( true )
-{
-	char *j;
-	size_t cnt = 0;
-	for ( j = dst; *src && cnt < n; src++, j++, cnt++ )*j = *src;
-	for ( ; cnt < n; j++, cnt++ )*j = '\0';
-	return dst;
-}
-
-char *strcat( char *dst, const char *src ) noexcept( true )
-{
-	char *j = dst;
-	while ( *j )j++;
-	for ( ; *src; src++, j++ )*j = *src;
-	*j = '\0';
-	return dst;
-}
-
-int strcmp( const char *s1, const char *s2 ) noexcept( true )
-{
-	for ( ; *s1 == *s2; s1++, s2++ )
-	{
-		if ( !*s1 )return 0;
-	}
-	return *s1 < *s2 ? -1 : 1;
-}
-
-int strncmp( const char *s1, const char *s2, size_t n ) noexcept( true )
-{
-	size_t cnt = 1;
-	if ( n == 0 )return 0;
-	for ( ; *s1 == *s2; s1++, s2++, cnt++ )
-	{
-		if ( !*s1 || cnt == n )return 0;
-	}
-	return *s1 < *s2 ? -1 : 1;
 }
 
 int strncmpamb( const char *s1, const char *s2, size_t n )
