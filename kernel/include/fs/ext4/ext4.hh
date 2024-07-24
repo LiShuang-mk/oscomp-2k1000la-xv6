@@ -464,7 +464,7 @@ namespace fs
 			u32 inode;
 			u16 rec_len;
 			u16 name_len;
-			char name[ dirent_max_name_len];
+			char name[ dirent_max_name_len ];
 		}ATTR_PACK;
 
 		struct Ext4DirEntryHash
@@ -493,8 +493,64 @@ namespace fs
 		}ATTR_PACK;
 		static_assert( sizeof( Ext4DirEntryTail ) == 12 );
 
+		struct Ext4DxEntry
+		{
+			u32 hash;
+			u32 block;
+		}ATTR_PACK;
+		static_assert( sizeof( Ext4DxEntry ) == 8 );
 
+		struct Ext4DxRoot
+		{
+			struct _dot_struct
+			{
+				u32 inode;
+				u16 rec_len;
+				u8  name_len;
+				u8  file_type;
+				char name[ 4 ];
+			}ATTR_PACK;
+			enum _hash_version_enum : u8
+			{
+				legacy = 0x0,
+				half_md4 = 0x1,
+				tea = 0x2,
+				u_legacy = 0x3,
+				u_half_md4 = 0x4,
+				u_tea = 0x5,
+				siphash = 0x6
+			};
 
+			_dot_struct dot;
+			_dot_struct dotdot;
+			struct
+			{
+				u32 reserved_zero;
+				_hash_version_enum hash_version;
+				u8 info_length;
+				u8 indirect_levels;
+				u8 unused_flags;
+			}ATTR_PACK info;
+
+			u16 limit;
+			u16 count;
+			u32 block;
+
+			Ext4DxEntry entries[];
+		}ATTR_PACK;
+		static_assert( sizeof( Ext4DxRoot ) == 0x28 );
+
+		struct Ext4DxNode
+		{
+			struct
+			{
+				u32 inode;
+				u16 rec_len;
+				u8 name_len;
+				u8 file_type;
+			}ATTR_PACK fake;
+			Ext4DxEntry entries[];
+		}ATTR_PACK;
 
 
 	} // namespace ext4

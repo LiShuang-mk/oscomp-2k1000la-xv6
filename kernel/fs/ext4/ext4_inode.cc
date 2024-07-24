@@ -11,6 +11,298 @@
 #include "klib/template_algorithmn.hh"
 #include "klib/klib.hh"
 
+
+// <<<<<<<< hash tree 相关 
+namespace fs
+{
+	namespace ext4
+	{
+
+#define EXT4_HASH_FUNCTION(name) ext4_hash_##name
+#define EXT4_HTREE_EOF 0x7FFFFFFFUL
+
+		/* F, G, and H are MD4 functions */
+
+		constexpr u32 EXT4_HASH_FUNCTION( F )( u32 x, u32 y, u32 z ) { return ( x & y ) | ( ~x & z ); }
+		constexpr u32 EXT4_HASH_FUNCTION( G )( u32 x, u32 y, u32 z ) { return ( x & y ) | ( x & z ) | ( y & z ); }
+		constexpr u32 EXT4_HASH_FUNCTION( H )( u32 x, u32 y, u32 z ) { return x ^ y ^ z; }
+
+		/* ROTATE_LEFT rotates x left n bits */
+		constexpr u32 EXT4_HASH_FUNCTION( rotate_left )( u32 x, u32 n ) { return ( x << n ) | ( x >> ( 32 - n ) ); }
+
+		/*
+		* FF, GG, and HH are transformations for rounds 1, 2, and 3.
+		* Rotation is separated from addition to prevent recomputation.
+		*/
+
+		constexpr void EXT4_HASH_FUNCTION( FF )( u32 &a, u32 &b, u32 &c, u32 &d, u32 &x, u32 s )
+		{
+			a += EXT4_HASH_FUNCTION( F )( b, c, d ) + x;
+			a = EXT4_HASH_FUNCTION( rotate_left )( a, s );
+		}
+
+		constexpr void EXT4_HASH_FUNCTION( GG )( u32 &a, u32 &b, u32 &c, u32 &d, u32 &x, u32 s )
+		{
+			a += EXT4_HASH_FUNCTION( G )( b, c, d ) + x + ( u32 ) 0x5A827999;
+			a = EXT4_HASH_FUNCTION( rotate_left )( a, s );
+		}
+
+		constexpr void EXT4_HASH_FUNCTION( HH )( u32 &a, u32 &b, u32 &c, u32 &d, u32 &x, u32 s )
+		{
+			a += EXT4_HASH_FUNCTION( H )( b, c, d ) + x + ( u32 ) 0x6ED9EBA1;
+			a = EXT4_HASH_FUNCTION( rotate_left )( a, s );
+		}
+
+		/*
+		* MD4 basic transformation.  It transforms state based on block.
+		*
+		* This is a half md4 algorithm since Linux uses this algorithm for dir
+		* index.  This function is derived from the RSA Data Security, Inc. MD4
+		* Message-Digest Algorithm and was modified as necessary.
+		*
+		* The return value of this function is u32 in Linux, but actually we don't
+		* need to check this value, so in our version this function doesn't return any
+		* value.
+		*/
+		static void ext4_half_md4( u32 hash[ 4 ], u32 data[ 8 ] )
+		{
+			u32 a = hash[ 0 ], b = hash[ 1 ], c = hash[ 2 ], d = hash[ 3 ];
+
+			/* Round 1 */
+			EXT4_HASH_FUNCTION( FF )( a, b, c, d, data[ 0 ], 3 );
+			EXT4_HASH_FUNCTION( FF )( d, a, b, c, data[ 1 ], 7 );
+			EXT4_HASH_FUNCTION( FF )( c, d, a, b, data[ 2 ], 11 );
+			EXT4_HASH_FUNCTION( FF )( b, c, d, a, data[ 3 ], 19 );
+			EXT4_HASH_FUNCTION( FF )( a, b, c, d, data[ 4 ], 3 );
+			EXT4_HASH_FUNCTION( FF )( d, a, b, c, data[ 5 ], 7 );
+			EXT4_HASH_FUNCTION( FF )( c, d, a, b, data[ 6 ], 11 );
+			EXT4_HASH_FUNCTION( FF )( b, c, d, a, data[ 7 ], 19 );
+
+			/* Round 2 */
+			EXT4_HASH_FUNCTION( GG )( a, b, c, d, data[ 1 ], 3 );
+			EXT4_HASH_FUNCTION( GG )( d, a, b, c, data[ 3 ], 5 );
+			EXT4_HASH_FUNCTION( GG )( c, d, a, b, data[ 5 ], 9 );
+			EXT4_HASH_FUNCTION( GG )( b, c, d, a, data[ 7 ], 13 );
+			EXT4_HASH_FUNCTION( GG )( a, b, c, d, data[ 0 ], 3 );
+			EXT4_HASH_FUNCTION( GG )( d, a, b, c, data[ 2 ], 5 );
+			EXT4_HASH_FUNCTION( GG )( c, d, a, b, data[ 4 ], 9 );
+			EXT4_HASH_FUNCTION( GG )( b, c, d, a, data[ 6 ], 13 );
+
+			/* Round 3 */
+			EXT4_HASH_FUNCTION( HH )( a, b, c, d, data[ 3 ], 3 );
+			EXT4_HASH_FUNCTION( HH )( d, a, b, c, data[ 7 ], 9 );
+			EXT4_HASH_FUNCTION( HH )( c, d, a, b, data[ 2 ], 11 );
+			EXT4_HASH_FUNCTION( HH )( b, c, d, a, data[ 6 ], 15 );
+			EXT4_HASH_FUNCTION( HH )( a, b, c, d, data[ 1 ], 3 );
+			EXT4_HASH_FUNCTION( HH )( d, a, b, c, data[ 5 ], 9 );
+			EXT4_HASH_FUNCTION( HH )( c, d, a, b, data[ 0 ], 11 );
+			EXT4_HASH_FUNCTION( HH )( b, c, d, a, data[ 4 ], 15 );
+
+			hash[ 0 ] += a;
+			hash[ 1 ] += b;
+			hash[ 2 ] += c;
+			hash[ 3 ] += d;
+		}
+
+		/*
+		* Tiny Encryption Algorithm.
+		*/
+		static void ext4_tea( u32 hash[ 4 ], u32 data[ 8 ] )
+		{
+			u32 tea_delta = 0x9E3779B9;
+			u32 sum;
+			u32 x = hash[ 0 ], y = hash[ 1 ];
+			int n = 16;
+			int i = 1;
+
+			while ( n-- > 0 )
+			{
+				sum = i * tea_delta;
+				x += ( ( y << 4 ) + data[ 0 ] ) ^ ( y + sum ) ^ ( ( y >> 5 ) + data[ 1 ] );
+				y += ( ( x << 4 ) + data[ 2 ] ) ^ ( x + sum ) ^ ( ( x >> 5 ) + data[ 3 ] );
+				i++;
+			}
+
+			hash[ 0 ] += x;
+			hash[ 1 ] += y;
+		}
+
+		static u32 ext4_legacy_hash( const char *name, int len, int unsigned_char )
+		{
+			u32 h0, h1 = 0x12A3FE2D, h2 = 0x37ABE8F9;
+			u32 multi = 0x6D22F5;
+			const unsigned char *uname = ( const unsigned char * ) name;
+			const signed char *sname = ( const signed char * ) name;
+			int val, i;
+
+			for ( i = 0; i < len; i++ )
+			{
+				if ( unsigned_char )
+					val = ( unsigned int ) *uname++;
+				else
+					val = ( int ) *sname++;
+
+				h0 = h2 + ( h1 ^ ( val * multi ) );
+				if ( h0 & 0x80000000 )
+					h0 -= 0x7FFFFFFF;
+				h2 = h1;
+				h1 = h0;
+			}
+
+			return ( h1 << 1 );
+		}
+
+		static void ext4_prep_hashbuf(
+			const char *src,
+			u32 slen,
+			u32 *dst,
+			int dlen,
+			int unsigned_char )
+		{
+			u32 padding = slen | ( slen << 8 ) | ( slen << 16 ) | ( slen << 24 );
+			u32 buf_val;
+			int len, i;
+			int buf_byte;
+			const unsigned char *ubuf = ( const unsigned char * ) src;
+			const signed char *sbuf = ( const signed char * ) src;
+
+			if ( slen > ( u32 ) dlen )
+				len = dlen;
+			else
+				len = slen;
+
+			buf_val = padding;
+
+			for ( i = 0; i < len; i++ )
+			{
+				if ( unsigned_char )
+					buf_byte = ( unsigned int ) ubuf[ i ];
+				else
+					buf_byte = ( int ) sbuf[ i ];
+
+				if ( ( i % 4 ) == 0 )
+					buf_val = padding;
+
+				buf_val <<= 8;
+				buf_val += buf_byte;
+
+				if ( ( i % 4 ) == 3 )
+				{
+					*dst++ = buf_val;
+					dlen -= sizeof( u32 );
+					buf_val = padding;
+				}
+			}
+
+			dlen -= sizeof( u32 );
+			if ( dlen >= 0 )
+				*dst++ = buf_val;
+
+			dlen -= sizeof( u32 );
+			while ( dlen >= 0 )
+			{
+				*dst++ = padding;
+				dlen -= sizeof( u32 );
+			}
+		}
+
+		[[maybe_unused]]
+		static int ext4_htree_hash(
+			const char *name,
+			int len,
+			const u32 *hash_seed,
+			int hash_version,
+			u32 *hash_major,
+			u32 *hash_minor )
+		{
+			u32 hash[ 4 ];
+			u32 data[ 8 ];
+			u32 major = 0, minor = 0;
+			int unsigned_char = 0;
+
+			if ( !name || !hash_major )
+				return ( -1 );
+
+			if ( len < 1 || len > 255 )
+				goto ext4_hash_error;
+
+			hash[ 0 ] = 0x67452301;
+			hash[ 1 ] = 0xEFCDAB89;
+			hash[ 2 ] = 0x98BADCFE;
+			hash[ 3 ] = 0x10325476;
+
+			if ( hash_seed )
+			{
+				hash[ 0 ] = hash_seed[ 0 ];
+				hash[ 1 ] = hash_seed[ 1 ];
+				hash[ 2 ] = hash_seed[ 2 ];
+				hash[ 3 ] = hash_seed[ 3 ];
+			}
+
+			using HashVer = Ext4DxRoot::_hash_version_enum;
+
+			switch ( ( HashVer ) ( u8 ) hash_version )
+			{
+				case HashVer::u_tea:
+					unsigned_char = 1;
+					/* FALLTHRU */
+				case HashVer::tea:
+					while ( len > 0 )
+					{
+						ext4_prep_hashbuf( name, len, data, 16, unsigned_char );
+						ext4_tea( hash, data );
+						len -= 16;
+						name += 16;
+					}
+					major = hash[ 0 ];
+					minor = hash[ 1 ];
+					break;
+				case HashVer::u_legacy:
+					unsigned_char = 1;
+					/* FALLTHRU */
+				case HashVer::legacy:
+					major = ext4_legacy_hash( name, len, unsigned_char );
+					break;
+				case HashVer::u_half_md4:
+					unsigned_char = 1;
+					/* FALLTHRU */
+				case HashVer::half_md4:
+					while ( len > 0 )
+					{
+						ext4_prep_hashbuf( name, len, data, 32, unsigned_char );
+						ext4_half_md4( hash, data );
+						len -= 32;
+						name += 32;
+					}
+					major = hash[ 1 ];
+					minor = hash[ 2 ];
+					break;
+				default:
+					goto ext4_hash_error;
+			}
+
+			major &= ~1;
+			if ( major == ( EXT4_HTREE_EOF << 1 ) )
+				major = ( EXT4_HTREE_EOF - 1 ) << 1;
+			*hash_major = major;
+			if ( hash_minor )
+				*hash_minor = minor;
+
+			return 0;
+
+		ext4_hash_error:
+			*hash_major = 0;
+			if ( hash_minor )
+				*hash_minor = 0;
+			return -1;
+		}
+
+	} // namespace ext4
+
+} // namespace fs
+// >>>>>>>> hash tree 相关
+
+
 namespace fs
 {
 	namespace ext4
@@ -68,7 +360,7 @@ namespace fs
 						{
 							if ( strncmp( dirname.c_str(), ( const char * ) dirent->name, dirent->name_len ) == 0 )
 							{	// 匹配到目录项
-								
+
 								Ext4Inode dirent_inode;
 								if ( _belong_fs->read_inode( dirent->inode, dirent_inode ) < 0 )
 								{	// 读取子目录项inode失败
@@ -349,6 +641,20 @@ namespace fs
 		{
 			long unit = _belong_fs->rBlockSize();
 			return ( target_block - start_block ) / unit;
+		}
+
+		void Ext4IndexNode::debug_hash( eastl::string dir_name )
+		{
+			using HashVer = Ext4DxRoot::_hash_version_enum;
+			u32 hash_seed[ 4 ];
+			_belong_fs->get_hash_seed( hash_seed );
+			u32 hmajor;
+			u32 hminor;
+			HashVer hv = HashVer::half_md4;
+			ext4_htree_hash( dir_name.c_str(), dir_name.size(),
+				hash_seed, ( int ) hv, &hmajor, &hminor );
+			printf( GREEN_COLOR_PRINT "hash dir \"%s\" = 0x%x-0x%x\n" CLEAR_COLOR_PRINT,
+				dir_name.c_str(), hmajor, hminor );
 		}
 
 	} // namespace ext4

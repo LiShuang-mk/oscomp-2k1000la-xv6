@@ -75,6 +75,13 @@ namespace fs
 			long get_sind_block_start() const { return _s_indirect_block_start; }
 			long get_dind_block_start() const { return _d_indirect_block_start; }
 			long get_tind_block_start() const { return _t_indirect_block_start; }
+			void get_hash_seed( u32 hash[ 4 ] ) const
+			{
+				hash[ 0 ] = _sb._super_block.hash_seed[ 0 ];
+				hash[ 1 ] = _sb._super_block.hash_seed[ 1 ];
+				hash[ 2 ] = _sb._super_block.hash_seed[ 2 ];
+				hash[ 3 ] = _sb._super_block.hash_seed[ 3 ];
+			}
 
 			Ext4Buffer * read_block( long block_no, bool pin = false ) { return _blocks_cacher.request_block( block_no, pin ); }
 

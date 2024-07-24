@@ -208,13 +208,13 @@ extern "C" {
 			ext4fs.read_inode( 2, node );
 
 			fs::ext4::Ext4IndexNode ram_node( node, &ext4fs );
-			fs::ext4::Ext4IndexNode * sub_node = ( fs::ext4::Ext4IndexNode * ) ram_node.lookup( "sdcard" );
-			if ( sub_node == nullptr )
-				log_trace( "ext4-inode lookup fail" );
-			else
-				log_trace( "ext4-inode lookup success" );
+			// fs::ext4::Ext4IndexNode * sub_node = ( fs::ext4::Ext4IndexNode * ) ram_node.lookup( "sdcard" );
+			// if ( sub_node == nullptr )
+			// 	log_trace( "ext4-inode lookup fail" );
+			// else
+			// 	log_trace( "ext4-inode lookup success" );
 
-
+			// ram_node.debug_hash( "sdcard" );
 
 // <<<< test ext4 fs
 
