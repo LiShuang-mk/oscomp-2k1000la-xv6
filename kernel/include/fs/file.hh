@@ -20,6 +20,8 @@ namespace pm
 
 	}
 }
+
+using namespace pm::ipc;
 namespace fs
 {	
 	class Dentry;
@@ -35,22 +37,34 @@ namespace fs
 		{
 		private:
 			struct { const FileTypes type_; Kstat kst_; } dv_;
-			//struct {const FileTypes type_; Pipe *pipe_} pp_;
+			struct { const FileTypes type_; Kstat kst_; Pipe *pipe_; } pp_;
 			struct { const FileTypes type_; Kstat kst_; dentry *dentry_; uint64 off_; } en_;
-			inline bool ensureDev() const { return dv_.type_ == FT_NONE || dv_.type_ == FT_STDIN || dv_.type_ == FT_STDOUT || dv_.type_ == FT_DEVICE; };
+			inline bool ensureDev() const { return  dv_.type_ == FT_DEVICE  ||
+													dv_.type_ == FT_NONE	||
+													dv_.type_ == FT_STDERR	||
+													dv_.type_ == FT_STDIN   ||
+													dv_.type_ == FT_STDOUT  ; };
 			inline bool ensureEntry() const { return en_.type_ == FT_ENTRY; };
+			inline bool ensurePipe() const { return pp_.type_ == FT_PIPE; };
 		public:
-			Data( FileTypes type ) : dv_( { type, type } ) { ensureDev(); }
-			Data( dentry *de_ ) : en_( { FT_ENTRY,de_, de_, 0 } ) { ensureEntry(); }
+			Data( FileTypes type ) 	: 	dv_( { type, type } ) { ensureDev(); }
+			Data( dentry *de_ ) 	: 	en_( { FT_ENTRY, de_, de_, 0 } ) { ensureEntry(); }
+			Data( Pipe *pipe_ ) 	: 	pp_( { FT_PIPE, pipe_, pipe_ } ) { ensurePipe(); }
 			~Data() = default;
 			inline dentry* get_Entry() const { ensureEntry(); return en_.dentry_; }
 			inline Kstat & get_Kstat()
-			{ //if(ensureEntry()) 
+			{
 				return en_.kst_;
 			}
 			inline uint64 & get_off()
-			{ //if(ensureEntry()) 
-				return en_.off_;
+			{
+				ensureEntry();
+					return en_.off_;
+			}
+			inline Pipe *get_Pipe()
+			{
+				ensurePipe();
+				return pp_.pipe_;
 			}
 			inline FileTypes get_Type() const { return en_.type_; }
 		} data;
@@ -59,10 +73,11 @@ namespace fs
 		File( FileTypes type_, FileOps ops_ = FileOp::fileop_none ) : ops( ops_ ), data( type_ ) {}
 		File( FileTypes type_, int flags_ ) : ops( flags_ ), data( type_ ) {}
 		File( dentry *de_, int flags_ ) : flags( flags_ ), ops( flags_ ), data( de_ ) {}
+		File( pm::ipc::Pipe *pipe, int flags_ ) : flags( flags_ ), ops( flags_ ), data( pipe ) {}
 		~File() = default;
 
-		int write( void *buf, size_t len );
-		int read( void *buf, size_t len, int off_ = -1, bool update = true );
+		int write( uint64 buf, size_t len );
+		int read( uint64 buf, size_t len, int off_ = -1, bool update = true );
 
 	};
 

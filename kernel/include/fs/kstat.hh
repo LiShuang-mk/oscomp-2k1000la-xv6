@@ -16,6 +16,14 @@
 #include "fs/dentry.hh"
 #include "fs/inode.hh"
 
+namespace pm
+{
+	namespace ipc
+	{
+		class Pipe;
+	}
+
+}
 namespace fs
 {
 
@@ -77,7 +85,13 @@ namespace fs
 			}
 		}
 		
-  //Kstat(Pipe *pipe){};
+		Kstat(pm::ipc::Pipe *pipe) :
+			dev( 0 ), ino( -1 ), mode( FT_PIPE ), nlink( 1 ), 
+			uid( 0 ), gid( 0 ), rdev( 0 ), __pad( 0 ),
+			size( 0 ), blksize( 0 ), __pad2( 0 ), blocks( 0 )
+		{
+		};
+
 		Kstat( FileTypes f_type ) :
 			dev( 0 ), ino( -1 ), mode( FT_NONE ), nlink( 1 ), 
 			uid( 0 ), gid( 0 ), rdev( 0 ), __pad( 0 ),

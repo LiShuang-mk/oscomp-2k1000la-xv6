@@ -45,7 +45,7 @@ namespace fs
 		if ( pathname.size() < 1 ) { base = pm::k_pm.get_cur_pcb()->get_cwd(); return; }	
 		else if ( pathname[ 0 ] == '/' ) { base = mnt_table[ "/" ]->getRoot(); }
 		else if ( base == nullptr ) { base = pm::k_pm.get_cur_pcb()->get_cwd(); }
-		
+
 		log_info("base name is %s ", base->rName());
 		size_t len = pathname.size();
 		if ( len > 0 )
