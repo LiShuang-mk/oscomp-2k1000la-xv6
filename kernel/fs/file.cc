@@ -167,26 +167,26 @@ namespace fs
 
 // ================ xv6 file pool ================	
 
-	xv6_file_pool k_file_table;
+	file_pool k_file_table;
 
-	void xv6_file_pool::init()
+	void file_pool::init()
 	{
 		_lock.init( "file pool" );
 		for ( auto &f : _files )
-		{
-			f.ref = 0;
-			f.type = xv6_file::FD_NONE;
+		{	// refcnt 的初始化在构造参数中
+			// f.ref = 0;
+			f.type = fs::FileTypes::FT_NONE;
 		}
 	}
 
-	xv6_file * xv6_file_pool::alloc_file()
+	File * file_pool::alloc_file()
 	{
 		_lock.acquire();
 		for ( auto &f : _files )
 		{
-			if ( f.ref == 0 && f.type == xv6_file::FD_NONE )
+			if ( f.refcnt == 0 && f.type == FileTypes::FT_NONE )
 			{
-				f.ref = 1;
+				f.refcnt = 1;
 				_lock.release();
 				return &f;
 			}
@@ -195,44 +195,45 @@ namespace fs
 		return nullptr;
 	}
 
-	void xv6_file_pool::free_file( xv6_file * f )
+	void file_pool::free_file( File * f )
 	{
 		_lock.acquire();
-		if ( f->ref <= 0 )
+		if ( f->refcnt <= 0 )
 		{
 			log_error( "[file pool] free no-ref file" );
 			_lock.release();
 			return;
 		}
-		--f->ref;
-		if ( f->ref == 0 )
+		--f->refcnt;
+		if ( f->refcnt == 0 )
 		{
-			if ( f->type == xv6_file::FD_PIPE )
-				f->pipe->close( f->writable );
-
-			f->readable = f->writable = 0;
-			f->dentry = nullptr;
-			f->major = 0;
-			f->off = 0;
-			f->type = xv6_file::FD_NONE;
+			if ( f->type == FileTypes::FT_PIPE )
+				//f->pipe->close( f->writable );
+				f->data.get_Pipe()->close( f->ops.fields.w );
+			f->type = FileTypes::FT_NONE;
+			f->flags = 0; 
+			f->ops = FileOps( 0 );
+			//Placement new
+			new ( &f->data ) File::Data( FileTypes::FT_NONE );
 		}
 		_lock.release();
 	}
 
-	void xv6_file_pool::dup( xv6_file *f )
+	void file_pool::dup( File *f )
 	{
 		_lock.acquire();
-		assert( f->ref >= 1, "file: try to dup no reference file." );
-		f->ref++;
+		assert( f->refcnt >= 1, "file: try to dup no reference file." );
+		f->refcnt++;
 		_lock.release();
 	}
 
-	xv6_file * xv6_file_pool::find_file( eastl::string path )
+	File * file_pool::find_file( eastl::string path )
 	{
 		_lock.acquire();
 		for ( auto &f : _files )
 		{
-			if ( f.dentry && f.dentry->rName() == path )
+			dentry *den = f.data.get_Entry();
+			if ( den && den->rName() == path )
 			{
 				_lock.release();
 				return &f;
@@ -242,13 +243,12 @@ namespace fs
 		return nullptr;
 	}
 
-	int xv6_file_pool::unlink( eastl::string path )
+	int file_pool::unlink( eastl::string path )
 	{
 		_lock.acquire();
 		_unlink_list.push_back( path );
 		_lock.release();
 		return 0;
 	}
-
-
+	
 } // namespace fs

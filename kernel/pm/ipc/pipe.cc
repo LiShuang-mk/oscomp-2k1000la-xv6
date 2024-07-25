@@ -79,7 +79,7 @@ namespace pm
 			return i;
 		}
 
-		int Pipe::alloc( fs::xv6_file * &f0, fs::xv6_file * &f1 )
+		int Pipe::alloc( fs::File * &f0, fs::File * &f1 )
 		{
 			if ( ( f0 = fs::k_file_table.alloc_file() ) == nullptr
 				|| ( f1 = fs::k_file_table.alloc_file() ) == nullptr )
@@ -91,15 +91,13 @@ namespace pm
 			_data = eastl::queue<uint8>();
 
 			// set file
-			f0->type = fs::xv6_file::FD_PIPE;
-			f0->pipe = this;
-			f0->readable = 1;
-			f0->writable = 0;
+			f0->type = fs::FileTypes::FT_PIPE;
+			new ( &f0->data ) fs::File::Data( this );
+			new ( &f0->ops  ) fs::FileOps( 1 ); //readonly
 
-			f1->pipe = this;
-			f1->type = fs::xv6_file::FD_PIPE;
-			f1->readable = 0;
-			f1->writable = 1;
+			f1->type = fs::FileTypes::FT_PIPE;
+			new ( &f1->data ) fs::File::Data( this );
+			new ( &f1->ops ) fs::FileOps( 2 ); //writeonly
 
 			return 0;
 		}

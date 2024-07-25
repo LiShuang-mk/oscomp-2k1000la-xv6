@@ -15,7 +15,6 @@
 #include <EASTL/unordered_map.h>
 namespace fs
 {
-	class Dentry;
 	class File;
 	class FileSystem;
 	class dentry;

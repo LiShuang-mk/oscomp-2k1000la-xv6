@@ -28,6 +28,7 @@
 #include "fs/device.hh"
 #include "fs/kstat.hh"
 #include "fs/ramfs/ramfs.hh"
+#include "fs/path.hh"
 
 #include <EASTL/vector.h>
 #include <EASTL/string.h>
@@ -187,13 +188,13 @@ namespace pm
 		p->_killed = 0;
 		p->_xstate = 0;
 		p->_state = ProcState::unused;
-		if ( p->_ofile[ 1 ]->ref > 1 )
-			p->_ofile[ 1 ]->ref--;
+		if ( p->_ofile[ 1 ]->refcnt > 1 )
+			p->_ofile[ 1 ]->refcnt--;
 		for ( int i = 3; i < ( int ) max_open_files; ++i )
 		{
-			if ( p->_ofile[ i ] != nullptr && p->_ofile[ i ]->ref > 0 )
+			if ( p->_ofile[ i ] != nullptr && p->_ofile[ i ]->refcnt > 0 )
 			{
-				p->_ofile[ i ]->ref--;
+				p->_ofile[ i ]->refcnt--;
 				p->_ofile[ i ] = nullptr;
 			}
 		}
@@ -253,12 +254,11 @@ namespace pm
 			true
 		);
 
-		fs::xv6_file *f = fs::k_file_table.alloc_file();
+		fs::File *f = fs::k_file_table.alloc_file();
 		assert( f != nullptr, "pm: alloc file fail while user init." );
-		f->writable = 1;
-		f->readable = 1;
-		f->major = dev::dev_console_num;
-		f->type = fs::xv6_file::FD_DEVICE;
+		new ( &f->ops ) fs::FileOps( 3 );
+		//f->major = dev::dev_console_num;
+		f->type = fs::FileTypes::FT_DEVICE;
 		p->_ofile[ 1 ] = f;
 		//p->_cwd = fs::fat::k_fatfs.get_root();
 		/// @todo 这里暂时修改进程的工作目录为fat的挂载点
@@ -824,7 +824,7 @@ namespace pm
 			path = path.substr( 2 );
 		}
 
-		fs::xv6_file * f = fs::k_file_table.alloc_file();
+		fs::File * f = fs::k_file_table.alloc_file();
 		if ( f == nullptr )
 			return -2;
 
@@ -845,21 +845,25 @@ namespace pm
 		}
 		else
 		{
-			dentry = p->_ofile[ dir_fd ]->dentry->EntrySearch( path );
+			dentry = p->_ofile[ dir_fd ]->data.get_Entry()->EntrySearch( path );
 			if ( dentry == nullptr )
 				return -4;
 		}
+		
+		fs::Path path_( path );
+		dentry = path_.pathSearch();
 
-		f->type = fs::xv6_file::FD_INODE;
-		f->dentry = dentry;
-		fs::Kstat kst_( dentry );
-		f->kst = kst_;
+		if( dentry == nullptr )
+			return -1; // file is not found  
+		// because of open.c's fileattr defination is not clearly, so here we set flags = 7, which means O_RDWR | O_WRONLY | O_RDONLY
+		[[maybe_unused]]fs::File *f_ = new fs::File( dentry, 7 );
+
 		if ( flags & O_RDWR )
-			f->readable = f->writable = 1;
+			new ( &f->ops ) fs::FileOps( 3 ); //read and write
 		else if ( flags & O_WRONLY )
-			f->readable = !( f->writable = 1 );
+			new ( &f->ops ) fs::FileOps( 1 ); //read only
 		else
-			f->readable = !( f->writable = 0 );
+			new ( &f->ops ) fs::FileOps( 0 ); //not allowed to read 
 
 		return alloc_fd( p, f );
 	}
@@ -884,8 +888,8 @@ namespace pm
 		Pcb * p = get_cur_pcb();
 		if ( p->_ofile[ fd ] == nullptr )
 			return -1;
-		fs::xv6_file * f = p->_ofile[ fd ];
-		*st = f->kst;
+		fs::File * f = p->_ofile[ fd ];
+		*st = f->data.get_Kstat( );
 
 		return 0;
 	}
@@ -926,7 +930,7 @@ namespace pm
 		if ( fd <= 2 || fd >= ( int ) max_open_files || map_size < 0 )
 			return -1;
 
-		fs::dentry * dent = p->_ofile[ fd ]->dentry;
+		fs::dentry * dent = p->_ofile[ fd ]->data.get_Entry();
 		if ( dent == nullptr )
 			return -1;
 
@@ -973,7 +977,7 @@ namespace pm
 
 	int ProcessManager::pipe( int *fd, int flags )
 	{
-		fs::xv6_file *rf, *wf;
+		fs::File *rf, *wf;
 		rf = nullptr;
 		wf = nullptr;
 
@@ -1000,7 +1004,7 @@ namespace pm
 		return 0;
 	}
 
-	int ProcessManager::alloc_fd( Pcb * p, fs::xv6_file * f )
+	int ProcessManager::alloc_fd( Pcb * p, fs::File * f )
 	{
 		int fd;
 
@@ -1015,7 +1019,7 @@ namespace pm
 		return -1;
 	}
 
-	int ProcessManager::alloc_fd( Pcb * p, fs::xv6_file * f, int fd )
+	int ProcessManager::alloc_fd( Pcb * p, fs::File * f, int fd )
 	{
 		if ( fd <= 2 || fd >= ( int ) max_open_files )
 			return -1;

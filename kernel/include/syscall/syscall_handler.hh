@@ -17,7 +17,7 @@
 
 namespace fs
 {
-	struct xv6_file;
+	class File;
 } // namespace fs
 
 
@@ -46,7 +46,7 @@ namespace syscall
 		int _fetch_str( uint64 addr, void *buf, uint64 max );
 		int _fetch_str( uint64 addr, eastl::string &str, uint64 max );
 		uint64 _arg_raw( int arg_n );
-		int _arg_fd( int arg_n, int *out_fd, fs::xv6_file **out_f );
+		int _arg_fd( int arg_n, int *out_fd, fs::File **out_f );
 
 		int _arg_int( int arg_n, int &out_int ) { out_int = _arg_raw( arg_n ); return 0; }
 		int _arg_addr( int arg_n, uint64 &out_addr ) { out_addr = _arg_raw( arg_n ); return 0; }

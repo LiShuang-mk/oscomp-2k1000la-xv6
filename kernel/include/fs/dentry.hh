@@ -24,11 +24,6 @@ namespace fs
 		class dentryCache;
 	}
 
-	enum DentryType
-	{
-		RAMFS_DENTRY = 0,
-		FAT32_DENTRY = 1,
-	};
 
 	namespace fat
 	{
@@ -76,6 +71,7 @@ namespace fs
 		bool isMntPoint();
 		void delete_child( eastl::string name ) { children.erase( name ); };
 		void setParent( dentry *parent ) { this->parent = parent; };
+		void unlink();
 
 	public:
 
