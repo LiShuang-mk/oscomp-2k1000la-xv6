@@ -38,7 +38,7 @@ namespace mm
 		/// @return success if true 
 		bool map_pages( PageTable &pt, uint64 va, uint64 size, uint64 pa, flag_t flags );
 
-		uint64 vmalloc( PageTable &pt, uint64 old_sz, uint64 new_sz );
+		uint64 vmalloc( PageTable &pt, uint64 old_sz, uint64 new_sz, bool executable = false );
 
 		uint64 vmdealloc( PageTable &pt, uint64 old_sz, uint64 new_sz );
 

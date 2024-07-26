@@ -60,7 +60,7 @@ namespace mm
 			assert( ( size & ( size - 1 ) ) == 0, "" );
 			// assert( order < ( int ) _node_manager._node_list_array_max_length );
 
-			node->_area_start = area;
+			node->_area_start = ( void * ) area;
 			node->_area_size = size;
 
 			// _node_manager.insert_available_list( node, order );

@@ -98,6 +98,9 @@ namespace fs
 			void read_data( long block_no, void * dst, long size );
 
 			int read_inode( long inode_no, Ext4Inode &node );
+
+		public:
+			Ext4IndexNode * debug_get_root_inode() { return _root_inode; }
 		};
 
 	} // namespace ext4

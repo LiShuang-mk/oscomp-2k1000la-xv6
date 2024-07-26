@@ -24,8 +24,7 @@
 //#include "fs/fat/fat32_file_system.hh"
 #include "fs/fat/fat32fs.hh"
 #include "fs/file.hh"
-#include "fs/dev/console.hh"
-#include "fs/device.hh"
+// #include "fs/dev/console.hh"
 #include "fs/kstat.hh"
 #include "fs/ramfs/ramfs.hh"
 #include "fs/path.hh"
@@ -39,6 +38,7 @@
 #include <process_interface.hh>
 #include <virtual_cpu.hh>
 #include <mem/virtual_memory.hh>
+#include <device_manager.hh>
 
 #include "klib/common.hh"
 
@@ -254,10 +254,16 @@ namespace pm
 			true
 		);
 
+		// p->_trapframe->era = ( uint64 ) &init_main - ( uint64 ) &_start_u_init;
+		// log_info( "user init: era = %p", p->_trapframe->era );
+		// p->_trapframe->sp = ( uint64 ) &_u_init_stke - ( uint64 ) &_start_u_init;
+		// log_info( "user init: sp  = %p", p->_trapframe->sp );
+		hsai::user_proc_init( ( void * ) p );
+
 		fs::File *f = fs::k_file_table.alloc_file();
 		assert( f != nullptr, "pm: alloc file fail while user init." );
 		new ( &f->ops ) fs::FileOps( 3 );
-		//f->major = dev::dev_console_num;
+		//f->major = DEV_STDOUT_NUM;
 		f->type = fs::FileTypes::FT_DEVICE;
 		p->_ofile[ 1 ] = f;
 		//p->_cwd = fs::fat::k_fatfs.get_root();
@@ -431,7 +437,7 @@ namespace pm
 		mm::PageTable pt_old;
 		uint64 ustack[ MAXARG ];
 		elf::elfhdr elf;
-		elf::proghdr ph = {} ;
+		elf::proghdr ph = {};
 		//fs::fat::Fat32DirInfo dir_;
 		fs::dentry *de;
 		int i, off;
@@ -455,7 +461,7 @@ namespace pm
 		// }
 
 		/// @todo check ELF header
-		de->getNode()->nodeRead( reinterpret_cast<uint64>(&elf), 0, sizeof( elf ));
+		de->getNode()->nodeRead( reinterpret_cast< uint64 >( &elf ), 0, sizeof( elf ) );
 
 		if ( elf.magic != elf::elfEnum::ELF_MAGIC )  // check magicnum
 		{
@@ -471,7 +477,7 @@ namespace pm
 
 		for ( i = 0, off = elf.phoff; i < elf.phnum; i++, off += sizeof( ph ) )
 		{
-			de->getNode()->nodeRead( reinterpret_cast<uint64>(&ph), off, sizeof( ph ) );
+			de->getNode()->nodeRead( reinterpret_cast< uint64 >( &ph ), off, sizeof( ph ) );
 
 			if ( ph.type != elf::elfEnum::ELF_PROG_LOAD )
 				continue;
@@ -488,7 +494,8 @@ namespace pm
 				return -1;
 			}
 			uint64 sz1;
-			if ( ( sz1 = mm::k_vmm.vmalloc( proc->_pt, sz, ph.vaddr + ph.memsz ) ) == 0 )
+			bool executable = ( ph.flags & 0x1 );		// 段是否可执行？
+			if ( ( sz1 = mm::k_vmm.vmalloc( proc->_pt, sz, ph.vaddr + ph.memsz, executable ) ) == 0 )
 			{
 				log_error( "exec: uvmalloc" );
 				proc_freepagetable( proc->_pt, sz );
@@ -508,6 +515,20 @@ namespace pm
 				proc_freepagetable( proc->_pt, sz );
 				return -1;
 			}
+		}
+
+		{
+			// ulong addr;
+			// ulong procva = 0;
+			// for ( ; procva < sz; procva += 4, addr+=4 )
+			// {
+			// 	if ( procva % hsai::page_size == 0 )
+			// 	{
+			// 		addr = proc->_pt.walk_addr( procva );
+			// 		addr = hsai::k_mem->to_vir( addr );
+			// 	}
+			// 	printf( "%p\t%p\n", procva, *( u32 * ) addr );
+			// }
 		}
 
 		proc = k_pm.get_cur_pcb();
@@ -589,17 +610,10 @@ namespace pm
 				proc->_name[ i ] = 0;
 		}
 
-		// // 逆向工程：修改 test_echo
-		// if ( path == "test_echo" )
-		// {
-		// 	char func_name[] = "test_execve";
-		// 	mm::k_vmm.copyout( proc->_pt, 0x2540, func_name, sizeof( func_name ) );
-		// }
-
 // commit to the user image.
 		proc->_sz = sz;
 		proc->_hp = sz;
-		hsai::set_trap_frame_return_value( proc->_trapframe, elf.entry );
+		hsai::set_trap_frame_entry( proc->_trapframe, ( void * ) elf.entry );
 		hsai::set_trap_frame_user_sp( proc->_trapframe, sp );
 		proc->_state = ProcState::runnable;
 		return argc;
@@ -619,7 +633,7 @@ namespace pm
 				n = size - i;
 			else
 				n = hsai::page_size;
-			de->getNode()->nodeRead(  hsai::k_mem->to_vir( pa ), offset + i, n );
+			de->getNode()->nodeRead( hsai::k_mem->to_vir( pa ), offset + i, n );
 		}
 		return 0;
 	}
@@ -830,7 +844,7 @@ namespace pm
 
 		if ( fs::k_file_table.has_unlinked( path ) )
 			return -5;  //
- 		
+
 		fs::dentry *dentry;
 		if ( dir_fd <= 2 )
 		{

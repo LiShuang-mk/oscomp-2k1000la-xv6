@@ -46,7 +46,14 @@ namespace hsai
 	// about device management
 
 	class DeviceManager;
+	class ConsoleStdin;
+	class ConsoleStdout;
+	class ConsoleStderr;
 
 	extern DeviceManager k_devm;
+
+	extern ConsoleStdin k_stdin;
+	extern ConsoleStdout k_stdout;
+	extern ConsoleStderr k_stderr;
 
 } // namespace hsai

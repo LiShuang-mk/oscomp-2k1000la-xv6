@@ -22,6 +22,8 @@
 #include "tm/timer_manager.hh"
 #include "klib/klib.hh"
 
+#include <hsai_global.hh>
+#include <mem/virtual_memory.hh>
 #include <process_interface.hh>
 
 
@@ -77,6 +79,7 @@ namespace syscall
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
 	{
+		// printf( BLUE_COLOR_PRINT "invoke syscall %d\n" CLEAR_COLOR_PRINT, sys_num );
 		return _syscall_funcs[ sys_num ]();
 	}
 
@@ -153,7 +156,13 @@ namespace syscall
 			return -1;
 		}
 
-		return f->write( p, n );
+		pm::Pcb * proc = pm::k_pm.get_cur_pcb();
+		mm::PageTable *pt = proc->get_pagetable();
+
+		u64 kp = pt->walk_addr( p );
+		kp = hsai::k_mem->to_vir( kp );
+
+		return f->write( kp, n );
 	}
 
 	uint64 SyscallHandler::_sys_read()

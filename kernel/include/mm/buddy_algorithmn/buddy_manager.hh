@@ -25,7 +25,7 @@ namespace mm
 		hsai::SpinLock _lock;
 
 		// the buddy area start address
-		ulong _buddy_start;
+		void * _buddy_start;
 
 		// available area node array, whose index corresponds to the order
 		BuddyNode *_node_list;
@@ -57,7 +57,7 @@ namespace mm
 			nd1._area_size = nd2._area_size = to_sz;
 
 			nd1._area_start = tmp._area_start;
-			nd2._area_start = nd1._area_start + to_sz;
+			nd2._area_start = ( void * ) ( ( ulong ) nd1._area_start + to_sz );
 
 		}
 
@@ -96,11 +96,11 @@ namespace mm
 
 			// assume nd1 and nd2 are buddy
 
-			ulong comb_start = ( nd1._area_start < nd2._area_start ) ? nd1._area_start : nd2._area_start;
+			ulong comb_start = ( ulong ) ( ( nd1._area_start < nd2._area_start ) ? nd1._area_start : nd2._area_start );
 			ulong comb_size = nd1._area_size << 1;
 
 			nd1 = nd2 = { 0,0 };
-			nd = { ._area_start = comb_start, ._area_size = comb_size };
+			nd = { ._area_start = ( void * ) comb_start, ._area_size = comb_size };
 		}
 
 		int _combine_node( uint from_order, BuddyNode &from_nd, BuddyNode &to_nd )

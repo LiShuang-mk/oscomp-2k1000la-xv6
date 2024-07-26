@@ -34,7 +34,7 @@ namespace mm
 		_lock.init( lock_name );
 
 		new ( &k_pagetable ) PageTable;
-		
+
 		k_pagetable.set_global();
 
 		uint64 addr = ( uint64 ) k_pmm.alloc_page();
@@ -82,7 +82,7 @@ namespace mm
 		return true;
 	}
 
-	uint64 VirtualMemoryManager::vmalloc( PageTable &pt, uint64 old_sz, uint64 new_sz )
+	uint64 VirtualMemoryManager::vmalloc( PageTable &pt, uint64 old_sz, uint64 new_sz, bool executable )
 	{
 		void *mem;
 
@@ -92,6 +92,7 @@ namespace mm
 		old_sz = hsai::page_round_up( old_sz );
 		for ( uint64 a = old_sz; a < new_sz; a += hsai::page_size )
 		{
+			k_pmm.debug_print();
 			mem = k_pmm.alloc_page();
 			if ( mem == nullptr )
 			{
@@ -99,7 +100,12 @@ namespace mm
 				return 0;
 			}
 			k_pmm.clear_page( mem );
-			if ( !map_data_pages( pt, a, hsai::page_size, ( ulong ) mem, true ) )
+
+			bool is_ok;
+			if ( executable ) is_ok = map_code_pages( pt, a, hsai::page_size, ( ulong ) mem, true );
+			else is_ok = map_data_pages( pt, a, hsai::page_size, ( ulong ) mem, true );
+
+			if ( !is_ok )
 			{
 				k_pmm.free_pages( mem );
 				vmdealloc( pt, a, old_sz );
@@ -132,6 +138,7 @@ namespace mm
 		{
 			va = hsai::page_round_down( src_va );
 			pa = ( uint64 ) pt.walk_addr( va );
+			pa = hsai::k_mem->to_vir( pa );
 			if ( pa == 0 )
 				return -1;
 			n = hsai::page_size - ( src_va - va );
@@ -156,6 +163,7 @@ namespace mm
 		{
 			va = hsai::page_round_down( src_va );
 			pa = ( uint64 ) pt.walk_addr( va );
+			pa = hsai::k_mem->to_vir( pa );
 			if ( pa == 0 )
 				return -1;
 			n = hsai::page_size - ( src_va - va );
@@ -202,6 +210,8 @@ namespace mm
 		{
 			va = hsai::page_round_down( src_va );
 			pa = ( uint64 ) pt.walk_addr( va );
+			pa = hsai::k_mem->to_vir( pa );
+
 			if ( pa == 0 )
 				return -1;
 			n = hsai::page_size - ( src_va - va );
@@ -318,6 +328,7 @@ namespace mm
 			a = hsai::page_round_down( va );
 			hsai::Pte pte = pt.walk( a, 0 );
 			pa = pte.to_pa();
+			pa = hsai::k_mem->to_vir( pa );
 			if ( pa == 0 )
 				return -1;
 			n = hsai::page_size - ( va - a );
@@ -350,7 +361,7 @@ namespace mm
 				log_panic( "vmunmap: not a leaf" );
 			if ( do_free )
 			{
-				k_pmm.free_pages( ( void* ) pte.to_pa() );
+				k_pmm.free_pages( ( void* ) hsai::k_mem->to_vir( pte.to_pa() ) );
 			}
 			pte.clear_data();
 		}
@@ -384,6 +395,7 @@ namespace mm
 			if ( !pte.is_present() )
 				log_panic( "uvmcopy: page not present" );
 			pa = ( uint64 ) pte.to_pa();
+			pa = hsai::k_mem->to_vir( pa );
 			flags = pte.get_flags();
 			if ( ( mem = mm::k_pmm.alloc_page() ) == nullptr )
 			{

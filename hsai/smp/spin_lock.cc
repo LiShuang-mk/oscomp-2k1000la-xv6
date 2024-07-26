@@ -35,7 +35,7 @@ namespace hsai
 		std::atomic_thread_fence( std::memory_order::acq_rel );
 
 		VirtualCpu * expected = nullptr;
-		while ( _locked.compare_exchange_strong( expected, cpu ) == false )
+		while ( _locked.compare_exchange_strong( expected, cpu, std::memory_order::acq_rel ) == false )
 			expected = nullptr;
 	}
 
@@ -43,7 +43,7 @@ namespace hsai
 	{
 		if ( !is_held() )
 			hsai_panic( "lock is already released." );
-		_locked.store( nullptr );
+		_locked.store( nullptr, std::memory_order::acq_rel );
 
 		std::atomic_thread_fence( std::memory_order::acq_rel );
 
