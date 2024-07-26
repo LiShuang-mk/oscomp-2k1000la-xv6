@@ -17,7 +17,7 @@ namespace mm
 	// an area may include several pages or more 
 	struct BuddyNode
 	{
-		uint64 _area_start;
+		void * _area_start;
 		uint64 _area_size;
 	}__attribute__( ( __packed__ ) );
 

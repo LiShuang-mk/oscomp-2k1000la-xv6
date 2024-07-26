@@ -17,8 +17,9 @@ namespace hsai
 	public:
 		CharDevice() = default;
 		virtual DeviceType type() override { return DeviceType::dev_char; }
-		virtual uint8 get_char_sync() = 0;
-		virtual uint8 get_char() = 0;
+		virtual bool support_stream() = 0;
+		virtual int get_char_sync( u8 *c ) = 0;
+		virtual int get_char( u8 *c ) = 0;
 		virtual int put_char_sync( u8 c ) = 0;
 		virtual int put_char( u8 c ) = 0;
 		virtual int handle_intr() = 0;

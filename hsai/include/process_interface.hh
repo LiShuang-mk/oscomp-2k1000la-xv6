@@ -13,6 +13,7 @@
 namespace hsai
 {
 	class VirtualPageTable;
+	class SpinLock;
 
 	constexpr uint proc_pool_size = PROC_POOL_SIZE;
 
@@ -38,10 +39,16 @@ namespace hsai
 
 	extern __hsai_kernel VirtualPageTable * get_pt_from_proc( void * proc );
 
+	extern __hsai_kernel void sleep_at( void * chan, SpinLock &lk );
+
+	extern __hsai_kernel void wakeup_at( void * chan );
+
 
 	extern __hsai_hal void user_proc_init( void * proc );
 
 	extern __hsai_hal void set_trap_frame_return_value( void * trapframe, ulong value );
+
+	extern __hsai_hal void set_trap_frame_entry( void * trapframe, void * entry );
 
 	extern __hsai_hal void set_trap_frame_user_sp( void * trapframe, ulong sp );
 

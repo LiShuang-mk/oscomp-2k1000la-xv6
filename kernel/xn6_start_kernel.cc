@@ -1,9 +1,7 @@
 #include "hal/disk/mbr.hh"
 
-#include "fs/device.hh"
 #include "fs/file.hh"
 #include "fs/dentrycache.hh"
-#include "fs/dev/console.hh"
 #include "fs/fat/fat32.hh"
 #include "fs/fat/fat32_file_system.hh"
 #include "fs/fat/fat32fs.hh"
@@ -23,6 +21,8 @@
 #include "pm/process_manager.hh"
 #include "pm/shmmanager.hh"
 #include "pm/scheduler.hh"
+
+#include "syscall/syscall_handler.hh"
 
 #include "klib/printer.hh"
 #include "klib/common.hh"
@@ -68,10 +68,10 @@ extern "C" {
 			hsai::hardware_abstract_init();
 
 			// printf init 
-			klib::k_printer.init( &dev::k_console, "printer" );
+			klib::k_printer.init( "printer" );
 
-			// console init 
-			new ( &dev::k_console ) dev::Console( DEFAULT_DEBUG_CONSOLE_NAME );
+			// // console init 
+			// new ( &dev::k_console ) dev::Console( DEFAULT_DEBUG_CONSOLE_NAME );
 
 			printf( "hello world\n" );
 			log_info( "Hello World!\n" );
@@ -184,28 +184,30 @@ extern "C" {
 
 // >>>> test ext4 fs
 
-			mm::k_hmm.print_heap_usage();
-			int bdevi = hsai::k_devm.search_block_device( "hdb" );
-			assert( bdevi >= 0, "bad device number" );
-			fs::ext4::Ext4FS ext4fs;
-			ext4fs.init( bdevi, 0, "ext4", "/test/" );
-			mm::k_hmm.print_heap_usage();
+			// mm::k_hmm.print_heap_usage();
+			// int bdevi = hsai::k_devm.search_block_device( "hdb" );
+			// assert( bdevi >= 0, "bad device number" );
+			// fs::ext4::Ext4FS ext4fs;
+			// ext4fs.init( bdevi, 0, "ext4", "/test/" );
+			// mm::k_hmm.print_heap_usage();
 
-			fs::dentry * ext4_rootdent = ext4fs.getRoot();
-			fs::dentry * dent1 = ext4_rootdent->EntrySearch( "sdcard" );
-			if ( dent1 == nullptr ) log_panic( "search sdcard fail" );
-			fs::dentry * dent2 = dent1->EntrySearch( "busybox_testcode.sh" );
-			if ( dent2 == nullptr ) log_panic( "search busybox_testcode.sh fail" );
-			fs::Inode * inod2 = dent2->getNode();
-			char * read_buf = new char[ 4000 ];
-			size_t read_len = inod2->nodeRead( ( ulong ) read_buf, 0, 4000 );
-			read_buf[ read_len ] = 0;
-			printf( CYAN_COLOR_PINRT "cat busybox_testcode.sh :\n" CLEAR_COLOR_PRINT );
-			printf( "%s", read_buf );
+			// ext4fs.debug_get_root_inode()->debug_hash( "sdcard" );
+
+			// fs::dentry * ext4_rootdent = ext4fs.getRoot();
+			// fs::dentry * dent1 = ext4_rootdent->EntrySearch( "sdcard" );
+			// if ( dent1 == nullptr ) log_panic( "search sdcard fail" );
+			// fs::dentry * dent2 = dent1->EntrySearch( "busybox_testcode.sh" );
+			// if ( dent2 == nullptr ) log_panic( "search busybox_testcode.sh fail" );
+			// fs::Inode * inod2 = dent2->getNode();
+			// char * read_buf = new char[ 4000 ];
+			// size_t read_len = inod2->nodeRead( ( ulong ) read_buf, 0, 4000 );
+			// read_buf[ read_len ] = 0;
+			// printf( CYAN_COLOR_PINRT "cat busybox_testcode.sh :\n" CLEAR_COLOR_PRINT );
+			// printf( "%s", read_buf );
 
 // <<<< test ext4 fs
 
-			while ( 1 );
+			// while ( 1 );
 
 			// test_buffer();
 			// while ( 1 );
@@ -227,29 +229,6 @@ extern "C" {
 			mm::k_hmm.print_heap_usage();
 
 
-// >>>> test ext4 fs
-
-			// int bdevi = hsai::k_devm.search_block_device( "hdb" );
-			// assert( bdevi >= 0, "bad device number" );
-			// fs::ext4::Ext4FS ext4fs;
-			// ext4fs.init( bdevi, 0, "ext4", "/test/" );
-			// mm::k_hmm.print_heap_usage();
-
-			// fs::ext4::Ext4Inode node;
-			// ext4fs.read_inode( 2, node );
-
-			// fs::ext4::Ext4IndexNode ram_node( node, &ext4fs );
-			// fs::ext4::Ext4IndexNode * sub_node = ( fs::ext4::Ext4IndexNode * ) ram_node.lookup( "sdcard" );
-			// if ( sub_node == nullptr )
-			// 	log_trace( "ext4-inode lookup fail" );
-			// else
-			// 	log_trace( "ext4-inode lookup success" );
-
-			// ram_node.debug_hash( "sdcard" );
-
-// <<<< test ext4 fs
-
-			while ( 1 );
 			//mnt.umount( 0 );
 			// new ( &fs::fat::k_fatfs ) fs::fat::Fat32FS;
 			// fs::fat::k_fatfs.init( 1, 0, "fat32");		
@@ -262,7 +241,7 @@ extern "C" {
 			//fs::fat::k_testcase_fs.init( 1, 0 );
 			//log_info( "testcase fs init" );
 
-			while ( 1 );
+			// while ( 1 );
 			// dev::k_dm.init();
 			// log_info( "k_dm init" );
 
@@ -272,6 +251,8 @@ extern "C" {
 			// pm::k_pm.exec("test_echo",args);
 			// log_info( "text start %p\n", &stext );
 			// log_info( "text end   %p\n", &etext ); 
+
+			syscall::k_syscall_handler.init();
 
 			printf( "user init start %p\n", &_start_u_init );
 			printf( "user init_main address %p\n", ( uint64 ) &init_main );

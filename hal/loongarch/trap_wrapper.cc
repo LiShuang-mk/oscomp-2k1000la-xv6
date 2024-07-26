@@ -21,11 +21,11 @@ extern "C" {
 		loongarch::k_em.machine_trap();
 	}
 
-	void _wrp_user_trap( uint64 estat )
+	void _wrp_user_trap()
 	{
 		// [[maybe_unused]] uint64 test_estat;
 		// asm volatile( "csrrd %0, 0x5" : "=r" ( test_estat ) : );
-		loongarch::k_em.user_trap( estat );
+		loongarch::k_em.user_trap();
 	}
 
 	void _wrp_user_trap_ret( void )

@@ -18,11 +18,11 @@ namespace mm
 	class PageTable : public hsai::VirtualPageTable
 	{
 	private:
-		uint64 _base_addr;
+		uint64 _base_addr = 0;
 		bool _is_global = false;
 
 	public:
-		PageTable();
+		PageTable() = default;
 		void set_base( uint64 addr ) { _base_addr = addr; }
 		uint64 get_base() { return _base_addr; }
 		void set_global() { _is_global = true; }

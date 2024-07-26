@@ -7,6 +7,7 @@
 //
 
 #include "uart/uart_ns16550.hh"
+#include "process_interface.hh"
 #include "hsai_log.hh"
 
 namespace hsai
@@ -54,24 +55,70 @@ namespace hsai
 
 	int UartNs16550::put_char( u8 c )
 	{
-		hsai_panic( "put char not implement" );
+		_lock.acquire();
+		while ( 1 )
+		{
+			if ( _wr_idx == _rd_idx + _buf_size )
+			{
+				// buffer is full.
+				// wait for uartstart() to open up space in the buffer.
+				sleep_at( &_rd_idx, _lock );
+			}
+			else
+			{
+				_buf[ _wr_idx % _buf_size ] = c;
+				_wr_idx += 1;
+				_start();
+				_lock.release();
+				return 0;
+			}
+		}
+	}
+
+	int UartNs16550::get_char_sync( u8 * c)
+	{
 		return -1;
 	}
 
-	uint8 UartNs16550::get_char_sync()
+	int UartNs16550::get_char( u8 * c)
 	{
-		return uint8();
-	}
-
-	uint8 UartNs16550::get_char()
-	{
-		return uint8();
+		return -1;
 	}
 
 	int UartNs16550::handle_intr()
 	{
 		hsai_panic( "handle intr not implement" );
 		return -1;
+	}
+
+	void UartNs16550::_start()
+	{
+		regLSR * lsr = ( regLSR * ) ( _reg_base + LSR );
+		char * thr = ( char * ) ( _reg_base + THR );
+		while ( 1 )
+		{
+			if ( _wr_idx == _rd_idx )
+			{
+				// transmit buffer is empty.
+				return;
+			}
+
+			if ( lsr->thr_empty == 0 )
+			{
+				// the UART transmit holding register is full,
+				// so we cannot give it another byte.
+				// it will interrupt when it's ready for a new byte.
+				return;
+			}
+
+			char c = _buf[ _rd_idx % _buf_size ];
+			_rd_idx += 1;
+
+			// maybe uartputc() is waiting for space in the buffer.
+			wakeup_at( &_rd_idx );
+
+			*thr = c;
+		}
 	}
 
 } // namespace hsai

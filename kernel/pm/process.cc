@@ -30,6 +30,7 @@ namespace pm
 		_state = ProcState::unused;
 		_gid = gid;
 		_kstack = mm::VirtualMemoryManager::kstack_vm_from_gid( _gid );
+		new ( &_pt ) mm::PageTable();
 		for ( auto &of : _ofile )
 			of = nullptr;
 		_context = hsai::get_context_address( _gid );

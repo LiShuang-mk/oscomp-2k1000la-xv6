@@ -22,13 +22,7 @@ namespace mm
 {
 	PageTable k_pagetable;
 
-	bool debug_trace_walk = false;
-
-	PageTable::PageTable()
-		: _base_addr( 0 )
-	{
-
-	}
+	bool debug_trace_walk = true;
 
 	hsai::Pte PageTable::walk( uint64 va, bool alloc )
 	{
@@ -104,6 +98,7 @@ namespace mm
 			return 0;
 		}
 		pa = ( uint64 ) pte.to_pa();
+		pa |= va & ( hsai::page_size - 1 );
 		return pa;
 	}
 
@@ -121,7 +116,7 @@ namespace mm
 			{																							//  get_pte_addr
 				// this PTE is points to a lower-level page table
 				PageTable child;
-				child.set_base( ( uint64 ) _pte.to_pa() );
+				child.set_base( hsai::k_mem->to_vir( _pte.to_pa() ) );
 				child.freewalk();
 				reset_pte_data( i );
 			}
@@ -140,7 +135,7 @@ namespace mm
 	{
 		if ( pte.is_valid() )
 		{
-			pt.set_base( ( uint64 ) pte.to_pa() );
+			pt.set_base( hsai::k_mem->to_vir( pte.to_pa() ) );
 		}
 		else
 		{

@@ -22,6 +22,9 @@ namespace hsai
 	{
 		for ( auto &te : _device_table )
 			_reset_device_table_entry( &te );
+		_device_table[ DEV_STDIN_NUM ].device_name = "stdin";
+		_device_table[ DEV_STDOUT_NUM ].device_name = "stdout";
+		_device_table[ DEV_STDERR_NUM ].device_name = "stderr";
 	}
 
 	int DeviceManager::register_device( VirtualDevice *dev, const char *name )
@@ -80,7 +83,7 @@ namespace hsai
 
 	int DeviceManager::search_block_device( const char *name )
 	{
-		for ( int i = 0; i < DEV_TBL_LEN; ++i )
+		for ( int i = DEV_FIRST_NOT_RSV; i < DEV_TBL_LEN; ++i )
 		{
 			DeviceTableEntry &te = _device_table[ i ];
 			if ( te.device_ptr == nullptr ) 			continue;
@@ -92,7 +95,7 @@ namespace hsai
 
 	int DeviceManager::search_char_device( const char *name )
 	{
-		for ( int i = 0; i < DEV_TBL_LEN; ++i )
+		for ( int i = DEV_FIRST_NOT_RSV; i < DEV_TBL_LEN; ++i )
 		{
 			DeviceTableEntry &te = _device_table[ i ];
 			if ( te.device_ptr == nullptr ) 			continue;
@@ -104,7 +107,7 @@ namespace hsai
 
 	int DeviceManager::remove_block_device( const char *name )
 	{
-		for ( int i = 0; i < DEV_TBL_LEN; ++i )
+		for ( int i = DEV_FIRST_NOT_RSV; i < DEV_TBL_LEN; ++i )
 		{
 			DeviceTableEntry &te = _device_table[ i ];
 			if ( te.device_ptr == nullptr ) 			continue;
@@ -120,7 +123,7 @@ namespace hsai
 
 	int DeviceManager::remove_char_device( const char *name )
 	{
-		for ( int i = 0; i < BLK_DEV_TBL_LEN; ++i )
+		for ( int i = DEV_FIRST_NOT_RSV; i < DEV_TBL_LEN; ++i )
 		{
 			DeviceTableEntry &te = _device_table[ i ];
 			if ( te.device_ptr == nullptr ) 			continue;

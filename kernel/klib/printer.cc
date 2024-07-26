@@ -8,9 +8,11 @@
 
 #include "klib/printer.hh"
 #include "klib/common.hh"
-#include "fs/dev/console.hh"
 
 #include <hsai_log.hh>
+#include <hsai_global.hh>
+#include <device_manager.hh>
+#include <stream_device.hh>
 
 namespace klib
 {
@@ -19,10 +21,18 @@ namespace klib
 	int Printer::_trace_flag = 0;
 	char Printer::_digits[] = "0123456789abcdef";
 
-	void Printer::init( dev::Console *console, const char *name )
+	void Printer::init( const char *name )
 	{
 		_type = out_type::console;
-		_console = console;
+
+		_console = ( hsai::StreamDevice * ) hsai::k_devm.get_device( "stderr" );
+		if ( _console == nullptr )
+			while ( 1 );
+		if ( _console->type() != hsai::dev_char )
+			while ( 1 );
+		if ( !_console->support_stream() )
+			while ( 1 );
+		
 		_lock.init( name );
 		_locking = 1;
 		_panicked = 0;
@@ -55,7 +65,7 @@ namespace klib
 
 		if ( _type == out_type::console && _console )
 			while ( --i >= 0 )
-				_console->putc( buf[ i ] );
+				_console->put_char_sync( buf[ i ] );
 	}
 
 
@@ -69,8 +79,8 @@ namespace klib
 
 		if ( _type == out_type::console && _console )
 		{
-			_console->putc( buf[ 1 ] );
-			_console->putc( buf[ 0 ] );
+			_console->put_char_sync( buf[ 1 ] );
+			_console->put_char_sync( buf[ 0 ] );
 		}
 	}
 
@@ -79,10 +89,10 @@ namespace klib
 		if ( _type != out_type::console || _console == nullptr )
 			return;
 		uint64 i;
-		_console->putc( '0' );
-		_console->putc( 'x' );
+		_console->put_char_sync( '0' );
+		_console->put_char_sync( 'x' );
 		for ( i = 0; i < ( sizeof( uint64 ) * 2 ); i++, x <<= 4 )
-			_console->putc( _digits[ x >> ( sizeof( uint64 ) * 8 - 4 ) ] );
+			_console->put_char_sync( _digits[ x >> ( sizeof( uint64 ) * 8 - 4 ) ] );
 	}
 
 	void Printer::printf( const char *fmt, ... )
@@ -122,7 +132,7 @@ namespace klib
 					}
 					else
 					{
-						_console->putc( c );
+						_console->put_char_sync( c );
 					}
 				}
 				continue;
@@ -149,21 +159,21 @@ namespace klib
 						s = ( char * ) "(null)";
 					if ( _type == out_type::console && _console )
 						for ( ; *s; s++ )
-							_console->putc( *s );
+							_console->put_char_sync( *s );
 					break;
 				case 'B':
 					printbyte( ( uchar ) va_arg( ap, int ) );
 					break;
 				case '%':
 					if ( _type == out_type::console && _console )
-						_console->putc( '%' );
+						_console->put_char_sync( '%' );
 					break;
 				default:
 				  // Print unknown % sequence to draw attention.
 					if ( _type == out_type::console && _console )
 					{
-						_console->putc( '%' );
-						_console->putc( c );
+						_console->put_char_sync( '%' );
+						_console->put_char_sync( c );
 					}
 					break;
 			}

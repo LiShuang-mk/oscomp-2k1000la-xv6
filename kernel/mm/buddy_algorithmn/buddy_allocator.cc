@@ -117,7 +117,7 @@ namespace mm
 		_lock.acquire();
 		uint8 order = _order_of_used_node[ index ];
 		_lock.release();
-		BuddyNode node = { ._area_start = ( ulong ) ptr, ._area_size = hsai::page_size << order };
+		BuddyNode node = { ._area_start = ptr, ._area_size = hsai::page_size << order };
 
 		for ( auto &bm : _buddy_managers )
 		{

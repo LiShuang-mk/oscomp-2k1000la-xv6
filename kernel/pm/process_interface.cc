@@ -68,4 +68,14 @@ namespace hsai
 		return ( VirtualPageTable * ) ( ( pm::Pcb * ) proc )->get_pagetable();
 	}
 
+	void sleep_at( void * chan, hsai::SpinLock & lk )
+	{
+		pm::k_pm.sleep( chan, &lk );
+	}
+
+	void wakeup_at( void * chan )
+	{
+		pm::k_pm.wakeup( chan );
+	}
+
 } // namespace hsai

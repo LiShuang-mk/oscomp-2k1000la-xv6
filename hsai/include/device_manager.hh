@@ -9,10 +9,10 @@
 #pragma once
 
 #include "hsai_defs.h"
+#include "virtual_device.hh"
 
 namespace hsai
 {
-	class VirtualDevice;
 	class BlockDevice;
 	class CharDevice;
 
@@ -59,10 +59,10 @@ namespace hsai
 
 		int remove_device( VirtualDevice * dev )
 		{
-			for ( int i = 0; i < DEV_TBL_LEN; ++i )
+			for ( int i = DEV_FIRST_NOT_RSV; i < DEV_TBL_LEN; ++i )
 			{
 				DeviceTableEntry &te = _device_table[ i ];
-				if ( te.device_ptr ==  dev )
+				if ( te.device_ptr == dev )
 				{
 					_reset_device_table_entry( &te );
 					return i;
@@ -71,14 +71,36 @@ namespace hsai
 			return -1;
 		}
 
+		int register_stdin( VirtualDevice * dev )
+		{
+			if ( dev->type() != dev_char ) return -1;
+			_device_table[ DEV_STDIN_NUM ].device_ptr = dev;
+			return 0;
+		}
+
+		int register_stdout( VirtualDevice * dev )
+		{
+			if ( dev->type() != dev_char ) return -1;
+			_device_table[ DEV_STDOUT_NUM ].device_ptr = dev;
+			return 0;
+		}
+
+		int register_stderr( VirtualDevice * dev )
+		{
+			if ( dev->type() != dev_char ) return -1;
+			_device_table[ DEV_STDERR_NUM ].device_ptr = dev;
+			return 0;
+		}
+
 	private:
 
 		int _search_null_device()
 		{
-			for ( int i = 0; auto & te : _device_table )
+			for ( int i = DEV_FIRST_NOT_RSV; i < DEV_TBL_LEN; ++i )
 			{
-				if ( te.device_ptr == nullptr ) return i;
-				++i;
+				auto & te = _device_table[ i ];
+				if ( te.device_ptr == nullptr )
+					return i;
 			}
 			return -1;
 		}

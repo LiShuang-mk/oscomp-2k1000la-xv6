@@ -15,7 +15,7 @@ namespace mm
 		: BuddyManager()
 	{
 		_lock.init( "buddy manager" );
-		_buddy_start = base_addr;
+		_buddy_start = ( void* ) base_addr;
 		_node_list = node_list;
 		_node_list_length = list_length;
 
@@ -115,7 +115,7 @@ namespace mm
 	{
 		_lock.acquire();
 		bool res = ( ( node._area_start >= _buddy_start )
-			&& ( node._area_start + node._area_size <= _buddy_start + ( hsai::page_size << ( _node_list_length - 1 ) ) ) );
+			&& ( ( ulong ) node._area_start + node._area_size <= ( ulong ) _buddy_start + ( hsai::page_size << ( _node_list_length - 1 ) ) ) );
 		_lock.release();
 		return res;
 	}

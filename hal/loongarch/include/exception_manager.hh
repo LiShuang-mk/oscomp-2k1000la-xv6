@@ -26,7 +26,7 @@ namespace loongarch
 		ExceptionManager() = default;
 		void init( const char *lock_name );
 		void kernel_trap();
-		void user_trap( uint64 estat );
+		void user_trap();
 		void user_trap_ret();
 		void machine_trap();
 		int dev_intr();
@@ -40,8 +40,12 @@ namespace loongarch
 		void _init_exception_handler();
 
 		void _syscall();
+
+		ulong _get_user_data( void * proc, u64 virt_addr );
+
+		void _print_va_page( void * proc, u64 virt_addr );
 	};
 
 	extern ExceptionManager k_em;
-	
+
 } // namespace loongarch

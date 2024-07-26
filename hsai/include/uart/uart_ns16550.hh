@@ -19,11 +19,16 @@
 
 namespace hsai
 {
+
 	class UartNs16550 : public VirtualUartController
 	{
 	private:
-		u64 _reg_base;
+		static constexpr ulong _buf_size = 64;
 		SpinLock _lock;
+		u64 _reg_base;
+		char _buf[ _buf_size ];
+		ulong _wr_idx;
+		ulong _rd_idx;
 
 	public:
 		UartNs16550();
@@ -32,9 +37,12 @@ namespace hsai
 		virtual void init() override;
 		virtual int put_char_sync( u8 c ) override;
 		virtual int put_char( u8 c ) override;
-		virtual uint8 get_char_sync() override;
-		virtual uint8 get_char() override;
+		virtual int get_char_sync( u8 * c ) override;
+		virtual int get_char( u8 * c ) override;
 		virtual int handle_intr() override;
+
+	private:
+		void _start();
 
 	private:
 		// 内部寄存器偏移

@@ -65,7 +65,7 @@ uservec:
 	st.d   $s7, $a0, 232
 	st.d   $s8, $a0, 240
 
-	csrrd  $t0, 0x5 # read estat 
+	# csrrd  $t0, 0x5 # read estat 
 
 # save the user a0 in p->trapframe->a0
 	csrrd  $t0, LOONGARCH_CSR_SAVE0
@@ -91,7 +91,7 @@ uservec:
 	invtlb 0x0,$zero,$zero
 
 DBG_BREAK_READ_ESTAT:
-	csrrd  $a0, 0x5		# read estat 
+	# csrrd  $a0, 0x5		# read estat 
 
 	# jump to usertrap(), which does not return
 	jirl   $zero ,$t0, 0

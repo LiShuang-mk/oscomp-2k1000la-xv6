@@ -6,10 +6,13 @@
 // --------------------------------------------------------------
 //
 
-#include "fs/device.hh"
 #include "fs/file.hh"
 #include "fs/dentry.hh"
 #include "fs/inode.hh"
+
+#include <hsai_global.hh>
+#include <device_manager.hh>
+#include <stream_device.hh>
 
 namespace fs
 {
@@ -32,7 +35,7 @@ namespace fs
 				break;
 			case FileTypes::FT_PIPE:
 			{
-				if ( static_cast<size_t>( data.get_Pipe()->write( buf, len ) ) == len )
+				if ( static_cast< size_t >( data.get_Pipe()->write( buf, len ) ) == len )
 				{
 					RC = len;
 				}
@@ -113,12 +116,24 @@ namespace fs
 
 			case FD_DEVICE:
 			{
-				if ( major < 0 || major >( short )dev::max_major_dev_num )
+				hsai::StreamDevice * sdev = ( hsai::StreamDevice * ) hsai::k_devm.get_device( major );
+				if ( sdev == nullptr )
 				{
-					log_error( "file write: invalid device major number" );
+					log_error( "file write: null device for device number %d", major );
 					return -1;
 				}
-				ret = dev::k_dm.write_device( major, 1, addr, n );
+				if ( sdev->type() != hsai::dev_char )
+				{
+					log_warn( "file write: device %d is not a char-dev", major );
+					return -2;
+				}
+				if ( !sdev->support_stream() )
+				{
+					log_warn( "file write: device %d is not a stream-dev", major );
+					return -3;
+				}
+
+				ret = sdev->write( ( void * ) addr, n );
 
 			} break;
 
@@ -132,7 +147,7 @@ namespace fs
 				break;
 		}
 
-		return ret == n ? n : -1;
+		return ret;
 	}
 
 	int xv6_file::read( uint64 addr, int n )

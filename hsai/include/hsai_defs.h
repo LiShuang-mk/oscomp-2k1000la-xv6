@@ -14,9 +14,11 @@
 
 #define NUMCPU 1
 
-#define BLK_DEV_TBL_LEN 64		// block device register table length
-#define CHA_DEV_TBL_LEN 64		// char device register table length
 #define DEV_TBL_LEN 64			// 设备管理表最大长度
+#define DEV_FIRST_NOT_RSV	3	// 第一个未保留的设备
+#define DEV_STDIN_NUM		0	// 标准输入流设备号
+#define DEV_STDOUT_NUM		1	// 标准输出流设备号
+#define DEV_STDERR_NUM		2	// 标准错误流设备号
 
 #define DEFAULT_DEBUG_CONSOLE_NAME "console"
 

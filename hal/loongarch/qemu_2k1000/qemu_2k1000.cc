@@ -166,6 +166,12 @@ namespace hsai
 		tf->a0 = v;
 	}
 
+	void set_trap_frame_entry( void * trapframe, void * entry )
+	{
+		TrapFrame * tf = ( TrapFrame * ) trapframe;
+		tf->era = ( u64 ) entry;
+	}
+
 	void set_trap_frame_user_sp( void * trapframe, ulong sp )
 	{
 		TrapFrame * tf = ( TrapFrame * ) trapframe;
