@@ -105,6 +105,10 @@ extern "C" {
 			// 	mm::k_pmm.trace_free_pages_count()
 			// );
 
+			// mm::k_pmm.debug_print();
+			// mm::k_pmm.debug_test_buddy();
+			// while ( 1 );
+
 			// timer init 
 			tmm::k_tm.init( "timer manager" );
 			log_info( "tm init" );

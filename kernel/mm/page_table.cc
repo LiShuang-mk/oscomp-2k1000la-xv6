@@ -22,7 +22,7 @@ namespace mm
 {
 	PageTable k_pagetable;
 
-	bool debug_trace_walk = true;
+	bool debug_trace_walk = false;
 
 	hsai::Pte PageTable::walk( uint64 va, bool alloc )
 	{

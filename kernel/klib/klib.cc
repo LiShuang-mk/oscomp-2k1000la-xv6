@@ -41,6 +41,21 @@ extern "C" {
 		return *i < *j ? -1 : 1;
 	}
 
+	size_t strlen( const char *s ) noexcept( true )
+	{
+		size_t len = 0;
+		while ( *s )s++, len++;
+		return len;
+	}
+
+	char *strcpy( char *dst, const char *src ) noexcept( true )
+	{
+		char *j;
+		for ( j = dst; *src; src++, j++ )*j = *src;
+		*j = '\0';
+		return dst;
+	}
+
 	char *strncpy( char *dst, const char *src, size_t n ) noexcept( true )
 	{
 		char *j;
@@ -129,20 +144,6 @@ char* strchr( const char *s, char c )
 	return 0;
 }
 
-char *strcpy( char *dst, const char *src ) noexcept( true )
-{
-	char *j;
-	for ( j = dst; *src; src++, j++ )*j = *src;
-	*j = '\0';
-	return dst;
-}
-
-size_t strlen( const char *s ) noexcept( true )
-{
-	size_t len = 0;
-	while ( *s )s++, len++;
-	return len;
-}
 
 float ceilf( float x )
 {

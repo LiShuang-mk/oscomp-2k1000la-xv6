@@ -39,7 +39,7 @@ namespace mm
 		_trace_page_cnt = 0;
 		_free_range( ( void* ) _ram_base, ( void * ) _ram_end );
 
-		new ( &k_phy_alloc ) BuddyAllocator( "buddy alloc", _ram_base, _ram_end - _ram_base );
+		new ( &k_phy_alloc ) BuddyAllocator( ( void * ) _ram_base, _ram_end - _ram_base );
 		_allocator = ( VirtualPageAllocator * ) &k_phy_alloc;
 	}
 
@@ -127,7 +127,7 @@ namespace mm
 	void PhysicalMemoryManager::debug_test_buddy()
 	{
 		BuddyAllocator * ba = ( BuddyAllocator * ) _allocator;
-		ba->debug_print_node_list();
+		ba->debug_print();
 
 		uint pgcnt;
 		void * pg;
@@ -135,34 +135,34 @@ namespace mm
 		pgcnt = 1;
 		pg = alloc_pages( pgcnt );
 		log_trace( "test alloc %d pages : %p", pgcnt, pg );
-		ba->debug_print_node_list();
+		ba->debug_print();
 		free_pages( pg );
 		log_trace( "test free  %d pages : %p", pgcnt, pg );
-		ba->debug_print_node_list();
+		ba->debug_print();
 
 		pgcnt = 10;
 		pg = alloc_pages( pgcnt );
 		log_trace( "test alloc %d pages : %p", pgcnt, pg );
-		ba->debug_print_node_list();
+		ba->debug_print();
 		free_pages( pg );
 		log_trace( "test free  %d pages : %p", pgcnt, pg );
-		ba->debug_print_node_list();
+		ba->debug_print();
 
 		pgcnt = 100;
 		pg = alloc_pages( pgcnt );
 		log_trace( "test alloc %d pages : %p", pgcnt, pg );
-		ba->debug_print_node_list();
+		ba->debug_print();
 		free_pages( pg );
 		log_trace( "test free  %d pages : %p", pgcnt, pg );
-		ba->debug_print_node_list();
+		ba->debug_print();
 
 		pgcnt = 1000;
 		pg = alloc_pages( pgcnt );
 		log_trace( "test alloc %d pages : %p", pgcnt, pg );
-		ba->debug_print_node_list();
+		ba->debug_print();
 		free_pages( pg );
 		log_trace( "test free  %d pages : %p", pgcnt, pg );
-		ba->debug_print_node_list();
+		ba->debug_print();
 
 		void * ps[ 1000 ];
 
@@ -176,17 +176,17 @@ namespace mm
 		}
 		printf( "\n" );
 		log_trace( "test alloc %d * 1000 pages : [0]=%p", pgcnt, ps[ 0 ] );
-		ba->debug_print_node_list();
+		ba->debug_print();
 		for ( auto & p : ps )
 			free_pages( p );
 		log_trace( "test free  %d * 1000 pages : [0]=%p", pgcnt, ps[ 0 ] );
-		ba->debug_print_node_list();
+		ba->debug_print();
 
 	}
 
 	void PhysicalMemoryManager::debug_print()
 	{
-		k_phy_alloc.debug_print_node_list();
+		k_phy_alloc.debug_print();
 	}
 
 } // namespace mm
