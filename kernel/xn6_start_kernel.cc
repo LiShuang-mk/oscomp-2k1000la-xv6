@@ -1,6 +1,5 @@
 #include "hal/disk/mbr.hh"
 
-#include "fs/file.hh"
 #include "fs/dentrycache.hh"
 #include "fs/fat/fat32.hh"
 #include "fs/fat/fat32_file_system.hh"
@@ -9,7 +8,6 @@
 #include "fs/ramfs/ramfs.hh"
 #include "fs/jbd2/journal_super_block.hh"
 #include "fs/buffer_manager.hh"
-#include "fs/file.hh"
 #include "fs/path.hh"
 
 #include "tm/timer_manager.hh"

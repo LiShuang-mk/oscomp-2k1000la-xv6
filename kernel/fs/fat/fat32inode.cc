@@ -11,10 +11,10 @@ namespace fs
 {
 
 	namespace fat
-	{	
+	{
 
 		void Fat32Inode::init( uint32 first_cluster, Fat32FS *belong_fs, Fat32NodeType node_type,
-							FileAttrs attr, size_t size , eastl::string dev_name)
+			FileAttrs attr, size_t size, eastl::string dev_name )
 		{
 			_first_cluster = first_cluster;
 			_belong_fs = belong_fs;
@@ -52,9 +52,9 @@ namespace fs
 			}
 			k_bufm.release_buffer_sync( buf );
 
-			if( !size )  //for root inode
+			if ( !size )  //for root inode
 				_size = _cover_size_bytes();
-			else	
+			else
 				_size = size;
 
 			assert(
@@ -136,8 +136,8 @@ namespace fs
 
 		dev_t Fat32Inode::rDev() const
 		{
-			if( _dev_name.empty() )
-                log_error("This is not a valid device file");
+			if ( _dev_name.empty() )
+				log_error( "This is not a valid device file" );
 			return hsai::k_devm.search_device( _dev_name.c_str() );
 		}
 
@@ -167,7 +167,7 @@ namespace fs
 		{
 			return _belong_fs;
 		}
-		
+
 		Inode * Fat32Inode::lookup( eastl::string dirname )
 		{
 			if ( !is_dir() ) return nullptr;
@@ -183,7 +183,7 @@ namespace fs
 			{
 				uint64 data_lba = _cluster_to_lba( cls_num );
 				buf = k_bufm.read_sync(
-					rDev(),
+					_belong_fs->owned_device(),
 					data_lba
 				);
 				void *desc_ptr = ( void * ) buf.get_data_ptr();
@@ -231,8 +231,8 @@ namespace fs
 			else
 				return nullptr;
 		}
-		
-		Inode *Fat32Inode::mknode(eastl::string name, FileAttrs attrs, eastl::string dev_name )
+
+		Inode *Fat32Inode::mknode( eastl::string name, FileAttrs attrs, eastl::string dev_name )
 		{
 			return _belong_fs->getSuperBlock()->allocInode( attrs, dev_name );
 		}

@@ -52,25 +52,26 @@ namespace fs
 			}
 			case FileTypes::FT_DEVICE:
 			{
-				log_panic( "file type device not implement" );
-				// hsai::StreamDevice * sdev = ( hsai::StreamDevice * ) hsai::k_devm.get_device( major );
-				// if ( sdev == nullptr )
-				// {
-				// 	log_error( "file write: null device for device number %d", major );
-				// 	return -1;
-				// }
-				// if ( sdev->type() != hsai::dev_char )
-				// {
-				// 	log_warn( "file write: device %d is not a char-dev", major );
-				// 	return -2;
-				// }
-				// if ( !sdev->support_stream() )
-				// {
-				// 	log_warn( "file write: device %d is not a stream-dev", major );
-				// 	return -3;
-				// }
+				// log_panic( "file type device not implement" );
+				uint major = 1;
+				hsai::StreamDevice * sdev = ( hsai::StreamDevice * ) hsai::k_devm.get_device( major );
+				if ( sdev == nullptr )
+				{
+					log_error( "file write: null device for device number %d", major );
+					return -1;
+				}
+				if ( sdev->type() != hsai::dev_char )
+				{
+					log_warn( "file write: device %d is not a char-dev", major );
+					return -2;
+				}
+				if ( !sdev->support_stream() )
+				{
+					log_warn( "file write: device %d is not a stream-dev", major );
+					return -3;
+				}
 
-				// ret = sdev->write( ( void * ) addr, n );
+				RC = ( int ) sdev->write( ( void * ) buf, len );
 
 			} break;
 			default:
@@ -249,7 +250,7 @@ namespace fs
 				//f->pipe->close( f->writable );
 				f->data.get_Pipe()->close( f->ops.fields.w );
 			f->type = FileTypes::FT_NONE;
-			f->flags = 0; 
+			f->flags = 0;
 			f->ops = FileOps( 0 );
 			//Placement new
 			new ( &f->data ) File::Data( FileTypes::FT_NONE );
@@ -288,5 +289,5 @@ namespace fs
 		_lock.release();
 		return 0;
 	}
-	
+
 } // namespace fs

@@ -344,9 +344,6 @@ namespace loongarch
 			TrapFrame *tf = ( TrapFrame* ) hsai::get_trap_frame_from_proc( proc );
 			[[maybe_unused]] uint64 usp = tf->sp;
 
-
-			// hsai_warn( "出现PIS异常很可能是一个诡异的bug, 此处继续运行" );
-
 			ulong iofbadv = this->_get_user_data( proc, badv );
 			hsai_printf( BLUE_COLOR_PRINT "read badi from badv 0x%x = 0x%x\n" CLEAR_COLOR_PRINT,
 				badv, iofbadv );
@@ -372,33 +369,41 @@ namespace loongarch
 			);
 		};
 
-		_exception_handlers[ csr::ecode_pis ] = [] ( uint32 estat ) ->void
+		_exception_handlers[ csr::ecode_pis ] = [ this ] ( uint32 estat ) ->void
 		{
+			// [[maybe_unused]] mm::Pte pte = Cpu::get_cpu()->get_cur_proc()->get_pagetable().walk( badv, 0 );
+			
 			Cpu * cpu = Cpu::get_la_cpu();
 			[[maybe_unused]] uint64 badv = cpu->read_csr( csr::badv );
-			// [[maybe_unused]] mm::Pte pte = Cpu::get_cpu()->get_cur_proc()->get_pagetable().walk( badv, 0 );
-			hsai_warn( "出现PIS异常很可能是一个诡异的bug, 此处继续运行" );
-			// hsai_error(
-			// 	"handle exception PIS :\n"
-			// 	"    badv : %x\n"
-			// 	"    badi : %x\n"
-			// 	"    pte  : %x",
-			// 	badv,
-			// 	cpu->read_csr( csr::badi ),
-			// 	pte.get_data()
-			// );
-			hsai_error(
+			[[maybe_unused]] uint64 era = cpu->read_csr( csr::era );
+
+			void * proc = hsai::get_cur_proc();
+			[[maybe_unused]] hsai::Pte pte = hsai::get_pt_from_proc( proc )->walk( badv, false );
+			TrapFrame *tf = ( TrapFrame* ) hsai::get_trap_frame_from_proc( proc );
+			[[maybe_unused]] uint64 usp = tf->sp;
+
+			ulong iofbadv = this->_get_user_data( proc, badv );
+			hsai_printf( BLUE_COLOR_PRINT "read badi from badv 0x%x = 0x%x\n" CLEAR_COLOR_PRINT,
+				badv, iofbadv );
+			this->_print_va_page( proc, era );
+			this->_print_va_page( proc, usp );
+
+			hsai_panic(
 				"handle exception PIS :\n"
 				"    badv : 0x%x\n"
 				"    badi : 0x%x\n"
 				"    crmd : 0x%x\n"
 				"    era  : 0x%x\n"
-				"    tick : %d",
+				"    tick : %d\n"
+				"    sp   : 0x%x\n"
+				"    pte  : %p",
 				badv,
 				cpu->read_csr( csr::badi ),
 				cpu->read_csr( csr::crmd ),
 				cpu->read_csr( csr::era ),
-				hsai::get_ticks()
+				hsai::get_ticks(),
+				usp,
+				pte.get_data()
 			);
 		};
 

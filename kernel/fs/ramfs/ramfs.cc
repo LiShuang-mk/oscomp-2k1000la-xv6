@@ -98,7 +98,7 @@ namespace fs{
                 return -1;
             }
 
-            if( mount->getNode()->rMode().filetype == FileTypes::FT_DIRECT )
+            if( mount->getNode()->rMode().filetype != FileTypes::FT_DIRECT )
             {
                 log_error("RamFS::mount: mount is not a directory");
                 return -1;
