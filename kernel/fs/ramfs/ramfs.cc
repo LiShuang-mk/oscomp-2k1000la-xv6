@@ -1,5 +1,5 @@
 #include "fs/ramfs/ramfs.hh"
-//#include "fs/dentrycache.hh"
+#include "fs/dentrycache.hh"
 #include "fs/dentry.hh"
 #include "fs/file.hh"
 #include "fs/fat/fat32fs.hh"
@@ -30,7 +30,11 @@ namespace fs{
             _fstype = "ramfs";  
             /// super block has been initialized in constructor
             _super_block = new RamFSSb( this );
-            _root = new fs::dentry( "/", _super_block->allocInode(
+            // _root = new fs::dentry( "/", _super_block->allocInode(
+            //                     FileAttrs::File_dir << FileAttrs::File_dir_s )
+            //                     , nullptr, true );
+            _root = fs::dentrycache::k_dentryCache.alloDentry();
+            new ( _root ) dentry( "/", _super_block->allocInode(
                                 FileAttrs::File_dir << FileAttrs::File_dir_s )
                                 , nullptr, true );
             _isroot = true;
@@ -44,6 +48,7 @@ namespace fs{
             _root->EntryCreate( "tmp", FileAttrs::File_dir << FileAttrs::File_dir_s );
             _root->EntryCreate( "mnt", FileAttrs::File_dir << FileAttrs::File_dir_s );
             
+            _root->printChildrenInfo(); 
             // init fat
             dentry* dev = _root->EntrySearch( "dev" );
             char ** dev_table = new char* [ DEV_TBL_LEN ];

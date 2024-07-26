@@ -26,9 +26,9 @@ namespace fs
         if ( [[maybe_unused]] auto subnod = (_node->lookup(name)))
         {
             log_trace("dentry::EntrySearch: found inode");
-            // dentry *subdentry = fs::dentrycache::k_dentryCache.alloDentry();
-            // subdentry->init(name, (Inode *)subnod, this);
-            dentry *subdentry = new dentry(name , subnod, this);
+            dentry *subdentry = fs::dentrycache::k_dentryCache.alloDentry();
+            new ( subdentry ) dentry(name, (Inode *)subnod, this);
+            //dentry *subdentry = new dentry(name , subnod, this);
             children[name] = subdentry;
             return subdentry;
         }
@@ -56,8 +56,9 @@ namespace fs
             log_error("dentry::EntryCreate: nodefs is not RamFS");
             return nullptr;
         }
-        dentry *newden = new dentry( name, node_, this );
-
+        //dentry *newden = new dentry( name, node_, this );
+        dentry *newden = fs::dentrycache::k_dentryCache.alloDentry();
+        new ( newden ) dentry( name, node_, this );
         if ( newden == nullptr ) {
             log_error("dentry::EntryCreate: Failed to create RamFSDen");
             delete node_; // 避免内存泄漏

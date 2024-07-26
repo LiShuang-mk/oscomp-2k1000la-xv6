@@ -23,35 +23,42 @@ namespace fs
 
         
 
-        constexpr uint MAX_DENTRY_NUM = 70;
-        constexpr uint DENTRY_TYPES = 2;
-        constexpr uint INACTIVE_LIST_MAX_SIZE = 35;  // tentative size
-        constexpr uint ACTIVE_LIST_MAX_SIZE = 30;
+        constexpr uint MAX_DENTRY_NUM = 100;
         /**
          * @brief Dentry cache
          * @test dentryCacheTest
          */
+
+        struct dentryCacheElement
+        {
+            fs::dentry dentry;
+            bool is_active_;
+            bool pin_;
+            dentryCacheElement() { is_active_ = false; pin_ = false;};
+            dentryCacheElement( fs::dentry den , bool active_, bool pin_ ) : dentry( den ), is_active_( active_ ), pin_( pin_ ) {}
+        };
+
         class dentryCache
         {
             hsai::SpinLock _lock;
-            list<dentry *> _active_list;
-            list<dentry *> _inactive_list;
-            fs::dentry _dentryPool[ MAX_DENTRY_NUM ];
-            vector<int> bitmap;
+            list<dentryCacheElement *> leafList_;  // leaf list
+            list<dentryCacheElement *> intenalList_; // interal list
+            list<dentryCacheElement *> freeList_; // free list
+            dentryCacheElement *freeListHead_; // free list head
+            dentryCacheElement dentryCacheElementPool_[MAX_DENTRY_NUM];
             
         public:
             dentryCache() = default;
             ~dentryCache() = default;
 
             void init();
-            dentry *getDentry();
-            void putDentry(dentry *dentry);
             dentry *alloDentry();
-            void releaseDentry(dentry *dentry);  // who will call this function apparently? , OOOO, it should be releaseInactiveDentry
             void touchDentry(dentry *dentry);
-            void touchDentryInternal(dentry *dentry);
-            dentry *releaseInactiveDentry( );
-
+            dentry *releaseInactiveDentry();
+            void intenalListRemove( dentry *dentry );
+            void intenalListPushBack( dentry *dentry );
+            void leafListPushBack( dentry *dentry );
+            void leafListRemove( dentry *dentry );
         };
 
         extern dentryCache k_dentryCache;
