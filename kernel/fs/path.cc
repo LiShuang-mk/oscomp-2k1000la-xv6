@@ -8,7 +8,7 @@
 #include "pm/process_manager.hh"
 
 #include "fs/path.hh"
-#include "fs/file.hh"
+#include "fs/file/file.hh"
 #include "fs/dentry.hh"
 #include "fs/fs_defs.hh"
 #include "fs/fat/fat32fs.hh"

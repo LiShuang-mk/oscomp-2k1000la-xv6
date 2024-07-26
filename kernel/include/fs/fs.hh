@@ -1,6 +1,7 @@
 #pragma once
 #include "types.hh"
 #include "fs/fs_defs.hh"
+#include "fs/file/file_defs.hh"
 
 #include <smp/spin_lock.hh>
 
@@ -43,7 +44,7 @@ namespace fs
 		virtual size_t rNamelen() const = 0; // get max name length
 		virtual dentry *getRoot() const = 0; // get root dentry
 		virtual dentry *getMntPoint() const = 0; // get mount point dentry
-		virtual mode_t 	rDefaultMod() const = 0;
+		virtual FileAttrs rDefaultMod() const = 0;
 		virtual int mount( dentry *dev, dentry *mnt, eastl::string fstype ) = 0 ;
 		virtual int umount( dentry *mnt ) = 0;
 

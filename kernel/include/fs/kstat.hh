@@ -12,7 +12,7 @@
 
 #include "fs/fs.hh"
 #include "fs/fs_defs.hh"
-#include "fs/file_defs.hh"
+#include "fs/file/file_defs.hh"
 #include "fs/dentry.hh"
 #include "fs/inode.hh"
 
@@ -65,7 +65,7 @@ namespace fs
 				{
 					dev = node->rDev();
 					ino = node->rIno();
-					mode = node->rMode();
+					mode = node->rMode().transMode(); // process mode 
 					nlink = 1;
 					uid = 0;
 					gid = 0;

@@ -11,7 +11,7 @@
 
 #include "mm/virtual_memory_manager.hh"
 
-#include "fs/file.hh"
+#include "fs/file/file.hh"
 namespace pm
 {
 	namespace ipc

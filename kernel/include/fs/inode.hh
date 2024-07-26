@@ -9,6 +9,7 @@
 #pragma once 
 
 #include "types.hh"
+#include "fs/file/file_defs.hh"
 #include <EASTL/string.h>
 namespace fs
 {
@@ -27,7 +28,7 @@ namespace fs
 		//virtual void link(const char *name,InodeRef nod) = 0;
 		//virtual int nodeHardUnlink() = 0;
 		virtual Inode* lookup( eastl::string dirname ) = 0;
-		virtual Inode* mknode( eastl::string name, mode_t mode, int dev ) = 0;
+		virtual Inode* mknode( eastl::string name, FileAttrs attr, eastl::string dev_name = "" ) = 0;
 		//virtual int entSymLink( const eastl::string arget ) = 0;
 
 		//virtual void nodeRemove() = 0;
@@ -45,14 +46,13 @@ namespace fs
 		//virtual int readDir( DStat *buf, uint32 len, uint64 off_ ) = 0;
 		//virtual int ioctl( uint64 req, uint64 arg ) = 0;
 
-		virtual mode_t rMode() const = 0; // get mode
+		virtual FileAttrs rMode() const = 0; // get mode
 		virtual dev_t rDev() const = 0; // get device number
 		virtual uint64 rFileSize()   const = 0; // get file size
 		virtual uint64 rIno() const = 0; // get inode number
 
 		// Ctime, Mtime, Atime temporarily not implemented
 		//virtual bool Empty() const = 0; // check if inode is empty
-
 		virtual SuperBlock *getSb() const = 0; // get super block
 		virtual FileSystem *getFS() const = 0; // get file system
 		//virtual int create( Inode *dir, Dentry *dentry, eastl::string name, uint32 mode ) = 0;

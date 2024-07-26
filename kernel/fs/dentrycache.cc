@@ -43,7 +43,7 @@ namespace fs
                 dentry = &( element->dentry );
                 leafListPushBack( dentry );
             }
-
+            _lock.release();
             return dentry;
         }
 

@@ -6,9 +6,9 @@ namespace fs
 {
     namespace ramfs
     {
-        Inode *RamFSSb::allocInode( mode_t mode , int dev)
+        Inode *RamFSSb::allocInode( FileAttrs attrs , eastl::string dev_name)
         {
-            return new RamInode( static_cast<RamFS *>(fs), ++ino, mode, ISDIR(mode), dev );
+            return new RamInode( static_cast< RamFS *>(fs), ++ino, attrs, dev_name );
         }
     }
 }// namespace fs

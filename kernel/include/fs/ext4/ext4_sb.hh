@@ -18,6 +18,7 @@ namespace fs
 		class Ext4FS;
 		class Ext4BlockGroup;
 
+		//FileAttrs EXT4DeaultMod = FileAttrs( 0777 );
 		class Ext4SB : public SuperBlock
 		{
 			friend Ext4FS;
@@ -38,10 +39,10 @@ namespace fs
 			virtual dentry * getMntPoint() const override { return nullptr; };
 			virtual FileSystem * getFileSystem() const override { return _belong_fs; };
 			virtual bool isValid() const override { return _cache_block_size != 0; };
-			virtual u32 rDefaultMod() const override { return 0; };
+			virtual FileAttrs rDefaultMod() const override { return FileAttrs( 0777 ); };
 			virtual size_t rBlockSize() const override { return _cache_block_size; };
 			virtual size_t rBlockNum() const override { return _cache_block_count; };
-			virtual Inode *allocInode( mode_t mode, int dev = -1 ) override { return nullptr; };
+			virtual Inode *allocInode( fs::FileAttrs attrs, eastl::string dev_name = "" ) override { return nullptr; };
 
 			size_t rBlockFree() const { return _cache_free_block_count; }
 

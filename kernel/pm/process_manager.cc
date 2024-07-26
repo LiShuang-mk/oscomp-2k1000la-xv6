@@ -23,7 +23,7 @@
 //#include "fs/fat/fat32Dentry.hh"
 //#include "fs/fat/fat32_file_system.hh"
 #include "fs/fat/fat32fs.hh"
-#include "fs/file.hh"
+#include "fs/file/file.hh"
 // #include "fs/dev/console.hh"
 #include "fs/kstat.hh"
 #include "fs/ramfs/ramfs.hh"

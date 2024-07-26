@@ -10,6 +10,7 @@ namespace fs{
     
     namespace ramfs{
 
+       // FileAttrs RamFSDefaultMod = FileAttrs( 0777 );
 
         class RamFSSb : public fs::SuperBlock {
             FileSystem *fs;
@@ -23,10 +24,10 @@ namespace fs{
                 dentry *getMntPoint() const override { log_panic("RamFS getMntPoint is forbidden!"); return nullptr; }
                 FileSystem *getFileSystem() const override { return fs; }
                 bool isValid() const override { return true; }
-                uint32 rDefaultMod() const override { return fs->rDefaultMod(); } 
+                FileAttrs rDefaultMod() const override { return FileAttrs( 0777 ); } 
                 size_t rBlockSize() const override { return 0; }
                 size_t rBlockNum() const override { return 0; }
-                Inode*  allocInode( mode_t mode, int dev = -1 )  override;
+                Inode*  allocInode( FileAttrs attrs, eastl::string dev_name = "" )  override;
         };
     }
 }

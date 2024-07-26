@@ -38,7 +38,7 @@ namespace fs
 
 			// /// @todo 3. init rootEntry, and it's fat32inode.
 
-			Fat32Inode *_node = static_cast<Fat32Inode *>( _super_block->allocInode( FileAttrs::File_dir << FileAttrs::File_dir_s ) );
+			Fat32Inode *_node = static_cast<Fat32Inode *>( _super_block->allocInode( _super_block->rDefaultMod() ) );
 			_node->init( 2, this, fat32nod_folder, 0 );
 			//_root = new dentry(rootname, _node, nullptr, false );
 			_root = fs::dentrycache::k_dentryCache.alloDentry();

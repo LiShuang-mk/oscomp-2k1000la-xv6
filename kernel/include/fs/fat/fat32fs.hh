@@ -1,7 +1,7 @@
 #include "types.hh"
 #include "fs/fat/fat32.hh"  
 #include "fs/fat/fat32Sb.hh"
-#include "fs/file.hh"
+#include "fs/file/file.hh"
 
 #include <EASTL/vector.h>
 #include <EASTL/string.h>
@@ -18,7 +18,6 @@ namespace fs
 
 		constexpr size_t Fat32MaxFileNameLength = 255;
 		constexpr uint64 Fat32MaxPathLength = 255;
-		constexpr mode_t Fat32_DEFALUT_MOD = FileAttrs::File_dir << FileAttrs::File_dir_s;
 		class Fat32FS : public FileSystem
 		{
 		private:
@@ -57,7 +56,7 @@ namespace fs
 			long rFreeFile() const override { return rBlockFree() / _super_block->rSectorPClu(); } /// @todo FAT32 free file number
 			eastl::string rFStype() const override { return _fstype; } 
 			size_t rNamelen() const override { return Fat32MaxPathLength; }
-			mode_t rDefaultMod() const override { return Fat32_DEFALUT_MOD; }
+			FileAttrs rDefaultMod() const override { return _super_block->rDefaultMod(); }
 			//void unInstall() override {  } /// @todo FAT32 uninstall file system
 			dentry *getRoot() const override ;
 			dentry *getMntPoint() const override { return _mnt; };
