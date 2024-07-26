@@ -12,6 +12,8 @@
 #include "fs/kstat.hh"
 
 #include "pm/ipc/pipe.hh"
+
+#include <EASTL/string.h>
 namespace pm
 {
 	namespace ipc{
@@ -24,15 +26,16 @@ namespace pm
 using namespace pm::ipc;
 namespace fs
 {	
-	class Dentry;
 	class dentry;
+	class file_pool;
 	class File
 	{
+		friend file_pool;
 	public:
 		FileTypes type;
 		int flags;
 		FileOps ops;
-
+		uint32 refcnt;
 		union Data
 		{
 		private:
@@ -69,15 +72,18 @@ namespace fs
 			inline FileTypes get_Type() const { return en_.type_; }
 		} data;
 
-		File( FileTypes type_ ) : data( type_ ) {}
-		File( FileTypes type_, FileOps ops_ = FileOp::fileop_none ) : ops( ops_ ), data( type_ ) {}
-		File( FileTypes type_, int flags_ ) : ops( flags_ ), data( type_ ) {}
-		File( dentry *de_, int flags_ ) : flags( flags_ ), ops( flags_ ), data( de_ ) {}
-		File( pm::ipc::Pipe *pipe, int flags_ ) : flags( flags_ ), ops( flags_ ), data( pipe ) {}
-		~File() = default;
+		private:
+			File() : refcnt( 0 ), data( FT_NONE ) {} // non-arg constructor only for file_p
+		public:
+			File( FileTypes type_ ) : refcnt( 0 ), data( type_ ) {}
+			File( FileTypes type_, FileOps ops_ = FileOp::fileop_none ) : ops( ops_ ), refcnt( 0 ), data( type_ ) {}
+			File( FileTypes type_, int flags_ ) : ops( flags_ ), refcnt( 0 ), data( type_ )  {}
+			File( dentry *de_, int flags_ ) : flags( flags_ ), ops( flags_ ), refcnt( 0 ), data( de_ ) {}
+			File( pm::ipc::Pipe *pipe, int flags_ ) : flags( flags_ ), ops( flags_ ), refcnt( 0 ), data( pipe ) {}
+			~File() = default;
 
-		int write( uint64 buf, size_t len );
-		int read( uint64 buf, size_t len, int off_ = -1, bool update = true );
+			int write( uint64 buf, size_t len );
+			int read( uint64 buf, size_t len, int off_ = -1, bool update = true );
 
 	};
 
@@ -109,25 +115,22 @@ namespace fs
 
 	constexpr uint file_pool_max_size = 100;
 	constexpr uint pipe_pool_max_size = 10;
-	class xv6_file_pool
+	class file_pool
 	{
 	private:
 		hsai::SpinLock _lock;
-		xv6_file _files[ file_pool_max_size ];
+		File _files[ file_pool_max_size ];
 		eastl::vector <eastl::string> _unlink_list;
-		pm::ipc::Pipe _pipe[ pipe_pool_max_size ];
-		int pipe_map[ pipe_pool_max_size ];
 	public:
 		void init();
-		xv6_file * alloc_file();
-		void free_file( xv6_file * f );
-		void dup( xv6_file * f );
-		xv6_file * find_file( eastl::string path);
+		File * alloc_file();
+		void free_file( File * f );
+		void dup( File * f );
+		File * find_file( eastl::string path);
 		int unlink( eastl::string path );
 		bool has_unlinked( eastl::string path) { return eastl::find( _unlink_list.begin(), _unlink_list.end(), path ) != _unlink_list.end();};
-		pm::ipc::Pipe * alloc_pipe();
 	};
 
-	extern xv6_file_pool k_file_table;
+	extern file_pool k_file_table;
 
 } // namespace fs

@@ -10,7 +10,6 @@
 
 namespace fs{
     
-    class Dentry;
     class dentry;
 
 

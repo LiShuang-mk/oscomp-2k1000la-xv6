@@ -14,7 +14,7 @@
 
 namespace fs{
 
-	class xv6_file;
+	class File;
 
 }
 namespace pm
@@ -48,7 +48,7 @@ namespace pm
 
 			int read( uint64, int n );
 
-			int alloc( fs::xv6_file * &f0, fs::xv6_file * &f1);
+			int alloc( fs::File * &f0, fs::File * &f1);
 
 			void close( bool is_write );
 

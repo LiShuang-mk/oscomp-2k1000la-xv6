@@ -13,7 +13,6 @@
 namespace fs
 {
 	class FileSystem;
-	class Dentry;
 	class Inode;
 	// class File;
 	// class DStat;
@@ -50,6 +49,5 @@ namespace fs
 
 	};
 
-	// Dentry * DentryRef;
 
 }

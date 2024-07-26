@@ -119,4 +119,8 @@ namespace fs
             }
     }
 
+    void dentry::unlink()
+    {
+        /// @todo node->unlink(); linkcnt--;
+    }
 }// namespace fs

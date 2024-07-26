@@ -7,7 +7,6 @@ namespace fs{
     
     class Inode;
     class FileSystem;
-    class Dentry;
     
     namespace ramfs{
 
