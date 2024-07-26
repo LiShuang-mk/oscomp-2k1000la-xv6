@@ -41,24 +41,25 @@ namespace fs
 	{
 		struct
 		{
-			int r : 1;    //read
-			int w : 1;    //write
-			int a : 1;    //append
+			uint r : 1;    //read
+			uint w : 1;    //write
+			uint a : 1;    //append
 		} fields;   //file's  authority
 		FileOp rwa;
 		FileOps( FileOp op_ = FileOp::fileop_none ) : rwa( op_ ) {}
 		FileOps( int flags_ )
 		{
-			fields.r = flags_ & FA_READ;
-			fields.w = flags_ & FA_WRITE;
-			fields.a = flags_ & FA_APPEND;
+			fields.r = ( flags_ & FA_READ ) ? 1 : 0;
+			fields.w = ( flags_ & FA_WRITE ) ? 1 : 0;
+			fields.a = ( flags_ & FA_APPEND ) ? 1 : 0;
 		}
 	};
 
-	/*	
+	/*
 		1. 	POSIX 文件权限和类型定义
 	*/
-	enum FileAttrs{
+	enum FileAttrs
+	{
 		File_dir = 0x01,
 
 		File_u_read = 0x04,
@@ -80,7 +81,7 @@ namespace fs
 
 	};
 
-	#define ISDIR( m ) ((m) & ( FileAttrs::File_dir << FileAttrs::File_dir_s))
+#define ISDIR( m ) ((m) & ( FileAttrs::File_dir << FileAttrs::File_dir_s))
 
-	
+
 } // namespace fs

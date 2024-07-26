@@ -26,7 +26,7 @@ namespace fs
 		}
 		log_info( "write %d bytes...\n", len );
 
-		switch ( data.get_Type() )
+		switch ( type )
 		{
 			case FileTypes::FT_STDOUT:
 			case FileTypes::FT_STDERR:
@@ -50,6 +50,29 @@ namespace fs
 				}
 				break;
 			}
+			case FileTypes::FT_DEVICE:
+			{
+				log_panic( "file type device not implement" );
+				// hsai::StreamDevice * sdev = ( hsai::StreamDevice * ) hsai::k_devm.get_device( major );
+				// if ( sdev == nullptr )
+				// {
+				// 	log_error( "file write: null device for device number %d", major );
+				// 	return -1;
+				// }
+				// if ( sdev->type() != hsai::dev_char )
+				// {
+				// 	log_warn( "file write: device %d is not a char-dev", major );
+				// 	return -2;
+				// }
+				// if ( !sdev->support_stream() )
+				// {
+				// 	log_warn( "file write: device %d is not a stream-dev", major );
+				// 	return -3;
+				// }
+
+				// ret = sdev->write( ( void * ) addr, n );
+
+			} break;
 			default:
 				log_panic( "file::write(),Unknown File Type!\n" );
 				break;
