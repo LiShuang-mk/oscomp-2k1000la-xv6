@@ -1,9 +1,10 @@
 #include "types.hh"
+
 #include "klib/common.hh"
 
 #include "fs/fs.hh"
 #include "fs/ramfs/ramfsSb.hh"
-#include "fs/file_defs.hh"
+
 #include <hsai_global.hh>
 
 #include <EASTL/string.h>
@@ -17,7 +18,6 @@ namespace fs{
 
         class RamFSDen;
 
-        constexpr mode_t RAMFS_DEFAULT_MODE =  FileAttrs::File_dir << FileAttrs::File_dir_s;
         class RamFS : public FileSystem
         {
             uint _device;
@@ -48,7 +48,7 @@ namespace fs{
                 size_t rNamelen() const override { return 512; } // RamFS does not have max name length
                 dentry *getRoot() const override ;// RamFS does not have root dentry
                 dentry *getMntPoint() const override { return _mnt; } // RamFS does not have mount point dentry
-                mode_t rDefaultMod() const override { return RAMFS_DEFAULT_MODE; }
+                FileAttrs rDefaultMod() const override { return _super_block->rDefaultMod(); }
                 int alloc_ino() { return _ino++; }
                 int mount( dentry *dev, dentry *mnt, eastl::string fstype ) override ;
                 int umount( dentry *mnt ) override ;

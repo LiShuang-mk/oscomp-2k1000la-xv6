@@ -4,7 +4,8 @@
 #include "fs/buffer_manager.hh"
 #include "fs/inode.hh"
 
-#include <EASTL/vector.h>
+#include "hsai_global.hh"
+#include "device_manager.hh"
 
 namespace fs
 {
@@ -12,12 +13,15 @@ namespace fs
 	namespace fat
 	{	
 
-		void Fat32Inode::init( uint32 first_cluster, Fat32FS *belong_fs, Fat32NodeType node_type, mode_t attr, size_t size )
+		void Fat32Inode::init( uint32 first_cluster, Fat32FS *belong_fs, Fat32NodeType node_type,
+							FileAttrs attr, size_t size , eastl::string dev_name)
 		{
 			_first_cluster = first_cluster;
 			_belong_fs = belong_fs;
 			_dir_type = node_type;
 			_attr = attr;
+			_dev_name = dev_name;
+
 
 			uint cluster_num = _first_cluster;
 			uint64 cls_num_in_sector = cluster_num /
@@ -132,7 +136,9 @@ namespace fs
 
 		dev_t Fat32Inode::rDev() const
 		{
-			return _belong_fs->owned_device();
+			if( _dev_name.empty() )
+                log_error("This is not a valid device file");
+			return hsai::k_devm.search_device( _dev_name.c_str() );
 		}
 
 		uint64 Fat32Inode::_cluster_to_lba( uint64 cluster )
@@ -226,9 +232,9 @@ namespace fs
 				return nullptr;
 		}
 		
-		Inode *Fat32Inode::mknode(eastl::string name, mode_t mode, int dev)
+		Inode *Fat32Inode::mknode(eastl::string name, FileAttrs attrs, eastl::string dev_name )
 		{
-			return _belong_fs->getSuperBlock()->allocInode( ISDIR(mode), dev );
+			return _belong_fs->getSuperBlock()->allocInode( attrs, dev_name );
 		}
 // ================ private helper function ================
 

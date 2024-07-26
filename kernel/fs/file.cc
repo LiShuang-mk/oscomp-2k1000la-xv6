@@ -6,7 +6,7 @@
 // --------------------------------------------------------------
 //
 
-#include "fs/file.hh"
+#include "fs/file/file.hh"
 #include "fs/dentry.hh"
 #include "fs/inode.hh"
 

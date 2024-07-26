@@ -1,7 +1,7 @@
 #include "fs/ramfs/ramfs.hh"
-//#include "fs/dentrycache.hh"
+#include "fs/dentrycache.hh"
 #include "fs/dentry.hh"
-#include "fs/file.hh"
+#include "fs/file/file.hh"
 #include "fs/fat/fat32fs.hh"
 
 #include "device_manager.hh"
@@ -30,20 +30,25 @@ namespace fs{
             _fstype = "ramfs";  
             /// super block has been initialized in constructor
             _super_block = new RamFSSb( this );
-            _root = new fs::dentry( "/", _super_block->allocInode(
-                                FileAttrs::File_dir << FileAttrs::File_dir_s )
+            // _root = new fs::dentry( "/", _super_block->allocInode(
+            //                     FileAttrs::File_dir << FileAttrs::File_dir_s )
+            //                     , nullptr, true );
+            FileAttrs attrs = _super_block->rDefaultMod();
+            attrs.filetype = FileTypes::FT_DIRECT;
+            _root = fs::dentrycache::k_dentryCache.alloDentry();
+            new ( _root ) dentry( "/", _super_block->allocInode(
+                                attrs )
                                 , nullptr, true );
             _isroot = true;
             _mnt = nullptr;
 
+            _root->EntryCreate( "dev",  attrs ); // 暂时把第二个参数为正数认为是目录， 还要创建 /dev/sda1, 用来初始化ext4
+            _root->EntryCreate( "proc", attrs );
+            _root->EntryCreate( "sys",  attrs );
+            _root->EntryCreate( "tmp",  attrs );
+            _root->EntryCreate( "mnt",  attrs );
             
-        
-            _root->EntryCreate( "dev", FileAttrs::File_dir << FileAttrs::File_dir_s ); // 暂时把第二个参数为正数认为是目录， 还要创建 /dev/sda1, 用来初始化ext4
-            _root->EntryCreate( "proc", FileAttrs::File_dir << FileAttrs::File_dir_s );
-            _root->EntryCreate( "sys", FileAttrs::File_dir << FileAttrs::File_dir_s );
-            _root->EntryCreate( "tmp", FileAttrs::File_dir << FileAttrs::File_dir_s );
-            _root->EntryCreate( "mnt", FileAttrs::File_dir << FileAttrs::File_dir_s );
-            
+            _root->printChildrenInfo(); 
             // init fat
             dentry* dev = _root->EntrySearch( "dev" );
             char ** dev_table = new char* [ DEV_TBL_LEN ];
@@ -57,7 +62,7 @@ namespace fs{
             {
                 if( dev_table[i] == nullptr )
                     break;
-                dev->EntryCreate( dev_table[i], FileAttrs::File_dir << FileAttrs::File_dir_s, i);
+                dev->EntryCreate( dev_table[i], _super_block->rDefaultMod(), dev_table[i] );
             }
             if( !dev )
             {
@@ -93,7 +98,7 @@ namespace fs{
                 return -1;
             }
 
-            if( !ISDIR( mount->getNode()->rMode() ) )
+            if( mount->getNode()->rMode().filetype == FileTypes::FT_DIRECT )
             {
                 log_error("RamFS::mount: mount is not a directory");
                 return -1;

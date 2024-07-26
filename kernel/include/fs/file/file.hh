@@ -8,7 +8,7 @@
 
 #pragma once 
 
-#include "fs/file_defs.hh"
+#include "fs/file/file_defs.hh"
 #include "fs/kstat.hh"
 
 #include "pm/ipc/pipe.hh"
@@ -132,5 +132,6 @@ namespace fs
 	};
 
 	extern file_pool k_file_table;
+
 
 } // namespace fs

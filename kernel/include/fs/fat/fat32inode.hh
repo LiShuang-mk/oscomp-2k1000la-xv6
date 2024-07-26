@@ -30,16 +30,17 @@ namespace fs
 			Fat32NodeType _dir_type;
 			eastl::vector<uint32> _clusters_number;
 			// eastl::unordered_map<eastl::string, Fat32DirectryShort> _children;
-			mode_t _attr;
+			FileAttrs _attr;
 			size_t _size;
 			uint _ino;
-			int _dev;
+			eastl::string _dev_name;
 			Fat32Inode * _sub_inode_cache = nullptr;
 
 		public:
 			Fat32Inode() = default;
-			Fat32Inode( Fat32FS *fs_, uint ino_, int dev_ = -1 ) : _belong_fs(fs_), _ino(ino_), _dev(dev_) { };
-			void init( uint32 first_cluster, Fat32FS *belong_fs, Fat32NodeType node_type, mode_t attr, size_t size = 0);
+			Fat32Inode( Fat32FS *fs_, fs::FileAttrs attr, uint ino_, eastl::string dev_name = "" ) 
+						: _belong_fs(fs_), _attr(attr), _ino(ino_), _dev_name( dev_name ) {};
+			void init( uint32 first_cluster, Fat32FS *belong_fs, Fat32NodeType node_type, fs::FileAttrs attr, size_t size = 0, eastl::string dev_name = "" );
 
 			void read_content( void *buf, uint64 read_len, uint64 offset, bool async_read = false );
 
@@ -61,10 +62,10 @@ namespace fs
 			 **************************************************/
 			Inode* lookup( eastl::string dirname ) override;
 
-			Inode* mknode( eastl::string name, mode_t mode, int dev ) override ;
+			Inode* mknode( eastl::string name, FileAttrs attrs, eastl::string dev_name = "" ) override ;
 			size_t nodeRead( uint64 dst_, size_t off_, size_t len_ ) override { read_content( ( void * ) dst_, len_, off_ ); return len_; };
 			size_t nodeWrite( uint64 src_, size_t off_, size_t len_ ) override { return 0; };
-			mode_t rMode() const override { return _attr; };
+			FileAttrs rMode() const override { return _attr; };
 			dev_t  rDev() const override;
 			uint64 rIno() const override { return _first_cluster; };
 			size_t  rFileSize() const override { return _size; };

@@ -10,7 +10,8 @@ namespace fs{
 	class dentry;
 	class Inode;
     namespace fat{
-
+		
+		//FileAttrs defaultAttrs = FileAttrs( 0777 );
 		class Fat32SuperBlock : public SuperBlock
 		{
 			private:
@@ -30,7 +31,7 @@ namespace fs{
 				dentry * getMntPoint() const override { return _fs->getMntPoint(); }
 				FileSystem * getFileSystem() const override { return _fs; }
 				bool isValid() const override { return is_valid; }
-				uint32 rDefaultMod() const override { return _fs->rDefaultMod(); }
+				FileAttrs rDefaultMod() const override { return FileAttrs( 0777 ); }
 				fat::FatBpb * get_bpb() { return &_dbr.bpb; }
 				fat::Fat32Ebpb * get_ebpb() { return &_dbr.ebpb; }
 				fat::Fat32Dbr * get_dbr() { return &_dbr; }
@@ -38,7 +39,7 @@ namespace fs{
 				uint rSectorPClu() { return _dbr.bpb.sectors_per_cluster; }
 				uint rFatCnt() { return _dbr.bpb.table_count; }
 				size_t rBlockNum() const override { return _dbr.bpb.total_sectors_32; }
-				Inode *allocInode( mode_t mode, int dev = -1 ) override ;
+				Inode *allocInode( FileAttrs attr, eastl::string dev_name = "" ) override ;
 		};
     }
 }

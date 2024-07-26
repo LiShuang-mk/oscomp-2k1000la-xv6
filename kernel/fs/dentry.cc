@@ -26,16 +26,16 @@ namespace fs
         if ( [[maybe_unused]] auto subnod = (_node->lookup(name)))
         {
             log_trace("dentry::EntrySearch: found inode");
-            // dentry *subdentry = fs::dentrycache::k_dentryCache.alloDentry();
-            // subdentry->init(name, (Inode *)subnod, this);
-            dentry *subdentry = new dentry(name , subnod, this);
+            dentry *subdentry = fs::dentrycache::k_dentryCache.alloDentry();
+            new ( subdentry ) dentry(name, (Inode *)subnod, this);
+            //dentry *subdentry = new dentry(name , subnod, this);
             children[name] = subdentry;
             return subdentry;
         }
         return nullptr;
     }
 
-    fs::dentry *dentry::EntryCreate( eastl::string name, uint32 mode, int dev )
+    fs::dentry *dentry::EntryCreate( eastl::string name, FileAttrs attrs, eastl::string dev_name )
     {
         if (name.empty()) {
             log_error("dentry::EntryCreate: name is empty");
@@ -50,14 +50,15 @@ namespace fs
             
         //[[maybe_unused]] FileSystem *fs = node->getFS();
 
-        Inode* node_ = this->_node->mknode( name, mode, dev );
+        Inode* node_ = this->_node->mknode( name, attrs, dev_name );
         if (node_ == nullptr) 
         {
             log_error("dentry::EntryCreate: nodefs is not RamFS");
             return nullptr;
         }
-        dentry *newden = new dentry( name, node_, this );
-
+        //dentry *newden = new dentry( name, node_, this );
+        dentry *newden = fs::dentrycache::k_dentryCache.alloDentry();
+        new ( newden ) dentry( name, node_, this );
         if ( newden == nullptr ) {
             log_error("dentry::EntryCreate: Failed to create RamFSDen");
             delete node_; // 避免内存泄漏
@@ -104,13 +105,15 @@ namespace fs
     {
         eastl::queue<dentry*> current;
         dentry *den;
+        FileAttrs attrs;
         current.push(this); // 将当前节点添加到队列
             
         while (!current.empty()) {
             den = current.front(); // 获取队列前端的节点
             current.pop(); 
-            
-            log_info("  %s", den->rName().c_str());            
+            attrs = den->getNode()->rMode();
+
+            printf("dentry name is %s, and it's attr is %d, it is a %d file", den->rName().c_str(), attrs.transMode(), attrs.filetype);            
             
             eastl::unordered_map<eastl::string, dentry*> children = den->getChildren();
             for (auto &child : children) {

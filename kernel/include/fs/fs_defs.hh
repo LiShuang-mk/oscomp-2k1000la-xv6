@@ -9,7 +9,9 @@
 #pragma once 
 
 #include "klib/common.hh"
+#include "fs/file/file_defs.hh"
 
+#include <EASTL/string.h>
 namespace fs
 {
 	class FileSystem;
@@ -26,10 +28,10 @@ namespace fs
 		virtual dentry* getMntPoint() const = 0; // get mount point dentry
 		virtual FileSystem* getFileSystem() const = 0; // get file system
 		virtual bool isValid() const = 0; // check if super block is valid
-		virtual uint32 rDefaultMod() const = 0; // get default mode
+		virtual FileAttrs rDefaultMod() const = 0; // get default mode
 		virtual size_t rBlockSize() const = 0; // get block size
 		virtual size_t rBlockNum() const = 0; // get block number
-		virtual Inode *allocInode( mode_t mode , int dev = -1) = 0; // allocate inode
+		virtual Inode *allocInode( FileAttrs attrs , eastl::string dev_name = "") = 0; // allocate inode
 		//virtual void destroyInode( Inode *inode ) = 0; // destroy inode
 	};
 

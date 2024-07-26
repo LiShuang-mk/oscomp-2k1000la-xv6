@@ -10,6 +10,7 @@
 
 #include "types.hh"
 #include "klib/common.hh"
+#include "fs/file/file_defs.hh"
 
 #include <EASTL/string.h>
 #include <EASTL/unordered_map.h>
@@ -59,7 +60,7 @@ namespace fs
 		~dentry();
 
 		dentry *EntrySearch( eastl::string name );
-		dentry *EntryCreate( eastl::string name, uint32 mode, int dev = -1 );
+		dentry *EntryCreate( eastl::string name, FileAttrs attrs, eastl::string dev_name = "" );
 		Inode *getNode();
 		bool isRoot();
 		dentry *getParent() { return parent == nullptr ? nullptr : parent; };

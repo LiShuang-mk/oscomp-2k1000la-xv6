@@ -371,6 +371,7 @@ namespace fs
 		{
 			_cal_blocks();
 			_cal_size();
+			//_attrs( 0777 );
 		}
 
 		Inode * Ext4IndexNode::lookup( eastl::string dirname )

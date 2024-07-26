@@ -9,7 +9,7 @@
 #include "syscall/syscall_handler.hh"
 #include "syscall/syscall_defs.hh"
 #include "hal/cpu.hh"
-#include "fs/file.hh"
+#include "fs/file/file.hh"
 #include "fs/dev/acpi_controller.hh"
 #include "fs/kstat.hh"
 #include "fs/path.hh"
