@@ -63,7 +63,10 @@ namespace fs
 				Inode *node = dentry->getNode();
 				if( node )
 				{
-					dev = node->rDev();
+					if( dentry->getNode()->rMode().filetype == fs::FileTypes::FT_DEVICE)
+						dev = node->rDev();
+					else 
+						dev = 10000;
 					ino = node->rIno();
 					mode = node->rMode().transMode(); // process mode 
 					nlink = 1;
@@ -86,14 +89,14 @@ namespace fs
 		}
 		
 		Kstat(pm::ipc::Pipe *pipe) :
-			dev( 0 ), ino( -1 ), mode( FT_PIPE ), nlink( 1 ), 
+			dev( 0 ), ino( 1000000 ), mode( FT_PIPE ), nlink( 1 ), 
 			uid( 0 ), gid( 0 ), rdev( 0 ), __pad( 0 ),
 			size( 0 ), blksize( 0 ), __pad2( 0 ), blocks( 0 )
 		{
 		};
 
 		Kstat( FileTypes f_type ) :
-			dev( 0 ), ino( -1 ), mode( FT_NONE ), nlink( 1 ), 
+			dev( 0 ), ino( 1000000 ), mode( FT_NONE ), nlink( 1 ), 
 			uid( 0 ), gid( 0 ), rdev( 0 ), __pad( 0 ),
 			size( 0 ), blksize( 0 ), __pad2( 0 ), blocks( 0 )
 		{

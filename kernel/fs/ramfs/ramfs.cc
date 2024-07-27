@@ -58,11 +58,12 @@ namespace fs{
                 dev_table[i] = nullptr;
             }
             hsai::k_devm.traversal_dev_table( dev_table );
+            fs::FileAttrs dev_Attrs = FileAttrs( FileTypes::FT_DEVICE, 0777 );
             for( int i = 0; i < DEV_TBL_LEN; i++ )
             {
                 if( dev_table[i] == nullptr )
                     break;
-                dev->EntryCreate( dev_table[i], _super_block->rDefaultMod(), dev_table[i] );
+                dev->EntryCreate( dev_table[i], dev_Attrs, dev_table[i] );
             }
             if( !dev )
             {

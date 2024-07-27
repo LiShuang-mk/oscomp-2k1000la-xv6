@@ -206,12 +206,12 @@ namespace fs
 				if ( find )
 				{
 					delete _sub_inode_cache;
-					_sub_inode_cache = new Fat32Inode();
+					_sub_inode_cache = static_cast<Fat32Inode * >( _belong_fs->getSuperBlock()->allocInode( _attr, _dev_name ) );
 					_sub_inode_cache->init(
 						( ( uint32 ) dir_info.first_cluster_high << 16 ) + ( uint32 ) dir_info.first_cluster_low,
 						_belong_fs,
 						( dir_info.attribute & Fat32DirectryAttribute::fat32_directry ) ? Fat32NodeType::fat32nod_folder : Fat32NodeType::fat32nod_file,
-						0,		/// TODO: inode attribute
+						_belong_fs->getSuperBlock()->rDefaultMod(),		/// TODO: inode attribute
 						dir_info.file_size_bytes
 
 					);

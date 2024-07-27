@@ -28,6 +28,12 @@
 #include "fs/kstat.hh"
 #include "fs/ramfs/ramfs.hh"
 #include "fs/path.hh"
+#include "fs/file/file.hh"
+#include "fs/file/device.hh"
+#include "fs/file/directory.hh"
+#include "fs/file/normal.hh"
+#include "fs/file/pipe.hh"
+#include "fs/fs_defs.hh"
 
 #include <EASTL/vector.h>
 #include <EASTL/string.h>
@@ -260,12 +266,26 @@ namespace pm
 		// log_info( "user init: sp  = %p", p->_trapframe->sp );
 		hsai::user_proc_init( ( void * ) p );
 
-		fs::File *f = fs::k_file_table.alloc_file();
-		assert( f != nullptr, "pm: alloc file fail while user init." );
-		new ( &f->ops ) fs::FileOps( 3 );
+		//fs::File *f = fs::k_file_table.alloc_file();
+		fs::FileAttrs fAttrsin = fs::FileAttrs(fs::FileTypes::FT_DEVICE, 0111); // only read
+		fs::device_file *f_in = new fs::device_file( fAttrsin, DEV_STDIN_NUM );
+		assert( f_in != nullptr, "pm: alloc stdin file fail while user init." );
+		
+		fs::FileAttrs fAttrsout = fs::FileAttrs(fs::FileTypes::FT_DEVICE, 0222); // only write
+		fs::device_file *f_out = new fs::device_file( fAttrsout, DEV_STDOUT_NUM );
+		assert( f_out != nullptr, "pm: alloc stdout file fail while user init." );
+
+		fs::FileAttrs fAttrserr = fs::FileAttrs(fs::FileTypes::FT_DEVICE, 0333); // read and write
+		fs::device_file *f_err = new fs::device_file( fAttrserr, DEV_STDERR_NUM );
+		assert( f_err != nullptr, "pm: alloc stderr file fail while user init." );
+
+		//new ( &f->ops ) fs::FileOps( 3 );
 		//f->major = DEV_STDOUT_NUM;
-		f->type = fs::FileTypes::FT_DEVICE;
-		p->_ofile[ 1 ] = f;
+
+		//f->type = fs::FileTypes::FT_DEVICE;
+		p->_ofile[ 0 ] = f_in;
+		p->_ofile[ 1 ] = f_out;
+		p->_ofile[ 2 ] = f_err;
 		//p->_cwd = fs::fat::k_fatfs.get_root();
 		/// @todo 这里暂时修改进程的工作目录为fat的挂载点
 		p->_cwd = fs::ramfs::k_ramfs.getRoot()->EntrySearch( "mnt" );
@@ -360,7 +380,8 @@ namespace pm
 		for ( i = 0; i < ( int ) max_open_files; i++ )
 			if ( p->_ofile[ i ] )
 			{
-				fs::k_file_table.dup( p->_ofile[ i ] );
+				//fs::k_file_table.dup( p->_ofile[ i ] );
+				p->_ofile[ i ]->dup();
 				np->_ofile[ i ] = p->_ofile[ i ];
 			}
 		np->_cwd = p->_cwd;
@@ -832,54 +853,59 @@ namespace pm
 
 		Pcb * p = get_cur_pcb();
 
-		// 处理一下path
-		if ( path[ 0 ] == '.' && path[ 1 ] == '/' )
-		{
-			path = path.substr( 2 );
-		}
+		// // 处理一下path
+		// if ( path[ 0 ] == '.' && path[ 1 ] == '/' )
+		// {
+		// 	path = path.substr( 2 );
+		// }
 
-		fs::File * f = fs::k_file_table.alloc_file();
-		if ( f == nullptr )
-			return -2;
+		// fs::File * f = fs::k_file_table.alloc_file();
+		// if ( f == nullptr )
+		// 	return -2;
 
-		if ( fs::k_file_table.has_unlinked( path ) )
-			return -5;  //
+		// if ( fs::k_file_table.has_unlinked( path ) )
+		// 	return -5;  //
 
 		fs::dentry *dentry;
-		if ( dir_fd <= 2 )
-		{
-			if ( path == "." )
-				dentry = p->_cwd;
-			else
-			{
-				dentry = p->_cwd->EntrySearch( path );
-				if ( dentry == nullptr )
-					return -3;
-			}
-		}
-		else
-		{
-			dentry = p->_ofile[ dir_fd ]->data.get_Entry()->EntrySearch( path );
-			if ( dentry == nullptr )
-				return -4;
-		}
+		// if ( dir_fd <= 2 )
+		// {
+		// 	if ( path == "." )
+		// 		dentry = p->_cwd;
+		// 	else
+		// 	{
+		// 		dentry = p->_cwd->EntrySearch( path );
+		// 		if ( dentry == nullptr )
+		// 			return -3;
+		// 	}
+		// }
+		// else
+		// {
+		// 	dentry = p->_ofile[ dir_fd ]->data.get_Entry()->EntrySearch( path );
+		// 	if ( dentry == nullptr )
+		// 		return -4;
+		//}
 		
 		fs::Path path_( path );
 		dentry = path_.pathSearch();
 
 		if( dentry == nullptr )
-			return -1; // file is not found  
-		// because of open.c's fileattr defination is not clearly, so here we set flags = 7, which means O_RDWR | O_WRONLY | O_RDONLY
-		[[maybe_unused]]fs::File *f_ = new fs::File( dentry, 7 );
+			return -1; // file is not found 
+		int dev = dentry->getNode()->rDev(); 
+		fs::FileAttrs attrs = dentry->getNode()->rMode();
+		
+		if( dev >= 0 ) //dentry is a device
+		{
+			fs::device_file *f = new fs::device_file( attrs, dev );
+			return alloc_fd( p, f );
+		}// else if( attrs.filetype == fs::FileTypes::FT_DIRECT)
+		// 	fs::directory *f = new fs::directory( attrs, dentry );
+		else	//normal file
+		{	
+			fs::normal_file *f = new fs::normal_file( attrs, dentry );
+			return alloc_fd( p, f );
+		}// because of open.c's fileattr defination is not clearly, so here we set flags = 7, which means O_RDWR | O_WRONLY | O_RDONLY
 
-		if ( flags & O_RDWR )
-			new ( &f->ops ) fs::FileOps( 3 ); //read and write
-		else if ( flags & O_WRONLY )
-			new ( &f->ops ) fs::FileOps( 1 ); //read only
-		else
-			new ( &f->ops ) fs::FileOps( 0 ); //not allowed to read 
-
-		return alloc_fd( p, f );
+		//return alloc_fd( p, f );
 	}
 
 	int ProcessManager::close( int fd )
@@ -889,7 +915,8 @@ namespace pm
 		Pcb * p = get_cur_pcb();
 		if ( p->_ofile[ fd ] == nullptr )
 			return 0;
-		fs::k_file_table.free_file( p->_ofile[ fd ] );
+		//fs::k_file_table.free_file( p->_ofile[ fd ] );
+		p->_ofile[ fd ]->free_file();
 		p->_ofile[ fd ] = nullptr;
 		return 0;
 	}
@@ -902,8 +929,8 @@ namespace pm
 		Pcb * p = get_cur_pcb();
 		if ( p->_ofile[ fd ] == nullptr )
 			return -1;
-		fs::File * f = p->_ofile[ fd ];
-		*st = f->data.get_Kstat( );
+		fs::file * f = p->_ofile[ fd ];
+		*st = f->_stat;
 
 		return 0;
 	}
@@ -944,7 +971,12 @@ namespace pm
 		if ( fd <= 2 || fd >= ( int ) max_open_files || map_size < 0 )
 			return -1;
 
-		fs::dentry * dent = p->_ofile[ fd ]->data.get_Entry();
+		fs::file * f = p->_ofile[ fd ];
+		if( f->_attrs.filetype != fs::FileTypes::FT_NORMAL )
+			return -1;
+
+		fs::normal_file *normal_f = static_cast<fs::normal_file *> ( f );
+		fs::dentry * dent = normal_f->getDentry();
 		if ( dent == nullptr )
 			return -1;
 
@@ -991,7 +1023,7 @@ namespace pm
 
 	int ProcessManager::pipe( int *fd, int flags )
 	{
-		fs::File *rf, *wf;
+		fs::pipe_file *rf, *wf;
 		rf = nullptr;
 		wf = nullptr;
 
@@ -1007,8 +1039,10 @@ namespace pm
 		{
 			if ( fd0 >= 0 )
 				p->_ofile[ fd0 ] = 0;
-			fs::k_file_table.free_file( rf );
-			fs::k_file_table.free_file( wf );
+			// fs::k_file_table.free_file( rf );
+			// fs::k_file_table.free_file( wf );
+			rf->free_file();
+			wf->free_file();
 			return -1;
 		}
 		p->_ofile[ fd0 ] = rf;
@@ -1018,7 +1052,7 @@ namespace pm
 		return 0;
 	}
 
-	int ProcessManager::alloc_fd( Pcb * p, fs::File * f )
+	int ProcessManager::alloc_fd( Pcb * p, fs::file * f )
 	{
 		int fd;
 
@@ -1033,7 +1067,7 @@ namespace pm
 		return -1;
 	}
 
-	int ProcessManager::alloc_fd( Pcb * p, fs::File * f, int fd )
+	int ProcessManager::alloc_fd( Pcb * p, fs::file * f, int fd )
 	{
 		if ( fd <= 2 || fd >= ( int ) max_open_files )
 			return -1;

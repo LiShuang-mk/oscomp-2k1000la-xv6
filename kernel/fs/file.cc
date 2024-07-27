@@ -16,114 +16,114 @@
 
 namespace fs
 {
-	int File::write( uint64 buf, size_t len )
-	{
-		int RC = -1;
-		if ( !ops.fields.w )
-		{
-			log_error( "File is not allowed to write!\n" );
-			return RC;
-		}
-		log_info( "write %d bytes...\n", len );
+	// int File::write( uint64 buf, size_t len )
+	// {
+	// 	int RC = -1;
+	// 	if ( !ops.fields.w )
+	// 	{
+	// 		log_error( "File is not allowed to write!\n" );
+	// 		return RC;
+	// 	}
+	// 	log_info( "write %d bytes...\n", len );
 
-		switch ( type )
-		{
-			case FileTypes::FT_STDOUT:
-			case FileTypes::FT_STDERR:
-				printf( "%s", ( char * ) buf );
-				RC = len;
-				break;
-			case FileTypes::FT_PIPE:
-			{
-				if ( static_cast< size_t >( data.get_Pipe()->write( buf, len ) ) == len )
-				{
-					RC = len;
-				}
-				break;
-			}
-			case FileTypes::FT_ENTRY:
-			{
-				if ( data.get_Entry()->getNode()->nodeWrite( buf, data.get_off(), len ) == len )
-				{
-					data.get_off() += len;
-					RC = len;
-				}
-				break;
-			}
-			case FileTypes::FT_DEVICE:
-			{
-				// log_panic( "file type device not implement" );
-				uint major = 1;
-				hsai::StreamDevice * sdev = ( hsai::StreamDevice * ) hsai::k_devm.get_device( major );
-				if ( sdev == nullptr )
-				{
-					log_error( "file write: null device for device number %d", major );
-					return -1;
-				}
-				if ( sdev->type() != hsai::dev_char )
-				{
-					log_warn( "file write: device %d is not a char-dev", major );
-					return -2;
-				}
-				if ( !sdev->support_stream() )
-				{
-					log_warn( "file write: device %d is not a stream-dev", major );
-					return -3;
-				}
+	// 	switch ( type )
+	// 	{
+	// 		case FileTypes::FT_STDOUT:
+	// 		case FileTypes::FT_STDERR:
+	// 			printf( "%s", ( char * ) buf );
+	// 			RC = len;
+	// 			break;
+	// 		case FileTypes::FT_PIPE:
+	// 		{
+	// 			if ( static_cast< size_t >( data.get_Pipe()->write( buf, len ) ) == len )
+	// 			{
+	// 				RC = len;
+	// 			}
+	// 			break;
+	// 		}
+	// 		case FileTypes::FT_ENTRY:
+	// 		{
+	// 			if ( data.get_Entry()->getNode()->nodeWrite( buf, data.get_off(), len ) == len )
+	// 			{
+	// 				data.get_off() += len;
+	// 				RC = len;
+	// 			}
+	// 			break;
+	// 		}
+	// 		case FileTypes::FT_DEVICE:
+	// 		{
+	// 			// log_panic( "file type device not implement" );
+	// 			uint major = 1;
+	// 			hsai::StreamDevice * sdev = ( hsai::StreamDevice * ) hsai::k_devm.get_device( major );
+	// 			if ( sdev == nullptr )
+	// 			{
+	// 				log_error( "file write: null device for device number %d", major );
+	// 				return -1;
+	// 			}
+	// 			if ( sdev->type() != hsai::dev_char )
+	// 			{
+	// 				log_warn( "file write: device %d is not a char-dev", major );
+	// 				return -2;
+	// 			}
+	// 			if ( !sdev->support_stream() )
+	// 			{
+	// 				log_warn( "file write: device %d is not a stream-dev", major );
+	// 				return -3;
+	// 			}
 
-				RC = ( int ) sdev->write( ( void * ) buf, len );
+	// 			RC = ( int ) sdev->write( ( void * ) buf, len );
 
-			} break;
-			default:
-				log_panic( "file::write(),Unknown File Type!\n" );
-				break;
-		}
+	// 		} break;
+	// 		default:
+	// 			log_panic( "file::write(),Unknown File Type!\n" );
+	// 			break;
+	// 	}
 
-		return RC;
-	}
+	// 	return RC;
+	// }
 
-	int File::read( uint64 buf, size_t len, int off_, bool update )
-	{
-		int RC = -1;
-		if ( !ops.fields.r )
-		{
-			log_error( "File is not allowed to read!\n" );
-			return RC;
-		}
-		switch ( data.get_Type() )
-		{
-			case FileTypes::FT_STDIN:
-				log_error( "stdin is not allowed to read!\n" );
-				break;
-			case FileTypes::FT_DEVICE:
-				log_error( "Device is not allowed to read!\n" );
-				break;
-			case FileTypes::FT_PIPE:
-			{
-				if ( auto read_len = data.get_Pipe()->read( buf, len ) )
-				{
-					RC = read_len;
-				}
-				break;
-			}
-			case FileTypes::FT_ENTRY:
-			{
-				if ( off_ < 0 )
-					off_ = data.get_off();
-				if ( auto read_len = data.get_Entry()->getNode()->nodeRead( buf, off_, len ) )
-				{
-					if ( update )
-						data.get_off() += read_len;
-					RC = read_len;
-				}
-				break;
-			}
-			default:
-				log_panic( "file::read(),Unknown File Type!\n" );
-				break;
-		}
-		return RC;
-	}
+	// int File::read( uint64 buf, size_t len, int off_, bool update )
+	// {
+	// 	int RC = -1;
+	// 	if ( !ops.fields.r )
+	// 	{
+	// 		log_error( "File is not allowed to read!\n" );
+	// 		return RC;
+	// 	}
+	// 	switch ( data.get_Type() )
+	// 	{
+	// 		case FileTypes::FT_STDIN:
+	// 			log_error( "stdin is not allowed to read!\n" );
+	// 			break;
+	// 		case FileTypes::FT_DEVICE:
+	// 			log_error( "Device is not allowed to read!\n" );
+	// 			break;
+	// 		case FileTypes::FT_PIPE:
+	// 		{
+	// 			if ( auto read_len = data.get_Pipe()->read( buf, len ) )
+	// 			{
+	// 				RC = read_len;
+	// 			}
+	// 			break;
+	// 		}
+	// 		case FileTypes::FT_ENTRY:
+	// 		{
+	// 			if ( off_ < 0 )
+	// 				off_ = data.get_off();
+	// 			if ( auto read_len = data.get_Entry()->getNode()->nodeRead( buf, off_, len ) )
+	// 			{
+	// 				if ( update )
+	// 					data.get_off() += read_len;
+	// 				RC = read_len;
+	// 			}
+	// 			break;
+	// 		}
+	// 		default:
+	// 			log_panic( "file::read(),Unknown File Type!\n" );
+	// 			break;
+	// 	}
+	// 	return RC;
+	// }
 
 // ================ xv6 file ================
 

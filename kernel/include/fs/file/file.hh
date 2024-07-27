@@ -43,15 +43,12 @@ namespace fs
 			struct { const FileTypes type_; Kstat kst_; Pipe *pipe_; } pp_;
 			struct { const FileTypes type_; Kstat kst_; dentry *dentry_; uint64 off_; } en_;
 			inline bool ensureDev() const { return  dv_.type_ == FT_DEVICE  ||
-													dv_.type_ == FT_NONE	||
-													dv_.type_ == FT_STDERR	||
-													dv_.type_ == FT_STDIN   ||
-													dv_.type_ == FT_STDOUT  ; };
-			inline bool ensureEntry() const { return en_.type_ == FT_ENTRY; };
+													dv_.type_ == FT_NONE ; };
+			inline bool ensureEntry() const { return en_.type_ == FT_NORMAL; };
 			inline bool ensurePipe() const { return pp_.type_ == FT_PIPE; };
 		public:
 			Data( FileTypes type ) 	: 	dv_( { type, type } ) { ensureDev(); }
-			Data( dentry *de_ ) 	: 	en_( { FT_ENTRY, de_, de_, 0 } ) { ensureEntry(); }
+			Data( dentry *de_ ) 	: 	en_( { FT_NORMAL, de_, de_, 0 } ) { ensureEntry(); }
 			Data( Pipe *pipe_ ) 	: 	pp_( { FT_PIPE, pipe_, pipe_ } ) { ensurePipe(); }
 			~Data() = default;
 			inline dentry* get_Entry() const { ensureEntry(); return en_.dentry_; }
@@ -82,8 +79,8 @@ namespace fs
 			File( pm::ipc::Pipe *pipe, int flags_ ) : flags( flags_ ), ops( flags_ ), refcnt( 0 ), data( pipe ) {}
 			~File() = default;
 
-			int write( uint64 buf, size_t len );
-			int read( uint64 buf, size_t len, int off_ = -1, bool update = true );
+			int write( uint64 buf, size_t len ) { return 0; };
+			int read( uint64 buf, size_t len, int off_ = -1, bool update = true ) { return 0; };
 
 	};
 
@@ -133,5 +130,20 @@ namespace fs
 
 	extern file_pool k_file_table;
 
+	class file
+	{
+		public:
+			FileAttrs _attrs;
+			uint32 refcnt;
+			Kstat _stat;
+		public:
+		 	file() = delete;
+			file( FileAttrs attrs ) : _attrs( attrs ), refcnt( 0 ), _stat( _attrs.filetype ) { }
+			virtual ~file() = default;
+			virtual void free_file() { refcnt--; if( refcnt == 0 ) delete this; };
+			virtual int read( uint64 buf, size_t len, int off = 0, bool upgrade = false ) = 0;
+			virtual int write( uint64 buf, size_t len ) = 0;
+			virtual void dup() { refcnt++; }; 
+	};
 
 } // namespace fs

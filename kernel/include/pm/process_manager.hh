@@ -89,8 +89,8 @@ namespace pm
 		void user_init();
 
 
-		int alloc_fd( Pcb * p, fs::File * f );
-		int alloc_fd( Pcb * p, fs::File * f, int fd );
+		int alloc_fd( Pcb * p, fs::file * f );
+		int alloc_fd( Pcb * p, fs::file * f, int fd );
 
 		void get_cur_proc_tms( tmm::tms * tsv );
 

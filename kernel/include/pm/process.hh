@@ -20,7 +20,7 @@
 namespace fs
 {
 	class dentry;
-	class File;
+	class file;
 }
 namespace pm
 {
@@ -73,7 +73,7 @@ namespace pm
 		mm::PageTable _pt;    // User lower half address page table
 		TrapFrame *_trapframe; // data page for uservec.S, use DMW address
 		void * _context;      // swtch() here to run process
-		fs::File *_ofile[ max_open_files ];  // Open files
+		fs::file *_ofile[ max_open_files ];  // Open files
 		// struct inode *cwd;           // Current directory
 		char _name[ 16 ];               // Process name (debugging)
 
@@ -129,7 +129,7 @@ namespace pm
 		uint64 get_size() { return _sz; }
 		uint64 get_last_user_tick() { return _last_user_tick; }
 		uint64 get_user_ticks() { return _user_ticks; }
-		fs::File * get_open_file( int fd )
+		fs::file * get_open_file( int fd )
 		{
 			if ( fd < 0 || fd >= ( int ) max_open_files ) return nullptr;
 			return _ofile[ fd ];
