@@ -87,8 +87,14 @@ namespace loongarch
 		// cpu->intr_on();
 	}
 
+	static int kernel_trap_cnt = 0;
+
 	void ExceptionManager::kernel_trap()
 	{
+		kernel_trap_cnt++;
+
+		if ( kernel_trap_cnt > 4 )
+			hsai_panic( "kernel trap" );
 		// tmm::k_tm.close_ti_intr();
 
 		// hsai_info( "enter kernel trap" );
@@ -133,6 +139,8 @@ namespace loongarch
 
 		cpu->write_csr( csr::era, era );
 		cpu->write_csr( csr::prmd, prmd );
+
+		kernel_trap_cnt--;
 	}
 
 	void ExceptionManager::user_trap()
@@ -347,7 +355,7 @@ namespace loongarch
 			ulong iofbadv = this->_get_user_data( proc, badv );
 			hsai_printf( BLUE_COLOR_PRINT "read badi from badv 0x%x = 0x%x\n" CLEAR_COLOR_PRINT,
 				badv, iofbadv );
-			this->_print_va_page( proc, era );
+			this->_print_pa_page( era );
 			this->_print_va_page( proc, usp );
 
 			hsai_panic(
@@ -372,7 +380,7 @@ namespace loongarch
 		_exception_handlers[ csr::ecode_pis ] = [ this ] ( uint32 estat ) ->void
 		{
 			// [[maybe_unused]] mm::Pte pte = Cpu::get_cpu()->get_cur_proc()->get_pagetable().walk( badv, 0 );
-			
+
 			Cpu * cpu = Cpu::get_la_cpu();
 			[[maybe_unused]] uint64 badv = cpu->read_csr( csr::badv );
 			[[maybe_unused]] uint64 era = cpu->read_csr( csr::era );
@@ -382,13 +390,16 @@ namespace loongarch
 			TrapFrame *tf = ( TrapFrame* ) hsai::get_trap_frame_from_proc( proc );
 			[[maybe_unused]] uint64 usp = tf->sp;
 
-			ulong iofbadv = this->_get_user_data( proc, badv );
-			hsai_printf( BLUE_COLOR_PRINT "read badi from badv 0x%x = 0x%x\n" CLEAR_COLOR_PRINT,
-				badv, iofbadv );
-			this->_print_va_page( proc, era );
+			ulong dofbadv = this->_get_user_data( proc, badv );
+			hsai_printf( BLUE_COLOR_PRINT "read data from badv 0x%x : 0x%x\n" CLEAR_COLOR_PRINT,
+				badv, dofbadv );
+			if ( ( era >> 60 ) == 0 )
+				this->_print_va_page( proc, era );
+			else
+				this->_print_pa_page( era );
 			this->_print_va_page( proc, usp );
 
-			hsai_panic(
+			hsai_error(
 				"handle exception PIS :\n"
 				"    badv : 0x%x\n"
 				"    badi : 0x%x\n"
@@ -563,18 +574,37 @@ namespace loongarch
 	{
 		hsai::VirtualPageTable * pt = hsai::get_pt_from_proc( proc );
 		u64 pa = pt->walk_addr( virt_addr );
-		pa &= ~( hsai::page_size - 1 );
+		pa = hsai::page_round_down( pa );
 		pa = hsai::k_mem->to_vir( pa );
 
 		u8 * p = ( u8* ) pa;
 		u64 va_start = hsai::page_round_down( virt_addr );
 
 		hsai_printf( BLUE_COLOR_PRINT "print the page data containing va(%p)\n" CLEAR_COLOR_PRINT, virt_addr );
-		hsai_printf( "                    00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" );
+		hsai_printf( "%p(ph)  00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n", pa );
 		for ( uint i = 0; i < hsai::page_size; ++i )
 		{
 			if ( i % 0x10 == 0 )
-				hsai_printf( "%p  ", va_start + i );
+				hsai_printf( "%p      ", va_start + i );
+			hsai_printf( "%B ", p[ i ] );
+			if ( i % 0x10 == 0xF )
+				hsai_printf( "\n" );
+		}
+	}
+
+	void ExceptionManager::_print_pa_page( u64 phys_addr )
+	{
+		phys_addr = hsai::k_mem->to_vir( phys_addr );
+		u64 pa = hsai::page_round_down( phys_addr );
+
+		u8 * p = ( u8* ) pa;
+
+		hsai_printf( BLUE_COLOR_PRINT "print the page data containing pa(%p)\n" CLEAR_COLOR_PRINT, phys_addr );
+		hsai_printf( "%p(ph)  00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n", pa );
+		for ( uint i = 0; i < hsai::page_size; ++i )
+		{
+			if ( i % 0x10 == 0 )
+				hsai_printf( "%p      ", pa + i );
 			hsai_printf( "%B ", p[ i ] );
 			if ( i % 0x10 == 0xF )
 				hsai_printf( "\n" );
