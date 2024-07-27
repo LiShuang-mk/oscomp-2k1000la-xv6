@@ -44,6 +44,8 @@ namespace loongarch
 		ulong _get_user_data( void * proc, u64 virt_addr );
 
 		void _print_va_page( void * proc, u64 virt_addr );
+
+		void _print_pa_page( u64 phys_addr );
 	};
 
 	extern ExceptionManager k_em;

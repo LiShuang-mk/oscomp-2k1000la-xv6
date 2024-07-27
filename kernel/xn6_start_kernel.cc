@@ -76,6 +76,11 @@ extern "C" {
 			// new ( &dev::k_console ) dev::Console( DEFAULT_DEBUG_CONSOLE_NAME );
 
 			printf( "hello world\n" );
+
+			printf( "test new printf: %#_016p, %#-8lx, %4s, %d\n", 0x12345678, 0x1234, "test truncate", 90 );
+
+			// while ( 1 );
+
 			log_info( "Hello World!\n" );
 
 			log_info( "xn6_start_kernel addr: %p", &xn6_start_kernel );
