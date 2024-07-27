@@ -73,7 +73,7 @@ extern "C" {
 
 			printf( "hello world\n" );
 
-			printf( "test new printf: %#_016p, %#-8lx, %4s\n", 0x12345678, 0x1234, "test truncate" );
+			printf( "test new printf: %#_016p, %#-8lx, %4s, %d\n", 0x12345678, 0x1234, "test truncate", 90 );
 
 			// while ( 1 );
 

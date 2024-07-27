@@ -203,8 +203,10 @@ namespace klib
 
 		tmpi--;
 		if ( ( tmpi % 4 ) == 3 )			// remove '_' in the front
+		{
 			buf.put( tmp[ tmpi ] );
-		tmpi--;
+			tmpi--;
+		}
 		if ( flag.seperate == 1 )
 		{
 			for ( ; tmpi >= 0; tmpi-- )
@@ -294,6 +296,8 @@ namespace klib
 				}
 			}
 
+			static print_flag Bfl = { .zero_pad = 1, .sign = 0, .plus = 0, .space = 0,.left = 0,.prefix = 0,.upper = 1,.seperate = 0 };
+			
 			// collect the base, or put directly if format is 'c','s','p','%'
 			int base = 10;
 			char ch;
@@ -316,7 +320,8 @@ namespace klib
 					str = va_arg( args, const char * );
 					if ( str == nullptr ) str = "(NULL)";
 					str_len = ( int ) strlen( str );
-					str_len = str_len > width ? width : str_len;
+					if ( width > 0 )
+						str_len = str_len > width ? width : str_len;
 
 					if ( fl.left == 1 )
 						for ( ; str_len < width; width-- )		// padding space
@@ -343,9 +348,14 @@ namespace klib
 					buf.put( '%' );
 					continue;
 
+				case 'B':
+					qualifier = 'B';
+					print_number( buf, ( u8 ) va_arg( args, uint ),
+						16, Bfl, qualifier, 2 );
+					continue;
+
 				case 'b': base = 2; break;
 				case 'o': base = 8; break;
-				case 'B': qualifier = 'B';
 				case 'X': fl.upper = 1;
 				case 'x': base = 16; break;
 				case 'd':

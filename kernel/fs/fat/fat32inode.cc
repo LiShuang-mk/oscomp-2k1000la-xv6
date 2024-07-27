@@ -211,7 +211,7 @@ namespace fs
 						( ( uint32 ) dir_info.first_cluster_high << 16 ) + ( uint32 ) dir_info.first_cluster_low,
 						_belong_fs,
 						( dir_info.attribute & Fat32DirectryAttribute::fat32_directry ) ? Fat32NodeType::fat32nod_folder : Fat32NodeType::fat32nod_file,
-						0,		/// TODO: inode attribute
+						_attr,		/// TODO: inode attribute
 						dir_info.file_size_bytes
 
 					);
