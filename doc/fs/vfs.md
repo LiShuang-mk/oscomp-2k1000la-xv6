@@ -42,10 +42,10 @@
 
 由于第一版的dentryCache中有部分冗余数据结构，另外对于dentry的释放时机也不太准确，因此重新调整dentrycache的结构。 
 - **数据结构**：
-    1. *** freelist_***：空闲dentry链表
-    2. *** leaflist_***: 内存中打开的文件系统树的中间结点链表
-    3. *** intenallist_***: 内存中的文件系统树的叶结点链表 
-    4. *** dentryCacheElement ***： 链表的元数据，由dentry，pin，busy三个属性构成。 dentry指向一个dentry，pin位表示该dentry是否可以被释放，默认的，中间结点和挂载点都不能直接被释放，busy位表示该dentry是否处于空闲状态。 
+    1.  freelist_：空闲dentry链表
+    2.  leaflist_: 内存中打开的文件系统树的中间结点链表
+    3.  intenallist_: 内存中的文件系统树的叶结点链表 
+    4.  dentryCacheElement ： 链表的元数据，由dentry，pin，busy三个属性构成。 dentry指向一个dentry，pin位表示该dentry是否可以被释放，默认的，中间结点和挂载点都不能直接被释放，busy位表示该dentry是否处于空闲状态。 
 - **组织方式**：dentryCache在初始化阶段初始化若干dentry，全部放入空闲链表freelist_中，当文件系统申请一个dentry时，dentry缓冲池优先从freelist分配出一个空闲dentry， 
 如果freelist_为空，则转而去文件树的叶子结点链表leaflist_中释放头部的一个dentry，如果被释放的dentry的双亲dentry的孩子在释放dentry后为空，则将其移动到leaflist_中，相应的， 
 当我们在一个dentry中成功执行了entrysearch或者entrycreate，我们也会将这个dentry从leaflist_移动到intenallist_，以此来对文件系统进行一些优化加速。
