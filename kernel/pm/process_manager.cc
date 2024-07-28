@@ -275,7 +275,7 @@ namespace pm
 		fs::device_file *f_out = new fs::device_file( fAttrsout, DEV_STDOUT_NUM );
 		assert( f_out != nullptr, "pm: alloc stdout file fail while user init." );
 
-		fs::FileAttrs fAttrserr = fs::FileAttrs(fs::FileTypes::FT_DEVICE, 0222); // read and write
+		fs::FileAttrs fAttrserr = fs::FileAttrs(fs::FileTypes::FT_DEVICE, 0222); // only write
 		fs::device_file *f_err = new fs::device_file( fAttrserr, DEV_STDERR_NUM );
 		assert( f_err != nullptr, "pm: alloc stderr file fail while user init." );
 
