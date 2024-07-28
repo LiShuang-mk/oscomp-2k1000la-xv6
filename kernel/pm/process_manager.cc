@@ -267,7 +267,7 @@ namespace pm
 		hsai::user_proc_init( ( void * ) p );
 
 		//fs::File *f = fs::k_file_table.alloc_file();
-		fs::FileAttrs fAttrsin = fs::FileAttrs(fs::FileTypes::FT_DEVICE, 0111); // only read
+		fs::FileAttrs fAttrsin = fs::FileAttrs(fs::FileTypes::FT_DEVICE, 0444); // only read
 		fs::device_file *f_in = new fs::device_file( fAttrsin, DEV_STDIN_NUM );
 		assert( f_in != nullptr, "pm: alloc stdin file fail while user init." );
 		
@@ -275,7 +275,7 @@ namespace pm
 		fs::device_file *f_out = new fs::device_file( fAttrsout, DEV_STDOUT_NUM );
 		assert( f_out != nullptr, "pm: alloc stdout file fail while user init." );
 
-		fs::FileAttrs fAttrserr = fs::FileAttrs(fs::FileTypes::FT_DEVICE, 0333); // read and write
+		fs::FileAttrs fAttrserr = fs::FileAttrs(fs::FileTypes::FT_DEVICE, 0222); // read and write
 		fs::device_file *f_err = new fs::device_file( fAttrserr, DEV_STDERR_NUM );
 		assert( f_err != nullptr, "pm: alloc stderr file fail while user init." );
 
