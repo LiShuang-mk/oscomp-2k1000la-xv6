@@ -36,6 +36,11 @@ namespace pm
 		_context = hsai::get_context_address( _gid );
 		if ( _context == nullptr )
 			log_panic( "process %d : context set fail", _gid );
+
+		// 配置资源限制
+
+		_rlim_vec[ ResourceLimitId::RLIMIT_STACK ].rlim_cur = default_proc_ustack_pages * hsai::page_size;
+		_rlim_vec[ ResourceLimitId::RLIMIT_STACK ].rlim_max = default_proc_ustack_pages * hsai::page_size;
 	}
 
 	void Pcb::map_kstack( mm::PageTable &pt )
@@ -46,11 +51,11 @@ namespace pm
 		char *pa;
 
 		// map the first page
-		pa = ( char * ) mm::k_pmm.alloc_pages( default_proc_stack_pages );
+		pa = ( char * ) mm::k_pmm.alloc_pages( default_proc_kstack_pages );
 		if ( pa == 0 )
 			log_panic( "pcb map kstack: no memory" );
 		mm::k_pmm.clear_page( ( void* ) pa );
-		if ( !mm::k_vmm.map_data_pages( pt, _kstack, hsai::page_size * default_proc_stack_pages, ( uint64 ) pa, false ) )
+		if ( !mm::k_vmm.map_data_pages( pt, _kstack, hsai::page_size * default_proc_kstack_pages, ( uint64 ) pa, false ) )
 			log_panic( "kernel vm map failed" );
 
 		// // map the second page

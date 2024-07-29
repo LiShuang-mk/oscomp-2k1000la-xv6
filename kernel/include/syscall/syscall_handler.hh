@@ -101,6 +101,7 @@ namespace syscall
 		uint64 _sys_pipe();
 		uint64 _sys_set_tid_address();
 		uint64 _sys_set_robust_list();
+		uint64 _sys_prlimit64();
 	};
 
 	extern SyscallHandler k_syscall_handler;

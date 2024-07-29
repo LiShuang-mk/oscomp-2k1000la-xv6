@@ -47,6 +47,7 @@ namespace syscall
 		_build_sysnum_enum_( exec, 221 )
 		_build_sysnum_enum_( mmap, 222 )
 		_build_sysnum_enum_( wait, 260 )
+		_build_sysnum_enum_( prlimit64, 261 )
 		_build_sysnum_enum_( statx, 291 )
 		_build_sysnum_enum_( poweroff, 2024 )
 	};

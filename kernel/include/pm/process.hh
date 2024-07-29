@@ -11,6 +11,7 @@
 #include "mm/page_table.hh"
 // #include "pm/context.hh"
 #include "pm/sharemem.hh"
+#include "pm/prlimit.hh"
 
 #include <smp/spin_lock.hh>
 #include <process_interface.hh>
@@ -32,7 +33,8 @@ namespace pm
 	constexpr int highest_proc_prio = 0;
 	constexpr uint max_open_files = 128;
 
-	constexpr int default_proc_stack_pages = 16;			// 默认进程内核栈大小（按页面数计算）
+	constexpr int default_proc_kstack_pages = 16;			// 默认进程内核栈大小（按页面数计算）
+	constexpr int default_proc_ustack_pages = 3;			// 默认进程用户栈大小（按页面数计算）
 
 	enum ProcState
 	{
@@ -109,6 +111,8 @@ namespace pm
 
 		robust_list_head * _robust_list = nullptr;
 
+		// for prlimit 进程资源相关
+		rlimit64 _rlim_vec[ ResourceLimitId::RLIM_NLIMITS ];
 
 	public:
 		Pcb();

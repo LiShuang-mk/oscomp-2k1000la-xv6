@@ -21,6 +21,7 @@
 #include "pm/process_manager.hh"
 #include "pm/scheduler.hh"
 #include "pm/futex.hh"
+#include "pm/prlimit.hh"
 
 
 #include "mm/virtual_memory_manager.hh"
@@ -83,6 +84,7 @@ namespace syscall
 		_syscall_funcs[ SYS_pipe ] = std::bind( &SyscallHandler::_sys_pipe, this );
 		_syscall_funcs[ SYS_set_tid_address ] = std::bind( &SyscallHandler::_sys_set_tid_address, this );
 		_syscall_funcs[ SYS_set_robust_list ] = std::bind( &SyscallHandler::_sys_set_robust_list, this );
+		_syscall_funcs[ SYS_prlimit64 ] = std::bind( &SyscallHandler::_sys_prlimit64, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -834,6 +836,34 @@ namespace syscall
 			return -2;
 
 		return pm::k_pm.set_robust_list( head, len );
+	}
+
+	uint64 SyscallHandler::_sys_prlimit64()
+	{
+		int pid;
+		if ( _arg_int( 0, pid ) < 0 )
+			return -1;
+
+		int rsrc;
+		if ( _arg_int( 1, rsrc ) < 0 )
+			return -2;
+
+		u64 new_limit;
+		u64 old_limit;
+		if ( _arg_addr( 2, new_limit ) < 0 )
+			return -3;
+		if ( _arg_addr( 3, old_limit ) < 0 )
+			return -4;
+
+		pm::rlimit64 *nlim = nullptr, *olim = nullptr;
+		pm::Pcb * p = pm::k_pm.get_cur_pcb();
+		mm::PageTable *pt = p->get_pagetable();
+		if ( new_limit != 0 )
+			nlim = ( pm::rlimit64 * ) hsai::k_mem->to_vir( pt->walk_addr( new_limit ) );
+		if ( old_limit != 0 )
+			olim = ( pm::rlimit64 * ) hsai::k_mem->to_vir( pt->walk_addr( old_limit ) );
+
+		return pm::k_pm.prlimit64( pid, rsrc, nlim, olim );
 	}
 
 } // namespace syscall

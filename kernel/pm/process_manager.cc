@@ -9,6 +9,7 @@
 #include "pm/process_manager.hh"
 #include "pm/process.hh"
 #include "pm/futex.hh"
+#include "pm/prlimit.hh"
 #include "pm/scheduler.hh"
 #include "pm/ipc/pipe.hh"
 
@@ -140,7 +141,7 @@ namespace pm
 
 				hsai::set_context_entry( p->_context, ( void* ) _wrp_fork_ret );
 
-				hsai::set_context_sp( p->_context, p->_kstack + hsai::page_size * default_proc_stack_pages );
+				hsai::set_context_sp( p->_context, p->_kstack + hsai::page_size * default_proc_kstack_pages );
 
 				p->_lock.release();
 
@@ -551,7 +552,7 @@ namespace pm
 		// 进程的用户虚拟空间占用地址低 128MiB，内核虚拟空间从 0xF0_0000_0000 开始
 		// 分配栈空间大小为 3 个页面，开头的 1 个页面用作保护页面
 
-		int stack_page_cnt = 3;
+		int stack_page_cnt = default_proc_ustack_pages;
 		stackbase = mm::vml::vm_user_end - stack_page_cnt * hsai::page_size;
 		sp = mm::vml::vm_user_end;
 
@@ -673,6 +674,12 @@ namespace pm
 		// argc is returned via the system call return
 		// value, which is in a0.
 		hsai::set_trap_frame_arg( proc->_trapframe, 1, sp );
+
+		// 配置资源限制
+
+		proc->_rlim_vec[ ResourceLimitId::RLIMIT_STACK ].rlim_cur
+			= proc->_rlim_vec[ ResourceLimitId::RLIMIT_STACK ].rlim_max
+			= sp - stackbase;
 
 		// save program name for debugging.
 		for ( uint i = 0; i < 16; i++ )
@@ -1127,6 +1134,35 @@ namespace pm
 
 		Pcb *p = get_cur_pcb();
 		p->_robust_list = head;
+
+		return 0;
+	}
+
+	int ProcessManager::prlimit64( int pid, int resource,
+		rlimit64 * new_limit, rlimit64 * old_limit )
+	{
+		Pcb * proc = nullptr;
+		if ( pid == 0 )
+			proc = get_cur_pcb();
+		else for ( Pcb &p : k_proc_pool )
+		{
+			if ( p._pid == pid )
+			{
+				proc = &p;
+				break;
+			}
+		}
+		if ( proc == nullptr )
+			return -10;
+
+		ResourceLimitId rsid = ( ResourceLimitId ) resource;
+		if ( rsid >= ResourceLimitId::RLIM_NLIMITS )
+			return -11;
+
+		if ( old_limit != nullptr )
+			*old_limit = proc->_rlim_vec[ rsid ];
+		if ( new_limit != nullptr )
+			proc->_rlim_vec[ rsid ] = *new_limit;
 
 		return 0;
 	}
