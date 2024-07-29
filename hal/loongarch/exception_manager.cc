@@ -363,8 +363,10 @@ namespace loongarch
 			TrapFrame *tf = ( TrapFrame* ) hsai::get_trap_frame_from_proc( proc );
 			[[maybe_unused]] uint64 usp = tf->sp;
 
-			hsai_printf( YELLOW_COLOR_PRINT "print the page at address a0(%p)\n" CLEAR_COLOR_PRINT, tf->a0 );
-			this->_print_va_page( proc, tf->a0 );
+			hsai_printf( YELLOW_COLOR_PRINT "load bad virtual address : %p\n" CLEAR_COLOR_PRINT, badv );
+
+			// hsai_printf( YELLOW_COLOR_PRINT "print the page at address a0(%p)\n" CLEAR_COLOR_PRINT, tf->a0 );
+			// this->_print_va_page( proc, tf->a0 );
 
 			if ( ( era >> 60 ) == 0 )
 				this->_print_va_page( proc, era );
@@ -374,9 +376,9 @@ namespace loongarch
 
 			this->_print_trap_frame( proc );
 
-			ulong iofbadv = this->_get_user_data( proc, badv );
-			hsai_printf( BLUE_COLOR_PRINT "read data(u64) from badv %p = %#lx\n" CLEAR_COLOR_PRINT,
-				badv, iofbadv );
+			// ulong iofbadv = this->_get_user_data( proc, badv );
+			// hsai_printf( BLUE_COLOR_PRINT "read data(u64) from badv %p = %#lx\n" CLEAR_COLOR_PRINT,
+			// 	badv, iofbadv );
 
 			hsai_panic(
 				"handle exception PIL :\n"

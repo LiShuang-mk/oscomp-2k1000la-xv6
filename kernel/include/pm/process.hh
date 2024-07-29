@@ -48,6 +48,8 @@ namespace pm
 	class ShmManager;
 	class Scheduler;
 
+	struct robust_list_head;
+
 	class Pcb
 	{
 		friend ProcessManager;
@@ -100,9 +102,12 @@ namespace pm
 		struct vma *vm[ 10 ];  // virtual memory area <<<<<<<<<<<<<<<<<< what??? Could ONE process has several vm space?
 
 
-		// 线程与 futex 相关
+		// 线程/futex 相关
+
 		int * _set_child_tid = nullptr;
 		int * _clear_child_tid = nullptr;
+
+		robust_list_head * _robust_list = nullptr;
 
 
 	public:

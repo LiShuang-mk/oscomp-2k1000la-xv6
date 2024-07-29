@@ -20,6 +20,9 @@
 // #include "pm/trap_frame.hh"
 #include "pm/process_manager.hh"
 #include "pm/scheduler.hh"
+#include "pm/futex.hh"
+
+
 #include "mm/virtual_memory_manager.hh"
 #include "mm/physical_memory_manager.hh"
 #include "tm/timer_manager.hh"
@@ -79,6 +82,7 @@ namespace syscall
 		_syscall_funcs[ SYS_unlinkat ] = std::bind( &SyscallHandler::_sys_unlinkat, this );
 		_syscall_funcs[ SYS_pipe ] = std::bind( &SyscallHandler::_sys_pipe, this );
 		_syscall_funcs[ SYS_set_tid_address ] = std::bind( &SyscallHandler::_sys_set_tid_address, this );
+		_syscall_funcs[ SYS_set_robust_list ] = std::bind( &SyscallHandler::_sys_set_robust_list, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -550,10 +554,10 @@ namespace syscall
 			return -1;
 		if ( _arg_int( 2, buf_len ) < 0 )
 			return -1;
-		if( f->_attrs.filetype != fs::FileTypes::FT_NORMAL)
+		if ( f->_attrs.filetype != fs::FileTypes::FT_NORMAL )
 			return -1;
 		//eastl::string name = f->data.get_Entry()->rName();
-		fs::normal_file * normal_f= static_cast<fs::normal_file *>( f );
+		fs::normal_file * normal_f = static_cast< fs::normal_file * >( f );
 		eastl::string name = normal_f->getDentry()->rName();
 
 		for ( uint i = 0; i < name.size(); ++i )
@@ -801,9 +805,35 @@ namespace syscall
 		if ( _arg_addr( 0, addr ) < 0 )
 			return -1;
 
-		tidptr = ( int * ) addr;
+		pm::Pcb * p = pm::k_pm.get_cur_pcb();
+		mm::PageTable *pt = p->get_pagetable();
+		tidptr = ( int * ) hsai::k_mem->to_vir( pt->walk_addr( addr ) );
+		if ( tidptr == nullptr )
+			return -10;
 
 		return pm::k_pm.set_tid_address( tidptr );
+	}
+
+	uint64 SyscallHandler::_sys_set_robust_list()
+	{
+		ulong addr;
+		pm::robust_list_head * head;
+		size_t len;
+
+		if ( _arg_addr( 0, addr ) < 0 )
+			return -1;
+
+		pm::Pcb * p = pm::k_pm.get_cur_pcb();
+		mm::PageTable *pt = p->get_pagetable();
+		head = ( pm::robust_list_head * ) hsai::k_mem->to_vir( pt->walk_addr( addr ) );
+
+		if ( head == nullptr )
+			return -10;
+
+		if ( _arg_addr( 1, len ) < 0 )
+			return -2;
+
+		return pm::k_pm.set_robust_list( head, len );
 	}
 
 } // namespace syscall

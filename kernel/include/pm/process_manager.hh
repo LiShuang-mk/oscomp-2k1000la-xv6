@@ -34,6 +34,8 @@ namespace pm
 {
 	constexpr int default_proc_slot = 1;
 
+	struct robust_list_head;
+
 #define MAXARG 32
 	class ProcessManager
 	{
@@ -86,6 +88,7 @@ namespace pm
 		int unlink( int fd, eastl::string path, int flags );
 		int pipe( int *fd, int );
 		int set_tid_address( int * tidptr );
+		int set_robust_list( robust_list_head * head, size_t len );
 
 		void user_init();
 

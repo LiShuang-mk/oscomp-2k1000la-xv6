@@ -8,6 +8,7 @@
 
 #include "pm/process_manager.hh"
 #include "pm/process.hh"
+#include "pm/futex.hh"
 #include "pm/scheduler.hh"
 #include "pm/ipc/pipe.hh"
 
@@ -78,6 +79,7 @@ namespace pm
 		for ( uint i = 0; i < num_process; ++i )
 		{
 			Pcb &p = k_proc_pool[ i ];
+			new ( &p ) Pcb();
 			p.init( "pcb", i );
 		}
 		_cur_pid = 1;
@@ -268,15 +270,15 @@ namespace pm
 		hsai::user_proc_init( ( void * ) p );
 
 		//fs::File *f = fs::k_file_table.alloc_file();
-		fs::FileAttrs fAttrsin = fs::FileAttrs(fs::FileTypes::FT_DEVICE, 0444); // only read
+		fs::FileAttrs fAttrsin = fs::FileAttrs( fs::FileTypes::FT_DEVICE, 0444 ); // only read
 		fs::device_file *f_in = new fs::device_file( fAttrsin, DEV_STDIN_NUM );
 		assert( f_in != nullptr, "pm: alloc stdin file fail while user init." );
-		
-		fs::FileAttrs fAttrsout = fs::FileAttrs(fs::FileTypes::FT_DEVICE, 0222); // only write
+
+		fs::FileAttrs fAttrsout = fs::FileAttrs( fs::FileTypes::FT_DEVICE, 0222 ); // only write
 		fs::device_file *f_out = new fs::device_file( fAttrsout, DEV_STDOUT_NUM );
 		assert( f_out != nullptr, "pm: alloc stdout file fail while user init." );
 
-		fs::FileAttrs fAttrserr = fs::FileAttrs(fs::FileTypes::FT_DEVICE, 0222); // only write
+		fs::FileAttrs fAttrserr = fs::FileAttrs( fs::FileTypes::FT_DEVICE, 0222 ); // only write
 		fs::device_file *f_err = new fs::device_file( fAttrserr, DEV_STDERR_NUM );
 		assert( f_err != nullptr, "pm: alloc stderr file fail while user init." );
 
@@ -567,8 +569,12 @@ namespace pm
 
 		mm::k_vmm.uvmset( proc->_pt, ( void * ) stackbase, 0, stack_page_cnt );
 
+		// 此后的代码用于支持 glibc，包括将 auxv, envp, argv, argc 压到用户栈中由glibc解析
 
-		argc = 2;	// following code will write back these arg
+
+		// 压入 argc argv
+
+		argc = 0;
 
 		//push argument strings, prepare rest of stack in ustack.
 		for ( ; argc < argv.size(); argc++ )
@@ -597,15 +603,43 @@ namespace pm
 
 			ustack[ argc ] = sp;
 		}
-
 		ustack[ argc ] = 0;
+
+		// zero-marker random-num auxv envp
+		{
+			char * st_ptr = ( char * ) hsai::k_mem->to_vir( proc->_pt.walk_addr( sp ) );
+
+			// 使用0标记栈底，压入一个用于glibc的伪随机数，并以16字节对齐
+			st_ptr -= 32;
+			sp -= 32;
+			u64 rd_pos = sp;	// 伪随机数的位置
+			( ( u64 * ) st_ptr )[ 0 ] = 0x42494C474B435546UL;
+			( ( u64 * ) st_ptr )[ 1 ] = 0x00504D4F43534F43UL;		// "FUCKGLIBCOSCOMP\0"
+			( ( u64 * ) st_ptr )[ 2 ] = 0;
+			( ( u64 * ) st_ptr )[ 3 ] = 0;
+
+			// 压入 auxv
+			// auxv[end] = AT_NULL
+			st_ptr -= sizeof( elf::Elf64_auxv_t );
+			sp -= sizeof( elf::Elf64_auxv_t );
+			( ( elf::Elf64_auxv_t* ) st_ptr )->a_type = elf::AT_NULL;
+			( ( elf::Elf64_auxv_t* ) st_ptr )->a_un.a_val = 0;
+			// auxv[0] = AT_RANDOM
+			st_ptr -= sizeof( elf::Elf64_auxv_t );
+			sp -= sizeof( elf::Elf64_auxv_t );
+			( ( elf::Elf64_auxv_t* ) st_ptr )->a_type = elf::AT_RANDOM;
+			( ( elf::Elf64_auxv_t* ) st_ptr )->a_un.a_val = rd_pos;
+
+			// 压入 envp
+			// envp[end] = NULL
+			st_ptr -= sizeof( void * );
+			sp -= sizeof( void * );
+			*( ( u64 * ) st_ptr ) = 0;
+
+		}
 
 		// push array of argument pointers
 		sp -= ( argc + 1 ) * sizeof( uint64 );
-		sp -= sp % 16;
-
-		ustack[ 0 ] = 0;
-		ustack[ 1 ] = sp;
 
 		if ( sp < stackbase )
 		{
@@ -620,7 +654,20 @@ namespace pm
 			return -1;
 		}
 
-		argc -= 2;
+		// 压入 argc
+		sp -= sizeof( uint64 );
+		if ( sp < stackbase )
+		{
+			proc_freepagetable( proc->_pt, sz );
+			log_panic( "exec: sp < stackbase" );
+			return -1;
+		}
+		if ( mm::k_vmm.copyout( proc->_pt, sp, &argc, sizeof( argc ) ) < 0 )
+		{
+			proc_freepagetable( proc->_pt, sz );
+			log_panic( "exec: copyout" );
+			return -1;
+		}
 
 		// arguments to user main(argc, argv)
 		// argc is returned via the system call return
@@ -898,23 +945,23 @@ namespace pm
 		// 	if ( dentry == nullptr )
 		// 		return -4;
 		//}
-		
+
 		fs::Path path_( path );
 		dentry = path_.pathSearch();
 
-		if( dentry == nullptr )
+		if ( dentry == nullptr )
 			return -1; // file is not found 
-		int dev = dentry->getNode()->rDev(); 
+		int dev = dentry->getNode()->rDev();
 		fs::FileAttrs attrs = dentry->getNode()->rMode();
-		
-		if( dev >= 0 ) //dentry is a device
+
+		if ( dev >= 0 ) //dentry is a device
 		{
 			fs::device_file *f = new fs::device_file( attrs, dev );
 			return alloc_fd( p, f );
 		}// else if( attrs.filetype == fs::FileTypes::FT_DIRECT)
 		// 	fs::directory *f = new fs::directory( attrs, dentry );
 		else	//normal file
-		{	
+		{
 			fs::normal_file *f = new fs::normal_file( attrs, dentry );
 			return alloc_fd( p, f );
 		}// because of open.c's fileattr defination is not clearly, so here we set flags = 7, which means O_RDWR | O_WRONLY | O_RDONLY
@@ -986,10 +1033,10 @@ namespace pm
 			return -1;
 
 		fs::file * f = p->_ofile[ fd ];
-		if( f->_attrs.filetype != fs::FileTypes::FT_NORMAL )
+		if ( f->_attrs.filetype != fs::FileTypes::FT_NORMAL )
 			return -1;
 
-		fs::normal_file *normal_f = static_cast<fs::normal_file *> ( f );
+		fs::normal_file *normal_f = static_cast< fs::normal_file * > ( f );
 		fs::dentry * dent = normal_f->getDentry();
 		if ( dent == nullptr )
 			return -1;
@@ -1071,6 +1118,17 @@ namespace pm
 		Pcb * p = get_cur_pcb();
 		p->_clear_child_tid = tidptr;
 		return p->_pid;
+	}
+
+	int ProcessManager::set_robust_list( robust_list_head * head, size_t len )
+	{
+		if ( len != sizeof( *head ) )
+			return -22;
+
+		Pcb *p = get_cur_pcb();
+		p->_robust_list = head;
+
+		return 0;
 	}
 
 	int ProcessManager::alloc_fd( Pcb * p, fs::file * f )

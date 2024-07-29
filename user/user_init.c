@@ -60,6 +60,7 @@ __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_unlinkat[
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_pipe[] = "pipe";
 
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_busybox[] = "sdcard/busybox";
+__attribute__( ( section( ".user.init.data" ) ) ) const char exec_busybox_unstrp[] = "sdcard/busybox_unstrp";
 __attribute__( ( section( ".user.init.data" ) ) ) const char busybox_name[] = "busybox";
 __attribute__( ( section( ".user.init.data" ) ) ) const char sh_name[] = "ash";
 
@@ -109,7 +110,7 @@ int init_main( void )
 	else if ( pid == 0 )
 	{
 		const char *bb_sh[] = { sh_name, 0 };
-		if ( execv( exec_busybox, bb_sh ) < 0 )
+		if ( execv( exec_busybox_unstrp, bb_sh ) < 0 )
 		{
 			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
 		}
