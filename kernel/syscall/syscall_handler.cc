@@ -13,6 +13,9 @@
 #include "fs/dev/acpi_controller.hh"
 #include "fs/kstat.hh"
 #include "fs/path.hh"
+#include "fs/file/normal.hh"
+#include "fs/file/file.hh"
+
 #include "pm/process.hh"
 // #include "pm/trap_frame.hh"
 #include "pm/process_manager.hh"
@@ -123,10 +126,10 @@ namespace syscall
 		return hsai::get_arg_from_trap_frame( hsai::get_trap_frame_from_proc( hsai::get_cur_proc() ), ( uint ) arg_n );
 	}
 
-	int SyscallHandler::_arg_fd( int arg_n, int *out_fd, fs::File **out_f )
+	int SyscallHandler::_arg_fd( int arg_n, int *out_fd, fs::file **out_f )
 	{
 		int fd;
-		fs::File *f;
+		fs::file *f;
 
 		if ( _arg_int( arg_n, fd ) < 0 )
 			return -1;
@@ -146,7 +149,7 @@ namespace syscall
 
 	uint64 SyscallHandler::_sys_write()
 	{
-		fs::File *f;
+		fs::file *f;
 		int n;
 		uint64 p;
 
@@ -168,7 +171,7 @@ namespace syscall
 
 	uint64 SyscallHandler::_sys_read()
 	{
-		fs::File * f;
+		fs::file * f;
 		uint64 buf;
 		int n;
 
@@ -307,21 +310,22 @@ namespace syscall
 	uint64 SyscallHandler::_sys_dup()
 	{
 		pm::Pcb * p = pm::k_pm.get_cur_pcb();
-		fs::File * f;
+		fs::file * f;
 		int fd;
 
 		if ( _arg_fd( 0, nullptr, &f ) < 0 )
 			return -1;
 		if ( ( fd = pm::k_pm.alloc_fd( p, f ) ) < 0 )
 			return -1;
-		fs::k_file_table.dup( f );
+		//fs::k_file_table.dup( f );
+		f->dup();
 		return fd;
 	}
 
 	uint64 SyscallHandler::_sys_dup2()
 	{
 		pm::Pcb * p = pm::k_pm.get_cur_pcb();
-		fs::File * f;
+		fs::file * f;
 		int fd;
 
 		if ( _arg_fd( 0, nullptr, &f ) < 0 )
@@ -330,7 +334,8 @@ namespace syscall
 			return -1;
 		if ( pm::k_pm.alloc_fd( p, f, fd ) < 0 )
 			return -1;
-		fs::k_file_table.dup( f );
+		//fs::k_file_table.dup( f );
+		f->dup();
 		return fd;
 	}
 
@@ -535,7 +540,7 @@ namespace syscall
 		} dirent;
 		dirent.d_reclen = 128;
 
-		fs::File * f;
+		fs::file * f;
 		uint64 buf_addr;
 		int buf_len;
 
@@ -545,8 +550,12 @@ namespace syscall
 			return -1;
 		if ( _arg_int( 2, buf_len ) < 0 )
 			return -1;
+		if( f->_attrs.filetype != fs::FileTypes::FT_NORMAL)
+			return -1;
+		//eastl::string name = f->data.get_Entry()->rName();
+		fs::normal_file * normal_f= static_cast<fs::normal_file *>( f );
+		eastl::string name = normal_f->getDentry()->rName();
 
-		eastl::string name = f->data.get_Entry()->rName();
 		for ( uint i = 0; i < name.size(); ++i )
 			dirent.d_name[ i ] = name[ i ];
 

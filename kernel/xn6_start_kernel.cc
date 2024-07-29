@@ -1,5 +1,7 @@
 #include "hal/disk/mbr.hh"
 
+#include "fs/file/file.hh"
+#include "fs/file/normal.hh"
 #include "fs/dentrycache.hh"
 #include "fs/fat/fat32.hh"
 #include "fs/fat/fat32_file_system.hh"
@@ -8,6 +10,8 @@
 #include "fs/ramfs/ramfs.hh"
 #include "fs/jbd2/journal_super_block.hh"
 #include "fs/buffer_manager.hh"
+#include "fs/file/file.hh"
+#include "fs/file/device.hh"
 #include "fs/path.hh"
 
 #include "tm/timer_manager.hh"
@@ -197,24 +201,30 @@ extern "C" {
 			// fs::ext4::Ext4FS ext4fs;
 			// ext4fs.init( bdevi, 0, "ext4", "/test/" );
 			// mm::k_hmm.print_heap_usage();
+			// mm::k_hmm.print_heap_usage();
+			// int bdevi = hsai::k_devm.search_block_device( "hdb" );
+			// assert( bdevi >= 0, "bad device number" );
+			// fs::ext4::Ext4FS ext4fs;
+			// ext4fs.init( bdevi, 0, "ext4", "/test/" );
+			// mm::k_hmm.print_heap_usage();
 
 			// ext4fs.debug_get_root_inode()->debug_hash( "sdcard" );
 
-			// fs::dentry * ext4_rootdent = ext4fs.getRoot();
-			// fs::dentry * dent1 = ext4_rootdent->EntrySearch( "sdcard" );
-			// if ( dent1 == nullptr ) log_panic( "search sdcard fail" );
-			// fs::dentry * dent2 = dent1->EntrySearch( "busybox_testcode.sh" );
-			// if ( dent2 == nullptr ) log_panic( "search busybox_testcode.sh fail" );
-			// fs::Inode * inod2 = dent2->getNode();
-			// char * read_buf = new char[ 4000 ];
-			// size_t read_len = inod2->nodeRead( ( ulong ) read_buf, 0, 4000 );
-			// read_buf[ read_len ] = 0;
-			// printf( CYAN_COLOR_PINRT "cat busybox_testcode.sh :\n" CLEAR_COLOR_PRINT );
-			// printf( "%s", read_buf );
+			// // fs::dentry * ext4_rootdent = ext4fs.getRoot();
+			// // fs::dentry * dent1 = ext4_rootdent->EntrySearch( "sdcard" );
+			// // if ( dent1 == nullptr ) log_panic( "search sdcard fail" );
+			// // fs::dentry * dent2 = dent1->EntrySearch( "busybox_testcode.sh" );
+			// // if ( dent2 == nullptr ) log_panic( "search busybox_testcode.sh fail" );
+			// // fs::Inode * inod2 = dent2->getNode();
+			// // char * read_buf = new char[ 4000 ];
+			// // size_t read_len = inod2->nodeRead( ( ulong ) read_buf, 0, 4000 );
+			// // read_buf[ read_len ] = 0;
+			// // printf( CYAN_COLOR_PINRT "cat busybox_testcode.sh :\n" CLEAR_COLOR_PRINT );
+			// // printf( "%s", read_buf );
 
 // <<<< test ext4 fs
 
-			// while ( 1 );
+			// //while ( 1 );
 
 			// test_buffer();
 			// while ( 1 );
@@ -234,10 +244,19 @@ extern "C" {
 			// fs::Path test_unlink( "/mnt/read" );
 			// [[maybe_unused]] fs::File* file = new fs::File( test_unlink.pathSearch(), 7 );
 
-			mm::k_hmm.print_heap_usage();
-
-
-			//mnt.umount( 0 );
+			//char *buf = new char[1024];
+			//file->read( reinterpret_cast<uint64>(buf), 1024 );
+			// mm::k_hmm.print_heap_usage();
+			// fs::FileAttrs attrs = fs::FileAttrs(fs::FileTypes::FT_DEVICE, 0777);
+			// fs::device_file dev_file = fs::device_file(attrs, 1);
+			// char data[] = { 's', 't', 'd', 'o', 'u', 't', '\0' }; // 修改为字符数组
+			// dev_file.write(reinterpret_cast<uint64>(data), 6);
+			// fs::dentry *den = mnt.pathSearch()->EntrySearch("text.txt");
+			// fs::normal_file normal = fs::normal_file(den->getNode()->rMode(), den);
+			// char *buf =  new char[1024];
+			// normal.read(reinterpret_cast<uint64>(buf), 1024);
+			// printf("read from text.txt: %s\n", buf);
+//mnt.umount( 0 );
 			// new ( &fs::fat::k_fatfs ) fs::fat::Fat32FS;
 			// fs::fat::k_fatfs.init( 1, 0, "fat32");		
 			//fs::mnt_table[ fs::fat::k_fatfs.rFStype() ] = &fs::fat::k_fatfs;
@@ -249,7 +268,7 @@ extern "C" {
 			//fs::fat::k_testcase_fs.init( 1, 0 );
 			//log_info( "testcase fs init" );
 
-			// while ( 1 );
+// 			// while ( 1 );
 			// dev::k_dm.init();
 			// log_info( "k_dm init" );
 

@@ -53,6 +53,7 @@ namespace fs
 			_root->EntryCreate( "mnt", attrs );
 
 			_root->printChildrenInfo();
+
 			// init fat
 			dentry* dev = _root->EntrySearch( "dev" );
 			char ** dev_table = new char*[ DEV_TBL_LEN ];

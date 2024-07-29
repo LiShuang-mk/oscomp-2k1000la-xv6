@@ -12,6 +12,8 @@
 #include "mm/virtual_memory_manager.hh"
 
 #include "fs/file/file.hh"
+#include "fs/file/pipe.hh"
+#include "fs/fs_defs.hh"
 namespace pm
 {
 	namespace ipc
@@ -79,25 +81,30 @@ namespace pm
 			return i;
 		}
 
-		int Pipe::alloc( fs::File * &f0, fs::File * &f1 )
+		int Pipe::alloc( fs::pipe_file * &f0, fs::pipe_file * &f1 )
 		{
-			if ( ( f0 = fs::k_file_table.alloc_file() ) == nullptr
-				|| ( f1 = fs::k_file_table.alloc_file() ) == nullptr )
-				return -1; // allocate file failed
+			// if ( ( f0 = fs::k_file_table.alloc_file() ) == nullptr
+			// 	|| ( f1 = fs::k_file_table.alloc_file() ) == nullptr )
+			// 	retur n -1; // allocate file failed
 
 			// init pipe
 			_read_is_open = true;
 			_write_is_open = true;
 			_data = eastl::queue<uint8>();
 
-			// set file
-			f0->type = fs::FileTypes::FT_PIPE;
-			new ( &f0->data ) fs::File::Data( this );
-			new ( &f0->ops  ) fs::FileOps( 1 ); //readonly
+			// set file			
+			fs::FileAttrs attrs = fs::FileAttrs( fs::FileTypes::FT_PIPE, 0771 );
+			f0 = new fs::pipe_file(attrs, this);
+			//f0->type = fs::FileTypes::FT_PIPE;
+			//new ( &f0->data ) fs::File::Data( this );
+			//new ( &f0->ops  ) fs::FileOps( 1 ); //readonly
 
-			f1->type = fs::FileTypes::FT_PIPE;
-			new ( &f1->data ) fs::File::Data( this );
-			new ( &f1->ops ) fs::FileOps( 2 ); //writeonly
+
+			attrs = fs::FileAttrs( fs::FileTypes::FT_PIPE, 0772 );
+			f1 = new fs::pipe_file(attrs, this);
+			//f1->type = fs::FileTypes::FT_PIPE;
+			//new ( &f1->data ) fs::File::Data( this );
+			//new ( &f1->ops ) fs::FileOps( 2 ); //writeonly
 
 			return 0;
 		}

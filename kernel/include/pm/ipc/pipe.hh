@@ -15,7 +15,8 @@
 namespace fs{
 
 	class File;
-
+	class pipe_file;
+	
 }
 namespace pm
 {
@@ -48,7 +49,7 @@ namespace pm
 
 			int read( uint64, int n );
 
-			int alloc( fs::File * &f0, fs::File * &f1);
+			int alloc( fs::pipe_file * &f0, fs::pipe_file * &f1);
 
 			void close( bool is_write );
 
