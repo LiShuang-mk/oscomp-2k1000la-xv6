@@ -76,7 +76,7 @@ namespace pm
 		int fork( uint64 usp );
 		int fork();
 		void fork_ret();
-		int brk( int n );
+		long brk( long n );
 		int open( int dir_fd, eastl::string path, uint flags );
 		int close( int fd );
 		int fstat( int fd, struct fs::Kstat *buf );
@@ -84,7 +84,8 @@ namespace pm
 		int getcwd( char * out_buf );
 		int mmap( int fd, int map_size );
 		int unlink( int fd, eastl::string path, int flags );
-		int pipe ( int *fd , int );
+		int pipe( int *fd, int );
+		int set_tid_address( int * tidptr );
 
 		void user_init();
 

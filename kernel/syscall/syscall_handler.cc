@@ -75,11 +75,12 @@ namespace syscall
 		_syscall_funcs[ SYS_statx ] = std::bind( &SyscallHandler::_sys_statx, this );
 		_syscall_funcs[ SYS_unlinkat ] = std::bind( &SyscallHandler::_sys_unlinkat, this );
 		_syscall_funcs[ SYS_pipe ] = std::bind( &SyscallHandler::_sys_pipe, this );
+		_syscall_funcs[ SYS_set_tid_address ] = std::bind( &SyscallHandler::_sys_set_tid_address, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
 	{
-		// printf( BLUE_COLOR_PRINT "invoke syscall %d\n" CLEAR_COLOR_PRINT, sys_num );
+		printf( BLUE_COLOR_PRINT "invoke syscall %d\n" CLEAR_COLOR_PRINT, sys_num );
 		return _syscall_funcs[ sys_num ]();
 	}
 
@@ -227,8 +228,8 @@ namespace syscall
 
 	uint64 SyscallHandler::_sys_brk()
 	{
-		int n;
-		if ( _arg_int( 0, n ) < 0 )
+		ulong n;
+		if ( _arg_addr( 0, n ) < 0 )
 			return -1;
 		return pm::k_pm.brk( n );
 	}
@@ -278,7 +279,7 @@ namespace syscall
 		}
 		else
 		{
-			_argv.clear();
+			// _argv.clear();
 			ret = pm::k_pm.exec( _path, _argv );
 		}
 
@@ -781,6 +782,19 @@ namespace syscall
 			return -1;
 
 		return 0;
+	}
+
+	uint64 SyscallHandler::_sys_set_tid_address()
+	{
+		ulong addr;
+		int * tidptr;
+
+		if ( _arg_addr( 0, addr ) < 0 )
+			return -1;
+
+		tidptr = ( int * ) addr;
+
+		return pm::k_pm.set_tid_address( tidptr );
 	}
 
 } // namespace syscall

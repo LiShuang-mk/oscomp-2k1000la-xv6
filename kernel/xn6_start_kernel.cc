@@ -229,9 +229,10 @@ extern "C" {
 			log_info( "ramfs init" );
 			fs::Path mnt( "/mnt" );
 			fs::Path dev( "/dev/hdb" );
-			mnt.mount( dev, "fat32", 0, 0 );  // for test mount fat32	
-			fs::Path test_unlink( "/mnt/read" );
-			[[maybe_unused]] fs::File* file = new fs::File( test_unlink.pathSearch(), 7 );
+			// mnt.mount( dev, "fat32", 0, 0 );  // for test mount fat32	
+			mnt.mount( dev, "ext4", 0, 0 );
+			// fs::Path test_unlink( "/mnt/read" );
+			// [[maybe_unused]] fs::File* file = new fs::File( test_unlink.pathSearch(), 7 );
 
 			mm::k_hmm.print_heap_usage();
 
@@ -240,7 +241,7 @@ extern "C" {
 			// new ( &fs::fat::k_fatfs ) fs::fat::Fat32FS;
 			// fs::fat::k_fatfs.init( 1, 0, "fat32");		
 			//fs::mnt_table[ fs::fat::k_fatfs.rFStype() ] = &fs::fat::k_fatfs;
-			log_info( " fat32 fs init" );
+			// log_info( " fat32 fs init" );
 			// now is try to mount concrate fs to ramfs
 			//fs::ramfs::k_ramfs.mount( &fs::fat::k_fatfs );
 			//fs::ramfs::k_ramfs.traversal();

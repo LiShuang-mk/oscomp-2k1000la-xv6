@@ -98,6 +98,7 @@ namespace syscall
 		uint64 _sys_statx();
 		uint64 _sys_unlinkat();
 		uint64 _sys_pipe();
+		uint64 _sys_set_tid_address();
 	};
 
 	extern SyscallHandler k_syscall_handler;

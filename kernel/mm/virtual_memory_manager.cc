@@ -26,7 +26,7 @@ namespace mm
 	{
 		if ( gid >= pm::num_process )
 			log_panic( "vmm: invalid gid" );
-		return ( vml::vm_trap_frame - ( ( ( gid + 1 ) * 2 ) << hsai::page_size_shift ) );
+		return ( vml::vm_trap_frame - ( ( ( gid + 1 ) * ( pm::default_proc_stack_pages + 1 ) ) << hsai::page_size_shift ) );
 	}
 
 	void VirtualMemoryManager::init( const char *lock_name )
@@ -92,7 +92,7 @@ namespace mm
 		old_sz = hsai::page_round_up( old_sz );
 		for ( uint64 a = old_sz; a < new_sz; a += hsai::page_size )
 		{
-			k_pmm.debug_print();
+			// k_pmm.debug_print();
 			mem = k_pmm.alloc_page();
 			if ( mem == nullptr )
 			{
@@ -127,6 +127,39 @@ namespace mm
 		}
 
 		return new_sz;
+	}
+
+	int VirtualMemoryManager::uvmset( PageTable &pt, void * va, u8 n, int page_cnt )
+	{
+		if ( !hsai::is_page_align( ( ulong ) va ) )
+		{
+			hsai_warn( "uvmset : va(%p) is not page-align", va );
+			return -1;
+		}
+		if ( page_cnt <= 0 )
+			return 0;
+
+		u64 fill = n;
+		fill |= fill << 8;
+		fill |= fill << 16;
+		fill |= fill << 32;
+
+		u8 * p = nullptr;
+		int fill_cnt = hsai::page_size / sizeof( fill );
+		char * vpa = ( char * ) va;
+		for ( ; page_cnt > 0; page_cnt--, vpa += hsai::page_size )
+		{
+			p = ( u8 * ) hsai::k_mem->to_vir( pt.walk_addr( ( ulong ) vpa ) );
+			if ( p == nullptr )
+			{
+				hsai_error( "uvmset : walk va(%p) fail!", vpa );
+				return -2;
+			}
+			u64 * fp = ( u64 * ) p;
+			for ( int i = 0; i < fill_cnt; ++i )
+				fp[ i ] = fill;
+		}
+		return 0;
 	}
 
 	int VirtualMemoryManager::copy_in( PageTable &pt, void *dst, uint64 src_va, uint64 len )
@@ -458,11 +491,10 @@ namespace mm
 	{
 		if ( newsz >= oldsz )
 			return oldsz;
-		if ( hsai::page_round_up( newsz ) < hsai::page_round_up( oldsz ) )
-			vmunmap( pt,
-				hsai::page_round_up( newsz ),
-				( hsai::page_round_up( oldsz ) - hsai::page_round_up( newsz ) ) / hsai::page_size,
-				1 );
+		ulong nsz = hsai::page_round_up( newsz );
+		ulong osz = hsai::page_round_up( oldsz );
+		if ( nsz < osz )
+			vmunmap( pt, nsz, ( osz - nsz ) / hsai::page_size, true );
 		return newsz;
 	}
 

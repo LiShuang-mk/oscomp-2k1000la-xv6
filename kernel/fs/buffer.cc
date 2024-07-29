@@ -79,7 +79,7 @@ namespace fs
 			_buffer_base[ i ] = mm::k_pmm.alloc_page();
 			if ( _buffer_base[ i ] == nullptr )
 			{
-				mm::k_pmm.debug_print();
+				// mm::k_pmm.debug_print();
 				log_panic(
 					"[ buffer alloc ] no memory.\n"
 					"block number : %d\n"

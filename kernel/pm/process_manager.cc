@@ -132,7 +132,7 @@ namespace pm
 
 				hsai::set_context_entry( p->_context, ( void* ) _wrp_fork_ret );
 
-				hsai::set_context_sp( p->_context, p->_kstack + hsai::page_size );
+				hsai::set_context_sp( p->_context, p->_kstack + hsai::page_size * default_proc_stack_pages );
 
 				p->_lock.release();
 
@@ -177,7 +177,8 @@ namespace pm
 		if ( !p->_pt.is_null() )
 		{
 			// mm::k_vmm.vmunmap( p->_pt, hsai::page_size, 1, 0 );
-			mm::k_vmm.vmfree( p->_pt, p->_sz );
+			// mm::k_vmm.vmfree( p->_pt, p->_sz );
+			p->_pt.freewalk_mapped();
 		}
 		p->_pt.set_base( 0 );
 		p->_sz = 0;
@@ -225,7 +226,7 @@ namespace pm
 		// p->_priority = 19;
 
 		p->_sz = ( uint64 ) &_end_u_init - ( uint64 ) &_start_u_init;
-		p->_hp = p->_sz;
+		// p->_hp = p->_sz;
 		//p->_sz = 0;
 
 		// map user init stack
@@ -329,7 +330,7 @@ namespace pm
 			return -1;
 		}
 		np->_sz = p->_sz;
-		np->_hp = p->_hp;
+		// np->_hp = p->_hp;
 
 		/// TODO: >> Share Memory Copy
 		// shmaddcount( p->shmkeymask );
@@ -422,8 +423,9 @@ namespace pm
 
 	void ProcessManager::proc_freepagetable( mm::PageTable pt, uint64 sz )
 	{
-		mm::k_vmm.vmunmap( pt, hsai::page_size, 1, 0 );
-		mm::k_vmm.vmfree( pt, sz );
+		// mm::k_vmm.vmunmap( pt, hsai::page_size, 1, 0 );
+		// mm::k_vmm.vmfree( pt, sz );
+		pt.freewalk_mapped();
 	}
 
 	int ProcessManager::exec( eastl::string path, eastl::vector<eastl::string> argv )
@@ -449,16 +451,16 @@ namespace pm
 
 		// if ( ( de = fs::fat::k_fatfs.get_root_dir()->EntrySearch( path ) ) 			
 		// 							== nullptr )
-		if ( ( de = fs::ramfs::k_ramfs.getRoot()->EntrySearch( "mnt" )->EntrySearch( path ) ) == nullptr )
+		eastl::string cur_path = "/mnt/";
+		eastl::string ab_path = cur_path + path;
+		log_trace( "exec fine : %s", ab_path.c_str() );
+		fs::Path path_resolver( ab_path );
+		if ( ( de = path_resolver.pathSearch() ) == nullptr )
+		// if ( ( de = fs::ramfs::k_ramfs.getRoot()->EntrySearch( "mnt" )->EntrySearch( path ) ) == nullptr )
 		{
 			log_error( "exec: cannot find file" );
 			return -1;   // 拿到文件夹信息
 		}
-		// if ( ( de = fs::fat::k_fatfs.get_dir_entry( dir_ ) ) == nullptr )
-		// {
-		// 	log_error( "exec: cannot find file" );
-		// 	return -1; 	 // 拿到文件信息
-		// }
 
 		/// @todo check ELF header
 		de->getNode()->nodeRead( reinterpret_cast< uint64 >( &elf ), 0, sizeof( elf ) );
@@ -495,19 +497,20 @@ namespace pm
 			}
 			uint64 sz1;
 			bool executable = ( ph.flags & 0x1 );		// 段是否可执行？
-			if ( ( sz1 = mm::k_vmm.vmalloc( proc->_pt, sz, ph.vaddr + ph.memsz, executable ) ) == 0 )
+			ulong pva = hsai::page_round_down( ph.vaddr );
+			if ( ( sz1 = mm::k_vmm.vmalloc( proc->_pt, pva, ph.vaddr + ph.memsz, executable ) ) == 0 )
 			{
 				log_error( "exec: uvmalloc" );
 				proc_freepagetable( proc->_pt, sz );
 				return -1;
 			}
 			sz = sz1;
-			if ( ( ph.vaddr % hsai::page_size ) != 0 )
-			{
-				log_error( "exec: vaddr not aligned" );
-				proc_freepagetable( proc->_pt, sz );
-				return -1;
-			}
+			// if ( ( ph.vaddr % hsai::page_size ) != 0 )
+			// {
+			// 	log_error( "exec: vaddr not aligned" );
+			// 	proc_freepagetable( proc->_pt, sz );
+			// 	return -1;
+			// }
 
 			if ( load_seg( proc->_pt, ph.vaddr, de, ph.off, ph.filesz ) < 0 )
 			{
@@ -517,41 +520,37 @@ namespace pm
 			}
 		}
 
-		{
-			// ulong addr;
-			// ulong procva = 0;
-			// for ( ; procva < sz; procva += 4, addr+=4 )
-			// {
-			// 	if ( procva % hsai::page_size == 0 )
-			// 	{
-			// 		addr = proc->_pt.walk_addr( procva );
-			// 		addr = hsai::k_mem->to_vir( addr );
-			// 	}
-			// 	printf( "%p\t%p\n", procva, *( u32 * ) addr );
-			// }
-		}
-
-		proc = k_pm.get_cur_pcb();
-
 		sz = hsai::page_round_up( sz );
 
 		//allocate two pages , the second is used for the user stack
-		uint64 sz1;
 
-		if ( ( sz1 = mm::k_vmm.uvmalloc( proc->_pt, sz, sz + 2 * hsai::page_size ) ) == 0 )
+		// 此处分配栈空间遵循 memlayout
+		// 进程的用户虚拟空间占用地址低 128MiB，内核虚拟空间从 0xF0_0000_0000 开始
+		// 分配栈空间大小为 3 个页面，开头的 1 个页面用作保护页面
+
+		int stack_page_cnt = 3;
+		stackbase = mm::vml::vm_user_end - stack_page_cnt * hsai::page_size;
+		sp = mm::vml::vm_user_end;
+
+		if ( mm::k_vmm.uvmalloc( proc->_pt, stackbase - hsai::page_size, sp ) == 0 )
 		{
 			log_error( "exec: vmalloc when allocating stack" );
 			proc_freepagetable( proc->_pt, sz );
 			return -1;
 		}
 
-		sz = sz1;
-		mm::k_vmm.uvmclear( proc->_pt, sz - 2 * hsai::page_size );
-		sp = sz;
-		stackbase = sp - hsai::page_size;
+		log_trace( "exec set stack-base = %p", proc->_pt.walk_addr( stackbase ) );
+		log_trace( "exec set page containing sp is %p", proc->_pt.walk_addr( sp - hsai::page_size ) );
+
+		mm::k_vmm.uvmclear( proc->_pt, stackbase - hsai::page_size );
+
+		mm::k_vmm.uvmset( proc->_pt, ( void * ) stackbase, 0, stack_page_cnt );
+
+
+		argc = 2;	// following code will write back these arg
 
 		//push argument strings, prepare rest of stack in ustack.
-		for ( argc = 0; argc < argv.size(); argc++ )
+		for ( ; argc < argv.size(); argc++ )
 		{
 			if ( argc >= MAXARG )
 			{
@@ -577,11 +576,15 @@ namespace pm
 
 			ustack[ argc ] = sp;
 		}
+
 		ustack[ argc ] = 0;
 
 		// push array of argument pointers
 		sp -= ( argc + 1 ) * sizeof( uint64 );
 		sp -= sp % 16;
+
+		ustack[ 0 ] = 0;
+		ustack[ 1 ] = sp;
 
 		if ( sp < stackbase )
 		{
@@ -595,6 +598,8 @@ namespace pm
 			log_panic( "exec: copyout" );
 			return -1;
 		}
+
+		argc -= 2;
 
 		// arguments to user main(argc, argv)
 		// argc is returned via the system call return
@@ -612,7 +617,7 @@ namespace pm
 
 // commit to the user image.
 		proc->_sz = sz;
-		proc->_hp = sz;
+		// proc->_hp = sz;
 		hsai::set_trap_frame_entry( proc->_trapframe, ( void * ) elf.entry );
 		hsai::set_trap_frame_user_sp( proc->_trapframe, sp );
 		proc->_state = ProcState::runnable;
@@ -624,12 +629,22 @@ namespace pm
 		uint i, n;
 		uint64 pa;
 
-		for ( i = 0; i < size; i += hsai::page_size )
+		i = 0;
+		if ( !hsai::is_page_align( va ) )		// 如果va不是页对齐的，先读出开头不对齐的部分
 		{
-			pa = ( uint64 ) pt.walk( va + i, 0 ).to_pa();
+			pa = pt.walk_addr( va );
+			pa = hsai::k_mem->to_vir( pa );
+			n = hsai::page_round_up( va ) - va;
+			de->getNode()->nodeRead( pa, offset + i, n );
+			i += n;
+		}
+
+		for ( ; i < size; i += hsai::page_size )			// 此时 va + i 地址是页对齐的
+		{
+			pa = ( uint64 ) pt.walk( va + i, 0 ).to_pa();	// pte.to_pa() 得到的地址是页对齐的
 			if ( pa == 0 )
 				log_panic( "load_seg: walk" );
-			if ( size - i < hsai::page_size )
+			if ( size - i < hsai::page_size )				// 如果是最后一页中的数据
 				n = size - i;
 			else
 				n = hsai::page_size;
@@ -770,7 +785,7 @@ namespace pm
 		lock->acquire();
 	}
 
-	int ProcessManager::brk( int n )
+	long ProcessManager::brk( long n )
 	{
 		//这里是一个假的brk，维护了一个假的堆指针 _hp
 
@@ -789,16 +804,18 @@ namespace pm
 		// return p->_hp;
 
 		Pcb *p = get_cur_pcb();		// 输入参数	：期望的堆大小
-		uint64 sz = p->_sz;			// 输出  	：实际的堆大小
-		uint64 oldhp = p->_hp;
+
+		if ( n <= 0 )		// get current heap size
+			return p->_sz;
+
+		// uint64 sz = p->_sz;			// 输出  	：实际的堆大小
+		uint64 oldhp = p->_sz;
 		uint64 newhp = n;
-		mm::PageTable pt = p->_pt;
-		uint64 differ = newhp - oldhp;
+		mm::PageTable &pt = p->_pt;
+		long differ = ( long ) newhp - ( long ) oldhp;
 
-		if ( n == 0 )		// get current heap size
-			return p->_hp;
 
-		if ( differ < 0 && newhp >= sz )   //shrink
+		if ( differ < 0 )				//shrink
 		{
 			if ( mm::k_vmm.uvmdealloc( pt, oldhp, newhp ) < 0 )
 			{
@@ -807,15 +824,12 @@ namespace pm
 		}
 		else if ( differ > 0 )
 		{
-			if ( newhp > ( static_cast< uint64 >( mm::vml::vm_end ) - static_cast< uint64 >( hsai::page_size ) ) )
-				return -1;
-
 			if ( mm::k_vmm.vmalloc( pt, oldhp, newhp ) == 0 )
 				return -1;
 		}
 
 		log_info( "brk: newsize%d, oldsize%d", newhp, oldhp );
-		p->_hp = newhp;
+		p->_sz = newhp;
 		return newhp; // 返回堆的大小
 	}
 
@@ -863,14 +877,14 @@ namespace pm
 			if ( dentry == nullptr )
 				return -4;
 		}
-		
+
 		fs::Path path_( path );
 		dentry = path_.pathSearch();
 
-		if( dentry == nullptr )
+		if ( dentry == nullptr )
 			return -1; // file is not found  
 		// because of open.c's fileattr defination is not clearly, so here we set flags = 7, which means O_RDWR | O_WRONLY | O_RDONLY
-		[[maybe_unused]]fs::File *f_ = new fs::File( dentry, 7 );
+		[[maybe_unused]] fs::File *f_ = new fs::File( dentry, 7 );
 
 		if ( flags & O_RDWR )
 			new ( &f->ops ) fs::FileOps( 3 ); //read and write
@@ -903,7 +917,7 @@ namespace pm
 		if ( p->_ofile[ fd ] == nullptr )
 			return -1;
 		fs::File * f = p->_ofile[ fd ];
-		*st = f->data.get_Kstat( );
+		*st = f->data.get_Kstat();
 
 		return 0;
 	}
@@ -1016,6 +1030,13 @@ namespace pm
 		fd[ 0 ] = fd0;
 		fd[ 1 ] = fd1;
 		return 0;
+	}
+
+	int ProcessManager::set_tid_address( int * tidptr )
+	{
+		Pcb * p = get_cur_pcb();
+		p->_clear_child_tid = tidptr;
+		return p->_pid;
 	}
 
 	int ProcessManager::alloc_fd( Pcb * p, fs::File * f )

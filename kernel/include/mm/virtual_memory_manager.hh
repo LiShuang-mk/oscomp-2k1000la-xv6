@@ -113,6 +113,14 @@ namespace mm
 		/// @return 
 		uint64 uvmdealloc( PageTable &pt, uint64 oldsz, uint64 newsz );
 
+		/// @brief 设置 va 起始的用户空间每个字节的值
+		/// @param pt 用户页表
+		/// @param va 虚拟地址，需要页对齐
+		/// @param n 需要设置的值
+		/// @param page_cnt 需要设置的页面数
+		/// @return 失败返回负数
+		int uvmset( PageTable &pt, void * va, u8 n, int page_cnt );
+
 	public:
 		bool map_code_pages( PageTable &pt, ulong va, ulong size, ulong pa, bool for_user )
 		{

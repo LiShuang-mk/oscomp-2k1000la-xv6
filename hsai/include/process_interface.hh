@@ -35,6 +35,8 @@ namespace hsai
 
 	extern __hsai_kernel ulong get_kstack_from_proc( void * proc );
 
+	extern __hsai_kernel ulong get_kstack_size( void * proc );
+
 	extern __hsai_kernel ulong get_pgd_addr( void * proc );
 
 	extern __hsai_kernel VirtualPageTable * get_pt_from_proc( void * proc );

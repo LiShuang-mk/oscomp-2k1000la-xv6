@@ -141,6 +141,7 @@ namespace mm
 		_lock.acquire();
 
 		long info_idx = _get_info_index( ( BuddyNode * ) ptr );
+		assert( info_idx < _infos_size, "[buddy] bad buddy-info index" );
 		BuddyInfo &info = _alloc_infos[ info_idx ];
 
 
@@ -175,7 +176,7 @@ namespace mm
 				if ( node->_area_size != buddy->_area_size )		// 伙伴节点已经被拆分，无法合并
 					break;
 				_remove_node( buddy );
-				_record_info( buddy, ( u8 ) -1, 1 );
+				_record_info( buddy, ( u8 ) -1, 0 );
 				if ( ( ulong ) node > ( ulong ) buddy )				// 地址较小的是主节点
 				{
 					BuddyNode *tmp = node;

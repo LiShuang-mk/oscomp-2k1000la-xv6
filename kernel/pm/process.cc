@@ -21,7 +21,7 @@ namespace pm
 
 	Pcb::Pcb()
 	{
-		
+
 	}
 
 	void Pcb::init( const char *lock_name, uint gid )
@@ -46,11 +46,11 @@ namespace pm
 		char *pa;
 
 		// map the first page
-		pa = ( char * ) mm::k_pmm.alloc_page();
+		pa = ( char * ) mm::k_pmm.alloc_pages( default_proc_stack_pages );
 		if ( pa == 0 )
 			log_panic( "pcb map kstack: no memory" );
 		mm::k_pmm.clear_page( ( void* ) pa );
-		if ( !mm::k_vmm.map_data_pages( pt, _kstack, hsai::page_size, ( uint64 ) pa, false ) )
+		if ( !mm::k_vmm.map_data_pages( pt, _kstack, hsai::page_size * default_proc_stack_pages, ( uint64 ) pa, false ) )
 			log_panic( "kernel vm map failed" );
 
 		// // map the second page

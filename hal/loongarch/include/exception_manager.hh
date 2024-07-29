@@ -46,6 +46,8 @@ namespace loongarch
 		void _print_va_page( void * proc, u64 virt_addr );
 
 		void _print_pa_page( u64 phys_addr );
+
+		void _print_trap_frame( void * proc );
 	};
 
 	extern ExceptionManager k_em;

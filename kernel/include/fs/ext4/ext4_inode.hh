@@ -41,8 +41,8 @@ namespace fs
 			virtual dev_t rDev() const override { return -1; };
 			virtual u64 rFileSize() const override { return -1; };
 			virtual u64 rIno() const override { return 0; };
-			virtual SuperBlock *getSb() const override { return nullptr; };
-			virtual FileSystem *getFS() const override { return nullptr; };
+			virtual SuperBlock *getSb() const override;
+			virtual FileSystem *getFS() const override { return ( FileSystem * ) _belong_fs; };
 
 		public:
 			/// @brief 读取 inode 所含的某一个逻辑块

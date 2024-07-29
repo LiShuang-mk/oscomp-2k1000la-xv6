@@ -53,6 +53,11 @@ namespace hsai
 		return ( ( pm::Pcb * ) proc )->get_kstack();
 	}
 
+	ulong get_kstack_size( void * proc )
+	{
+		return pm::default_proc_stack_pages * hsai::page_size;
+	}
+
 	ulong get_pgd_addr( void * proc )
 	{
 		return ( ( pm::Pcb * ) proc )->get_pagetable()->get_base();

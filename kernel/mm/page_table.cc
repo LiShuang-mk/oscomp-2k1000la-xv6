@@ -31,8 +31,8 @@ namespace mm
 			log_warn( "walk: pagetable not global" );
 			return hsai::Pte();
 		}
-		if ( va >= vml::vm_end )
-			log_panic( "va out of bounds" );
+		// if ( va >= vml::vm_end )
+			// log_panic( "va out of bounds" );
 
 		PageTable pt;
 		pt.set_base( _base_addr );
@@ -84,8 +84,8 @@ namespace mm
 	{
 		uint64 pa;
 
-		if ( va >= vml::vm_end )
-			return 0;
+		// if ( va >= vml::vm_end )
+			// return 0;
 
 		hsai::Pte pte = walk( va, false/* alloc */ );
 		if ( pte.is_null() )
@@ -104,8 +104,9 @@ namespace mm
 
 
 	void PageTable::freewalk()
-	{ // pte num is 4096 / 8 = 512 in pgtable
-		for ( uint i = 0; i < 512; i++ )
+	{
+		uint pte_cnt = hsai::page_size / sizeof( pte_t );
+		for ( uint i = 0; i < pte_cnt; i++ )
 		{
 			hsai::Pte next_level = get_pte( i );
 			hsai::Pte _pte( ( pte_t * ) next_level.to_pa() );
@@ -123,6 +124,30 @@ namespace mm
 			else if ( pte_valid )
 			{
 				log_panic( "freewalk: leaf" );
+			}
+		}
+		k_pmm.free_pages( ( void * ) _base_addr );
+	}
+
+	void PageTable::freewalk_mapped()
+	{
+		uint pte_cnt = hsai::page_size / sizeof( pte_t );
+		for ( uint i = 0; i < pte_cnt; i++ )
+		{
+			hsai::Pte next_level = get_pte( i );
+			hsai::Pte _pte( ( pte_t * ) next_level.to_pa() );
+			bool pte_dir = _pte.is_dir_page();
+			if ( pte_dir )					// 如果pte指向一个页表，则递归释放
+			{
+				// this PTE is points to a lower-level page table
+				PageTable child;
+				child.set_base( hsai::k_mem->to_vir( _pte.to_pa() ) );
+				child.freewalk();
+				reset_pte_data( i );
+			}
+			else if ( _pte.is_valid() )		// 如果pte指向一个有效的物理页面，则将页面释放
+			{
+				k_pmm.free_pages( ( void * ) hsai::k_mem->to_vir( _pte.to_pa() ) );
 			}
 		}
 		k_pmm.free_pages( ( void * ) _base_addr );

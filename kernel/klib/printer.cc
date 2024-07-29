@@ -144,12 +144,12 @@ namespace klib
 
 		space_pad -= tmpi;
 
-		// seperation should occupy room
+		// // seperation should occupy room
 
-		int sepr_cnt = 0;
-		if ( flag.seperate == 1 )
-			sepr_cnt = ( tmpi - 1 ) / 4;
-		space_pad -= sepr_cnt;
+		// int sepr_cnt = 0;
+		// if ( flag.seperate == 1 )
+		// 	sepr_cnt = ( tmpi - 1 ) / 4;
+		// space_pad -= sepr_cnt;
 
 		// prefix should occupy room
 
@@ -338,6 +338,7 @@ namespace klib
 				case 'p':
 					fl.prefix = 1;
 					fl.zero_pad = 1;
+					fl.seperate = 1;
 					if ( width < 0 ) width = sizeof( void * ) << 1;
 					width += 2;		// prefix
 					print_number( buf, ( ulong ) va_arg( args, void * ),

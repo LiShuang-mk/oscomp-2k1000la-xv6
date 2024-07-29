@@ -40,8 +40,11 @@ namespace mm
 		/// @return physical address mapped from va
 		virtual ulong walk_addr( uint64 va ) override;
 
-		/// @brief 递归地释放页表中的所有页面
+		/// @brief 递归地释放页表占用的页表
 		void freewalk();
+
+		/// @brief 递归地释放页表及其映射的所有页
+		void freewalk_mapped();
 
 		uint64 get_pte_data( uint64 index ) { return ( uint64 ) ( ( pte_t * ) _base_addr )[ index ]; }
 		void   reset_pte_data(uint64 index)   { ((pte_t *) _base_addr)[ index ] = 0; }

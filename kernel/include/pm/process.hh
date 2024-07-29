@@ -32,6 +32,8 @@ namespace pm
 	constexpr int highest_proc_prio = 0;
 	constexpr uint max_open_files = 128;
 
+	constexpr int default_proc_stack_pages = 16;			// 默认进程内核栈大小（按页面数计算）
+
 	enum ProcState
 	{
 		unused,
@@ -81,7 +83,7 @@ namespace pm
 		int _priority;				// Process priority (0-20)=(highest-lowest)
 
 		// about share memory 
-		uint _shm;					// The low-boundary address of share memory 
+		ulong _shm;					// The low-boundary address of share memory 
 		void *_shmva[ SHM_NUM ];				// The sharemem of process
 		uint _shmkeymask;			// The mask of using shared physical memory page 
 
@@ -92,10 +94,16 @@ namespace pm
 		uint64 _user_ticks;			// the ticks of that the process has run in user mode
 		uint64 _last_user_tick;		// the tick value of that the process returns to user mode last time
 
-		uint64 _hp;					// 一个假的堆指针，后续会删除
+		// uint64 _hp;					// 一个假的堆指针，后续会删除
 
 		// vm
 		struct vma *vm[ 10 ];  // virtual memory area <<<<<<<<<<<<<<<<<< what??? Could ONE process has several vm space?
+
+
+		// 线程与 futex 相关
+		int * _set_child_tid = nullptr;
+		int * _clear_child_tid = nullptr;
+
 
 	public:
 		Pcb();

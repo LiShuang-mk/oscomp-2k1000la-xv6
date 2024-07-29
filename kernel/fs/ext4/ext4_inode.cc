@@ -374,6 +374,11 @@ namespace fs
 			//_attrs( 0777 );
 		}
 
+		SuperBlock * Ext4IndexNode::getSb() const
+		{
+			return _belong_fs->getSuperBlock();
+		}
+
 		Inode * Ext4IndexNode::lookup( eastl::string dirname )
 		{
 			if ( !( _inode.mode & ext4_imode_fdir ) )		// 当前inode不是目录
@@ -450,6 +455,7 @@ namespace fs
 				log_warn( "ext4-inode : read logical block %d fail", block_no );
 				return 0;
 			}
+			f = ( u8* ) blk_buf->get_data_ptr();
 			for ( size_t i = 0; i < read_len; i++ )
 			{
 				b_off = ( off + i ) % b_siz;
