@@ -1,5 +1,7 @@
 #include "fs/file/file.hh"
 
+struct termios;
+
 namespace fs
 {
     class device_file : public file
@@ -14,6 +16,8 @@ namespace fs
             ~device_file()  = default;
 
             int read( uint64 buf, size_t len, int off = 0, bool upgrade = false ) override ;
-            int write( uint64 buf, size_t len ) override;
-    };
+			int write( uint64 buf, size_t len ) override;
+
+			int tcgetattr( termios * ts );
+	};
 }

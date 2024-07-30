@@ -3,6 +3,8 @@
 #include "device_manager.hh"
 #include "stream_device.hh"
 
+#include <termios.h>
+
 namespace fs
 {
     int device_file::read( uint64 buf, size_t len, int off, bool upgrade ) 
@@ -67,5 +69,12 @@ namespace fs
 
 		ret = sdev->write( ( void * ) buf, len );
 		return ret;
-    }
+	}
+
+
+	int device_file::tcgetattr( termios * ts )
+	{
+		// ts->c_ispeed = ts->c_ospeed = B115200;
+		return 0;
+	}
 }
