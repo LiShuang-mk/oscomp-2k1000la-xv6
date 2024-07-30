@@ -30,6 +30,7 @@ namespace syscall
 		_build_sysnum_enum_( getdents, 61 )
 		_build_sysnum_enum_( read, 63 )
 		_build_sysnum_enum_( write, 64 )
+		_build_sysnum_enum_( readlinkat, 78 )
 		_build_sysnum_enum_( fstat, 80 )
 		_build_sysnum_enum_( exit, 93 )
 		_build_sysnum_enum_( set_tid_address, 96 )

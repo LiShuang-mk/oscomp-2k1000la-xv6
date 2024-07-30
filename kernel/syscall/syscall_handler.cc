@@ -15,6 +15,7 @@
 #include "fs/path.hh"
 #include "fs/file/normal.hh"
 #include "fs/file/file.hh"
+#include "fs/file/file_defs.hh"
 
 #include "pm/process.hh"
 // #include "pm/trap_frame.hh"
@@ -85,6 +86,7 @@ namespace syscall
 		_syscall_funcs[ SYS_set_tid_address ] = std::bind( &SyscallHandler::_sys_set_tid_address, this );
 		_syscall_funcs[ SYS_set_robust_list ] = std::bind( &SyscallHandler::_sys_set_robust_list, this );
 		_syscall_funcs[ SYS_prlimit64 ] = std::bind( &SyscallHandler::_sys_prlimit64, this );
+		_syscall_funcs[ SYS_readlinkat ] = std::bind( &SyscallHandler::_sys_readlinkat, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -866,4 +868,72 @@ namespace syscall
 		return pm::k_pm.prlimit64( pid, rsrc, nlim, olim );
 	}
 
+	uint64 SyscallHandler::_sys_readlinkat()
+	{
+		pm::Pcb * p = pm::k_pm.get_cur_pcb();
+		mm::PageTable * pt = p->get_pagetable();
+		int fd; 
+		fs::Path filePath;
+		int ret;
+
+		if( _arg_int( 0, fd ) < 0 )
+			return -1;
+		// if( _arg_fd( 0, nullptr, &f ) < 0 )
+		// 	return -1;
+
+		eastl::string path;
+		if( _arg_str( 1, path, 256 ) < 0 )
+			return -1;
+		
+		uint64 buf;
+		if( _arg_addr(2, buf) < 0 )
+			return -1;
+		
+		size_t buf_size;
+		if( _arg_addr( 3, buf_size ) < 0 )
+		    return -1;
+		
+		if( fd == AT_FDCWD )
+			new ( &filePath ) fs::Path( path, p->_cwd );
+		else
+			new ( &filePath ) fs::Path( path, p->_ofile[fd] );
+		
+		eastl::string result;
+		eastl::string pathname = filePath.rPathName();
+		char *k_buf = new char [buf_size + 1];
+		if( pathname[0] == '/' ) // this is a absolute path
+		{
+			size_t pos = pathname.rfind('/');
+			if (pos != eastl::string::npos) {
+				result = pathname.substr(0, pos);
+			} else {
+				result = pathname;
+			}
+			result += '/';
+			eastl::string proc_name = p->_name;
+
+			result.append(proc_name);
+
+			[[maybe_unused]]size_t resultlen = result.length();
+			resultlen <= buf_size ? ret = result.length() : ret = buf_size;
+			result = result.substr( 0, ret );
+		}
+		else
+		{
+			int fd_new = filePath.open( fs::FileAttrs( fs::FileTypes::FT_NORMAL, 0444) ); //readonly;
+			if( fd_new < 0 )
+				return -1;
+			
+			pm::Pcb * pcb = pm::k_pm.get_cur_pcb();
+			ret = pcb->_ofile[ fd_new ]->readlink( ( uint64 )k_buf, buf_size );
+			if( ret < 0 )
+				return -1;
+		}
+		if( mm::k_vmm.copyout( *pt, buf, result.c_str(), ret ) < 0 )
+			return -1;
+
+		// pm::k_pm.close( fd_new );
+		delete[] k_buf;
+		return ret;
+	}
 } // namespace syscall

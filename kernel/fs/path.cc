@@ -9,33 +9,50 @@
 
 #include "fs/path.hh"
 #include "fs/file/file.hh"
+#include "fs/file/normal.hh"
 #include "fs/dentry.hh"
 #include "fs/fs_defs.hh"
 #include "fs/fat/fat32fs.hh"
 
+#include "pm/process_manager.hh"
 #include <EASTL/unordered_map.h>
 
 namespace fs
 {
 	eastl::unordered_map<eastl::string, FileSystem *> mnt_table;
 
-	Path::Path( const eastl::string& path_, File *base_ )
-		: base( base_ == nullptr ? nullptr : base_->data.get_Entry() )
-		, pathname( path_ )
+
+	/// 这里的base_文件需要有dentry，目前只有normalfile有dentry
+	Path::Path( const eastl::string& path_, file *base_ )
+		: pathname( path_ )
 	{
+
+		fs::normal_file *file = static_cast<fs::normal_file *>( base_ );
+		if( file == nullptr ) 
+			log_panic("Path: base file is not a normalfile");
+		
+		base = file->getDentry();
 		pathbuild();
 	}
 
-	Path::Path( const char *str_, File *base_ )
-		: base( base_ == nullptr ? nullptr : base_->data.get_Entry() )
-		, pathname( str_ )
+	Path::Path( const char *str_, file *base_ )
+		: pathname( str_ )
 	{
+		fs::normal_file *file = static_cast<fs::normal_file *>( base_ );
+		if( file == nullptr ) 
+			log_panic("Path: base file is not a normalfile");
+		
+		base = file->getDentry();
 		pathbuild();
 	}
 
-	Path::Path( File *base_ )
-		: base( base_->data.get_Entry() )
+	Path::Path( file *base_ )
 	{
+		fs::normal_file *file = static_cast<fs::normal_file *>( base_ );
+		if( file == nullptr )  
+			log_panic("Path: base file is not a normalfile");
+		
+		base = file->getDentry();
 		pathbuild();
 	}
 
@@ -193,4 +210,29 @@ namespace fs
 		return -1;
 	}
 
+	int Path::open( FileAttrs attrs_ )
+	{
+		dentry *den = pathSearch();
+
+		if( !den )
+			return -1;
+		FileAttrs attrs = den->getNode()->rMode();
+		if( attrs.filetype != FileTypes::FT_DIRECT 
+			&& attrs_.u_write
+			&& attrs_.o_write
+			&& attrs_.g_write )
+			log_error(" try to open a directory with write mode");
+
+		if( attrs_.filetype == FileTypes::FT_DIRECT 
+			&& attrs.filetype != FileTypes::FT_DIRECT )
+			log_error(" try to open a not directory file as directory ");
+		
+	    fs::normal_file *f = new fs::normal_file( attrs_, den );
+		pm::Pcb *cur_proc = pm::k_pm.get_cur_pcb();
+		int fd = pm::k_pm.alloc_fd( cur_proc, f );
+
+		if( fd < 0 )
+			return -1;
+		return fd;
+	}
 } // namespace fs

@@ -10,6 +10,8 @@
 
 namespace fs
 {
+
+	#define AT_FDCWD		-100 //current dir
 	enum FileTypes
 	{
 		FT_NONE,
