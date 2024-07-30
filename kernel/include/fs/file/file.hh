@@ -80,7 +80,7 @@ namespace fs
 			~File() = default;
 
 			int write( uint64 buf, size_t len ) { return 0; };
-			int read( uint64 buf, size_t len, int off_ = -1, bool update = true ) { return 0; };
+			int read( uint64 buf, size_t len, int off_ = 0, bool update = true ) { return 0; };
 
 	};
 
@@ -144,6 +144,8 @@ namespace fs
 			virtual int read( uint64 buf, size_t len, int off = 0, bool upgrade = false ) = 0;
 			virtual int write( uint64 buf, size_t len ) = 0;
 			virtual void dup() { refcnt++; }; 
+			int readlink( uint64 buf, size_t len );
+			//virtual int readlink( uint64 buf, size_t len ) = 0;
 	};
 
 } // namespace fs

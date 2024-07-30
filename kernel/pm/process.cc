@@ -41,6 +41,11 @@ namespace pm
 
 		_rlim_vec[ ResourceLimitId::RLIMIT_STACK ].rlim_cur = default_proc_ustack_pages * hsai::page_size;
 		_rlim_vec[ ResourceLimitId::RLIMIT_STACK ].rlim_max = default_proc_ustack_pages * hsai::page_size;
+
+		for (int i = 0; i < SIGRTMAX; ++i) {
+            _sigactions[i] = nullptr;
+        } // init sigactions
+
 	}
 
 	void Pcb::map_kstack( mm::PageTable &pt )

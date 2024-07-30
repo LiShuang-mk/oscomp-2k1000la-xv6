@@ -18,6 +18,8 @@ namespace fs
 	class File;
 	class FileSystem;
 	class dentry;
+	class file;
+	struct FileAttrs;
 	class Path
 	{
 	private:
@@ -28,7 +30,7 @@ namespace fs
 	public:
 		Path() = default;
 		Path( const Path& path ) = default;
-		Path( const eastl::string& path_, File *base_ );
+		Path( const eastl::string& path_, file *base_ );
 		Path( const eastl::string& path_, dentry *base_ )
 			: base( base_ )
 			, pathname( path_ )
@@ -41,7 +43,7 @@ namespace fs
 		{
 			pathbuild();
 		}
-		Path( const char *str_, File *base_ );
+		Path( const char *str_, file *base_ );
 		Path( const char *str_, dentry *base_ )
 			: base( base_ )
 			, pathname( str_ )
@@ -54,7 +56,7 @@ namespace fs
 		{
 			pathbuild();
 		}
-		Path( File *base_ );
+		Path( file *base_ );
 		Path( dentry *base_ )
 			: base( base_ )
 		{
@@ -70,6 +72,8 @@ namespace fs
 		dentry *pathCreate( uint32 mode );
 		int mount( Path &dev, eastl::string fstype , uint64 flags, uint64 data);
 		int umount( uint64 flags );
+		int open( FileAttrs attrs );
+		eastl::string rPathName() { return pathname; }
 	};
 
 	extern eastl::unordered_map<eastl::string, FileSystem *> mnt_table;
