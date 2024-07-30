@@ -19,6 +19,7 @@ namespace syscall
 		_build_sysnum_enum_( getcwd, 17 )
 		_build_sysnum_enum_( dup, 23 )
 		_build_sysnum_enum_( dup2, 24 )
+		_build_sysnum_enum_( fcntl, 25 )
 		_build_sysnum_enum_( ioctl, 29 )
 		_build_sysnum_enum_( mkdir, 34 )
 		_build_sysnum_enum_( unlinkat, 35 )

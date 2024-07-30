@@ -75,6 +75,7 @@ namespace fs
 	int device_file::tcgetattr( termios * ts )
 	{
 		// ts->c_ispeed = ts->c_ospeed = B115200;
+		
 		return 0;
 	}
 }

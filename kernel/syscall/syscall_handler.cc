@@ -38,6 +38,9 @@
 #include <process_interface.hh>
 #include <EASTL/random.h>
 
+#include <fcntl.h>
+#include <sys/ioctl.h>
+
 namespace syscall
 {
 	SyscallHandler k_syscall_handler;
@@ -96,6 +99,7 @@ namespace syscall
 		_syscall_funcs[ SYS_getrandom ] = std::bind( &SyscallHandler::_sys_getrandom, this );
 		_syscall_funcs[ SYS_sigaction ] = std::bind( &SyscallHandler::_sys_sigaction, this );
 		_syscall_funcs[ SYS_ioctl ] = std::bind( &SyscallHandler::_sys_ioctl, this );
+		_syscall_funcs[ SYS_fcntl ] = std::bind( &SyscallHandler::_sys_fcntl, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -912,64 +916,67 @@ namespace syscall
 	{
 		pm::Pcb * p = pm::k_pm.get_cur_pcb();
 		mm::PageTable * pt = p->get_pagetable();
-		int fd; 
+		int fd;
 		fs::Path filePath;
 		int ret;
 
-		if( _arg_int( 0, fd ) < 0 )
+		if ( _arg_int( 0, fd ) < 0 )
 			return -1;
 		// if( _arg_fd( 0, nullptr, &f ) < 0 )
 		// 	return -1;
 
 		eastl::string path;
-		if( _arg_str( 1, path, 256 ) < 0 )
+		if ( _arg_str( 1, path, 256 ) < 0 )
 			return -1;
-		
+
 		uint64 buf;
-		if( _arg_addr(2, buf) < 0 )
+		if ( _arg_addr( 2, buf ) < 0 )
 			return -1;
-		
+
 		size_t buf_size;
-		if( _arg_addr( 3, buf_size ) < 0 )
-		    return -1;
-		
-		if( fd == AT_FDCWD )
+		if ( _arg_addr( 3, buf_size ) < 0 )
+			return -1;
+
+		if ( fd == AT_FDCWD )
 			new ( &filePath ) fs::Path( path, p->_cwd );
 		else
-			new ( &filePath ) fs::Path( path, p->_ofile[fd] );
-		
+			new ( &filePath ) fs::Path( path, p->_ofile[ fd ] );
+
 		eastl::string result;
 		eastl::string pathname = filePath.rPathName();
-		char *k_buf = new char [buf_size + 1];
-		if( pathname[0] == '/' ) // this is a absolute path
+		char *k_buf = new char[ buf_size + 1 ];
+		if ( pathname[ 0 ] == '/' ) // this is a absolute path
 		{
-			size_t pos = pathname.rfind('/');
-			if (pos != eastl::string::npos) {
-				result = pathname.substr(0, pos);
-			} else {
+			size_t pos = pathname.rfind( '/' );
+			if ( pos != eastl::string::npos )
+			{
+				result = pathname.substr( 0, pos );
+			}
+			else
+			{
 				result = pathname;
 			}
 			result += '/';
 			eastl::string proc_name = p->_name;
 
-			result.append(proc_name);
+			result.append( proc_name );
 
-			[[maybe_unused]]size_t resultlen = result.length();
+			[[maybe_unused]] size_t resultlen = result.length();
 			resultlen <= buf_size ? ret = result.length() : ret = buf_size;
 			result = result.substr( 0, ret );
 		}
 		else
 		{
-			int fd_new = filePath.open( fs::FileAttrs( fs::FileTypes::FT_NORMAL, 0444) ); //readonly;
-			if( fd_new < 0 )
+			int fd_new = filePath.open( fs::FileAttrs( fs::FileTypes::FT_NORMAL, 0444 ) ); //readonly;
+			if ( fd_new < 0 )
 				return -1;
-			
+
 			pm::Pcb * pcb = pm::k_pm.get_cur_pcb();
-			ret = pcb->_ofile[ fd_new ]->readlink( ( uint64 )k_buf, buf_size );
-			if( ret < 0 )
+			ret = pcb->_ofile[ fd_new ]->readlink( ( uint64 ) k_buf, buf_size );
+			if ( ret < 0 )
 				return -1;
 		}
-		if( mm::k_vmm.copyout( *pt, buf, result.c_str(), ret ) < 0 )
+		if ( mm::k_vmm.copyout( *pt, buf, result.c_str(), ret ) < 0 )
 			return -1;
 
 		// pm::k_pm.close( fd_new );
@@ -981,33 +988,34 @@ namespace syscall
 	{
 		uint64 bufaddr;
 		int buflen;
-		[[maybe_unused]]int flags;
+		[[maybe_unused]] int flags;
 		pm::Pcb * pcb = pm::k_pm.get_cur_pcb();
 		mm::PageTable *pt = pcb->get_pagetable();
 
-		if( _arg_addr( 0, bufaddr) < 0 )
-			return -1; 
-		
-		if( _arg_int( 1, buflen ) < 0 )
-		    return -1;
-		
-		if( _arg_int( 2, buflen ) < 0 )
+		if ( _arg_addr( 0, bufaddr ) < 0 )
 			return -1;
 
-		if( bufaddr == 0 && buflen == 0 )
+		if ( _arg_int( 1, buflen ) < 0 )
 			return -1;
-		
+
+		if ( _arg_int( 2, buflen ) < 0 )
+			return -1;
+
+		if ( bufaddr == 0 && buflen == 0 )
+			return -1;
+
 		char *k_buf = new char[ buflen ];
-		if( !k_buf )
+		if ( !k_buf )
 			return -1;
-		
-		ulong random=0x42494C474B435546UL;
+
+		ulong random = 0x42494C474B435546UL;
 		size_t random_size = sizeof( random );
-		for (size_t i = 0; i < static_cast<size_t>( buflen ); i += random_size) {
-			size_t copy_size = (i + random_size ) <= static_cast<size_t>(buflen) ? random_size : buflen - i;
-			memcpy(k_buf + i, &random, copy_size);
+		for ( size_t i = 0; i < static_cast< size_t >( buflen ); i += random_size )
+		{
+			size_t copy_size = ( i + random_size ) <= static_cast< size_t >( buflen ) ? random_size : buflen - i;
+			memcpy( k_buf + i, &random, copy_size );
 		}
-		if( mm::k_vmm.copyout( *pt, bufaddr, k_buf, buflen ) < 0 ) 
+		if ( mm::k_vmm.copyout( *pt, bufaddr, k_buf, buflen ) < 0 )
 			return -1;
 
 		delete[] k_buf;
@@ -1017,30 +1025,30 @@ namespace syscall
 	uint64 SyscallHandler::_sys_sigaction()
 	{
 		pm::Pcb *proc = pm::k_pm.get_cur_pcb();
-		[[maybe_unused]]mm::PageTable *pt = proc->get_pagetable();
-		[[maybe_unused]]pm::ipc::signal::sigaction a_newact, a_oldact;
+		[[maybe_unused]] mm::PageTable *pt = proc->get_pagetable();
+		[[maybe_unused]] pm::ipc::signal::sigaction a_newact, a_oldact;
 		// a_newact = nullptr;
 		// a_oldact = nullptr;
 		uint64 newactaddr, oldactaddr;
 		int flag;
 		int ret = -1;
 
-		if( _arg_int( 0, flag ) < 0 )
-			return -1;
-		
-		if( _arg_addr( 1, newactaddr ) < 0 )
-			return -1;	
-		
-		if( _arg_addr( 2, oldactaddr ) < 0 )
+		if ( _arg_int( 0, flag ) < 0 )
 			return -1;
 
-		if( oldactaddr != 0 )
-			a_oldact =  pm::ipc::signal::sigaction();
+		if ( _arg_addr( 1, newactaddr ) < 0 )
+			return -1;
 
-		if( newactaddr != 0 )
+		if ( _arg_addr( 2, oldactaddr ) < 0 )
+			return -1;
+
+		if ( oldactaddr != 0 )
+			a_oldact = pm::ipc::signal::sigaction();
+
+		if ( newactaddr != 0 )
 		{
-			if( mm::k_vmm.copy_in( *pt, &a_newact, newactaddr, sizeof(pm::ipc::signal::sigaction ) ) < 0 )
-		 		return -1;
+			if ( mm::k_vmm.copy_in( *pt, &a_newact, newactaddr, sizeof( pm::ipc::signal::sigaction ) ) < 0 )
+				return -1;
 			//a_newact = ( pm::ipc::signal::sigaction *)(hsai::k_mem->to_vir( pt->walk_addr( newactaddr ) ));
 			ret = pm::ipc::signal::sigAction( flag, &a_newact, nullptr );
 		}
@@ -1048,9 +1056,9 @@ namespace syscall
 		{
 			ret = pm::ipc::signal::sigAction( flag, &a_newact, &a_oldact );
 		}
-		if( ret == 0 && oldactaddr != 0 )
+		if ( ret == 0 && oldactaddr != 0 )
 		{
-			if( mm::k_vmm.copyout( *pt, oldactaddr, &a_oldact, sizeof(pm::ipc::signal::sigaction ) ) < 0 )
+			if ( mm::k_vmm.copyout( *pt, oldactaddr, &a_oldact, sizeof( pm::ipc::signal::sigaction ) ) < 0 )
 				return -1;
 		}
 		return ret;
@@ -1085,7 +1093,7 @@ namespace syscall
 
 		/// @todo not implement
 
-		if ( ( cmd & 0xFFFF ) == 0x5401 )
+		if ( ( cmd & 0xFFFF ) == TCGETS )
 		{
 			fs::device_file * df = ( fs::device_file * ) f;
 			mm::PageTable *pt = pm::k_pm.get_cur_pcb()->get_pagetable();
@@ -1093,7 +1101,58 @@ namespace syscall
 			return df->tcgetattr( ts );
 		}
 
+		if ( ( cmd & 0XFFFF ) == TIOCGPGRP )
+		{
+			mm::PageTable *pt = pm::k_pm.get_cur_pcb()->get_pagetable();
+			int * p_pgrp = ( int* ) hsai::k_mem->to_vir( pt->walk_addr( arg ) );
+			*p_pgrp = 1;
+			return 0;
+		}
+
 		return 0;
+	}
+
+	uint64 SyscallHandler::_sys_fcntl()
+	{
+		pm::Pcb * p = pm::k_pm.get_cur_pcb();
+		fs::file * f;
+		int op;
+		ulong arg;
+		int retfd = -1;
+
+		if ( _arg_fd( 0, nullptr, &f ) < 0 )
+			return -1;
+		if ( _arg_int( 1, op ) < 0 )
+			return -2;
+
+		switch ( op )
+		{
+			case F_DUPFD:
+				if ( _arg_addr( 2, arg ) < 0 )
+					return -3;
+				for ( int i = ( int ) arg; i < ( int ) pm::max_open_files; ++i )
+				{
+					if ( ( retfd = pm::k_pm.alloc_fd( p, f, i ) ) == i )
+						break;
+				}
+				return retfd;
+
+			case F_DUPFD_CLOEXEC:
+				if ( _arg_addr( 2, arg ) < 0 )
+					return -3;
+				for ( int i = ( int ) arg; i < ( int ) pm::max_open_files; ++i )
+				{
+					if ( ( retfd = pm::k_pm.alloc_fd( p, f, i ) ) == i )
+						break;
+				}
+				p->get_open_file( retfd )->_fl_cloexec = true;
+				return retfd;
+
+			default:
+				break;
+		}
+
+		return retfd;
 	}
 
 } // namespace syscall

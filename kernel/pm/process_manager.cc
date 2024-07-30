@@ -681,6 +681,16 @@ namespace pm
 			= proc->_rlim_vec[ ResourceLimitId::RLIMIT_STACK ].rlim_max
 			= sp - stackbase;
 
+		// 处理 F_DUPFD_CLOEXEC 标志位
+		for ( auto &f : proc->_ofile )
+		{
+			if ( f != nullptr && f->_fl_cloexec )
+			{
+				f->free_file();
+				f = nullptr;
+			}
+		}
+
 		// save program name for debugging.
 		for ( uint i = 0; i < 16; i++ )
 		{

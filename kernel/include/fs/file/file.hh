@@ -136,7 +136,8 @@ namespace fs
 			FileAttrs _attrs;
 			uint32 refcnt;
 			Kstat _stat;
-		public:
+			bool _fl_cloexec = false;		// close when exec
+	public:
 		 	file() = delete;
 			file( FileAttrs attrs ) : _attrs( attrs ), refcnt( 0 ), _stat( _attrs.filetype ) { }
 			virtual ~file() = default;
