@@ -27,7 +27,10 @@
 
 #include "mm/virtual_memory_manager.hh"
 #include "mm/physical_memory_manager.hh"
+
 #include "tm/timer_manager.hh"
+#include "tm/time.hh"
+
 #include "klib/klib.hh"
 
 #include <hsai_global.hh>
@@ -86,6 +89,9 @@ namespace syscall
 		_syscall_funcs[ SYS_set_tid_address ] = std::bind( &SyscallHandler::_sys_set_tid_address, this );
 		_syscall_funcs[ SYS_set_robust_list ] = std::bind( &SyscallHandler::_sys_set_robust_list, this );
 		_syscall_funcs[ SYS_prlimit64 ] = std::bind( &SyscallHandler::_sys_prlimit64, this );
+		_syscall_funcs[ SYS_clock_gettime ] = std::bind( &SyscallHandler::_sys_clock_gettime, this );
+		_syscall_funcs[ SYS_mprotect ] = std::bind( &SyscallHandler::_sys_mprotect, this );
+		_syscall_funcs[ SYS_getuid ] = std::bind( &SyscallHandler::_sys_getuid, this );
 		_syscall_funcs[ SYS_readlinkat ] = std::bind( &SyscallHandler::_sys_readlinkat, this );
 	}
 
@@ -866,6 +872,37 @@ namespace syscall
 			olim = ( pm::rlimit64 * ) hsai::k_mem->to_vir( pt->walk_addr( old_limit ) );
 
 		return pm::k_pm.prlimit64( pid, rsrc, nlim, olim );
+	}
+
+	uint64 SyscallHandler::_sys_clock_gettime()
+	{
+		int clock_id;
+		if ( _arg_int( 0, clock_id ) < 0 )
+			return -1;
+
+		u64 addr;
+		if ( _arg_addr( 1, addr ) < 0 )
+			return -2;
+
+		tmm::timespec * tp = nullptr;
+		pm::Pcb * p = pm::k_pm.get_cur_pcb();
+		mm::PageTable *pt = p->get_pagetable();
+		if ( addr != 0 )
+			tp = ( tmm::timespec * ) hsai::k_mem->to_vir( pt->walk_addr( addr ) );
+
+		tmm::SystemClockId cid = ( tmm::SystemClockId ) clock_id;
+
+		return tmm::k_tm.clock_gettime( cid, tp );
+	}
+
+	uint64 SyscallHandler::_sys_mprotect()
+	{
+		return 0;
+	}
+
+	uint64 SyscallHandler::_sys_getuid()
+	{
+		return 0;
 	}
 
 	uint64 SyscallHandler::_sys_readlinkat()

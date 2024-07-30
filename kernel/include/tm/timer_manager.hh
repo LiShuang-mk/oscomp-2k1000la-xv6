@@ -9,6 +9,7 @@
 #pragma once 
 
 #include "types.hh"
+#include "tm/time.hh"
 
 #include <smp/spin_lock.hh>
 
@@ -51,6 +52,8 @@ namespace tmm
 		int sleep_n_ticks( int n );
 
 		int sleep_from_tv( timeval tv );
+
+		int clock_gettime( SystemClockId clockid, timespec * tp );
 
 		// void open_ti_intr();
 		// void close_ti_intr();

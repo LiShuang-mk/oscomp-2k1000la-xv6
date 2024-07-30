@@ -107,5 +107,15 @@ namespace tmm
 		return sleep_n_ticks( n );
 	}
 
+	int TimerManager::clock_gettime( SystemClockId cid, timespec * tp )
+	{
+		if ( tp == nullptr )
+			return 0;
+		timeval tv = get_time_val();
+		tp->tv_nsec = tv.tv_sec;
+		tp->tv_nsec = tv.tv_usec * 1000;
+		return 0;
+	}
+
 } // namespace tm
 
