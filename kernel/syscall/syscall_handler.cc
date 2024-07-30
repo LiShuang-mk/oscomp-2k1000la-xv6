@@ -100,6 +100,8 @@ namespace syscall
 		_syscall_funcs[ SYS_sigaction ] = std::bind( &SyscallHandler::_sys_sigaction, this );
 		_syscall_funcs[ SYS_ioctl ] = std::bind( &SyscallHandler::_sys_ioctl, this );
 		_syscall_funcs[ SYS_fcntl ] = std::bind( &SyscallHandler::_sys_fcntl, this );
+		_syscall_funcs[ SYS_getpgid ] = std::bind( &SyscallHandler::_sys_getpgid, this );
+		_syscall_funcs[ SYS_setpgid ] = std::bind( &SyscallHandler::_sys_setpgid, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -1155,4 +1157,19 @@ namespace syscall
 		return retfd;
 	}
 
+	uint64 SyscallHandler::_sys_getpgid()
+	{
+		int pid;
+		if( _arg_int( 0, pid ) < 0 )
+			return -1;
+		return 1;
+	}
+	
+	uint64 SyscallHandler::_sys_setpgid()
+	{
+		int pid, pgid;
+        if( _arg_int( 0, pid ) < 0 || _arg_int( 1, pgid ) < 0 )
+            return -1;
+        return 1;
+	}
 } // namespace syscall
