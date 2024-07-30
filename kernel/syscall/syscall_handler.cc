@@ -96,6 +96,7 @@ namespace syscall
 		_syscall_funcs[ SYS_getrandom ] = std::bind( &SyscallHandler::_sys_getrandom, this );
 		_syscall_funcs[ SYS_sigaction ] = std::bind( &SyscallHandler::_sys_sigaction, this );
 		_syscall_funcs[ SYS_ioctl ] = std::bind( &SyscallHandler::_sys_ioctl, this );
+		_syscall_funcs[ SYS_getpgid ] = std::bind( &SyscallHandler::_sys_getpgid, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -1096,4 +1097,11 @@ namespace syscall
 		return 0;
 	}
 
+	uint64 SyscallHandler::_sys_getpgid()
+	{
+		int pid;
+		if( _arg_int( 0, pid ) < 0 )
+			return -1;
+		return 1;
+	}
 } // namespace syscall
