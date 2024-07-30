@@ -89,6 +89,7 @@ namespace syscall
 		_syscall_funcs[ SYS_set_robust_list ] = std::bind( &SyscallHandler::_sys_set_robust_list, this );
 		_syscall_funcs[ SYS_prlimit64 ] = std::bind( &SyscallHandler::_sys_prlimit64, this );
 		_syscall_funcs[ SYS_clock_gettime ] = std::bind( &SyscallHandler::_sys_clock_gettime, this );
+		_syscall_funcs[ SYS_mprotect ] = std::bind( &SyscallHandler::_sys_mprotect, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -889,6 +890,11 @@ namespace syscall
 		tmm::SystemClockId cid = ( tmm::SystemClockId ) clock_id;
 
 		return tmm::k_tm.clock_gettime( cid, tp );
+	}
+
+	uint64 SyscallHandler::_sys_mprotect()
+	{
+		return 0;
 	}
 
 } // namespace syscall

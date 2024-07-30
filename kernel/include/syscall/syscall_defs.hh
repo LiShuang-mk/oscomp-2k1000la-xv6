@@ -47,6 +47,7 @@ namespace syscall
 		_build_sysnum_enum_( fork, 220 )
 		_build_sysnum_enum_( exec, 221 )
 		_build_sysnum_enum_( mmap, 222 )
+		_build_sysnum_enum_( mprotect, 226 )
 		_build_sysnum_enum_( wait, 260 )
 		_build_sysnum_enum_( prlimit64, 261 )
 		_build_sysnum_enum_( statx, 291 )
