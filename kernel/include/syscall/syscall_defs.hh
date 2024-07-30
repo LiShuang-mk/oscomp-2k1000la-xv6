@@ -52,6 +52,7 @@ namespace syscall
 		_build_sysnum_enum_( mprotect, 226 )
 		_build_sysnum_enum_( wait, 260 )
 		_build_sysnum_enum_( prlimit64, 261 )
+		_build_sysnum_enum_( getrandom, 278 )
 		_build_sysnum_enum_( statx, 291 )
 		_build_sysnum_enum_( poweroff, 2024 )
 	};

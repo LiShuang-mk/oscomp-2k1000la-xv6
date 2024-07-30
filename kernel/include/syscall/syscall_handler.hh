@@ -106,6 +106,7 @@ namespace syscall
 		uint64 _sys_mprotect();
 		uint64 _sys_getuid();
 		uint64 _sys_readlinkat();
+		uint64 _sys_getrandom();
 	};
 
 	extern SyscallHandler k_syscall_handler;

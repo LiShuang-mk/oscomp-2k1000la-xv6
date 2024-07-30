@@ -36,7 +36,7 @@
 #include <hsai_global.hh>
 #include <mem/virtual_memory.hh>
 #include <process_interface.hh>
-
+#include <EASTL/random.h>
 
 namespace syscall
 {
@@ -93,6 +93,7 @@ namespace syscall
 		_syscall_funcs[ SYS_mprotect ] = std::bind( &SyscallHandler::_sys_mprotect, this );
 		_syscall_funcs[ SYS_getuid ] = std::bind( &SyscallHandler::_sys_getuid, this );
 		_syscall_funcs[ SYS_readlinkat ] = std::bind( &SyscallHandler::_sys_readlinkat, this );
+		_syscall_funcs[ SYS_getrandom ] = std::bind( &SyscallHandler::_sys_getrandom, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -972,5 +973,42 @@ namespace syscall
 		// pm::k_pm.close( fd_new );
 		delete[] k_buf;
 		return ret;
+	}
+
+	uint64 SyscallHandler::_sys_getrandom()
+	{
+		uint64 bufaddr;
+		int buflen;
+		[[maybe_unused]]int flags;
+		pm::Pcb * pcb = pm::k_pm.get_cur_pcb();
+		mm::PageTable *pt = pcb->get_pagetable();
+
+		if( _arg_addr( 0, bufaddr) < 0 )
+			return -1; 
+		
+		if( _arg_int( 1, buflen ) < 0 )
+		    return -1;
+		
+		if( _arg_int( 2, buflen ) < 0 )
+			return -1;
+
+		if( bufaddr == 0 && buflen == 0 )
+			return -1;
+		
+		char *k_buf = new char[ buflen ];
+		if( !k_buf )
+			return -1;
+		
+		ulong random=0x42494C474B435546UL;
+		size_t random_size = sizeof( random );
+		for (size_t i = 0; i < static_cast<size_t>( buflen ); i += random_size) {
+			size_t copy_size = (i + random_size ) <= static_cast<size_t>(buflen) ? random_size : buflen - i;
+			memcpy(k_buf + i, &random, copy_size);
+		}
+		if( mm::k_vmm.copyout( *pt, bufaddr, k_buf, buflen ) < 0 ) 
+			return -1;
+
+		delete[] k_buf;
+		return buflen;
 	}
 } // namespace syscall
