@@ -15,7 +15,7 @@
 #include "fs/path.hh"
 #include "fs/file/normal.hh"
 #include "fs/file/file.hh"
-#include "fs/file/file_defs.hh"
+#include "fs/file/device.hh"
 
 #include "pm/process.hh"
 // #include "pm/trap_frame.hh"
@@ -95,6 +95,7 @@ namespace syscall
 		_syscall_funcs[ SYS_readlinkat ] = std::bind( &SyscallHandler::_sys_readlinkat, this );
 		_syscall_funcs[ SYS_getrandom ] = std::bind( &SyscallHandler::_sys_getrandom, this );
 		_syscall_funcs[ SYS_sigaction ] = std::bind( &SyscallHandler::_sys_sigaction, this );
+		_syscall_funcs[ SYS_ioctl ] = std::bind( &SyscallHandler::_sys_ioctl, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -1053,6 +1054,46 @@ namespace syscall
 				return -1;
 		}
 		return ret;
+	}
+
+
+	uint64 SyscallHandler::_sys_ioctl()
+	{
+		int tmp;
+
+		fs::file *f = nullptr;
+		int fd;
+		if ( _arg_fd( 0, &fd, &f ) < 0 )
+			return -1;
+		if ( f == nullptr )
+			return -1;
+		fd = fd;
+
+		if ( f->_attrs.filetype != fs::FileTypes::FT_DEVICE )
+			return -1;
+
+		u32 cmd;
+		if ( _arg_int( 1, tmp ) < 0 )
+			return -2;
+		cmd = ( u32 ) tmp;
+		cmd = cmd;
+
+		ulong arg;
+		if ( _arg_addr( 2, arg ) < 0 )
+			return -3;
+		arg = arg;
+
+		/// @todo not implement
+
+		if ( ( cmd & 0xFFFF ) == 0x5401 )
+		{
+			fs::device_file * df = ( fs::device_file * ) f;
+			mm::PageTable *pt = pm::k_pm.get_cur_pcb()->get_pagetable();
+			termios * ts = ( termios * ) hsai::k_mem->to_vir( pt->walk_addr( arg ) );
+			return df->tcgetattr( ts );
+		}
+
+		return 0;
 	}
 
 } // namespace syscall
