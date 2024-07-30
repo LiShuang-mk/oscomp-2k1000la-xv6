@@ -23,7 +23,7 @@
 #include "pm/scheduler.hh"
 #include "pm/futex.hh"
 #include "pm/prlimit.hh"
-
+#include "pm/ipc/signal.hh"
 
 #include "mm/virtual_memory_manager.hh"
 #include "mm/physical_memory_manager.hh"
@@ -94,6 +94,7 @@ namespace syscall
 		_syscall_funcs[ SYS_getuid ] = std::bind( &SyscallHandler::_sys_getuid, this );
 		_syscall_funcs[ SYS_readlinkat ] = std::bind( &SyscallHandler::_sys_readlinkat, this );
 		_syscall_funcs[ SYS_getrandom ] = std::bind( &SyscallHandler::_sys_getrandom, this );
+		_syscall_funcs[ SYS_sigaction ] = std::bind( &SyscallHandler::_sys_sigaction, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -1011,4 +1012,45 @@ namespace syscall
 		delete[] k_buf;
 		return buflen;
 	}
+
+	uint64 SyscallHandler::_sys_sigaction()
+	{
+		pm::Pcb *proc = pm::k_pm.get_cur_pcb();
+		[[maybe_unused]]mm::PageTable *pt = proc->get_pagetable();
+		[[maybe_unused]]pm::ipc::signal::sigaction *a_newact,* a_oldact;
+		a_newact = nullptr;
+		a_oldact = nullptr;
+		uint64 newactaddr, oldactaddr;
+		int flag;
+		int ret = -1;
+
+		if( _arg_int( 0, flag ) < 0 )
+			return -1;
+		
+		if( _arg_addr( 1, newactaddr ) < 0 )
+			return -1;	
+		
+		if( _arg_addr( 2, oldactaddr ) < 0 )
+			return -1;
+
+		if( oldactaddr == 0 )
+			a_oldact = nullptr;
+		if( newactaddr != 0 )
+		{
+			if( mm::k_vmm.copy_in( *pt, &a_newact, newactaddr, sizeof(pm::ipc::signal::sigaction ) ) < 0 )
+		 		return -1;
+			ret = pm::ipc::signal::sigAction( flag, a_newact, a_oldact );
+		}
+		else
+		{
+			ret = pm::ipc::signal::sigAction( flag, a_newact, a_oldact );
+		}
+		if( ret == 0 && oldactaddr != 0 )
+		{
+			if( mm::k_vmm.copyout( *pt, oldactaddr, a_oldact, sizeof(pm::ipc::signal::sigaction ) ) < 0 )
+				return -1;
+		}
+		return ret;
+	}
+
 } // namespace syscall

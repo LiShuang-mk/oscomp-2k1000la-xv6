@@ -15,6 +15,7 @@
 
 #include <smp/spin_lock.hh>
 #include <process_interface.hh>
+#include "pm/ipc/signal.hh"
 
 #include <EASTL/string.h>
 
@@ -113,6 +114,7 @@ namespace pm
 
 		// for prlimit 进程资源相关
 		rlimit64 _rlim_vec[ ResourceLimitId::RLIM_NLIMITS ];
+		pm::ipc::signal::sigaction* _sigactions[ SIGRTMAX ];
 
 	public:
 		Pcb();
