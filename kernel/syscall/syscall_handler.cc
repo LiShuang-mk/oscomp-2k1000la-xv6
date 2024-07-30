@@ -90,6 +90,7 @@ namespace syscall
 		_syscall_funcs[ SYS_prlimit64 ] = std::bind( &SyscallHandler::_sys_prlimit64, this );
 		_syscall_funcs[ SYS_clock_gettime ] = std::bind( &SyscallHandler::_sys_clock_gettime, this );
 		_syscall_funcs[ SYS_mprotect ] = std::bind( &SyscallHandler::_sys_mprotect, this );
+		_syscall_funcs[ SYS_getuid ] = std::bind( &SyscallHandler::_sys_getuid, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -893,6 +894,11 @@ namespace syscall
 	}
 
 	uint64 SyscallHandler::_sys_mprotect()
+	{
+		return 0;
+	}
+
+	uint64 SyscallHandler::_sys_getuid()
 	{
 		return 0;
 	}

@@ -104,6 +104,7 @@ namespace syscall
 		uint64 _sys_prlimit64();
 		uint64 _sys_clock_gettime();
 		uint64 _sys_mprotect();
+		uint64 _sys_getuid();
 	};
 
 	extern SyscallHandler k_syscall_handler;
