@@ -105,6 +105,7 @@ namespace syscall
 		_syscall_funcs[ SYS_setpgid ] = std::bind( &SyscallHandler::_sys_setpgid, this );
 		_syscall_funcs[ SYS_geteuid ] = std::bind( &SyscallHandler::_sys_geteuid, this );
 		_syscall_funcs[ SYS_ppoll ] = std::bind( &SyscallHandler::_sys_ppoll, this );
+		_syscall_funcs[ SYS_getgid ] = std::bind( &SyscallHandler::_sys_getgid, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -1239,5 +1240,10 @@ namespace syscall
 		if( mm::k_vmm.copyout( *pt, fds_addr, fds, nfds * sizeof(pollfd) ) < 0 )
 			return -1;
 		return ret;
+	}
+
+	uint64 SyscallHandler::_sys_getgid()
+	{
+		return 1;
 	}
 } // namespace syscall

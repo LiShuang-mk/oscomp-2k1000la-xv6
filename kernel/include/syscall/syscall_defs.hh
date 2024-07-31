@@ -51,6 +51,7 @@ namespace syscall
 		_build_sysnum_enum_( getppid, 173 )
 		_build_sysnum_enum_( getuid, 174 )
 		_build_sysnum_enum_( geteuid, 175 )
+		_build_sysnum_enum_( getgid , 176 )
 		_build_sysnum_enum_( brk, 214 )
 		_build_sysnum_enum_( munmap, 215 )
 		_build_sysnum_enum_( fork, 220 )
