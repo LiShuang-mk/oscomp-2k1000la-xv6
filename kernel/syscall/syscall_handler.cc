@@ -40,6 +40,7 @@
 
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <asm-generic/poll.h>
 
 namespace syscall
 {
@@ -103,6 +104,7 @@ namespace syscall
 		_syscall_funcs[ SYS_getpgid ] = std::bind( &SyscallHandler::_sys_getpgid, this );
 		_syscall_funcs[ SYS_setpgid ] = std::bind( &SyscallHandler::_sys_setpgid, this );
 		_syscall_funcs[ SYS_geteuid ] = std::bind( &SyscallHandler::_sys_geteuid, this );
+		_syscall_funcs[ SYS_ppoll ] = std::bind( &SyscallHandler::_sys_ppoll, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -912,7 +914,7 @@ namespace syscall
 
 	uint64 SyscallHandler::_sys_getuid()
 	{
-		return 0;
+		return 1;
 	}
 
 	uint64 SyscallHandler::_sys_readlinkat()
@@ -1175,6 +1177,11 @@ namespace syscall
 	}
 
 	uint64 SyscallHandler::_sys_geteuid()
+	{
+		return 1;
+	}
+
+	uint64 SyscallHandler::_sys_ppoll()
 	{
 		return 1;
 	}
