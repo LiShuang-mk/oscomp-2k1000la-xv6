@@ -86,4 +86,5 @@ namespace fs
 			return _value & 0x01FF;
 		}
 	};
+	
 }

@@ -856,6 +856,17 @@ namespace fs
 
 						Ext4IndexNode * sub_inode = new Ext4IndexNode( dirent_inode, _belong_fs );
 						if ( sub_inode == nullptr ) log_warn( "ext4-inode : no mem to create sub-inode" );
+						sub_inode->_attrs._value = ( dirent_inode.mode ) & 0x1FF;
+						Ext4InodeMode md = ( Ext4InodeMode ) ( ( u16 ) dirent_inode.mode & 0xF000 );
+						switch ( md )
+						{
+							case ext4_imode_fdir: sub_inode->_attrs.filetype = FileTypes::FT_DIRECT; break;
+							case ext4_imode_fchr:
+							case ext4_imode_fblk: sub_inode->_attrs.filetype = FileTypes::FT_DEVICE; break;
+							case ext4_imode_fifo: sub_inode->_attrs.filetype = FileTypes::FT_PIPE; break;
+							case ext4_imode_freg: sub_inode->_attrs.filetype = FileTypes::FT_NORMAL; break;
+							default: sub_inode->_attrs.filetype = FileTypes::FT_NONE; break;
+						}
 						return sub_inode;
 					}
 				}

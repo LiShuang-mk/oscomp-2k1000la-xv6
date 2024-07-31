@@ -45,7 +45,7 @@ SECTIONS
 
 	. = ALIGN(0x1000);
 	_u_init_dats = .;
-	*(.user.init.data .user.init.data.*);
+	*(.user.init.data .user.init.data.p);
 	_u_init_date = .;
 
 	_end_u_init = .;

@@ -197,8 +197,9 @@ namespace syscall
 		fs::file * f;
 		uint64 buf;
 		int n;
+		[[maybe_unused]] int fd = -1;
 
-		if ( _arg_fd( 0, nullptr, &f ) < 0 )
+		if ( _arg_fd( 0, &fd, &f ) < 0 )
 			return -1;
 		if ( _arg_addr( 1, buf ) < 0 )
 			return -2;
@@ -511,6 +512,7 @@ namespace syscall
 			return -1;
 
 		int res = pm::k_pm.open( dir_fd, path, flags );
+		log_trace( "openat return fd is %d", res );
 		return res;
 	}
 
@@ -1135,7 +1137,10 @@ namespace syscall
 				for ( int i = ( int ) arg; i < ( int ) pm::max_open_files; ++i )
 				{
 					if ( ( retfd = pm::k_pm.alloc_fd( p, f, i ) ) == i )
+					{
+						f->refcnt++;
 						break;
+					}
 				}
 				return retfd;
 
@@ -1145,7 +1150,10 @@ namespace syscall
 				for ( int i = ( int ) arg; i < ( int ) pm::max_open_files; ++i )
 				{
 					if ( ( retfd = pm::k_pm.alloc_fd( p, f, i ) ) == i )
+					{
+						f->refcnt++;
 						break;
+					}
 				}
 				p->get_open_file( retfd )->_fl_cloexec = true;
 				return retfd;

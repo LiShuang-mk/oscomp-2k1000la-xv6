@@ -63,6 +63,10 @@ __attribute__( ( section( ".user.init.data" ) ) ) const char exec_busybox[] = "s
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_busybox_unstrp[] = "sdcard/busybox_unstrp";
 __attribute__( ( section( ".user.init.data" ) ) ) const char busybox_name[] = "busybox";
 __attribute__( ( section( ".user.init.data" ) ) ) const char sh_name[] = "ash";
+__attribute__( ( section( ".user.init.data" ) ) ) const char echo_name[] = "echo";
+__attribute__( ( section( ".user.init.data" ) ) ) const char hello_busybox_str[] = "hello, busybox!\n";
+__attribute__( ( section( ".user.init.data" ) ) ) const char busybox_testcode_str[] = "/mnt/sdcard/busybox_testcode.sh";
+// __attribute__( ( section( ".user.init.data.p" ) ) ) const char *bb_sh[] = { sh_name, 0 };
 
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_libcbench[] = "sdcard/libc-bench";
 
@@ -102,6 +106,8 @@ int init_main( void )
 
 	__attribute__( ( __unused__ ) ) int pid;
 
+	const char *bb_sh[ 4 ] = { 0 };
+
 	pid = fork();
 	if ( pid < 0 )
 	{
@@ -109,7 +115,11 @@ int init_main( void )
 	}
 	else if ( pid == 0 )
 	{
-		const char *bb_sh[] = { sh_name, 0 };
+		bb_sh[ 0 ] = sh_name;
+		bb_sh[ 1 ] = busybox_testcode_str;
+		bb_sh[ 2 ] = 0;
+		bb_sh[ 3 ] = 0;
+		// const char *bb_sh[] = { sh_name, echo_name, hello_busybox_str, 0 };
 		if ( execv( exec_busybox_unstrp, bb_sh ) < 0 )
 		{
 			write( 1, exec_fail_str, sizeof( exec_fail_str ) );

@@ -980,6 +980,14 @@ namespace pm
 		else	//normal file
 		{
 			fs::normal_file *f = new fs::normal_file( attrs, dentry );
+			log_info( "test normal file read" );
+			{
+				fs::file *ff = ( fs::file * ) f;
+				char buf[ 8 ];
+				ff->read( ( ulong ) buf, 8 );
+				buf[ 8 ] = 0;
+				printf( "%s\n", buf );
+			}
 			return alloc_fd( p, f );
 		}// because of open.c's fileattr defination is not clearly, so here we set flags = 7, which means O_RDWR | O_WRONLY | O_RDONLY
 
