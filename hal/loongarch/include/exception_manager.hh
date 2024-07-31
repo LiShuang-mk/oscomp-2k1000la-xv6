@@ -30,6 +30,7 @@ namespace loongarch
 		void user_trap_ret();
 		void machine_trap();
 		int dev_intr();
+		int _brk();
 
 	public:
 		void ahci_read_handle();

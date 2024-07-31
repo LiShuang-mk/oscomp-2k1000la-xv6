@@ -112,6 +112,7 @@ namespace syscall
 		uint64 _sys_fcntl();
 		uint64 _sys_getpgid();
 		uint64 _sys_setpgid();
+		uint64 _sys_geteuid();
 	};
 
 	extern SyscallHandler k_syscall_handler;
