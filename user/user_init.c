@@ -62,7 +62,7 @@ __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_pipe[] = 
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_busybox[] = "busybox";
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_busybox_unstrp[] = "busybox_unstrp";
 __attribute__( ( section( ".user.init.data" ) ) ) const char busybox_name[] = "busybox";
-__attribute__( ( section( ".user.init.data" ) ) ) const char sh_name[] = "ash";
+__attribute__( ( section( ".user.init.data" ) ) ) const char sh_name[] = "sh";
 __attribute__( ( section( ".user.init.data" ) ) ) const char echo_name[] = "echo";
 __attribute__( ( section( ".user.init.data" ) ) ) const char cat_name[] = "cat";
 __attribute__( ( section( ".user.init.data" ) ) ) const char hello_busybox_str[] = "hello, busybox!\n";
@@ -151,7 +151,7 @@ int init_main( void )
 		bb_sh[ 1 ] = busybox_testcode_str;
 		bb_sh[ 2 ] = 0;
 		bb_sh[ 3 ] = 0;
-		if ( execv( exec_busybox, bb_sh ) < 0 )
+		if ( execv( exec_libcbench, 0 ) < 0 )
 		{
 			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
 		}

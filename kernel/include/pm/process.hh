@@ -35,7 +35,7 @@ namespace pm
 	constexpr uint max_open_files = 128;
 
 	constexpr int default_proc_kstack_pages = 16;			// 默认进程内核栈大小（按页面数计算）
-	constexpr int default_proc_ustack_pages = 3;			// 默认进程用户栈大小（按页面数计算）
+	constexpr int default_proc_ustack_pages = 32;			// 默认进程用户栈大小（按页面数计算）
 
 	enum ProcState
 	{

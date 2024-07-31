@@ -16,6 +16,7 @@
 #include "fs/file/normal.hh"
 #include "fs/file/file.hh"
 #include "fs/file/device.hh"
+#include "fs/file/pipe.hh"
 
 #include "pm/process.hh"
 // #include "pm/trap_frame.hh"
@@ -114,8 +115,10 @@ namespace syscall
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
 	{
-		// if ( sys_num != SYS_write )
-		// 	printf( BLUE_COLOR_PRINT "invoke syscall %d\n" CLEAR_COLOR_PRINT, sys_num );
+#ifdef OS_DEBUG
+		if ( sys_num != SYS_write )
+			printf( BLUE_COLOR_PRINT "invoke syscall %d\n" CLEAR_COLOR_PRINT, sys_num );
+#endif
 		return _syscall_funcs[ sys_num ]();
 	}
 
@@ -199,10 +202,16 @@ namespace syscall
 		pm::Pcb * proc = pm::k_pm.get_cur_pcb();
 		mm::PageTable *pt = proc->get_pagetable();
 
-		u64 kp = pt->walk_addr( p );
-		kp = hsai::k_mem->to_vir( kp );
+		char * buf = new char[ n + 10 ];
+		if ( mm::k_vmm.copy_in( *pt, ( void * ) buf, p, n ) < 0 )
+			return -1;
 
-		return f->write( kp, n );
+		if ( buf[ 0 ] == '#' && buf[ 1 ] == '#' && buf[ 2 ] == '#' && buf[ 3 ] == '#' )
+		{
+			printf( YELLOW_COLOR_PRINT "note : echo ####\n" CLEAR_COLOR_PRINT );
+		}
+
+		return f->write( ( ulong ) buf, n );
 	}
 
 	uint64 SyscallHandler::_sys_read()
@@ -349,8 +358,9 @@ namespace syscall
 		pm::Pcb * p = pm::k_pm.get_cur_pcb();
 		fs::file * f;
 		int fd;
+		[[maybe_unused]] int oldfd = 0;
 
-		if ( _arg_fd( 0, nullptr, &f ) < 0 )
+		if ( _arg_fd( 0, &oldfd, &f ) < 0 )
 			return -1;
 		if ( ( fd = pm::k_pm.alloc_fd( p, f ) ) < 0 )
 			return -1;
@@ -364,8 +374,9 @@ namespace syscall
 		pm::Pcb * p = pm::k_pm.get_cur_pcb();
 		fs::file * f;
 		int fd;
+		[[maybe_unused]] int oldfd = 0;
 
-		if ( _arg_fd( 0, nullptr, &f ) < 0 )
+		if ( _arg_fd( 0, &oldfd, &f ) < 0 )
 			return -1;
 		if ( _arg_int( 1, fd ) < 0 )
 			return -1;
@@ -1308,7 +1319,11 @@ namespace syscall
 			return -5;
 
 		int readcnt = in_f->read( ( ulong ) buf, count, start_off );
-		int writecnt = out_f->write( ( ulong ) buf, readcnt );
+		int writecnt = 0;
+		if ( out_f->_attrs.filetype == fs::FileTypes::FT_PIPE )
+			writecnt = ( ( fs::pipe_file * ) out_f )->write_in_kernel( ( ulong ) buf, readcnt );
+		else
+			writecnt = out_f->write( ( ulong ) buf, readcnt );
 
 		if ( p_off != nullptr )
 			*p_off += writecnt;

@@ -1049,7 +1049,7 @@ namespace pm
 				return -1;
 		}
 
-		log_info( "brk: newsize%d, oldsize%d", newhp, oldhp );
+		// log_info( "brk: newsize%d, oldsize%d", newhp, oldhp );
 		p->_heap_ptr = newhp;
 		return newhp; // 返回堆的大小
 	}
@@ -1340,10 +1340,10 @@ namespace pm
 
 	int ProcessManager::alloc_fd( Pcb * p, fs::file * f, int fd )
 	{
-		if ( fd <= 2 || fd >= ( int ) max_open_files )
-			return -1;
-		if ( p->_ofile[ fd ] != nullptr )
-			return -1;
+		// if ( fd <= 2 || fd >= ( int ) max_open_files )
+		// 	return -1;
+		// if ( p->_ofile[ fd ] != nullptr )
+		// 	return -1;
 		p->_ofile[ fd ] = f;
 		return fd;
 	}

@@ -52,6 +52,38 @@ namespace pm
 			return i;
 		}
 
+		int Pipe::write_in_kernel( ulong addr, int n )
+		{
+			int i = 0;
+			Pcb * pr = k_pm.get_cur_pcb();
+
+			_lock.acquire();
+			while ( i < n )
+			{
+				if ( !_read_is_open || pr->is_killed() )
+				{
+					_lock.release();
+					return -1;
+				}
+				if ( _data.size() >= pipe_size )
+				{ //DOC: pipewrite-full
+					k_pm.wakeup( &_read_sleep );
+					k_pm.sleep( &_write_sleep, &_lock );
+				}
+				else
+				{
+					char ch;
+					ch = *( char* ) ( addr + i );
+					_data.push( ch );
+					i++;
+				}
+			}
+			k_pm.wakeup( &_read_sleep );
+			_lock.release();
+
+			return i;
+		}
+
 		int Pipe::read( uint64 addr, int n )
 		{
 			int i;
@@ -94,14 +126,14 @@ namespace pm
 
 			// set file			
 			fs::FileAttrs attrs = fs::FileAttrs( fs::FileTypes::FT_PIPE, 0771 );
-			f0 = new fs::pipe_file(attrs, this);
+			f0 = new fs::pipe_file( attrs, this );
 			//f0->type = fs::FileTypes::FT_PIPE;
 			//new ( &f0->data ) fs::File::Data( this );
 			//new ( &f0->ops  ) fs::FileOps( 1 ); //readonly
 
 
 			attrs = fs::FileAttrs( fs::FileTypes::FT_PIPE, 0772 );
-			f1 = new fs::pipe_file(attrs, this);
+			f1 = new fs::pipe_file( attrs, this );
 			//f1->type = fs::FileTypes::FT_PIPE;
 			//new ( &f1->data ) fs::File::Data( this );
 			//new ( &f1->ops ) fs::FileOps( 2 ); //writeonly

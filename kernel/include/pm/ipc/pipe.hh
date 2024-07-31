@@ -46,6 +46,7 @@ namespace pm
 			};
 
 			int write( uint64 addr, int n );
+			int write_in_kernel( uint64 addr, int n );
 
 			int read( uint64, int n );
 

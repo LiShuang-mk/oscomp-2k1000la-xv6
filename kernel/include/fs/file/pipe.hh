@@ -16,6 +16,8 @@ namespace fs
             ~pipe_file() = default;
 
             int read( uint64 buf, size_t len, int off = 0, bool upgrade = false ) override { return _pipe->read( buf, len ); };
-            int write( uint64 buf, size_t len ) override { return _pipe->write( buf, len ); };
-    };
+			int write( uint64 buf, size_t len ) override { return _pipe->write( buf, len ); };
+
+			int write_in_kernel( uint64 buf, size_t len ) { return _pipe->write_in_kernel( buf, len ); }
+	};
 }

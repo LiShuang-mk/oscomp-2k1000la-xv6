@@ -1,4 +1,5 @@
 #include "fs/ramfs/ramfs.hh"
+#include "fs/ramfs/ramfsInode.hh"
 #include "fs/dentrycache.hh"
 #include "fs/dentry.hh"
 #include "fs/file/file.hh"
@@ -52,7 +53,8 @@ namespace fs
 			_root->EntryCreate( "tmp", attrs );
 			_root->EntryCreate( "mnt", attrs );
 			dentry * etc_dent = _root->EntryCreate( "etc", attrs );
-			etc_dent->EntryCreate( "busybox.conf", attrs );
+			dentry * conf_dent = etc_dent->EntryCreate( "busybox.conf", attrs );
+			( ( RamInode * ) conf_dent->getNode() )->readable = true;
 
 			_root->printChildrenInfo();
 
