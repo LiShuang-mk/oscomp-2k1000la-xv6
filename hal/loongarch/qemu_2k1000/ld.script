@@ -38,12 +38,12 @@ SECTIONS
 	*(.user.init.stack);
 	_u_init_stke = .;
 
-	. = ALIGN(0x1000);
+	. = ALIGN(0x4000);
 	_u_init_txts = .;
 	*(.user.init);
 	_u_init_txte = .;
 
-	. = ALIGN(0x1000);
+	. = ALIGN(0x4000);
 	_u_init_dats = .;
 	*(.user.init.data .user.init.data.p);
 	_u_init_date = .;

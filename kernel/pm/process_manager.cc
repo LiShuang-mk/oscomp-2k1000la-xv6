@@ -190,7 +190,9 @@ namespace pm
 			p->_pt.freewalk_mapped();
 		}
 		p->_pt.set_base( 0 );
+		p->_prog_section_cnt = 0;
 		p->_sz = 0;
+		p->_heap_ptr = 0;
 		p->_pid = 0;
 		p->parent = 0;
 		p->_chan = 0;
@@ -239,35 +241,72 @@ namespace pm
 		//p->_sz = 0;
 
 		// map user init stack
-		mm::k_vmm.map_data_pages(
-			p->_pt,
-			0,
-			( uint64 ) &_u_init_stke - ( uint64 ) &_u_init_stks,
-			( uint64 ) &_u_init_stks,
-			true
-		);
 
-		mm::k_vmm.map_code_pages(
-			p->_pt,
-			( uint64 ) &_u_init_txts - ( uint64 ) &_start_u_init,
-			( uint64 ) &_u_init_txte - ( uint64 ) &_u_init_txts,
-			( uint64 ) &_u_init_txts,
-			true
-		);
+		int stack_page_cnt = default_proc_ustack_pages;
+		ulong stackbase = mm::vml::vm_user_end - stack_page_cnt * hsai::page_size;
+		ulong sp = mm::vml::vm_user_end;
 
-		// map user init data
-		mm::k_vmm.map_data_pages(
-			p->_pt,
-			( uint64 ) &_u_init_dats - ( uint64 ) &_start_u_init,
-			( uint64 ) &_u_init_date - ( uint64 ) &_u_init_dats,
-			( uint64 ) &_u_init_dats,
-			true
-		);
+		if ( mm::k_vmm.uvmalloc( p->_pt, stackbase - hsai::page_size, sp ) == 0 )
+		{
+			log_panic( "user-init: vmalloc when allocating stack" );
+			return;
+		}
 
-		// p->_trapframe->era = ( uint64 ) &init_main - ( uint64 ) &_start_u_init;
-		// log_info( "user init: era = %p", p->_trapframe->era );
-		// p->_trapframe->sp = ( uint64 ) &_u_init_stke - ( uint64 ) &_start_u_init;
-		// log_info( "user init: sp  = %p", p->_trapframe->sp );
+		log_trace( "user-init set stack-base = %p", p->_pt.walk_addr( stackbase ) );
+		log_trace( "user-init set page containing sp is %p", p->_pt.walk_addr( sp - hsai::page_size ) );
+
+		mm::k_vmm.uvmclear( p->_pt, stackbase - hsai::page_size );
+
+		mm::k_vmm.uvmset( p->_pt, ( void * ) stackbase, 0, stack_page_cnt );
+
+		hsai::set_trap_frame_user_sp( p->_trapframe, sp );
+
+		// mm::k_vmm.map_data_pages(
+		// 	p->_pt,
+		// 	0,
+		// 	( uint64 ) &_u_init_stke - ( uint64 ) &_u_init_stks,
+		// 	( uint64 ) &_u_init_stks,
+		// 	true
+		// );
+
+		{
+			int ps_cnt = p->_prog_section_cnt;
+
+			// map user init code
+			mm::k_vmm.map_code_pages(
+				p->_pt,
+				( uint64 ) &_u_init_txts - ( uint64 ) &_start_u_init,
+				( uint64 ) &_u_init_txte - ( uint64 ) &_u_init_txts,
+				( uint64 ) &_u_init_txts,
+				true
+			);
+			p->_prog_sections[ ps_cnt ]._sec_start = ( void * )
+				hsai::page_round_down( ( ( uint64 ) &_u_init_txts - ( uint64 ) &_start_u_init ) );
+			p->_prog_sections[ ps_cnt ]._sec_size =
+				hsai::page_round_up( ( uint64 ) &_u_init_txte - ( uint64 ) &_u_init_txts );
+			ps_cnt++;
+
+			// map user init data
+			mm::k_vmm.map_data_pages(
+				p->_pt,
+				( uint64 ) &_u_init_dats - ( uint64 ) &_start_u_init,
+				( uint64 ) &_u_init_date - ( uint64 ) &_u_init_dats,
+				( uint64 ) &_u_init_dats,
+				true
+			);
+			p->_prog_sections[ ps_cnt ]._sec_start = ( void * )
+				hsai::page_round_down( ( ( uint64 ) &_u_init_dats - ( uint64 ) &_start_u_init ) );
+			p->_prog_sections[ ps_cnt ]._sec_size =
+				hsai::page_round_up( ( uint64 ) &_u_init_date - ( uint64 ) &_u_init_dats );
+			ps_cnt++;
+
+			p->_prog_section_cnt = ps_cnt;
+		}
+
+	  // p->_trapframe->era = ( uint64 ) &init_main - ( uint64 ) &_start_u_init;
+	  // log_info( "user init: era = %p", p->_trapframe->era );
+	  // p->_trapframe->sp = ( uint64 ) &_u_init_stke - ( uint64 ) &_start_u_init;
+	  // log_info( "user init: sp  = %p", p->_trapframe->sp );
 		hsai::user_proc_init( ( void * ) p );
 
 		//fs::File *f = fs::k_file_table.alloc_file();
@@ -343,17 +382,60 @@ namespace pm
 		np->_lock.acquire();
 
 		// Copy user memory from parent to child.
+
 		mm::PageTable *curpt, *newpt;
 		curpt = p->get_pagetable();
 		newpt = np->get_pagetable();
-		if ( mm::k_vmm.vm_copy( *curpt, *newpt, p->_sz ) < 0 )
+
+		// vm copy : 1. 拷贝LOAD程序段
+
 		{
-			freeproc( np );
-			np->_lock.release();
-			return -1;
+			ulong sec_start;
+			ulong sec_size;
+			for ( int j = 0; j < p->_prog_section_cnt; j++ )
+			{
+				auto & pd = p->_prog_sections[ j ];
+				sec_start = hsai::page_round_down( ( ulong ) pd._sec_start );
+				sec_size = hsai::page_round_up( ( ulong ) pd._sec_start + pd._sec_size ) - sec_start;
+				if ( mm::k_vmm.vm_copy( *curpt, *newpt, sec_start, sec_size ) < 0 )
+				{
+					freeproc( np );
+					np->_lock.release();
+					return -1;
+				}
+				np->_prog_sections[ j ] = pd;
+				np->_prog_section_cnt++;
+			}
 		}
+
+	   // vm copy : 2. 拷贝堆内存
+
+		{
+			ulong heap_start = hsai::page_round_up( p->_sz );
+			ulong heap_size = hsai::page_round_up( p->_heap_ptr - heap_start );
+			if ( mm::k_vmm.vm_copy( *curpt, *newpt, heap_start, heap_size ) < 0 )
+			{
+				freeproc( np );
+				np->_lock.release();
+				return -2;
+			}
+		}
+
+		// vm copy : 3. 拷贝用户栈
+
+		{
+			// 多出的一页是保护页面，防止栈溢出
+			ulong stack_start = mm::vml::vm_user_end - ( 1 + default_proc_ustack_pages ) * hsai::page_size;
+			if ( mm::k_vmm.vm_copy( *curpt, *newpt, stack_start, ( 1 + default_proc_ustack_pages ) * hsai::page_size ) < 0 )
+			{
+				freeproc( np );
+				np->_lock.release();
+				return -3;
+			}
+		}
+
 		np->_sz = p->_sz;
-		// np->_hp = p->_hp;
+		np->_heap_ptr = p->_heap_ptr;
 
 		/// TODO: >> Share Memory Copy
 		// shmaddcount( p->shmkeymask );
@@ -469,7 +551,8 @@ namespace pm
 		int i, off;
 
 		// proc->_pt.freewalk();
-		mm::k_vmm.vmfree( proc->_pt, proc->_sz );
+		// mm::k_vmm.vmfree( proc->_pt, proc->_sz );
+		proc->_pt.freewalk_mapped();
 		_proc_create_vm( proc );
 
 
@@ -500,6 +583,8 @@ namespace pm
 		// 	log_error("exec: cannot create pagetable");
 		// 	return -1;
 		// }
+
+		proc->_prog_section_cnt = 0;
 
 		for ( i = 0, off = elf.phoff; i < elf.phnum; i++, off += sizeof( ph ) )
 		{
@@ -542,6 +627,13 @@ namespace pm
 				proc_freepagetable( proc->_pt, sz );
 				return -1;
 			}
+
+			// 记录程序段
+
+			int pi = proc->_prog_section_cnt;
+			proc->_prog_sections[ pi ]._sec_start = ( void* ) ph.vaddr;
+			proc->_prog_sections[ pi ]._sec_size = ph.memsz;
+			proc->_prog_section_cnt++;
 		}
 
 		sz = hsai::page_round_up( sz );
@@ -702,6 +794,7 @@ namespace pm
 
 // commit to the user image.
 		proc->_sz = sz;
+		proc->_heap_ptr = hsai::page_round_up( sz );
 		// proc->_hp = sz;
 		hsai::set_trap_frame_entry( proc->_trapframe, ( void * ) elf.entry );
 		hsai::set_trap_frame_user_sp( proc->_trapframe, sp );
@@ -872,29 +965,13 @@ namespace pm
 
 	long ProcessManager::brk( long n )
 	{
-		//这里是一个假的brk，维护了一个假的堆指针 _hp
-
-		// if ( n < 0 )
-		// 	return -1;
-
-		// Pcb * p = get_cur_pcb();
-
-		// if ( n == 0 )
-		// 	return p->_hp;
-
-		// if ( ( uint64 ) n <= p->_hp )
-		// 	return p->_hp;
-
-		// p->_hp = n;
-		// return p->_hp;
-
 		Pcb *p = get_cur_pcb();		// 输入参数	：期望的堆大小
 
-		if ( n <= 0 )		// get current heap size
-			return p->_sz;
+		if ( n <= 0 )				// get current heap size
+			return p->_heap_ptr;
 
-		// uint64 sz = p->_sz;			// 输出  	：实际的堆大小
-		uint64 oldhp = p->_sz;
+		// uint64 sz = p->_sz;		// 输出  	：实际的堆大小
+		uint64 oldhp = p->_heap_ptr;
 		uint64 newhp = n;
 		mm::PageTable &pt = p->_pt;
 		long differ = ( long ) newhp - ( long ) oldhp;
@@ -914,7 +991,7 @@ namespace pm
 		}
 
 		log_info( "brk: newsize%d, oldsize%d", newhp, oldhp );
-		p->_sz = newhp;
+		p->_heap_ptr = newhp;
 		return newhp; // 返回堆的大小
 	}
 

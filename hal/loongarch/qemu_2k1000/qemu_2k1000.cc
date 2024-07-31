@@ -156,8 +156,8 @@ namespace hsai
 		TrapFrame * tf = ( TrapFrame* ) get_trap_frame_from_proc( proc );
 		tf->era = ( uint64 ) &init_main - ( uint64 ) &_start_u_init;
 		hsai_info( "user init: era = %p", tf->era );
-		tf->sp = ( uint64 ) &_u_init_stke - ( uint64 ) &_start_u_init;
-		hsai_info( "user init: sp  = %p", tf->sp );
+		// tf->sp = ( uint64 ) &_u_init_stke - ( uint64 ) &_start_u_init;
+		// hsai_info( "user init: sp  = %p", tf->sp );
 	}
 
 	void set_trap_frame_return_value( void * trapframe, ulong v )

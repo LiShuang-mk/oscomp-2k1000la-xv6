@@ -414,14 +414,22 @@ namespace mm
 		return pt;
 	}
 
-	int VirtualMemoryManager::vm_copy( PageTable &old_pt, PageTable &new_pt, uint64 size )
+	
+	int VirtualMemoryManager::vm_copy( PageTable &old_pt, PageTable &new_pt, uint64 start, uint64 size )
 	{
 		hsai::Pte pte;
 		uint64 pa, va;
+		uint64 va_end;
 		uint64 flags;
 		void *mem;
 
-		for ( va = 0; va < size; va += hsai::page_size )
+		if ( !hsai::is_page_align( start ) )
+			log_panic( "vm copy : va start not page-align" );
+		if ( !hsai::is_page_align( size ) )
+			log_panic( "vm copy : copy size is not page-align" );
+
+		va_end = start + size;
+		for ( va = start; va < va_end; va += hsai::page_size )
 		{
 			if ( ( pte = old_pt.walk( va, 0 ) ).is_null() )
 				log_panic( "uvmcopy: pte should exist" );

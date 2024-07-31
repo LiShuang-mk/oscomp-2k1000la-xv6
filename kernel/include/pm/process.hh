@@ -53,6 +53,13 @@ namespace pm
 
 	struct robust_list_head;
 
+	struct program_section_desc
+	{
+		void * _sec_start = nullptr;			// virtual address
+		ulong _sec_size = 0;
+	};
+	constexpr int max_program_section_num = 12;
+
 	class Pcb
 	{
 		friend ProcessManager;
@@ -61,6 +68,9 @@ namespace pm
 	public:
 		hsai::SpinLock _lock;
 		int _gid = num_process;					// global ID in pool 
+
+		program_section_desc _prog_sections[ max_program_section_num ];
+		int _prog_section_cnt = 0;
 
 		fs::dentry *_cwd;				// current working directory
 		eastl::string _cwd_name;
@@ -99,7 +109,7 @@ namespace pm
 		uint64 _user_ticks;			// the ticks of that the process has run in user mode
 		uint64 _last_user_tick;		// the tick value of that the process returns to user mode last time
 
-		// uint64 _hp;					// 一个假的堆指针，后续会删除
+		uint64 _heap_ptr = 0;					// 堆指针，堆的起始位置为程序原大小 _sz 向上对齐页地址
 
 		// vm
 		struct vma *vm[ 10 ];  // virtual memory area <<<<<<<<<<<<<<<<<< what??? Could ONE process has several vm space?
