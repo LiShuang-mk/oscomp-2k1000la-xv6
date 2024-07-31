@@ -40,6 +40,7 @@
 
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <asm-generic/poll.h>
 
 namespace syscall
 {
@@ -102,6 +103,11 @@ namespace syscall
 		_syscall_funcs[ SYS_fcntl ] = std::bind( &SyscallHandler::_sys_fcntl, this );
 		_syscall_funcs[ SYS_getpgid ] = std::bind( &SyscallHandler::_sys_getpgid, this );
 		_syscall_funcs[ SYS_setpgid ] = std::bind( &SyscallHandler::_sys_setpgid, this );
+		_syscall_funcs[ SYS_geteuid ] = std::bind( &SyscallHandler::_sys_geteuid, this );
+		_syscall_funcs[ SYS_ppoll ] = std::bind( &SyscallHandler::_sys_ppoll, this );
+		_syscall_funcs[ SYS_getgid ] = std::bind( &SyscallHandler::_sys_getgid, this );
+		_syscall_funcs[ SYS_setgid ] = std::bind( &SyscallHandler::_sys_setgid, this );
+		_syscall_funcs[ SYS_setuid ] = std::bind( &SyscallHandler::_sys_setuid, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -913,7 +919,7 @@ namespace syscall
 
 	uint64 SyscallHandler::_sys_getuid()
 	{
-		return 0;
+		return 1;
 	}
 
 	uint64 SyscallHandler::_sys_readlinkat()
@@ -1179,5 +1185,85 @@ namespace syscall
         if( _arg_int( 0, pid ) < 0 || _arg_int( 1, pgid ) < 0 )
             return -1;
         return 1;
+	}
+
+	uint64 SyscallHandler::_sys_geteuid()
+	{
+		return 1;
+	}
+
+	uint64 SyscallHandler::_sys_ppoll()
+	{
+		uint64 	fds_addr;
+		uint64 	timeout_addr;
+		uint64  sigmask_addr;
+		pollfd *fds = nullptr;
+		int 	nfds;
+		[[maybe_unused]]timespec* tm = nullptr;  // 现在没用上
+		[[maybe_unused]]sigset_t sigmask; 		// 现在没用上
+		[[maybe_unused]]int timeout;			// 现在没用上
+		int ret = 0;
+
+		pm::Pcb *cur_proc = pm::k_pm.get_cur_pcb();
+		mm::PageTable *pt = cur_proc->get_pagetable();
+		
+		if( _arg_addr( 0,fds_addr ) < 0 )
+			return -1;
+		
+		if( _arg_int( 1, nfds ) < 0 )
+			return -1;
+		
+		if( _arg_addr( 2, timeout_addr ) < 0 )	
+			return -1;
+
+		if( _arg_addr( 3, sigmask_addr ) < 0 )
+			return -1;
+		
+		fds = new pollfd[ nfds ];
+		for( int i = 0; i < nfds; i++ )
+		{
+			if( mm::k_vmm.copy_in( *pt, &fds[ i ], fds_addr + i * sizeof(pollfd), sizeof(pollfd) ) < 0 )
+				return -1;
+		}
+		
+		if( timeout_addr != 0 )
+			tm = ( timespec * ) hsai::k_mem->to_vir( pt->walk_addr( timeout_addr ) );
+		
+		if( tm == nullptr )
+			timeout = -1;
+		else
+			timeout = tm->tv_sec * 1000 + tm->tv_nsec / 1000000;
+
+		if( sigmask_addr != 0 )	
+			if( mm::k_vmm.copy_in( *pt, &sigmask, sigmask_addr, sizeof(sigset_t) ) < 0 )
+				return -1;
+		
+		for( auto i = 0; i < nfds; i++)
+		{
+			fds[i].revents = 0;
+			if( fds[i].fd < 0 ) { continue; }
+			if( fds[i].events & POLLIN ) { fds[i].revents |= POLLIN; }
+			if( fds[i].events & POLLOUT ) { fds[i].revents |= POLLOUT; }
+			ret++;
+		}
+
+		if( mm::k_vmm.copyout( *pt, fds_addr, fds, nfds * sizeof(pollfd) ) < 0 )
+			return -1;
+		return ret;
+	}
+
+	uint64 SyscallHandler::_sys_getgid()
+	{
+		return 1;
+	}
+
+	uint64 SyscallHandler::_sys_setgid()
+	{
+		return 1;
+	}
+
+	uint64 SyscallHandler::_sys_setuid()
+	{
+		return 1;
 	}
 } // namespace syscall

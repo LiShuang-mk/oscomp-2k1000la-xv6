@@ -249,7 +249,26 @@ namespace loongarch
 
 		userret( hsai::get_trap_frame_vir_addr(), pgdl );
 	}
+	
+	int ExceptionManager::_brk()
+	{
+		Cpu *cpu = Cpu::get_la_cpu();
+		//uint64 estat = cpu->read_csr( csr::estat );
+		//uint64 ecfg = cpu->read_csr( csr::ecfg );
 
+		hsai_info("BreakPoint exception occured! Registers values:\n"
+			"era: %p\n"
+			"badv: %p\n"
+			"badi: %p\n",
+			"crmd: %p\n",
+			cpu->read_csr( csr::era ),
+			cpu->read_csr( csr::badv ),
+			cpu->read_csr( csr::badi ),
+			cpu->read_csr( csr::crmd )
+		);
+		return 0;
+	}
+	
 	int ExceptionManager::dev_intr()
 	{
 		Cpu * cpu = Cpu::get_la_cpu();
@@ -317,6 +336,7 @@ namespace loongarch
 		return dev;
 	}
 
+	
 	void ExceptionManager::machine_trap()
 	{
 		hsai_panic( "not implement" );
@@ -348,6 +368,8 @@ namespace loongarch
 	void ExceptionManager::_init_exception_handler()
 	{
 		_exception_handlers[ csr::ecode_int ] = std::bind( &ExceptionManager::dev_intr, this );
+
+		_exception_handlers[ csr::ecode_brk ] = std::bind( &ExceptionManager::_brk, this );
 
 		_exception_handlers[ csr::ecode_pil ] = [ this ] ( uint32 estat ) ->void
 		{
@@ -427,7 +449,7 @@ namespace loongarch
 			hsai_printf( BLUE_COLOR_PRINT "read data(u64) from badv %p = %#lx\n" CLEAR_COLOR_PRINT,
 				badv, iofbadv );
 
-			hsai_error(
+			hsai_panic(
 				"handle exception PIS :\n"
 				"    badv : 0x%x\n"
 				"    badi : 0x%x\n"
