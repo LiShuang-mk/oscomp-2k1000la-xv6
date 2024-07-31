@@ -20,7 +20,7 @@ depends = \
 	$(patsubst %.c, $(BUILDPATH)/user/%.d, $(c_src)) \
 	$(patsubst %.S, $(BUILDPATH)/user/%.d, $(s_src))
 
-all: $(BUILDPATH)/user/user.a
+all: initdir $(BUILDPATH)/user/user.a
 
 $(BUILDPATH)/user/user.a: $(objs)
 	$(AR) rcs $@ $^
