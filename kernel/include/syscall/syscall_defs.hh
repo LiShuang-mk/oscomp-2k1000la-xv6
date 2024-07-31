@@ -42,6 +42,7 @@ namespace syscall
 		_build_sysnum_enum_( clock_gettime, 113 )
 		_build_sysnum_enum_( sched_yield, 124 )
 		_build_sysnum_enum_( sigaction, 134 )
+		_build_sysnum_enum_( setgid, 144 )
 		_build_sysnum_enum_( times, 153 )
 		_build_sysnum_enum_( setpgid, 154 )
 		_build_sysnum_enum_( getpgid, 155 )

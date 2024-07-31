@@ -106,6 +106,7 @@ namespace syscall
 		_syscall_funcs[ SYS_geteuid ] = std::bind( &SyscallHandler::_sys_geteuid, this );
 		_syscall_funcs[ SYS_ppoll ] = std::bind( &SyscallHandler::_sys_ppoll, this );
 		_syscall_funcs[ SYS_getgid ] = std::bind( &SyscallHandler::_sys_getgid, this );
+		_syscall_funcs[ SYS_setgid ] = std::bind( &SyscallHandler::_sys_setgid, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -1243,6 +1244,11 @@ namespace syscall
 	}
 
 	uint64 SyscallHandler::_sys_getgid()
+	{
+		return 1;
+	}
+
+	uint64 SyscallHandler::_sys_setgid()
 	{
 		return 1;
 	}
