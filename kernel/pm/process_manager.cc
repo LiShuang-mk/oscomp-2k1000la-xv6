@@ -41,6 +41,7 @@
 #include <EASTL/string.h>
 #include <EASTL/map.h>
 #include <EASTL/hash_map.h>
+#include <EASTL/stack.h>
 
 #include <hsai_global.hh>
 #include <process_interface.hh>
@@ -332,7 +333,7 @@ namespace pm
 		//p->_cwd = fs::fat::k_fatfs.get_root();
 		/// @todo 这里暂时修改进程的工作目录为fat的挂载点
 		p->_cwd = fs::ramfs::k_ramfs.getRoot()->EntrySearch( "mnt" );
-		p->_cwd_name = p->_cwd->rName();
+		p->_cwd_name = "/mnt/";
 
 
 		/// TODO:
@@ -558,8 +559,11 @@ namespace pm
 
 		// if ( ( de = fs::fat::k_fatfs.get_root_dir()->EntrySearch( path ) ) 			
 		// 							== nullptr )
-		eastl::string cur_path = "/mnt/";
-		eastl::string ab_path = cur_path + path;
+		eastl::string ab_path;
+		if ( path[ 0 ] == '/' )
+			ab_path = path;
+		else
+			ab_path = proc->_cwd_name + path;
 		log_trace( "exec fine : %s", ab_path.c_str() );
 		fs::Path path_resolver( ab_path );
 		if ( ( de = path_resolver.pathSearch() ) == nullptr )
@@ -700,9 +704,11 @@ namespace pm
 
 		// zero-marker random-num auxv envp
 		{
+			if ( sp == mm::vml::vm_user_end )
+				sp -= 16;
 			char * st_ptr = ( char * ) hsai::k_mem->to_vir( proc->_pt.walk_addr( sp ) );
 
-			// 使用0标记栈底，压入一个用于glibc的伪随机数，并以16字节对齐
+		// 使用0标记栈底，压入一个用于glibc的伪随机数，并以16字节对齐
 			st_ptr -= 32;
 			sp -= 32;
 			u64 rd_pos = sp;	// 伪随机数的位置
@@ -928,6 +934,59 @@ namespace pm
 		exit_proc( p, state );
 	}
 
+	void ProcessManager::exit_group( int status )
+	{
+		void * stk[ num_process + 10 ];			// 这里不使用stl库是因为 exit 后不会返回，无法调用析构函数，可能造成内存泄露
+		int stk_ptr = 0;
+
+		u8 visit[ num_process ];
+		memset( ( void* ) visit, 0, sizeof visit );
+		pm::Pcb *cp = get_cur_pcb();
+
+		_wait_lock.acquire();
+
+		for ( uint i = 0; i < num_process; i++ )
+		{
+			if ( k_proc_pool[ i ]._state == ProcState::unused )
+				continue;
+			if ( visit[ i ] != 0 )
+				continue;
+
+			pm::Pcb *p = &k_proc_pool[ i ];
+			visit[ i ] = 1;
+			stk[ stk_ptr ] = ( void * ) p;
+			stk_ptr++;
+			bool need_chp = false;
+
+			while ( p->parent != nullptr )
+			{
+				if ( p->parent == cp )
+				{
+					need_chp = true;
+					break;
+				}
+				p = p->parent;
+				visit[ p->_gid ] = 1;
+				stk[ stk_ptr ] = ( void * ) p;
+				stk_ptr++;
+			}
+
+			while ( stk_ptr > 0 )
+			{
+				pm::Pcb * tp = ( pm::Pcb * ) stk[ stk_ptr - 1 ];
+				stk_ptr--;
+				if ( need_chp )
+				{
+					freeproc( tp );
+				}
+			}
+		}
+
+		_wait_lock.release();
+
+		exit_proc( cp, status );
+	}
+
 	void ProcessManager::wakeup( void *chan )
 	{
 		Pcb *p;
@@ -1057,14 +1116,14 @@ namespace pm
 		else	//normal file
 		{
 			fs::normal_file *f = new fs::normal_file( attrs, dentry );
-			log_info( "test normal file read" );
-			{
-				fs::file *ff = ( fs::file * ) f;
-				char buf[ 8 ];
-				ff->read( ( ulong ) buf, 8 );
-				buf[ 8 ] = 0;
-				printf( "%s\n", buf );
-			}
+			// log_info( "test normal file read" );
+			// {
+			// 	fs::file *ff = ( fs::file * ) f;
+			// 	char buf[ 8 ];
+			// 	ff->read( ( ulong ) buf, 8 );
+			// 	buf[ 8 ] = 0;
+			// 	printf( "%s\n", buf );
+			// }
 			return alloc_fd( p, f );
 		}// because of open.c's fileattr defination is not clearly, so here we set flags = 7, which means O_RDWR | O_WRONLY | O_RDONLY
 
@@ -1104,7 +1163,9 @@ namespace pm
 
 		fs::dentry *dentry;
 
-		dentry = p->_cwd->EntrySearch( path );
+		fs::Path pt( path );
+		dentry = pt.pathSearch();
+		// dentry = p->_cwd->EntrySearch( path );
 		if ( dentry == nullptr )
 			return -1;
 		p->_cwd = dentry;

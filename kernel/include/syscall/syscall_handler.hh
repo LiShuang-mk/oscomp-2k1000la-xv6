@@ -117,6 +117,8 @@ namespace syscall
 		uint64 _sys_getgid();
 		uint64 _sys_setgid();
 		uint64 _sys_setuid();
+		uint64 _sys_sendfile();
+		uint64 _sys_exit_group();
 	};
 
 	extern SyscallHandler k_syscall_handler;

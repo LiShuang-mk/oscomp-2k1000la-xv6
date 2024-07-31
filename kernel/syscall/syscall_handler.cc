@@ -108,12 +108,14 @@ namespace syscall
 		_syscall_funcs[ SYS_getgid ] = std::bind( &SyscallHandler::_sys_getgid, this );
 		_syscall_funcs[ SYS_setgid ] = std::bind( &SyscallHandler::_sys_setgid, this );
 		_syscall_funcs[ SYS_setuid ] = std::bind( &SyscallHandler::_sys_setuid, this );
+		_syscall_funcs[ SYS_send_file ] = std::bind( &SyscallHandler::_sys_sendfile, this );
+		_syscall_funcs[ SYS_exit_group ] = std::bind( &SyscallHandler::_sys_exit_group, this );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
 	{
-		if ( sys_num != SYS_write )
-			printf( BLUE_COLOR_PRINT "invoke syscall %d\n" CLEAR_COLOR_PRINT, sys_num );
+		// if ( sys_num != SYS_write )
+		// 	printf( BLUE_COLOR_PRINT "invoke syscall %d\n" CLEAR_COLOR_PRINT, sys_num );
 		return _syscall_funcs[ sys_num ]();
 	}
 
@@ -1271,4 +1273,56 @@ namespace syscall
 	{
 		return 1;
 	}
+
+	uint64 SyscallHandler::_sys_sendfile()
+	{
+		int in_fd, out_fd;
+		fs::file *in_f, *out_f;
+		if ( _arg_fd( 0, &out_fd, &out_f ) < 0 )
+			return -1;
+		if ( _arg_fd( 1, &in_fd, &in_f ) < 0 )
+			return -2;
+
+		ulong addr;
+		ulong * p_off = nullptr;
+		p_off = p_off;
+		if ( _arg_addr( 2, addr ) < 0 )
+			return -3;
+
+		mm::PageTable *pt = pm::k_pm.get_cur_pcb()->get_pagetable();
+		if ( addr != 0 )
+			p_off = ( ulong * ) hsai::k_mem->to_vir( pt->walk_addr( addr ) );
+
+		size_t count;
+		if ( _arg_addr( 3, count ) < 0 )
+			return -4;
+
+		/// @todo sendfile
+
+		ulong start_off = 0;
+		if ( p_off != nullptr )
+			start_off = *p_off;
+
+		void * buf = ( void * ) new char[ count + 1 ];
+		if ( buf == nullptr )
+			return -5;
+
+		int readcnt = in_f->read( ( ulong ) buf, count, start_off );
+		int writecnt = out_f->write( ( ulong ) buf, readcnt );
+
+		if ( p_off != nullptr )
+			*p_off += writecnt;
+
+		return writecnt;
+	}
+
+	uint64 SyscallHandler::_sys_exit_group()
+	{
+		int status;
+		if ( _arg_int( 0, status ) < 0 )
+			return -1;
+		pm::k_pm.exit_group( status );
+		return -111;	// not return;
+	}
+
 } // namespace syscall

@@ -58,7 +58,7 @@ namespace tmm
 		uint64 cpt = hsai::cycles_per_tick();
 
 		_lock.acquire();
-		t_val = cpt - hsai::get_hw_time_stamp();
+		t_val = hsai::get_hw_time_stamp();
 		t_val += _ticks * cpt;
 		_lock.release();
 
@@ -111,9 +111,23 @@ namespace tmm
 	{
 		if ( tp == nullptr )
 			return 0;
-		timeval tv = get_time_val();
-		tp->tv_nsec = tv.tv_sec;
-		tp->tv_nsec = tv.tv_usec * 1000;
+
+		uint64 t_val;
+		uint64 cpt = hsai::cycles_per_tick();
+		uint64 freq = hsai::get_main_frequence();
+
+		_lock.acquire();
+		t_val = hsai::get_hw_time_stamp();
+		t_val += _ticks * cpt;
+		_lock.release();
+
+		tp->tv_sec = ( long ) ( t_val / freq );
+
+		ulong rest_cyc = t_val % freq;
+		double rest = ( double ) rest_cyc * ( double ) _1G / ( double ) freq;
+
+		tp->tv_nsec = ( long ) rest;
+
 		return 0;
 	}
 

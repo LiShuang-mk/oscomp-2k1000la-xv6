@@ -51,6 +51,8 @@ namespace fs
 			_root->EntryCreate( "sys", attrs );
 			_root->EntryCreate( "tmp", attrs );
 			_root->EntryCreate( "mnt", attrs );
+			dentry * etc_dent = _root->EntryCreate( "etc", attrs );
+			etc_dent->EntryCreate( "busybox.conf", attrs );
 
 			_root->printChildrenInfo();
 

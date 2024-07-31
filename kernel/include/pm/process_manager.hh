@@ -32,7 +32,7 @@ namespace tmm
 
 namespace pm
 {
-	constexpr int default_proc_slot = 1;
+	constexpr int default_proc_slot = 4;
 
 	struct robust_list_head;
 	struct rlimit64;
@@ -91,6 +91,7 @@ namespace pm
 		int set_tid_address( int * tidptr );
 		int set_robust_list( robust_list_head * head, size_t len );
 		int prlimit64( int pid, int resource, rlimit64 * new_limit, rlimit64 * old_limit );
+		void exit_group( int status );
 
 		void user_init();
 

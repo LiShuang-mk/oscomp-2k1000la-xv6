@@ -59,16 +59,21 @@ __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_munmap[] 
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_unlinkat[] = "unlink";
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_pipe[] = "pipe";
 
-__attribute__( ( section( ".user.init.data" ) ) ) const char exec_busybox[] = "sdcard/busybox";
-__attribute__( ( section( ".user.init.data" ) ) ) const char exec_busybox_unstrp[] = "sdcard/busybox_unstrp";
+__attribute__( ( section( ".user.init.data" ) ) ) const char exec_busybox[] = "busybox";
+__attribute__( ( section( ".user.init.data" ) ) ) const char exec_busybox_unstrp[] = "busybox_unstrp";
 __attribute__( ( section( ".user.init.data" ) ) ) const char busybox_name[] = "busybox";
 __attribute__( ( section( ".user.init.data" ) ) ) const char sh_name[] = "ash";
 __attribute__( ( section( ".user.init.data" ) ) ) const char echo_name[] = "echo";
+__attribute__( ( section( ".user.init.data" ) ) ) const char cat_name[] = "cat";
 __attribute__( ( section( ".user.init.data" ) ) ) const char hello_busybox_str[] = "hello, busybox!\n";
 __attribute__( ( section( ".user.init.data" ) ) ) const char busybox_testcode_str[] = "/mnt/sdcard/busybox_testcode.sh";
+__attribute__( ( section( ".user.init.data" ) ) ) const char test_sh_str[] = "/mnt/sdcard/test.sh";
+__attribute__( ( section( ".user.init.data" ) ) ) const char busybox_path[] = "/mnt/sdcard/";
 // __attribute__( ( section( ".user.init.data.p" ) ) ) const char *bb_sh[] = { sh_name, 0 };
 
-__attribute__( ( section( ".user.init.data" ) ) ) const char exec_libcbench[] = "sdcard/libc-bench";
+__attribute__( ( section( ".user.init.data" ) ) ) const char exec_time_test[] = "time-test";
+
+__attribute__( ( section( ".user.init.data" ) ) ) const char exec_libcbench[] = "libc-bench";
 
 
 __attribute__( ( section( ".user.init.data" ) ) ) const char digits[] = "0123456789abcdef";
@@ -106,7 +111,7 @@ int init_main( void )
 
 	__attribute__( ( __unused__ ) ) int pid;
 
-	const char *bb_sh[ 4 ] = { 0 };
+	__attribute__( ( __unused__ ) ) const char *bb_sh[ 4 ] = { 0 };
 
 	pid = fork();
 	if ( pid < 0 )
@@ -115,12 +120,38 @@ int init_main( void )
 	}
 	else if ( pid == 0 )
 	{
+		chdir( busybox_path );
+		bb_sh[ 0 ] = sh_name;
+		bb_sh[ 1 ] = test_sh_str;
+		bb_sh[ 2 ] = 0;
+		bb_sh[ 3 ] = 0;
+		if ( execv( exec_time_test, 0 ) < 0 )
+		{
+			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
+		}
+		exit( 0 );
+	}
+	else
+	{
+		int child_exit_state = -100;
+		if ( wait( -1, &child_exit_state ) < 0 )
+			write( 1, wait_fail, sizeof( wait_fail ) );
+		write( 1, "exec busybox sh fail", 21 );
+	}
+
+	pid = fork();
+	if ( pid < 0 )
+	{
+		write( 1, errstr, sizeof( errstr ) );
+	}
+	else if ( pid == 0 )
+	{
+		chdir( busybox_path );
 		bb_sh[ 0 ] = sh_name;
 		bb_sh[ 1 ] = busybox_testcode_str;
 		bb_sh[ 2 ] = 0;
 		bb_sh[ 3 ] = 0;
-		// const char *bb_sh[] = { sh_name, echo_name, hello_busybox_str, 0 };
-		if ( execv( exec_busybox_unstrp, bb_sh ) < 0 )
+		if ( execv( exec_busybox, bb_sh ) < 0 )
 		{
 			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
 		}

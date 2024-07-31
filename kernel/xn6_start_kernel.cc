@@ -61,6 +61,23 @@ extern "C" {
 extern "C" {
 	int main() { while ( 1 ); }
 
+	ulong now_ns()
+	{
+		tmm::timespec ts = { 0, 0 };
+		tmm::k_tm.clock_gettime( tmm::CLOCK_MONOTONIC, &ts );
+		return ts.tv_sec * _1G + ts.tv_nsec;
+	}
+
+	ulong iter( ulong n )
+	{
+		volatile size_t v = 0;
+		for ( ulong i = 0; i < n; i++ )
+		{
+			v += 1;
+		}
+		return 0;
+	}
+
 	int xn6_start_kernel()
 	{
 		if ( hsai::get_cpu()->get_cpu_id() == 0 )
@@ -179,7 +196,7 @@ extern "C" {
 			// 使用前先备份2kfs.img或sdcard.img
 			// test_sata();
 
-			mm::k_pmm.debug_print();
+			// mm::k_pmm.debug_print();
 
 			// log_trace(
 			// 	"bufm 初始化前跟踪空闲物理页 : %d",
@@ -191,7 +208,7 @@ extern "C" {
 			// 	"bufm 初始化后跟踪空闲物理页 : %d",
 			// 	mm::k_pmm.trace_free_pages_count()
 			// );
-			mm::k_pmm.debug_print();
+			// mm::k_pmm.debug_print();
 
 // >>>> test ext4 fs
 
@@ -289,6 +306,7 @@ extern "C" {
 
 			pm::k_pm.user_init();
 			log_info( "user init" );
+
 
 			// tmm::timeval tv;
 			// log_info( "==== 开始 测试 timer ====" );
