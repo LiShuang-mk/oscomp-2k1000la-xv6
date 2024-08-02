@@ -310,7 +310,7 @@ namespace syscall
 			}
 			if ( uarg == 0 )
 			{
-				_argv[ i ].clear();
+				// _argv[ i ].clear();
 				break;
 			}
 			_argv.emplace_back( eastl::string() );
@@ -1217,13 +1217,13 @@ namespace syscall
 		uint64  sigmask_addr;
 		pollfd *fds = nullptr;
 		int 	nfds;
-		[[maybe_unused]] timespec* tm = nullptr;  // 现在没用上
-		[[maybe_unused]] sigset_t sigmask; 		// 现在没用上
-		[[maybe_unused]] int timeout;			// 现在没用上
+		[[maybe_unused]] timespec tm { 0,0 };			// 现在没用上
+		[[maybe_unused]] sigset_t sigmask; 			// 现在没用上
+		[[maybe_unused]] int timeout;				// 现在没用上
 		int ret = 0;
 
-		pm::Pcb *cur_proc = pm::k_pm.get_cur_pcb();
-		mm::PageTable *pt = cur_proc->get_pagetable();
+		pm::Pcb *proc = pm::k_pm.get_cur_pcb();
+		mm::PageTable *pt = proc->get_pagetable();
 
 		if ( _arg_addr( 0, fds_addr ) < 0 )
 			return -1;
@@ -1238,35 +1238,87 @@ namespace syscall
 			return -1;
 
 		fds = new pollfd[ nfds ];
+		if ( fds == nullptr )
+			return -2;
 		for ( int i = 0; i < nfds; i++ )
 		{
 			if ( mm::k_vmm.copy_in( *pt, &fds[ i ], fds_addr + i * sizeof( pollfd ), sizeof( pollfd ) ) < 0 )
+			{
+				delete[] fds;
 				return -1;
+			}
 		}
 
 		if ( timeout_addr != 0 )
-			tm = ( timespec * ) hsai::k_mem->to_vir( pt->walk_addr( timeout_addr ) );
-
-		if ( tm == nullptr )
-			timeout = -1;
-		else
-			timeout = tm->tv_sec * 1000 + tm->tv_nsec / 1000000;
+		{
+			if ( ( mm::k_vmm.copy_in( *pt, &tm, timeout_addr, sizeof( tm ) ) ) < 0 )
+			{
+				delete[] fds;
+				return -1;
+			}
+			timeout = tm.tv_sec * 1000 + tm.tv_nsec / 1000000;
+		}
+		else timeout = -1;
 
 		if ( sigmask_addr != 0 )
 			if ( mm::k_vmm.copy_in( *pt, &sigmask, sigmask_addr, sizeof( sigset_t ) ) < 0 )
+			{
+				delete[] fds;
 				return -1;
+			}
 
-		for ( auto i = 0; i < nfds; i++ )
+		while ( 1 )
 		{
-			fds[ i ].revents = 0;
-			if ( fds[ i ].fd < 0 ) { continue; }
-			if ( fds[ i ].events & POLLIN ) { fds[ i ].revents |= POLLIN; }
-			if ( fds[ i ].events & POLLOUT ) { fds[ i ].revents |= POLLOUT; }
-			ret++;
+			for ( auto i = 0; i < nfds; i++ )
+			{
+				fds[ i ].revents = 0;
+				if ( fds[ i ].fd < 0 ) { continue; }
+
+				fs::file * f = nullptr;
+				int reti = 0;
+
+				if ( ( f = proc->get_open_file( fds[ i ].fd ) ) == nullptr )
+				{
+					fds[ i ].revents |= POLLNVAL;
+					reti = 1;
+				}
+				else
+				{
+					if ( fds[ i ].events & POLLIN )
+					{
+						if ( f->read_ready() )
+						{
+							fds[ i ].revents |= POLLIN;
+							reti = 1;
+						}
+					}
+					if ( fds[ i ].events & POLLOUT )
+					{
+						if ( f->write_ready() )
+						{
+							fds[ i ].revents |= POLLOUT;
+							reti = 1;
+						}
+					}
+				}
+
+				ret += reti;
+			}
+			if ( ret != 0 )
+				break;
+			// else
+			// {
+			// 	/// @todo sleep
+			// }
 		}
 
 		if ( mm::k_vmm.copyout( *pt, fds_addr, fds, nfds * sizeof( pollfd ) ) < 0 )
+		{
+			delete[] fds;
 			return -1;
+		}
+
+		delete[] fds;
 		return ret;
 	}
 

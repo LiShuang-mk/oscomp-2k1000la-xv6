@@ -564,7 +564,7 @@ namespace pm
 			ab_path = path;
 		else
 			ab_path = proc->_cwd_name + path;
-		log_trace( "exec fine : %s", ab_path.c_str() );
+		log_trace( "exec file : %s", ab_path.c_str() );
 		fs::Path path_resolver( ab_path );
 		if ( ( de = path_resolver.pathSearch() ) == nullptr )
 		// if ( ( de = fs::ramfs::k_ramfs.getRoot()->EntrySearch( "mnt" )->EntrySearch( path ) ) == nullptr )

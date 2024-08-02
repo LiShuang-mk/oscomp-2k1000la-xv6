@@ -307,6 +307,8 @@ extern "C" {
 			pm::k_pm.user_init();
 			log_info( "user init" );
 
+			// while ( 1 );
+
 
 			// tmm::timeval tv;
 			// log_info( "==== 开始 测试 timer ====" );

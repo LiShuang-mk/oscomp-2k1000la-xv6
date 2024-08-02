@@ -39,5 +39,25 @@ namespace fs
         ret = node->nodeWrite( buf, 0, len );
 
         return ret;
-    }
+	}
+
+	bool normal_file::read_ready()
+	{
+		if ( _attrs.filetype == FileTypes::FT_DIRECT )
+			return false;
+		if ( _attrs.filetype == FileTypes::FT_NONE )
+			return true;
+		log_warn( "normal file is not a directory or regular file." );
+		return false;
+	}
+	
+	bool normal_file::write_ready()
+	{
+		if ( _attrs.filetype == FileTypes::FT_DIRECT )
+			return false;
+		if ( _attrs.filetype == FileTypes::FT_NONE )
+			return true;
+		log_warn( "normal file is not a directory or regular file." );
+		return false;
+	}
 }

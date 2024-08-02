@@ -52,7 +52,7 @@ namespace pm
 			return i;
 		}
 
-		int Pipe::write_in_kernel( ulong addr, int n )
+		int Pipe::write_in_kernel( uint64 addr, int n )
 		{
 			int i = 0;
 			Pcb * pr = k_pm.get_cur_pcb();

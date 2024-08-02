@@ -55,6 +55,7 @@ namespace hsai
 		AhciCmdList * _cmd_ls = nullptr;
 		AhciRevFis * _rev_fis = nullptr;
 		AhciCmdTbl *_cmd_tbl = nullptr;		// 实际上命令槽不只一个，这里简化设计，只使用一个命令槽
+		const int _default_cmd_slot = 0;
 		ulong _block_size = 0;
 		int _is_idtf = false;
 
@@ -67,6 +68,9 @@ namespace hsai
 		virtual int write_blocks_sync( long start_block, long block_count, BufferDescriptor * buf_list, int buf_count ) override;
 		virtual int write_blocks( long start_block, long block_count, BufferDescriptor * buf_list, int buf_count ) override;
 		virtual int handle_intr() override;
+
+		virtual bool read_ready() override { return !_cmd_slot_busy( _default_cmd_slot ) && !_task_busy(); }
+		virtual bool write_ready() override { return !_cmd_slot_busy( _default_cmd_slot ) && !_task_busy(); }
 
 	public:
 		AhciPortDriver() = default;
@@ -140,8 +144,18 @@ namespace hsai
 
 		void _wait_while_busy( uint cmd_slot )
 		{
-			while ( _regs->ci & ( 1U << cmd_slot ) );
-			while ( _regs->tfd & ( ahci_port_tfd_sts_bsy_m | ahci_port_tfd_sts_drq_m ) );
+			while ( _cmd_slot_busy( cmd_slot ) );
+			while ( _task_busy() );
+		}
+
+		constexpr bool _cmd_slot_busy( uint cmd_slot )
+		{
+			return _regs->ci & ( 1U << cmd_slot );
+		}
+
+		constexpr bool _task_busy()
+		{
+			return _regs->tfd & ( ahci_port_tfd_sts_bsy_m | ahci_port_tfd_sts_drq_m );
 		}
 
 		void _fill_fis_h2d_lba( SataFisRegH2D *fis, uint64 lba )

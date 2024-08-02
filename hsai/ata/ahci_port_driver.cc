@@ -190,7 +190,7 @@ namespace hsai
 
 		// 配置命令头
 
-		int cmd_slot = 0;	// 仅使用 0 号命令槽
+		int cmd_slot = _default_cmd_slot;	// 仅使用 0 号命令槽
 
 		AhciCmdHeader& head = _cmd_ls->headers[ cmd_slot ];
 
@@ -254,7 +254,7 @@ namespace hsai
 	{
 		// 配置命令头
 
-		int cmd_slot = 0;	// 仅使用 0 号命令槽
+		int cmd_slot = _default_cmd_slot;	// 仅使用 0 号命令槽
 
 		AhciCmdHeader& head = _cmd_ls->headers[ cmd_slot ];
 
@@ -333,7 +333,7 @@ namespace hsai
 	{
 		// 配置命令头
 
-		int cmd_slot = 0;	// 仅使用 0 号命令槽
+		int cmd_slot = _default_cmd_slot;	// 仅使用 0 号命令槽
 
 		AhciCmdHeader& head = _cmd_ls->headers[ cmd_slot ];
 

@@ -27,10 +27,13 @@ namespace hsai
 		AhciDriver() = default;
 		AhciDriver( const char * lock_name, void * base_addr );
 		virtual DeviceType type() override { return DeviceType::dev_other; }
+		virtual bool read_ready() override { return false; }
+		virtual bool write_ready() override { return false; }
+
 		virtual int handle_intr() override;
 
 	public:
-		
+
 		/// @brief 向设备发送idnetify命令，获取设备元信息
 		void identify_device();
 

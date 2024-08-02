@@ -44,11 +44,13 @@ namespace pm
 			{
 				_lock.init( "pipe" );
 			};
+			bool read_is_open() { return _read_is_open; }
+			bool write_is_open() { return _write_is_open; }
 
 			int write( uint64 addr, int n );
 			int write_in_kernel( uint64 addr, int n );
 
-			int read( uint64, int n );
+			int read( uint64 addr, int n );
 
 			int alloc( fs::pipe_file * &f0, fs::pipe_file * &f1);
 

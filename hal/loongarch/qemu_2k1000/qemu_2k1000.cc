@@ -83,6 +83,7 @@ namespace hsai
 				( uint64 ) qemu2k1000::UartAddr::uart0
 				| ( uint64 ) qemu2k1000::dmwin::win_1
 				) );
+		qemu2k1000::debug_uart.init();
 		register_debug_uart( &qemu2k1000::debug_uart );
 
 		// 2. 架构初始化

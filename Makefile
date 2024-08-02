@@ -37,7 +37,7 @@ export CFLAGS += -MD
 export CFLAGS += -DNUMCPU=$(CONF_CPU_NUM)
 export CFLAGS += -DARCH=$(CONF_ARCH)
 export CFLAGS += -DPLATFORM=$(CONF_PLATFORM)
-# export CFLAGS += -DOS_DEBUG										# open debug output
+export CFLAGS += -DOS_DEBUG										# open debug output
 ifeq ($(HOST_OS),Linux)
 export CFLAGS += -DLINUX_BUILD=1
 endif

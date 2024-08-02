@@ -62,6 +62,8 @@ __attribute__( ( section( ".user.init.data" ) ) ) const char exec_test_pipe[] = 
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_busybox[] = "busybox";
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_busybox_unstrp[] = "busybox_unstrp";
 __attribute__( ( section( ".user.init.data" ) ) ) const char busybox_name[] = "busybox";
+__attribute__( ( section( ".user.init.data" ) ) ) const char busybox_arg_c[] = "-c";
+__attribute__( ( section( ".user.init.data" ) ) ) const char busybox_arg_cmd[] = "'echo hello,busybox!'";
 __attribute__( ( section( ".user.init.data" ) ) ) const char sh_name[] = "sh";
 __attribute__( ( section( ".user.init.data" ) ) ) const char echo_name[] = "echo";
 __attribute__( ( section( ".user.init.data" ) ) ) const char cat_name[] = "cat";
@@ -75,6 +77,11 @@ __attribute__( ( section( ".user.init.data" ) ) ) const char exec_time_test[] = 
 
 __attribute__( ( section( ".user.init.data" ) ) ) const char exec_libcbench[] = "libc-bench";
 
+__attribute__( ( section( ".user.init.data" ) ) ) const char exec_lmbench[] = "lmbench_all";
+__attribute__( ( section( ".user.init.data" ) ) ) const char exec_lmbench_arg1[] = "lat_syscall";
+__attribute__( ( section( ".user.init.data" ) ) ) const char exec_lmbench_arg2[] = "-P";
+__attribute__( ( section( ".user.init.data" ) ) ) const char exec_lmbench_arg3[] = "1";
+__attribute__( ( section( ".user.init.data" ) ) ) const char exec_lmbench_arg4[] = "read";
 
 __attribute__( ( section( ".user.init.data" ) ) ) const char digits[] = "0123456789abcdef";
 
@@ -111,7 +118,7 @@ int init_main( void )
 
 	__attribute__( ( __unused__ ) ) int pid;
 
-	__attribute__( ( __unused__ ) ) const char *bb_sh[ 4 ] = { 0 };
+	__attribute__( ( __unused__ ) ) const char *bb_sh[ 8 ] = { 0 };
 
 	pid = fork();
 	if ( pid < 0 )
@@ -148,10 +155,11 @@ int init_main( void )
 	{
 		chdir( busybox_path );
 		bb_sh[ 0 ] = sh_name;
-		bb_sh[ 1 ] = busybox_testcode_str;
+		bb_sh[ 1 ] = 0;
 		bb_sh[ 2 ] = 0;
 		bb_sh[ 3 ] = 0;
-		if ( execv( exec_libcbench, 0 ) < 0 )
+		bb_sh[ 4 ] = 0;
+		if ( execv( exec_busybox_unstrp, bb_sh ) < 0 )
 		{
 			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
 		}

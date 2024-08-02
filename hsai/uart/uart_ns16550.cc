@@ -34,10 +34,12 @@ namespace hsai
 		regFCR * fcr = ( regFCR* ) ( _reg_base + FCR );
 		fcr->tx_fifo_reset = fcr->rx_fifo_reset = 1;
 		fcr->enable = 1;
+		fcr->rx_fifo_level = 0;
 
 		// enable interrupt
 		regIER * ier = ( regIER* ) ( _reg_base + IER );
 		ier->data_ready = 1;
+		// ier->thr_empty = 1;
 
 		_lock.init( "UART" );
 	}
@@ -45,7 +47,7 @@ namespace hsai
 	int UartNs16550::put_char_sync( u8 c )
 	{
 		_lock.acquire();
-		regLSR * lsr = ( regLSR* ) ( _reg_base + LSR );
+		volatile regLSR * lsr = ( volatile regLSR* ) ( _reg_base + LSR );
 		while ( lsr->thr_empty == 0 )
 			;
 		_write_reg( THR, ( u8 ) c );
@@ -75,26 +77,50 @@ namespace hsai
 		}
 	}
 
-	int UartNs16550::get_char_sync( u8 * c)
+	int UartNs16550::get_char_sync( u8 * c )
 	{
-		return -1;
+		volatile regLSR * lsr = ( volatile regLSR * ) ( _reg_base + LSR );
+		while ( lsr->data_ready == 0 );
+		*c = _read_reg( THR );
+		return 0;
 	}
 
-	int UartNs16550::get_char( u8 * c)
+	int UartNs16550::get_char( u8 * c )
 	{
-		return -1;
+		if ( _read_buffer_empty() )
+			return -1;
+		else
+		{
+			*c = _read_buffer_get();
+			return 0;
+		}
 	}
 
 	int UartNs16550::handle_intr()
 	{
-		hsai_panic( "handle intr not implement" );
-		return -1;
+		u8 c = 0;
+		volatile regLSR * lsr = ( volatile regLSR * ) ( _reg_base + LSR );
+		while ( !_read_buffer_full() )
+		{
+			if ( lsr->data_ready == 1 )
+			{
+				c = _read_reg( THR );
+				_read_buffer_put( c );
+			}
+			else break;
+		}
+
+		_lock.acquire();
+		_start();
+		_lock.release();
+
+		return 0;
 	}
 
 	void UartNs16550::_start()
 	{
-		regLSR * lsr = ( regLSR * ) ( _reg_base + LSR );
-		char * thr = ( char * ) ( _reg_base + THR );
+		volatile regLSR * lsr = ( volatile  regLSR * ) ( _reg_base + LSR );
+		volatile char * thr = ( volatile char * ) ( _reg_base + THR );
 		while ( 1 )
 		{
 			if ( _wr_idx == _rd_idx )

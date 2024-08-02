@@ -23,12 +23,17 @@ namespace hsai
 	class UartNs16550 : public VirtualUartController
 	{
 	private:
-		static constexpr ulong _buf_size = 64;
+		static constexpr ulong _buf_size = 1024;
 		SpinLock _lock;
-		u64 _reg_base;
+		u64 _reg_base = 0;
+
 		char _buf[ _buf_size ];
-		ulong _wr_idx;
-		ulong _rd_idx;
+		ulong _wr_idx = 0;
+		ulong _rd_idx = 0;
+
+		char _read_buf[ _buf_size ];
+		ulong _read_front = 0;
+		ulong _read_tail = 0;
 
 	public:
 		UartNs16550();
@@ -40,6 +45,10 @@ namespace hsai
 		virtual int get_char_sync( u8 * c ) override;
 		virtual int get_char( u8 * c ) override;
 		virtual int handle_intr() override;
+
+	public:
+		virtual bool read_ready() override { return !_read_buffer_empty(); }
+		virtual bool write_ready() override { return !_read_buffer_full(); }
 
 	private:
 		void _start();
@@ -159,8 +168,12 @@ namespace hsai
 		static_assert( sizeof( regPSD ) == 1 );
 
 	private:
-		constexpr void _write_reg( RegOffset reg, u8 data ) { ( ( u8* ) _reg_base )[ ( int ) reg ] = data; }
-		constexpr u8 _read_reg( RegOffset reg ) { return ( ( u8* ) _reg_base )[ ( int ) reg ]; }
+		constexpr void _write_reg( RegOffset reg, u8 data ) { ( ( volatile u8* ) _reg_base )[ ( int ) reg ] = data; }
+		constexpr u8 _read_reg( RegOffset reg ) { return ( ( volatile u8* ) _reg_base )[ ( int ) reg ]; }
+		constexpr bool _read_buffer_full() { return _read_front == _read_tail + _buf_size; }
+		constexpr bool _read_buffer_empty() { return _read_front == _read_tail; }
+		constexpr void _read_buffer_put( char c ) { _read_buf[ _read_front % _buf_size ] = c; _read_front++; }
+		constexpr char _read_buffer_get() { _read_tail++; return _read_buf[ ( _read_tail - 1 ) % _buf_size ]; }
 	};
 
 } // namespace hsai

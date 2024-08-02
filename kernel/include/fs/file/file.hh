@@ -144,7 +144,9 @@ namespace fs
 			virtual void free_file() { refcnt--; if( refcnt == 0 ) delete this; };
 			virtual int read( uint64 buf, size_t len, int off = 0, bool upgrade = false ) = 0;
 			virtual int write( uint64 buf, size_t len ) = 0;
-			virtual void dup() { refcnt++; }; 
+			virtual void dup() { refcnt++; };
+			virtual bool read_ready() = 0;
+			virtual bool write_ready() = 0;
 			int readlink( uint64 buf, size_t len );
 			//virtual int readlink( uint64 buf, size_t len ) = 0;
 	};
