@@ -950,8 +950,6 @@ namespace syscall
 
 		if ( _arg_int( 0, fd ) < 0 )
 			return -1;
-		// if( _arg_fd( 0, nullptr, &f ) < 0 )
-		// 	return -1;
 
 		eastl::string path;
 		if ( _arg_str( 1, path, 256 ) < 0 )
@@ -970,45 +968,13 @@ namespace syscall
 		else
 			new ( &filePath ) fs::Path( path, p->_ofile[ fd ] );
 
-		eastl::string result;
-		eastl::string pathname = filePath.rPathName();
-		char *k_buf = new char[ buf_size + 1 ];
-		if ( pathname[ 0 ] == '/' ) // this is a absolute path
-		{
-			size_t pos = pathname.rfind( '/' );
-			if ( pos != eastl::string::npos )
-			{
-				result = pathname.substr( 0, pos );
-			}
-			else
-			{
-				result = pathname;
-			}
-			result += '/';
-			eastl::string proc_name = p->_name;
+		char *buffer = new char[ buf_size ];
+		ret = filePath.pathSearch()->getNode()->readlinkat( buffer, buf_size );
 
-			result.append( proc_name );
-
-			[[maybe_unused]] size_t resultlen = result.length();
-			resultlen <= buf_size ? ret = result.length() : ret = buf_size;
-			result = result.substr( 0, ret );
-		}
-		else
-		{
-			int fd_new = filePath.open( fs::FileAttrs( fs::FileTypes::FT_NORMAL, 0444 ) ); //readonly;
-			if ( fd_new < 0 )
-				return -1;
-
-			pm::Pcb * pcb = pm::k_pm.get_cur_pcb();
-			ret = pcb->_ofile[ fd_new ]->readlink( ( uint64 ) k_buf, buf_size );
-			if ( ret < 0 )
-				return -1;
-		}
-		if ( mm::k_vmm.copyout( *pt, buf, result.c_str(), ret ) < 0 )
+		if ( mm::k_vmm.copyout( *pt, buf, ( void * )buffer, ret ) < 0 )
 			return -1;
 
-		// pm::k_pm.close( fd_new );
-		delete[] k_buf;
+		delete[] buffer;
 		return ret;
 	}
 

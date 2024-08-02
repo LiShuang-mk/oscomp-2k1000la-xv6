@@ -73,6 +73,7 @@ namespace fs
 		void delete_child( eastl::string name ) { children.erase( name ); };
 		void setParent( dentry *parent ) { this->parent = parent; };
 		void unlink();
+		void setNode( Inode * node_ ) { _node = node_; };
 
 	public:
 

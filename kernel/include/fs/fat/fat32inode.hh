@@ -71,6 +71,7 @@ namespace fs
 			size_t  rFileSize() const override { return _size; };
 			SuperBlock *getSb() const override;
 			FileSystem *getFS() const override;
+			int readlinkat( char *buf, size_t len ) override { return 0; }; // not implemented
 		private:
 			uint64 _cluster_to_lba( uint64 cluster );
 			uint64 _cover_size_bytes();
