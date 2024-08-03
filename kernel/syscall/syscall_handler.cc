@@ -963,16 +963,23 @@ namespace syscall
 		if ( _arg_addr( 3, buf_size ) < 0 )
 			return -1;
 
-		// if ( fd == AT_FDCWD )
-		// 	new ( &filePath ) fs::Path( path, p->_cwd );
-		// else
-		// 	new ( &filePath ) fs::Path( path, p->_ofile[ fd ] );
+		if ( fd == AT_FDCWD )
+			new ( &filePath ) fs::Path( path, p->_cwd );
+		else
+			new ( &filePath ) fs::Path( path, p->_ofile[ fd ] );
 
+		fs::dentry * dent = filePath.pathSearch();
+		if ( dent == nullptr )
+			return -1;
+		
 		char *buffer = new char[ buf_size ];
-		ret = filePath.pathSearch()->getNode()->readlinkat( buffer, buf_size );
+		ret = dent->getNode()->readlinkat( buffer, buf_size );
 
 		if ( mm::k_vmm.copyout( *pt, buf, ( void * )buffer, ret ) < 0 )
+		{
+			delete[] buffer;
 			return -1;
+		}
 
 		delete[] buffer;
 		return ret;
