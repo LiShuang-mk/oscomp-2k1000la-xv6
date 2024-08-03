@@ -74,6 +74,7 @@ namespace pm
 
 		fs::dentry *_cwd;				// current working directory
 		eastl::string _cwd_name;
+		eastl::string exe; 			  // absolute path of the executable file
 		// p->lock must be held when using these:
 		enum ProcState _state;        // Process state
 		void *_chan;                  // If non-zero, sleeping on chan

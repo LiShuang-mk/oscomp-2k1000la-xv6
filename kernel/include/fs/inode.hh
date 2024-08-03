@@ -43,6 +43,7 @@ namespace fs
 		//void readPages();
 
 		//virtual int readLink( char *buf, uint64 len ) = 0;
+		virtual int readlinkat( char *buf, uint64 len ) = 0;
 		//virtual int readDir( DStat *buf, uint32 len, uint64 off_ ) = 0;
 		//virtual int ioctl( uint64 req, uint64 arg ) = 0;
 

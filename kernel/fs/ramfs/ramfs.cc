@@ -79,6 +79,22 @@ namespace fs
 				return;
 			}
 			_root->printChildrenInfo();
+			
+
+			// init /proc
+			dentry *proc = _root->EntrySearch( "proc" );
+			if (!proc )
+			{
+				log_error( "RamFS::initfd: proc is nullptr" );
+                return;
+			}
+			
+			proc->EntryCreate( "self", FileAttrs( FileTypes::FT_DIRECT, 0444) );
+
+			dentry *self = proc->EntrySearch( "self" );
+			dentry *exe = self->EntryCreate( "exe", FileAttrs( FileTypes::FT_NORMAL, 0444 ) );
+			Exe *exe_ = new Exe( static_cast<RamFS*>(self->getNode()->getFS()), 11 );
+			exe->setNode( exe_ );
 
 			return;
 		}

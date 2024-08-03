@@ -1,6 +1,9 @@
 #include "fs/ramfs/ramfsInode.hh"
 #include "fs/ramfs/ramfs.hh"
 
+#include "pm/process_manager.hh"
+
+#include "klib/klib.hh"
 #include "hsai_global.hh"
 #include "device_manager.hh"
 
@@ -54,6 +57,20 @@ namespace fs
 				return read_len;
 			}
 			else return 0;
+		}
+
+		int Exe::readlinkat( char *buf, size_t len)
+		{
+			pm::Pcb *cur_proc = pm::k_pm.get_cur_pcb();
+			int copylen = 0;
+			if( len > cur_proc->exe.length() ) 
+				copylen = cur_proc->exe.length();
+			else
+				copylen = len;
+			
+			memcpy( buf, cur_proc->exe.c_str(), copylen );
+
+			return copylen;
 		}
 	}
 }
