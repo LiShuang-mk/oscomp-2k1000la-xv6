@@ -17,7 +17,7 @@ __attribute__( ( section( ".user.init.data" ) ) ) const char str[] = "\nHello Wo
 __attribute__( ( section( ".user.init.data" ) ) ) const char errstr[] = "fork fail\n";
 __attribute__( ( section( ".user.init.data" ) ) ) const char parent_str[] = "parent write. fork pid is ";
 __attribute__( ( section( ".user.init.data" ) ) ) const char child_str[] = "child write\n";
-__attribute__( ( section( ".user.init.data" ) ) ) const char exec_fail_str[] = "exec fail\n";
+__attribute__( ( section( ".user.init.data" ) ) ) const char exec_fail_str[] = "execve fail\n";
 __attribute__( ( section( ".user.init.data" ) ) ) const char wait_success[] = "  wait success\n";
 __attribute__( ( section( ".user.init.data" ) ) ) const char wait_fail[] = "wait fail\n";
 __attribute__( ( section( ".user.init.data" ) ) ) const char sleep_success[] = "sleep_success\n";
@@ -143,7 +143,7 @@ int init_main( void )
 		int child_exit_state = -100;
 		if ( wait( -1, &child_exit_state ) < 0 )
 			write( 1, wait_fail, sizeof( wait_fail ) );
-		write( 1, "exec busybox sh fail", 21 );
+		write( 1, "execve busybox sh fail", 21 );
 	}
 
 	pid = fork();
@@ -170,7 +170,7 @@ int init_main( void )
 		int child_exit_state = -100;
 		if ( wait( -1, &child_exit_state ) < 0 )
 			write( 1, wait_fail, sizeof( wait_fail ) );
-		write( 1, "exec busybox sh fail", 21 );
+		write( 1, "execve busybox sh fail", 21 );
 	}
 
 	while ( 1 );

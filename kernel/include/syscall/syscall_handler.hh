@@ -32,8 +32,6 @@ namespace syscall
 	{
 	private:
 		std::function<uint64( void )> _syscall_funcs[ max_syscall_funcs_num ];
-		eastl::string _path;
-		eastl::vector<eastl::string> _argv;
 
 
 	public:
@@ -75,7 +73,7 @@ namespace syscall
 		uint64 _sys_getpid();
 		uint64 _sys_getppid();
 		uint64 _sys_brk();
-		uint64 _sys_exec();
+		uint64 _sys_execve();
 		uint64 _sys_wait();
 		uint64 _sys_poweroff();
 		uint64 _sys_dup();

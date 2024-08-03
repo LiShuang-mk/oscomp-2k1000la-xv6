@@ -57,8 +57,6 @@ namespace syscall
 				return 0;
 			};
 		}
-		_argv.clear();
-		_path.clear();
 
 		_syscall_funcs[ SYS_write ] = std::bind( &SyscallHandler::_sys_write, this );
 		_syscall_funcs[ SYS_read ] = std::bind( &SyscallHandler::_sys_read, this );
@@ -67,7 +65,7 @@ namespace syscall
 		_syscall_funcs[ SYS_getpid ] = std::bind( &SyscallHandler::_sys_getpid, this );
 		_syscall_funcs[ SYS_getppid ] = std::bind( &SyscallHandler::_sys_getppid, this );
 		_syscall_funcs[ SYS_brk ] = std::bind( &SyscallHandler::_sys_brk, this );
-		_syscall_funcs[ SYS_exec ] = std::bind( &SyscallHandler::_sys_exec, this );
+		_syscall_funcs[ SYS_execve ] = std::bind( &SyscallHandler::_sys_execve, this );
 		_syscall_funcs[ SYS_wait ] = std::bind( &SyscallHandler::_sys_wait, this );
 		_syscall_funcs[ SYS_poweroff ] = std::bind( &SyscallHandler::_sys_poweroff, this );
 		_syscall_funcs[ SYS_dup ] = std::bind( &SyscallHandler::_sys_dup, this );
@@ -283,57 +281,53 @@ namespace syscall
 		return pm::k_pm.brk( n );
 	}
 
-	uint64 SyscallHandler::_sys_exec()
+	uint64 SyscallHandler::_sys_execve()
 	{
-		uint i;
-		uint64 uargv, uarg;
+		uint64 uargv, uenvp;
 
-		_path.clear();
-		if ( _arg_str( 0, _path, hsai::page_size ) < 0 || _arg_addr( 1, uargv ) < 0 )
-		{
+		eastl::string path;
+		if ( _arg_str( 0, path, hsai::page_size ) < 0
+			|| _arg_addr( 1, uargv ) < 0
+			|| _arg_addr( 2, uenvp ) < 0 )
 			return -1;
-		}
-		_argv.clear();
 
-		bool is_bad = false;
-		for ( i = 0; ; i++ )
+		eastl::vector<eastl::string> argv;
+		ulong uarg;
+		for ( ulong i = 0, puarg = uargv; ; i++, puarg += sizeof( char * ) )
 		{
 			if ( i >= max_arg_num )
-			{
-				is_bad = true;
-				break;
-			}
-			if ( _fetch_addr( uargv + sizeof( uint64 ) * i, uarg ) < 0 )
-			{
-				is_bad = true;
-				break;
-			}
+				return -1;
+
+			if ( _fetch_addr( puarg, uarg ) < 0 )
+				return -1;
+
 			if ( uarg == 0 )
-			{
-				// _argv[ i ].clear();
 				break;
-			}
-			_argv.emplace_back( eastl::string() );
-			if ( _fetch_str( uarg, _argv[ i ], hsai::page_size ) < 0 )
-			{
-				is_bad = true;
-				break;
-			}
+
+			argv.emplace_back( eastl::string() );
+			if ( _fetch_str( uarg, argv[ i ], hsai::page_size ) < 0 )
+				return -1;
 		}
 
-		int ret;
-		if ( is_bad )
+		eastl::vector<eastl::string> envp;
+		ulong uenv;
+		for ( ulong i = 0, puenv = uenvp; ; i++, puenv += sizeof( char * ) )
 		{
-			ret = -1;
-		}
-		else
-		{
-			// _argv.clear();
-			ret = pm::k_pm.exec( _path, _argv );
+			if ( i >= max_arg_num )
+				return -2;
+
+			if ( _fetch_addr( puenv, uenv ) < 0 )
+				return -2;
+
+			if ( uenv == 0 )
+				break;
+
+			envp.emplace_back( eastl::string() );
+			if ( _fetch_str( uenv, envp[ i ], hsai::page_size ) < 0 )
+				return -2;
 		}
 
-		_argv.clear();
-		return ret;
+		return pm::k_pm.execve( path, argv, envp );
 	}
 
 	uint64 SyscallHandler::_sys_wait()
@@ -971,11 +965,11 @@ namespace syscall
 		fs::dentry * dent = filePath.pathSearch();
 		if ( dent == nullptr )
 			return -1;
-		
+
 		char *buffer = new char[ buf_size ];
 		ret = dent->getNode()->readlinkat( buffer, buf_size );
 
-		if ( mm::k_vmm.copyout( *pt, buf, ( void * )buffer, ret ) < 0 )
+		if ( mm::k_vmm.copyout( *pt, buf, ( void * ) buffer, ret ) < 0 )
 		{
 			delete[] buffer;
 			return -1;

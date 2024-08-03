@@ -68,7 +68,7 @@ namespace pm
 		void freeproc( Pcb *p );
 		void sche_proc( Pcb *p );
 
-		int exec( eastl::string path, eastl::vector<eastl::string> args );
+		int execve( eastl::string path, eastl::vector<eastl::string> args, eastl::vector<eastl::string> envs );
 		int wait( int child_pid, uint64 addr );
 		int load_seg( mm::PageTable &pt, uint64 va, fs::dentry *de, uint offset, uint size );
 

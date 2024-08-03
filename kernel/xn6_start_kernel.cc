@@ -292,7 +292,7 @@ extern "C" {
 			// test_fat32();
 			// while ( 1 );
 			// eastl::vector<eastl::string> args;
-			// pm::k_pm.exec("test_echo",args);
+			// pm::k_pm.execve("test_echo",args);
 			// log_info( "text start %p\n", &stext );
 			// log_info( "text end   %p\n", &etext ); 
 
@@ -326,7 +326,7 @@ extern "C" {
 			// loongarch::Cpu::get_cpu()->set_cur_proc( np );
 
 			// eastl::vector<eastl::string> args;
-			// pm::k_pm.exec( "test_echo", args );
+			// pm::k_pm.execve( "test_echo", args );
 
 			// mm::debug_trace_walk = true;
 			pm::k_scheduler.start_schedule();

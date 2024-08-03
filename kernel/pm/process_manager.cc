@@ -535,16 +535,14 @@ namespace pm
 		pt.freewalk_mapped();
 	}
 
-	int ProcessManager::exec( eastl::string path, eastl::vector<eastl::string> argv )
+	int ProcessManager::execve( eastl::string path, eastl::vector<eastl::string> argv, eastl::vector<eastl::string> envs )
 	{
 		Pcb *proc = get_cur_pcb();
 		uint64 sz = 0;
 		uint64 sp;
 		uint64 stackbase;
-		uint64 argc;
 		mm::PageTable pt;
 		mm::PageTable pt_old;
-		uint64 ustack[ MAXARG ];
 		elf::elfhdr elf;
 		elf::proghdr ph = {};
 		//fs::fat::Fat32DirInfo dir_;
@@ -562,13 +560,13 @@ namespace pm
 		else
 			ab_path = proc->_cwd_name + path;
 
-		log_trace( "exec file : %s", ab_path.c_str() );
+		log_trace( "execve file : %s", ab_path.c_str() );
 
 		fs::Path path_resolver( ab_path );
 		if ( ( de = path_resolver.pathSearch() ) == nullptr )
 		// if ( ( de = fs::ramfs::k_ramfs.getRoot()->EntrySearch( "mnt" )->EntrySearch( path ) ) == nullptr )
 		{
-			log_error( "exec: cannot find file" );
+			log_error( "execve: cannot find file" );
 			return -1;   // 拿到文件夹信息
 		}
 
@@ -577,7 +575,7 @@ namespace pm
 
 		if ( elf.magic != elf::elfEnum::ELF_MAGIC )  // check magicnum
 		{
-			log_error( "exec: not a valid ELF file" );
+			log_error( "execve: not a valid ELF file" );
 			return -1;
 		}
 
@@ -586,7 +584,7 @@ namespace pm
 
 		// create user pagetable for given process
 		// if((pt = proc_pagetable(proc)).is_null()){
-		// 	log_error("exec: cannot create pagetable");
+		// 	log_error("execve: cannot create pagetable");
 		// 	return -1;
 		// }
 
@@ -600,13 +598,13 @@ namespace pm
 				continue;
 			if ( ph.memsz < ph.filesz )
 			{
-				log_error( "exec: memsz < filesz" );
+				log_error( "execve: memsz < filesz" );
 				proc_freepagetable( proc->_pt, sz );
 				return -1;
 			}
 			if ( ph.vaddr + ph.memsz < ph.vaddr )
 			{
-				log_error( "exec: vaddr + memsz < vaddr" );
+				log_error( "execve: vaddr + memsz < vaddr" );
 				proc_freepagetable( proc->_pt, sz );
 				return -1;
 			}
@@ -615,21 +613,21 @@ namespace pm
 			ulong pva = hsai::page_round_down( ph.vaddr );
 			if ( ( sz1 = mm::k_vmm.vmalloc( proc->_pt, pva, ph.vaddr + ph.memsz, executable ) ) == 0 )
 			{
-				log_error( "exec: uvmalloc" );
+				log_error( "execve: uvmalloc" );
 				proc_freepagetable( proc->_pt, sz );
 				return -1;
 			}
 			sz = sz1;
 			// if ( ( ph.vaddr % hsai::page_size ) != 0 )
 			// {
-			// 	log_error( "exec: vaddr not aligned" );
+			// 	log_error( "execve: vaddr not aligned" );
 			// 	proc_freepagetable( proc->_pt, sz );
 			// 	return -1;
 			// }
 
 			if ( load_seg( proc->_pt, ph.vaddr, de, ph.off, ph.filesz ) < 0 )
 			{
-				log_error( "exec: load_icode" );
+				log_error( "execve: load_icode" );
 				proc_freepagetable( proc->_pt, sz );
 				return -1;
 			}
@@ -648,7 +646,7 @@ namespace pm
 
 		// 此处分配栈空间遵循 memlayout
 		// 进程的用户虚拟空间占用地址低 128MiB，内核虚拟空间从 0xF0_0000_0000 开始
-		// 分配栈空间大小为 3 个页面，开头的 1 个页面用作保护页面
+		// 分配栈空间大小为 32 个页面，开头的 1 个页面用作保护页面
 
 		int stack_page_cnt = default_proc_ustack_pages;
 		stackbase = mm::vml::vm_user_end - stack_page_cnt * hsai::page_size;
@@ -656,32 +654,76 @@ namespace pm
 
 		if ( mm::k_vmm.uvmalloc( proc->_pt, stackbase - hsai::page_size, sp ) == 0 )
 		{
-			log_error( "exec: vmalloc when allocating stack" );
+			log_error( "execve: vmalloc when allocating stack" );
 			proc_freepagetable( proc->_pt, sz );
 			return -1;
 		}
 
-		log_trace( "exec set stack-base = %p", proc->_pt.walk_addr( stackbase ) );
-		log_trace( "exec set page containing sp is %p", proc->_pt.walk_addr( sp - hsai::page_size ) );
+		log_trace( "execve set stack-base = %p", proc->_pt.walk_addr( stackbase ) );
+		log_trace( "execve set page containing sp is %p", proc->_pt.walk_addr( sp - hsai::page_size ) );
 
 		mm::k_vmm.uvmclear( proc->_pt, stackbase - hsai::page_size );
 
 		mm::k_vmm.uvmset( proc->_pt, ( void * ) stackbase, 0, stack_page_cnt );
 
-		// 此后的代码用于支持 glibc，包括将 auxv, envp, argv, argc 压到用户栈中由glibc解析
+		// >>>> 此后的代码用于支持 glibc，包括将 auxv, envp, argv, argc 压到用户栈中由glibc解析
 
 
-		// 压入 argc argv
+		// 1. 使用0标记栈底，压入一个用于glibc的伪随机数，并以16字节对齐
 
-		argc = 0;
+		sp -= 32;
+		u64 rd_pos = 0;
+		{
+			char * st_ptr = ( char * ) hsai::k_mem->to_vir( proc->_pt.walk_addr( sp ) );
+			rd_pos = sp;	// 伪随机数的位置
+			( ( u64 * ) st_ptr )[ 0 ] = 0x42494C474B435546UL;
+			( ( u64 * ) st_ptr )[ 1 ] = 0x00504D4F43534F43UL;		// "FUCKGLIBCOSCOMP\0"
+			( ( u64 * ) st_ptr )[ 2 ] = -0x114514FF114514UL;
+			( ( u64 * ) st_ptr )[ 3 ] = 0;
+		}
 
-		//push argument strings, prepare rest of stack in ustack.
+		// 2. 压入 env string
+
+		ulong uenvp[ MAXARG ];
+		ulong envc;
+		for ( envc = 0; envc < envs.size(); envc++ )
+		{
+			if ( envc >= MAXARG )
+			{
+				proc_freepagetable( proc->_pt, sz );
+				log_panic( "execve: too many arguments" );
+				return -1;
+			}
+
+			sp -= envs[ envc ].length() + 1;
+			sp -= sp % 16;
+			if ( sp < stackbase )
+			{
+				proc_freepagetable( proc->_pt, sz );
+				log_panic( "execve: sp < stackbase" );
+				return -1;
+			}
+			if ( mm::k_vmm.copyout( proc->_pt, sp, envs[ envc ].c_str(), envs[ envc ].length() + 1 ) < 0 )
+			{
+				proc_freepagetable( proc->_pt, sz );
+				log_panic( "execve: copyout" );
+				return -1;
+			}
+
+			uenvp[ envc ] = sp;
+		}
+		uenvp[ envc ] = 0;			// envp[end] = nullptr
+
+		// 3. 压入 arg string
+
+		uint64 uargv[ MAXARG ];
+		ulong argc = 0;
 		for ( ; argc < argv.size(); argc++ )
 		{
 			if ( argc >= MAXARG )
 			{
 				proc_freepagetable( proc->_pt, sz );
-				log_panic( "exec: too many arguments" );
+				log_panic( "execve: too many arguments" );
 				return -1;
 			}
 
@@ -690,85 +732,67 @@ namespace pm
 			if ( sp < stackbase )
 			{
 				proc_freepagetable( proc->_pt, sz );
-				log_panic( "exec: sp < stackbase" );
+				log_panic( "execve: sp < stackbase" );
 				return -1;
 			}
 			if ( mm::k_vmm.copyout( proc->_pt, sp, argv[ argc ].c_str(), argv[ argc ].length() + 1 ) < 0 )
 			{
 				proc_freepagetable( proc->_pt, sz );
-				log_panic( "exec: copyout" );
+				log_panic( "execve: copyout" );
 				return -1;
 			}
 
-			ustack[ argc ] = sp;
+			uargv[ argc ] = sp;
 		}
-		ustack[ argc ] = 0;
+		uargv[ argc ] = 0;		// argv[end] = nullptr
 
-		// zero-marker random-num auxv envp
+		sp -= sp % 16;
+
+		// 4. 压入 auxv
 		{
-			if ( sp == mm::vml::vm_user_end )
-				sp -= 16;
-			char * st_ptr = ( char * ) hsai::k_mem->to_vir( proc->_pt.walk_addr( sp ) );
-
-		// 使用0标记栈底，压入一个用于glibc的伪随机数，并以16字节对齐
-			st_ptr -= 32;
-			sp -= 32;
-			u64 rd_pos = sp;	// 伪随机数的位置
-			( ( u64 * ) st_ptr )[ 0 ] = 0x42494C474B435546UL;
-			( ( u64 * ) st_ptr )[ 1 ] = 0x00504D4F43534F43UL;		// "FUCKGLIBCOSCOMP\0"
-			( ( u64 * ) st_ptr )[ 2 ] = 0;
-			( ( u64 * ) st_ptr )[ 3 ] = 0;
-
-			// 压入 auxv
+			elf::Elf64_auxv_t aux;
 			// auxv[end] = AT_NULL
-			st_ptr -= sizeof( elf::Elf64_auxv_t );
 			sp -= sizeof( elf::Elf64_auxv_t );
-			( ( elf::Elf64_auxv_t* ) st_ptr )->a_type = elf::AT_NULL;
-			( ( elf::Elf64_auxv_t* ) st_ptr )->a_un.a_val = 0;
+			aux.a_type = elf::AT_NULL;
+			aux.a_un.a_val = 0;
+			if ( mm::k_vmm.copyout( proc->_pt, sp, ( void * ) &aux, sizeof( aux ) ) < 0 )
+			{
+				log_panic( "execve: copyout" );
+				return -1;
+			}
 			// auxv[0] = AT_RANDOM
-			st_ptr -= sizeof( elf::Elf64_auxv_t );
 			sp -= sizeof( elf::Elf64_auxv_t );
-			( ( elf::Elf64_auxv_t* ) st_ptr )->a_type = elf::AT_RANDOM;
-			( ( elf::Elf64_auxv_t* ) st_ptr )->a_un.a_val = rd_pos;
-
-			// 压入 envp
-			// envp[end] = NULL
-			st_ptr -= sizeof( void * );
-			sp -= sizeof( void * );
-			*( ( u64 * ) st_ptr ) = 0;
-
+			aux.a_type = elf::AT_RANDOM;
+			aux.a_un.a_val = rd_pos;
+			if ( mm::k_vmm.copyout( proc->_pt, sp, ( void * ) &aux, sizeof( aux ) ) < 0 )
+			{
+				log_panic( "execve: copyout" );
+				return -1;
+			}
 		}
 
-		// push array of argument pointers
-		sp -= ( argc + 1 ) * sizeof( uint64 );
+		// 5. 压入 envp
 
-		if ( sp < stackbase )
+		sp -= ( envc + 1 ) * sizeof( char * );
+		assert( sp >= stackbase, "execve: ustack flow out" );
+		if ( mm::k_vmm.copyout( proc->_pt, sp, uenvp, ( envc + 1 ) * sizeof( char * ) ) < 0 )
+			log_panic( "execve: copyout" );
+
+		// 6. 压入 argv
+		sp -= ( argc + 1 ) * sizeof( char * );
+		assert( sp >= stackbase, "execve: ustack flow out" );
+		if ( mm::k_vmm.copyout( proc->_pt, sp, uargv, ( argc + 1 ) * sizeof( char * ) ) < 0 )
 		{
 			proc_freepagetable( proc->_pt, sz );
-			log_panic( "exec: sp < stackbase" );
-			return -1;
-		}
-		if ( mm::k_vmm.copyout( proc->_pt, sp, ustack, ( argc + 1 ) * sizeof( uint64 ) ) < 0 )
-		{
-			proc_freepagetable( proc->_pt, sz );
-			log_panic( "exec: copyout" );
+			log_panic( "execve: copyout" );
 			return -1;
 		}
 
-		// 压入 argc
+		// 7. 压入 argc
 		sp -= sizeof( uint64 );
-		if ( sp < stackbase )
-		{
-			proc_freepagetable( proc->_pt, sz );
-			log_panic( "exec: sp < stackbase" );
-			return -1;
-		}
+		assert( sp >= stackbase, "execve: ustack flow out" );
 		if ( mm::k_vmm.copyout( proc->_pt, sp, &argc, sizeof( argc ) ) < 0 )
-		{
-			proc_freepagetable( proc->_pt, sz );
-			log_panic( "exec: copyout" );
-			return -1;
-		}
+			log_panic( "execve: copyout" );
 
 		// arguments to user main(argc, argv)
 		// argc is returned via the system call return

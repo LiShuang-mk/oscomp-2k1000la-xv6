@@ -102,7 +102,7 @@ namespace elf
 
 		AT_IGNOREPPC = 22,		/* Entry should be ignored.  */
 
-		AT_SECURE = 23,			/* Boolean, was exec setuid-like?  */
+		AT_SECURE = 23,			/* Boolean, was execve setuid-like?  */
 
 		AT_BASE_PLATFORM = 24,	/* String identifying real platforms.*/
 
