@@ -30,7 +30,7 @@ namespace fs
 		dup();
 	}
 
-	int device_file::read( uint64 buf, size_t len, int off, bool upgrade )
+	long device_file::read( uint64 buf, size_t len, long off, bool upgrade )
 	{
 		int ret;
 
@@ -41,13 +41,15 @@ namespace fs
 		}
 
 		ret = _dev->read( ( void * ) buf, len );
-		if ( ret >= 0 && upgrade )  // 这里 没有写sdev从指定位置读取的函数
-			off += ret;
+
+		/// @note 对于流式设备而言，没有文件偏移的概念
+		// if ( ret >= 0 && upgrade )  // 这里 没有写sdev从指定位置读取的函数
+		// 	off += ret;
 		return ret;
 
 	}
 
-	int device_file::write( uint64 buf, size_t len )
+	long device_file::write( uint64 buf, size_t len, long off, bool upgrade )
 	{
 		int ret;
 

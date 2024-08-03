@@ -38,7 +38,7 @@ namespace fs
 			"[SUID]\n"
 			"# Allow command to be run by anyone.\n"
 			"su = ssx root.root\n"
-			"passwd = ssx root.root"
+			// "passwd = ssx root.root"
 			"loadkmap = ssx root.root\n"
 			"mount = ssx root.root\n"
 			"reboot = ssx root.root\n"

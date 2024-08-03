@@ -211,7 +211,7 @@ namespace syscall
 			printf( YELLOW_COLOR_PRINT "note : echo ####\n" CLEAR_COLOR_PRINT );
 		}
 
-		return f->write( ( ulong ) buf, n );
+		return f->write( ( ulong ) buf, n, f->get_file_offset(), true );
 	}
 
 	uint64 SyscallHandler::_sys_read()
@@ -237,7 +237,7 @@ namespace syscall
 		mm::PageTable *pt = p->get_pagetable();
 
 		char * k_buf = new char[ n + 1 ];
-		int ret = f->read( ( uint64 ) k_buf, n );
+		int ret = f->read( ( uint64 ) k_buf, n, f->get_file_offset(), true );
 		if ( ret < 0 )
 			return -6;
 		if ( mm::k_vmm.copyout( *pt, buf, k_buf, ret ) < 0 )
@@ -946,7 +946,7 @@ namespace syscall
 		mm::PageTable * pt = p->get_pagetable();
 		int fd;
 		fs::Path filePath;
-		int ret;
+		size_t ret;
 
 		if ( _arg_int( 0, fd ) < 0 )
 			return -1;
@@ -965,50 +965,53 @@ namespace syscall
 		if ( _arg_addr( 3, buf_size ) < 0 )
 			return -1;
 
-		if ( fd == AT_FDCWD )
-			new ( &filePath ) fs::Path( path, p->_cwd );
-		else
-			new ( &filePath ) fs::Path( path, p->_ofile[ fd ] );
+		// if ( fd == AT_FDCWD )
+		// 	new ( &filePath ) fs::Path( path, p->_cwd );
+		// else
+		// 	new ( &filePath ) fs::Path( path, p->_ofile[ fd ] );
 
 		eastl::string result;
-		eastl::string pathname = filePath.rPathName();
-		char *k_buf = new char[ buf_size + 1 ];
-		if ( pathname[ 0 ] == '/' ) // this is a absolute path
-		{
-			size_t pos = pathname.rfind( '/' );
-			if ( pos != eastl::string::npos )
-			{
-				result = pathname.substr( 0, pos );
-			}
-			else
-			{
-				result = pathname;
-			}
-			result += '/';
-			eastl::string proc_name = p->_name;
+		// eastl::string pathname = filePath.rPathName();
+		// char *k_buf = new char[ buf_size + 1 ];
+		// if ( pathname[ 0 ] == '/' ) // this is a absolute path
+		// {
+		// 	size_t pos = pathname.rfind( '/' );
+		// 	if ( pos != eastl::string::npos )
+		// 	{
+		// 		result = pathname.substr( 0, pos );
+		// 	}
+		// 	else
+		// 	{
+		// 		result = pathname;
+		// 	}
+		// 	result += '/';
+		// 	eastl::string proc_name = p->_name;
 
-			result.append( proc_name );
+		// 	result.append( proc_name );
 
-			[[maybe_unused]] size_t resultlen = result.length();
-			resultlen <= buf_size ? ret = result.length() : ret = buf_size;
-			result = result.substr( 0, ret );
-		}
-		else
-		{
-			int fd_new = filePath.open( fs::FileAttrs( fs::FileTypes::FT_NORMAL, 0444 ) ); //readonly;
-			if ( fd_new < 0 )
-				return -1;
+		// 	[[maybe_unused]] size_t resultlen = result.length();
+		// 	resultlen <= buf_size ? ret = result.length() : ret = buf_size;
+		// 	result = result.substr( 0, ret );
+		// }
+		// else
+		// {
+		// 	int fd_new = filePath.open( fs::FileAttrs( fs::FileTypes::FT_NORMAL, 0444 ) ); //readonly;
+		// 	if ( fd_new < 0 )
+		// 		return -1;
 
-			pm::Pcb * pcb = pm::k_pm.get_cur_pcb();
-			ret = pcb->_ofile[ fd_new ]->readlink( ( uint64 ) k_buf, buf_size );
-			if ( ret < 0 )
-				return -1;
-		}
+		// 	pm::Pcb * pcb = pm::k_pm.get_cur_pcb();
+		// 	ret = pcb->_ofile[ fd_new ]->readlink( ( uint64 ) k_buf, buf_size );
+		// 	if ( ret < 0 )
+		// 		return -1;
+		// }
+		if ( path == "/proc/self/exe" )
+			result = p->_cwd_name + p->_name;
+		ret = buf_size > result.size() ? result.size() : buf_size;
 		if ( mm::k_vmm.copyout( *pt, buf, result.c_str(), ret ) < 0 )
 			return -1;
 
 		// pm::k_pm.close( fd_new );
-		delete[] k_buf;
+		// delete[] k_buf;
 		return ret;
 	}
 
@@ -1143,7 +1146,7 @@ namespace syscall
 	uint64 SyscallHandler::_sys_fcntl()
 	{
 		pm::Pcb * p = pm::k_pm.get_cur_pcb();
-		fs::file * f;
+		fs::file * f = nullptr;
 		int op;
 		ulong arg;
 		int retfd = -1;
@@ -1155,6 +1158,13 @@ namespace syscall
 
 		switch ( op )
 		{
+			case F_SETFD:
+				if ( _arg_addr( 2, arg ) < 0 )
+					return -3;
+				if ( arg & FD_CLOEXEC )
+					f->_fl_cloexec = true;
+				return 0;
+
 			case F_DUPFD:
 				if ( _arg_addr( 2, arg ) < 0 )
 					return -3;
@@ -1362,7 +1372,7 @@ namespace syscall
 
 		/// @todo sendfile
 
-		ulong start_off = 0;
+		ulong start_off = in_f->get_file_offset();
 		if ( p_off != nullptr )
 			start_off = *p_off;
 
@@ -1370,12 +1380,12 @@ namespace syscall
 		if ( buf == nullptr )
 			return -5;
 
-		int readcnt = in_f->read( ( ulong ) buf, count, start_off );
+		int readcnt = in_f->read( ( ulong ) buf, count, start_off, true );
 		int writecnt = 0;
 		if ( out_f->_attrs.filetype == fs::FileTypes::FT_PIPE )
 			writecnt = ( ( fs::pipe_file * ) out_f )->write_in_kernel( ( ulong ) buf, readcnt );
 		else
-			writecnt = out_f->write( ( ulong ) buf, readcnt );
+			writecnt = out_f->write( ( ulong ) buf, readcnt, out_f->get_file_offset(), true );
 
 		if ( p_off != nullptr )
 			*p_off += writecnt;

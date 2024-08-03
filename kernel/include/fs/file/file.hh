@@ -16,7 +16,8 @@
 #include <EASTL/string.h>
 namespace pm
 {
-	namespace ipc{
+	namespace ipc	
+{
 
 		class Pipe;
 
@@ -25,7 +26,7 @@ namespace pm
 
 using namespace pm::ipc;
 namespace fs
-{	
+{
 	class dentry;
 	class file_pool;
 	class File
@@ -42,14 +43,17 @@ namespace fs
 			struct { const FileTypes type_; Kstat kst_; } dv_;
 			struct { const FileTypes type_; Kstat kst_; Pipe *pipe_; } pp_;
 			struct { const FileTypes type_; Kstat kst_; dentry *dentry_; uint64 off_; } en_;
-			inline bool ensureDev() const { return  dv_.type_ == FT_DEVICE  ||
-													dv_.type_ == FT_NONE ; };
+			inline bool ensureDev() const
+			{
+				return  dv_.type_ == FT_DEVICE ||
+					dv_.type_ == FT_NONE;
+			};
 			inline bool ensureEntry() const { return en_.type_ == FT_NORMAL; };
 			inline bool ensurePipe() const { return pp_.type_ == FT_PIPE; };
 		public:
-			Data( FileTypes type ) 	: 	dv_( { type, type } ) { ensureDev(); }
-			Data( dentry *de_ ) 	: 	en_( { FT_NORMAL, de_, de_, 0 } ) { ensureEntry(); }
-			Data( Pipe *pipe_ ) 	: 	pp_( { FT_PIPE, pipe_, pipe_ } ) { ensurePipe(); }
+			Data( FileTypes type ) : dv_( { type, type } ) { ensureDev(); }
+			Data( dentry *de_ ) : en_( { FT_NORMAL, de_, de_, 0 } ) { ensureEntry(); }
+			Data( Pipe *pipe_ ) : pp_( { FT_PIPE, pipe_, pipe_ } ) { ensurePipe(); }
 			~Data() = default;
 			inline dentry* get_Entry() const { ensureEntry(); return en_.dentry_; }
 			inline Kstat & get_Kstat()
@@ -59,7 +63,7 @@ namespace fs
 			inline uint64 & get_off()
 			{
 				ensureEntry();
-					return en_.off_;
+				return en_.off_;
 			}
 			inline Pipe *get_Pipe()
 			{
@@ -69,31 +73,31 @@ namespace fs
 			inline FileTypes get_Type() const { return en_.type_; }
 		} data;
 
-		private:
-			File() : refcnt( 0 ), data( FT_NONE ) {} // non-arg constructor only for file_p
-		public:
-			File( FileTypes type_ ) : refcnt( 0 ), data( type_ ) {}
-			File( FileTypes type_, FileOps ops_ = FileOp::fileop_none ) : ops( ops_ ), refcnt( 0 ), data( type_ ) {}
-			File( FileTypes type_, int flags_ ) : ops( flags_ ), refcnt( 0 ), data( type_ )  {}
-			File( dentry *de_, int flags_ ) : flags( flags_ ), ops( flags_ ), refcnt( 0 ), data( de_ ) {}
-			File( pm::ipc::Pipe *pipe, int flags_ ) : flags( flags_ ), ops( flags_ ), refcnt( 0 ), data( pipe ) {}
-			~File() = default;
+	private:
+		File() : refcnt( 0 ), data( FT_NONE ) {} // non-arg constructor only for file_p
+	public:
+		File( FileTypes type_ ) : refcnt( 0 ), data( type_ ) {}
+		File( FileTypes type_, FileOps ops_ = FileOp::fileop_none ) : ops( ops_ ), refcnt( 0 ), data( type_ ) {}
+		File( FileTypes type_, int flags_ ) : ops( flags_ ), refcnt( 0 ), data( type_ ) {}
+		File( dentry *de_, int flags_ ) : flags( flags_ ), ops( flags_ ), refcnt( 0 ), data( de_ ) {}
+		File( pm::ipc::Pipe *pipe, int flags_ ) : flags( flags_ ), ops( flags_ ), refcnt( 0 ), data( pipe ) {}
+		~File() = default;
 
-			int write( uint64 buf, size_t len ) { return 0; };
-			int read( uint64 buf, size_t len, int off_ = 0, bool update = true ) { return 0; };
+		int write( uint64 buf, size_t len ) { return 0; };
+		int read( uint64 buf, size_t len, int off_ = 0, bool update = true ) { return 0; };
 
 	};
 
 
 	class xv6_file_pool;
-	
+
 	/// TODO: 这是搬运自xv6的file，在将来使用vfs后将弃用
 	class xv6_file
 	{
 		friend xv6_file_pool;
 	public:
 		xv6_file() : ref( 0 ), readable( 0 ), writable( 0 ), dentry( nullptr ), off( 0 ), major( 0 ) {};
-		
+
 		enum { FD_NONE, FD_PIPE, FD_INODE, FD_DEVICE } type;
 		int ref; // reference count
 		char readable;
@@ -104,7 +108,7 @@ namespace fs
 		uint off;          // FD_INODE
 		short major;       // FD_DEVICE
 		fs::Kstat kst;
-		
+
 		int write( uint64 addr, int n );
 		int read( uint64 addr, int n );
 
@@ -123,32 +127,37 @@ namespace fs
 		File * alloc_file();
 		void free_file( File * f );
 		void dup( File * f );
-		File * find_file( eastl::string path);
+		File * find_file( eastl::string path );
 		int unlink( eastl::string path );
-		bool has_unlinked( eastl::string path) { return eastl::find( _unlink_list.begin(), _unlink_list.end(), path ) != _unlink_list.end();};
+		bool has_unlinked( eastl::string path ) { return eastl::find( _unlink_list.begin(), _unlink_list.end(), path ) != _unlink_list.end(); };
 	};
 
 	extern file_pool k_file_table;
 
 	class file
 	{
-		public:
-			FileAttrs _attrs;
-			uint32 refcnt;
-			Kstat _stat;
-			bool _fl_cloexec = false;		// close when exec
 	public:
-		 	file() = delete;
-			file( FileAttrs attrs ) : _attrs( attrs ), refcnt( 0 ), _stat( _attrs.filetype ) { }
-			virtual ~file() = default;
-			virtual void free_file() { refcnt--; if( refcnt == 0 ) delete this; };
-			virtual int read( uint64 buf, size_t len, int off = 0, bool upgrade = false ) = 0;
-			virtual int write( uint64 buf, size_t len ) = 0;
-			virtual void dup() { refcnt++; };
-			virtual bool read_ready() = 0;
-			virtual bool write_ready() = 0;
-			int readlink( uint64 buf, size_t len );
-			//virtual int readlink( uint64 buf, size_t len ) = 0;
+		FileAttrs _attrs;
+		uint32 refcnt;
+		Kstat _stat;
+		bool _fl_cloexec = false;		// close when exec
+		long _file_ptr = 0;				// file read header's offset correponding to the start of the file
+	public:
+		file() = delete;
+		file( FileAttrs attrs ) : _attrs( attrs ), refcnt( 0 ), _stat( _attrs.filetype ) {}
+		virtual ~file() = default;
+		virtual void free_file() { refcnt--; if ( refcnt == 0 ) delete this; };
+		virtual long read( uint64 buf, size_t len, long off, bool upgrade_off ) = 0;
+		virtual long write( uint64 buf, size_t len, long off, bool upgrade_off ) = 0;
+		virtual void dup() { refcnt++; };
+		virtual bool read_ready() = 0;
+		virtual bool write_ready() = 0;
+
+
+		long get_file_offset() { return _file_ptr; }
+
+		int readlink( uint64 buf, size_t len );
+		//virtual int readlink( uint64 buf, size_t len ) = 0;
 	};
 
 } // namespace fs

@@ -21,8 +21,8 @@ namespace fs
 		device_file( uint dev ) : device_file( FileAttrs( FileTypes::FT_DEVICE, 0777 ), dev ) {};
 		~device_file() = default;
 
-		int read( uint64 buf, size_t len, int off = 0, bool upgrade = false ) override;
-		int write( uint64 buf, size_t len ) override;
+		long read( uint64 buf, size_t len, long off, bool upgrade = true ) override;
+		long write( uint64 buf, size_t len, long off, bool upgrade = true ) override;
 
 		virtual bool read_ready() override;
 		virtual bool write_ready() override;

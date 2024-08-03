@@ -553,9 +553,6 @@ namespace pm
 
 		// proc->_pt.freewalk();
 		// mm::k_vmm.vmfree( proc->_pt, proc->_sz );
-		proc->_pt.freewalk_mapped();
-		_proc_create_vm( proc );
-
 
 		// if ( ( de = fs::fat::k_fatfs.get_root_dir()->EntrySearch( path ) ) 			
 		// 							== nullptr )
@@ -581,6 +578,9 @@ namespace pm
 			log_error( "exec: not a valid ELF file" );
 			return -1;
 		}
+
+		proc->_pt.freewalk_mapped();
+		_proc_create_vm( proc );
 
 		// create user pagetable for given process
 		// if((pt = proc_pagetable(proc)).is_null()){
@@ -790,7 +790,7 @@ namespace pm
 		}
 
 		// save program name for debugging.
-		for ( uint i = 0; i < 16; i++ )
+		for ( uint i = 0; i < sizeof proc->_name; i++ )
 		{
 			if ( i < path.size() )
 				proc->_name[ i ] = path[ i ];

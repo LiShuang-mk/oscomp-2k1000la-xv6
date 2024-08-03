@@ -32,7 +32,7 @@ namespace pm
 	constexpr int default_proc_prio = 10;
 	constexpr int lowest_proc_prio = 19;
 	constexpr int highest_proc_prio = 0;
-	constexpr uint max_open_files = 128;
+	constexpr uint max_open_files = 512;
 
 	constexpr int default_proc_kstack_pages = 16;			// 默认进程内核栈大小（按页面数计算）
 	constexpr int default_proc_ustack_pages = 32;			// 默认进程用户栈大小（按页面数计算）
@@ -92,7 +92,7 @@ namespace pm
 		void * _context;      // swtch() here to run process
 		fs::file *_ofile[ max_open_files ];  // Open files
 		// struct inode *cwd;           // Current directory
-		char _name[ 16 ];               // Process name (debugging)
+		char _name[ 256 ];               // Process name (debugging)
 
 		int _slot;					// Rest of time slot 
 		int _priority;				// Process priority (0-20)=(highest-lowest)
