@@ -114,8 +114,8 @@ namespace syscall
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
 	{
 #ifdef OS_DEBUG
-		if ( sys_num != SYS_write )
-			printf( BLUE_COLOR_PRINT "invoke syscall %d\n" CLEAR_COLOR_PRINT, sys_num );
+		// if ( sys_num != SYS_write )
+		// 	printf( BLUE_COLOR_PRINT "invoke syscall %d\n" CLEAR_COLOR_PRINT, sys_num );
 #endif
 		return _syscall_funcs[ sys_num ]();
 	}

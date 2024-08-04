@@ -707,8 +707,15 @@ namespace pm
 		{
 			char * st_ptr = ( char * ) hsai::k_mem->to_vir( proc->_pt.walk_addr( sp ) );
 			rd_pos = sp;	// 伪随机数的位置
-			( ( u64 * ) st_ptr )[ 0 ] = 0x42494C474B435546UL;
-			( ( u64 * ) st_ptr )[ 1 ] = 0x00504D4F43534F43UL;		// "FUCKGLIBCOSCOMP\0"
+
+			/// @note 此处的所谓随机数，实际上是有意义的，
+			/// 在loongarch的glibc中它不能覆盖用户地址空间
+			/// 此处使用高四位为0x2/0x3，这是一个非法的直接
+			/// 映射窗口，具体详解文档 how_to_adapt_glibc.md
+			( ( u64 * ) st_ptr )[ 0 ] = 0x2UL << 60;					// 0x2000_xxxx_xxxx_xxxx
+			( ( u64 * ) st_ptr )[ 1 ] = 0x3UL << 60;					// 0x3000_xxxx_xxxx_xxxx
+			// ( ( u64 * ) st_ptr )[ 0 ] = 0x42494C474B435546UL;
+			// ( ( u64 * ) st_ptr )[ 1 ] = 0x00504D4F43534F43UL;		// "FUCKGLIBCOSCOMP\0"
 			( ( u64 * ) st_ptr )[ 2 ] = -0x114514FF114514UL;
 			( ( u64 * ) st_ptr )[ 3 ] = 0;
 		}
@@ -884,7 +891,9 @@ namespace pm
 		hsai::set_trap_frame_entry( proc->_trapframe, ( void * ) elf.entry );
 		hsai::set_trap_frame_user_sp( proc->_trapframe, sp );
 		proc->_state = ProcState::runnable;
-		return argc;
+
+		/// @note 此处是为了兼容glibc的需要，详见 how_to_adapt_glibc.md
+		return 0x0;			// rtld_fini
 	}
 
 	int ProcessManager::load_seg( mm::PageTable &pt, uint64 va, fs::dentry *de, uint offset, uint size )

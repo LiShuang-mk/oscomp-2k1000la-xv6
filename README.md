@@ -50,3 +50,5 @@
 #### 8. [=> 空间地址划分](./doc/memlayout.md)
 
 #### 9. [=> uboot启动与调试](./doc/how_to_uboot.md)
+
+#### 10. [=> 如何适配使用glibc的用户程序](./doc/how_to_adapt_glibc.md)

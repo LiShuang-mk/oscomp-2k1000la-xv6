@@ -14,3 +14,6 @@ build/**
 *.dis
 copy_kernel_to_ext4.sh
 oscomp/*
+glibc
+testsuits
+.gdb_cmd.txt
