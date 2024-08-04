@@ -285,6 +285,7 @@ namespace pm
 				hsai::page_round_down( ( ( uint64 ) &_u_init_txts - ( uint64 ) &_start_u_init ) );
 			p->_prog_sections[ ps_cnt ]._sec_size =
 				hsai::page_round_up( ( uint64 ) &_u_init_txte - ( uint64 ) &_u_init_txts );
+			p->_prog_sections[ ps_cnt ]._debug_name = "user-init code";
 			ps_cnt++;
 
 			// map user init data
@@ -299,6 +300,7 @@ namespace pm
 				hsai::page_round_down( ( ( uint64 ) &_u_init_dats - ( uint64 ) &_start_u_init ) );
 			p->_prog_sections[ ps_cnt ]._sec_size =
 				hsai::page_round_up( ( uint64 ) &_u_init_date - ( uint64 ) &_u_init_dats );
+			p->_prog_sections[ ps_cnt ]._debug_name = "user-init data";
 			ps_cnt++;
 
 			p->_prog_section_cnt = ps_cnt;
@@ -637,10 +639,39 @@ namespace pm
 			int pi = proc->_prog_section_cnt;
 			proc->_prog_sections[ pi ]._sec_start = ( void* ) ph.vaddr;
 			proc->_prog_sections[ pi ]._sec_size = ph.memsz;
+			proc->_prog_sections[ pi ]._debug_name = "LOAD";
 			proc->_prog_section_cnt++;
 		}
 
+		// 为程序映像转储 elf 程序头
+
 		sz = hsai::page_round_up( sz );
+		u64 phdr = 0;			// for AT_PHDR
+		{
+			ulong phsz = elf.phentsize * elf.phnum;
+			u64 sz1;
+			if ( ( sz1 = mm::k_vmm.vmalloc( proc->_pt, sz, sz + phsz ) ) == 0 )
+				log_panic( "execve: vaalloc" );
+
+			u8 * tmp = new u8[ phsz + 8 ];
+			if ( tmp == nullptr )
+				log_panic( "execve: no mem" );
+			if ( de->getNode()->nodeRead( ( ulong ) tmp, elf.phoff, phsz ) != phsz )
+				log_panic( "execve: node read" );
+			if ( mm::k_vmm.copyout( proc->_pt, sz, ( void * ) tmp, phsz ) < 0 )
+				log_panic( "execve: copy out" );
+			delete[] tmp;
+
+			phdr = sz;
+			sz = hsai::page_round_up( sz1 );
+
+			// 将该段作为程序段记录下来
+			int pi = proc->_prog_section_cnt;
+			proc->_prog_sections[ pi ]._sec_start = ( void* ) phdr;
+			proc->_prog_sections[ pi ]._sec_size = phsz;
+			proc->_prog_sections[ pi ]._debug_name = "program headers";
+			proc->_prog_section_cnt++;
+		}
 
 		//allocate two pages , the second is used for the user stack
 
@@ -759,6 +790,27 @@ namespace pm
 			{
 				log_panic( "execve: copyout" );
 				return -1;
+			}
+			if ( phdr != 0 )
+			{
+				// auxv[3] = AT_PHNUM
+				sp -= sizeof( elf::Elf64_auxv_t );
+				aux.a_type = elf::AT_PHNUM;
+				aux.a_un.a_val = elf.phnum;
+				if ( mm::k_vmm.copyout( proc->_pt, sp, ( void * ) &aux, sizeof( aux ) ) < 0 )
+					log_panic( "execve: copyout" );
+				// auxv[2] = AT_PHENT
+				sp -= sizeof( elf::Elf64_auxv_t );
+				aux.a_type = elf::AT_PHENT;
+				aux.a_un.a_val = elf.phentsize;
+				if ( mm::k_vmm.copyout( proc->_pt, sp, ( void * ) &aux, sizeof( aux ) ) < 0 )
+					log_panic( "execve: copyout" );
+				// auxv[1] = AT_PHDR
+				sp -= sizeof( elf::Elf64_auxv_t );
+				aux.a_type = elf::AT_PHDR;
+				aux.a_un.a_val = phdr;
+				if ( mm::k_vmm.copyout( proc->_pt, sp, ( void * ) &aux, sizeof( aux ) ) < 0 )
+					log_panic( "execve: copyout" );
 			}
 			// auxv[0] = AT_RANDOM
 			sp -= sizeof( elf::Elf64_auxv_t );

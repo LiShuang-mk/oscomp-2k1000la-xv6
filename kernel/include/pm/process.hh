@@ -57,6 +57,7 @@ namespace pm
 	{
 		void * _sec_start = nullptr;			// virtual address
 		ulong _sec_size = 0;
+		const char * _debug_name = nullptr;
 	};
 	constexpr int max_program_section_num = 12;
 
