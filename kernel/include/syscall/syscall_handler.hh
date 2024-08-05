@@ -32,7 +32,7 @@ namespace syscall
 	{
 	private:
 		std::function<uint64( void )> _syscall_funcs[ max_syscall_funcs_num ];
-
+		const char * _syscall_name[ max_syscall_funcs_num ];
 
 	public:
 		SyscallHandler() {};

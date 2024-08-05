@@ -19,7 +19,7 @@ namespace fs
 
 	fs::dentry *dentry::EntrySearch( const eastl::string name )
     {
-        log_trace("dentry::EntrySearch: name = %s", name.c_str());
+        // log_trace("dentry::EntrySearch: name = %s", name.c_str());
         auto it = children.find(name);
         if (it != children.end())
             return it->second;
