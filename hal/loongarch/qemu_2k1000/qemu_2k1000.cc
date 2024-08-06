@@ -59,11 +59,13 @@ namespace hsai
 
 	constexpr uint64 _1K_dec = 1000UL;
 	constexpr uint64 _1M_dec = _1K_dec * _1K_dec;
+	constexpr uint64 _1G_dec = _1M_dec * _1K_dec;
 
 	// 以下两个常量表达式应当是绑定在一起的
 
 	// 参考测例说明的时钟频率是12.5MHz, 但是测试发现比这个值要小一些，大约是四分之一
 	// constexpr uint64 qemu_fre = 12 * _1M_dec + 500 * _1K_dec;
+	// constexpr uint64 qemu_fre = 100 * _1M_dec;					// 按照 CPUCFG.4 的值则恰为 100'000'000
 	constexpr uint64 qemu_fre = 3 * _1M_dec + 125 * _1K_dec;
 	// 由cycles计算出微秒的方法
 	constexpr uint64 qemu_fre_cal_usec( uint64 cycles ) { return cycles * 8 / 25; }

@@ -26,7 +26,7 @@ namespace mm
 	{
 		if ( gid >= pm::num_process )
 			log_panic( "vmm: invalid gid" );
-		return ( vml::vm_trap_frame - ( ( ( gid + 1 ) * ( pm::default_proc_kstack_pages + 1 ) ) << hsai::page_size_shift ) );
+		return ( vml::vm_kernel_end - ( ( ( gid + 1 ) * ( pm::default_proc_kstack_pages + 1 ) ) << hsai::page_size_shift ) );
 	}
 
 	void VirtualMemoryManager::init( const char *lock_name )

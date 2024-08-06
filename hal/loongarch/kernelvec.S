@@ -19,18 +19,18 @@ kernelvec:
 	addi.d $sp, $sp, -256
 
 	# >> test sp
-	csrwr $t0, 0x31
-	add.d $t0, $sp, $zero
-	srli.d $t0, $t0, 60
-	bgeu  $t0, $zero, _end_test_sp
-_start_test_sp:
-	li.w  $t0, 4095
-	and   $t0, $t0, $sp
-	addi.d $t0, $t0, -300
-	bge   $t0, $zero, _end_test_sp
-	b     0
-_end_test_sp:
-	csrwr $t0, 0x31
+# 	csrwr $t0, 0x31
+# 	add.d $t0, $sp, $zero
+# 	srli.d $t0, $t0, 60
+# 	bgeu  $t0, $zero, _end_test_sp
+# _start_test_sp:
+# 	li.w  $t0, 4095
+# 	and   $t0, $t0, $sp
+# 	addi.d $t0, $t0, -300
+# 	bge   $t0, $zero, _end_test_sp
+# 	b     0
+# _end_test_sp:
+# 	csrwr $t0, 0x31
 	# << test sp
 
 	# save the registers.

@@ -244,8 +244,8 @@ namespace pm
 		// map user init stack
 
 		int stack_page_cnt = default_proc_ustack_pages;
-		ulong stackbase = mm::vml::vm_user_end - stack_page_cnt * hsai::page_size;
-		ulong sp = mm::vml::vm_user_end;
+		ulong stackbase = mm::vml::vm_ustack_end - stack_page_cnt * hsai::page_size;
+		ulong sp = mm::vml::vm_ustack_end;
 
 		if ( mm::k_vmm.uvmalloc( p->_pt, stackbase - hsai::page_size, sp ) == 0 )
 		{
@@ -428,7 +428,7 @@ namespace pm
 
 		{
 			// 多出的一页是保护页面，防止栈溢出
-			ulong stack_start = mm::vml::vm_user_end - ( 1 + default_proc_ustack_pages ) * hsai::page_size;
+			ulong stack_start = mm::vml::vm_ustack_end - ( 1 + default_proc_ustack_pages ) * hsai::page_size;
 			if ( mm::k_vmm.vm_copy( *curpt, *newpt, stack_start, ( 1 + default_proc_ustack_pages ) * hsai::page_size ) < 0 )
 			{
 				freeproc( np );
@@ -676,12 +676,12 @@ namespace pm
 		//allocate two pages , the second is used for the user stack
 
 		// 此处分配栈空间遵循 memlayout
-		// 进程的用户虚拟空间占用地址低 128MiB，内核虚拟空间从 0xF0_0000_0000 开始
+		// 进程的用户虚拟空间占用地址低 64GiB，内核虚拟空间从 0xFFF0_0000_0000 开始
 		// 分配栈空间大小为 32 个页面，开头的 1 个页面用作保护页面
 
 		int stack_page_cnt = default_proc_ustack_pages;
-		stackbase = mm::vml::vm_user_end - stack_page_cnt * hsai::page_size;
-		sp = mm::vml::vm_user_end;
+		stackbase = mm::vml::vm_ustack_end - stack_page_cnt * hsai::page_size;
+		sp = mm::vml::vm_ustack_end;
 
 		if ( mm::k_vmm.uvmalloc( proc->_pt, stackbase - hsai::page_size, sp ) == 0 )
 		{
