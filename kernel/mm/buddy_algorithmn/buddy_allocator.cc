@@ -27,7 +27,7 @@ namespace mm
 		// mem 末尾存储 infos
 
 		_alloc_infos = ( BuddyInfo * ) ( ( ulong ) mem + size - ( ulong ) _infos_size );
-		memset( _alloc_infos, -1, _infos_size );
+		memset( _alloc_infos, 0, _infos_size );
 
 		_mem_addr = mem;
 		_mem_size = size - _infos_size;
@@ -54,7 +54,7 @@ namespace mm
 					._area_size = hsai::page_size << k
 				};
 				_insert_node( &node, ( int ) k );					// record the node as available node
-				_record_info( &node, k, 0 );
+				_record_info( &node, k, 0, 1 );
 				_buddy_max_order = k;
 
 				_area_desc[ _area_desc_len ] = {					// create an area descriptor
@@ -68,7 +68,7 @@ namespace mm
 		}
 	}
 
-	void *BuddyAllocator::alloc_pages( uint count )
+	void *BuddyAllocator::alloc_pages( ulong count )
 	{
 		if ( count == 0 )
 		{
@@ -120,7 +120,7 @@ namespace mm
 			}
 		}
 
-		_record_info( node, order, 1 );
+		_record_info( node, order, 1, 1 );
 
 		_lock.release();
 
@@ -144,7 +144,10 @@ namespace mm
 		assert( info_idx < _infos_size, "[buddy] bad buddy-info index" );
 		BuddyInfo &info = _alloc_infos[ info_idx ];
 
-
+		if ( info.area_flag == 0 )					// 这是一个页指针，分配和回收动作对其无效
+		{
+			return 0;
+		}
 		if ( info.in_use == 0 )
 		{
 			printf( "repeat free %p", ptr );
@@ -176,20 +179,20 @@ namespace mm
 				if ( node->_area_size != buddy->_area_size )		// 伙伴节点已经被拆分，无法合并
 					break;
 				_remove_node( buddy );
-				_record_info( buddy, ( u8 ) -1, 0 );
 				if ( ( ulong ) node > ( ulong ) buddy )				// 地址较小的是主节点
-				{
-					BuddyNode *tmp = node;
-					node = buddy;
-					buddy = tmp;
+				{	// 交换
+					node = ( BuddyNode * ) ( ( ulong ) node ^ ( ulong ) buddy );
+					buddy = ( BuddyNode * ) ( ( ulong ) node ^ ( ulong ) buddy );
+					node = ( BuddyNode * ) ( ( ulong ) node ^ ( ulong ) buddy );
 				}
+				_record_info( buddy, 0, 0, 0 );						// 被合并的节点指针记录为页指针
 				assert( _combine_node( *node, *buddy ) >= 0, "[buddy] combine node error" );
 				order++;
 			}
 		}
 
 		_insert_node( node, order );
-		_record_info( node, order, 0 );
+		_record_info( node, order, 0, 1 );
 
 		_lock.release();
 		return 0;

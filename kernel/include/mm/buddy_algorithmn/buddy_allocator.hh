@@ -26,8 +26,9 @@ namespace mm
 
 	struct BuddyInfo
 	{
-		u8 order : 7;
-		u8 in_use : 1;
+		u8 order : 6;
+		u8 area_flag : 1;			// whether area ptr or page ptr?
+		u8 in_use : 1;				// whether allocated or not?
 	}__attribute__( ( __packed__ ) );
 	static_assert( sizeof( BuddyInfo ) == 1 );
 
@@ -71,7 +72,7 @@ namespace mm
 		BuddyAllocator() = default;
 		BuddyAllocator( void *start, ulong size );
 
-		virtual void *alloc_pages( uint count ) override;
+		virtual void *alloc_pages( ulong count ) override;
 
 		virtual int free_pages( void *ptr ) override;
 
@@ -120,11 +121,12 @@ namespace mm
 			ulong addr = ( ulong ) node;
 			return ( addr - ( ulong ) _mem_addr ) / hsai::page_size;
 		}
-		void _record_info( BuddyNode *node, u8 order, u8 use )
+		void _record_info( BuddyNode *node, u8 order, u8 use, u8 is_area )
 		{
 			BuddyInfo &info = _alloc_infos[ _get_info_index( node ) ];
 			info.in_use = use;
 			info.order = order;
+			info.area_flag = is_area;
 		}
 		bool _is_in_use( BuddyNode *node )
 		{
@@ -165,7 +167,7 @@ namespace mm
 
 			_split_node( nd, inlist );
 			_insert_node( &inlist, order - 1 );
-			_record_info( &inlist, order - 1, 0 );
+			_record_info( &inlist, order - 1, 0, 1 );
 
 			return 0;
 		}

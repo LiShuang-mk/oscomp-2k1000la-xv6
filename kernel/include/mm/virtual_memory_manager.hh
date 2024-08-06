@@ -38,16 +38,16 @@ namespace mm
 		/// @return success if true 
 		bool map_pages( PageTable &pt, uint64 va, uint64 size, uint64 pa, flag_t flags );
 
-		uint64 vmalloc( PageTable &pt, uint64 old_sz, uint64 new_sz, bool executable = false );
+		uint64 vm_alloc( PageTable &pt, uint64 old_sz, uint64 new_sz, bool executable = false, bool for_user = true );
 
-		uint64 vmdealloc( PageTable &pt, uint64 old_sz, uint64 new_sz );
+		uint64 vm_dealloc( PageTable &pt, uint64 old_sz, uint64 new_sz );
 
 		/// @brief unmap va from pt
 		/// @param pt pagetable to use
 		/// @param va virtual address
 		/// @param npages num of pages to unmap
 		/// @param do_free free physical pages?
-		void vmunmap( PageTable &pt, uint64 va, uint64 npages, int do_free );
+		void vm_unmap( PageTable &pt, uint64 va, uint64 npages, int do_free );
 
 		PageTable vm_create();
 
@@ -61,11 +61,6 @@ namespace mm
 		/// @param phyaddr 
 		/// @return newshm if success
 		uint64 allocshm( PageTable &pt, uint64 oldshm, uint64 newshm, uint64 sz, void *phyaddr[ pm::MAX_SHM_PGNUM ] );
-
-		/// @brief 
-		/// @param pt 
-		/// @param sz 
-		void vmfree( PageTable &pt, uint64 sz );
 
 		int copy_in( PageTable &pt, void *dst, uint64 src_va, uint64 len );
 
@@ -89,6 +84,7 @@ namespace mm
 		/// @param newshm newshm lower address 
 		/// @return oldshm if success
 		uint64 deallocshm( PageTable &pt, uint64 oldshm, uint64 newshm );
+
 		/// @brief copy from kernel to user
 		/// @param pt pagetable to use
 		/// @param va dest virtual address 
@@ -96,22 +92,11 @@ namespace mm
 		/// @param len length
 		/// @return 0 if success, -1 if failed
 		int copyout( PageTable &pt, uint64 va, const void *p, uint64 len );
+
 		/// @brief mark a PTE invalid for user access
 		/// @param pt 
 		/// @param va 
-		void uvmclear( PageTable &pt, uint64 va );
-		/// @brief allocate memory to grow process from oldsz to newsz
-		/// @param pt pagetable to use 
-		/// @param oldsz old size
-		/// @param newsz new size
-		/// @return 
-		uint64 uvmalloc( PageTable &pt, uint64 oldsz, uint64 newsz );
-		/// @brief deallocate memory to shrink process from oldsz to newsz
-		/// @param pt pagetable to use
-		/// @param oldsz old size
-		/// @param newsz new size
-		/// @return 
-		uint64 uvmdealloc( PageTable &pt, uint64 oldsz, uint64 newsz );
+		int vm_set_super( PageTable &pt, uint64 va, ulong page_cnt );
 
 		/// @brief 设置 va 起始的用户空间每个字节的值
 		/// @param pt 用户页表
