@@ -93,6 +93,16 @@ extern "C" {
 		}
 		return *s1 < *s2 ? -1 : 1;
 	}
+
+	char *strrchr( const char *s, char c ) noexcept( true )
+	{
+		const char *j = nullptr;
+		for ( ; *s; s++ )
+		{
+			if ( *s == c )j = s;
+		}
+		return ( char* ) j;
+	}
 }
 
 const void *

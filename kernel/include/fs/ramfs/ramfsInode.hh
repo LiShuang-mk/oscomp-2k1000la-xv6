@@ -56,5 +56,13 @@ namespace fs{
                 Exe( RamFS *fs, uint ino ) : ramfs::RamInode(fs, ino, false) {};
                 int readlinkat( char *buf, size_t len ) override;
         };
+
+        class Mount : public RamInode
+        {
+            public:
+                Mount( RamFS *fs, uint ino, FileAttrs attrs ) : ramfs::RamInode( fs, ino, attrs ) {};
+                size_t nodeRead( uint64 dst_, size_t off_, size_t len_ ) override ;
+        };
+
     }
 }

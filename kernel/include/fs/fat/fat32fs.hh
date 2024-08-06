@@ -48,7 +48,7 @@ namespace fs
 			inline bool isRootFS() const override { return _isroot; }
 			inline SuperBlock * getSuperBlock() const override { return _super_block; }
 			//int ldSuperBlock( uint64 dev, Dentry * mnt ) override { return -1; } // @todo FAT32 load super block
-			//long rMagic() const override { return 0x12345678; }/// @todo FAT32 magic number 
+			long rMagic() const override { return _super_block->get_dbr()->bootable_signature; }/// @todo FAT32 magic number 
 			size_t rBlockSize() const override { return _super_block->rBlockSize(); }
 			long rBlockNum() const override { return _super_block->rBlockNum(); }
 			long rBlockFree() const override { return rBlockNum(); } /// @todo FAT32 free block number

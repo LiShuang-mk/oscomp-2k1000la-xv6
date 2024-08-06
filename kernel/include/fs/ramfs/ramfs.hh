@@ -52,6 +52,7 @@ namespace fs{
                 int alloc_ino() { return _ino++; }
                 int mount( dentry *dev, dentry *mnt, eastl::string fstype ) override ;
                 int umount( dentry *mnt ) override ;
+                long rMagic() const override { return 0x9fa0; } // RamFS does not have magic number
         };
 
         extern RamFS k_ramfs;

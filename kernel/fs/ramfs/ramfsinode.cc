@@ -1,5 +1,6 @@
 #include "fs/ramfs/ramfsInode.hh"
 #include "fs/ramfs/ramfs.hh"
+#include "fs/path.hh"
 
 #include "pm/process_manager.hh"
 
@@ -7,6 +8,7 @@
 #include "hsai_global.hh"
 #include "device_manager.hh"
 
+#include <mntent.h>
 namespace fs
 {
 
@@ -59,6 +61,7 @@ namespace fs
 			else return 0;
 		}
 
+
 		int Exe::readlinkat( char *buf, size_t len)
 		{
 			pm::Pcb *cur_proc = pm::k_pm.get_cur_pcb();
@@ -72,5 +75,44 @@ namespace fs
 
 			return copylen;
 		}
+
+		
+		size_t Mount::nodeRead( uint64 dst_, size_t off_, size_t len_ )
+		{
+			int off = off_;
+			size_t readbts = 0;
+			int cnt = 0;
+			for( auto it : fs::mnt_table )
+			{
+				//设备名称 总大小 用量 可用量 已用量百分比 挂载点
+				FileSystem *fs = it.second;
+				fs::Path path( fs->getRoot() );
+				eastl::string row =  fs->getRoot()->rName() + " \t" +
+									eastl::string(it.first) + " \t" +
+									eastl::string(it.second->rFStype()) + " \t" +
+									"rw\n"; // 确保每个字段之间用空格或制表符分隔，并且行末尾有一个换行符
+				//printf( "row: %s\n", row.c_str() );
+				int readlen = row.length(); // 使用 row.length() 而不是 sizeof(row)
+				int bytes;
+		
+				if( readlen + readbts < len_ )
+					bytes = readlen;
+				else
+					bytes = len_ - readbts;
+		
+				if( off < readlen )
+				{
+					memcpy( (void *)dst_, row.c_str() + off, bytes );
+					dst_ += bytes;
+					readbts += bytes;
+				}
+				else
+					bytes > off ? off = 0 : off -= bytes;
+		
+				cnt++;
+			}
+			return readbts;
+		}
+		
 	}
 }

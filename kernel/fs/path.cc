@@ -92,7 +92,11 @@ namespace fs
 			}
 			if ( !rep ) { ++dirnum; }  // 补齐末尾'/'
 			dirname = eastl::vector<eastl::string>( dirnum );
-			for ( size_t i = 0; i < ( size_t ) dirnum; ++i ) { dirname[ i ] = pathname.substr( ind[ i ][ 0 ], ind[ i ][ 1 ] ); }
+			for ( size_t i = 0; i < ( size_t ) dirnum; ++i ) 
+			{ 
+				dirname[ i ] = pathname.substr( ind[ i ][ 0 ], ind[ i ][ 1 ] ); 
+			}
+
 			delete[] ind;
 		}
 		return;
@@ -161,9 +165,10 @@ namespace fs
 		if( pathname == "/" ) return mnt_table[ "/" ]->getSuperBlock()->getRoot();
 		dentry * entry, * next;
 		if ( base == nullptr ) { return nullptr; }	// 无效路径
-		else if( ( entry = pathHitTable()) != nullptr) { }// 查询挂载表，找到对应根目录
-		else { entry = base; }	// 未找到对应根目录，使用当前目录
-
+		// else if( ( entry = pathHitTable()) != nullptr) { }// 查询挂载表，找到对应根目录
+		// else { entry = base; }	// 未找到对应根目录，使用当前目录
+		
+		entry = base;
 		int dirsize = dirname.size();
 
 		for(int i=0; i < dirsize; i++)
@@ -193,7 +198,6 @@ namespace fs
 		
 		if( mntEnt->getNode( )->getFS()->mount( devEnt, mntEnt, fstype ) == 0)
 		{
-			mnt_table[ pathname ] = mntEnt->getNode()->getFS();
 			return 0;
 		}
 		return -1;
