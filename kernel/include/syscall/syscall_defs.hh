@@ -26,6 +26,7 @@ namespace syscall
 		_build_sysnum_enum_(unlinkat, 35),
 		_build_sysnum_enum_(umount, 39),
 		_build_sysnum_enum_(mount, 40),
+		_build_sysnum_enum_(statfs, 43),
 		_build_sysnum_enum_(chdir, 49),
 		_build_sysnum_enum_(openat, 56),
 		_build_sysnum_enum_(close, 57),

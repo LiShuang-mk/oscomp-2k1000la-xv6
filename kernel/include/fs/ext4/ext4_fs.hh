@@ -51,9 +51,10 @@ namespace fs
 			virtual size_t rBlockSize() const override { return _sb.rBlockSize(); };
 			virtual long rBlockNum() const override { return _sb.rBlockNum(); };
 			virtual long rBlockFree() const override { return _sb.rBlockFree(); };
-			virtual long rMaxFile() const override { return -1; };
-			virtual long rFreeFile() const override { return -1; };
-			virtual size_t rNamelen() const override { return -1; };
+			virtual long rMaxFile() const override { return 10000; };
+			virtual long rFreeFile() const override { return 10000; };
+			virtual size_t rNamelen() const override { return 256; };
+			virtual long rMagic() const override { return 0xef53; };
 			virtual dentry *getRoot() const override { return _root_dir; };
 			virtual dentry *getMntPoint() const override { return _sb.getMntPoint(); };
 			virtual FileAttrs rDefaultMod() const override { return _sb.rDefaultMod(); };

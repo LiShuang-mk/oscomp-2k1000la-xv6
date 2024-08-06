@@ -20,6 +20,7 @@ extern "C" {
 	char  *strncpy( char *dst, const char *src, size_t n ) noexcept( true );
 	int    strcmp( const char *s1, const char *s2 ) noexcept( true );
 	int    strncmp( const char *s1, const char *s2, size_t n ) noexcept( true );
+	char  *strrchr( const char *s, char c ) noexcept( true );
 }
 
 

@@ -112,6 +112,7 @@ namespace syscall
 		BIND_SYSCALL(setuid);
 		BIND_SYSCALL(sendfile);
 		BIND_SYSCALL(exit_group);
+		BIND_SYSCALL(statfs);
 	}
 
 	uint64 SyscallHandler::invoke_syscaller(uint64 sys_num)
@@ -1184,4 +1185,23 @@ namespace syscall
 		return -111; // not return;
 	}
 
+	uint64 SyscallHandler::_sys_statfs()
+	{
+		eastl::string path;
+		uint64 statfsaddr;
+		mm::PageTable *pt = pm::k_pm.get_cur_pcb()->get_pagetable();
+		
+		if( _arg_str(0, path, 128) < 0 ) 
+			return -1;
+
+		if( _arg_addr(1, statfsaddr) < 0 ) 
+			return -2;
+
+		fs::Path fspath(path);
+		fs::statfs statfs_ = fs::statfs(*fspath.pathSearch()->getNode()->getFS());
+
+		if ( mm::k_vmm.copyout(*pt, statfsaddr, &statfs_, sizeof(statfs_)) < 0 ) 
+			return -1;
+		return 0;
+	}
 } // namespace syscall

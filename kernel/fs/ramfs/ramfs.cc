@@ -5,6 +5,7 @@
 #include "fs/file/file.hh"
 #include "fs/fat/fat32fs.hh"
 #include "fs/ext4/ext4_fs.hh"
+#include "fs/path.hh"
 
 #include "device_manager.hh"
 #include "hsai_global.hh"
@@ -90,11 +91,18 @@ namespace fs
 			}
 			
 			proc->EntryCreate( "self", FileAttrs( FileTypes::FT_DIRECT, 0444) );
-
+			
 			dentry *self = proc->EntrySearch( "self" );
+			// init exe
 			dentry *exe = self->EntryCreate( "exe", FileAttrs( FileTypes::FT_NORMAL, 0444 ) );
 			Exe *exe_ = new Exe( static_cast<RamFS*>(self->getNode()->getFS()), 11 );
 			exe->setNode( exe_ );
+
+
+			//init mount
+			dentry *mounts = proc->EntryCreate( "mounts", FileAttrs( FileTypes::FT_DIRECT, 0444 ) );
+			Mount *mnt_ = new Mount( static_cast<RamFS*>(mounts->getNode()->getFS()), 11, FileAttrs( FileTypes::FT_NORMAL, 0444 ) );
+			mounts->setNode( mnt_ );
 
 			return;
 		}
@@ -141,12 +149,23 @@ namespace fs
 				dentry *root = fatfs->getRoot();
 				[[maybe_unused]] dentry *parent = mount->getParent();
 
+				dentry *mnt = mount;
+				eastl::string mnt_path;
+				while( mnt != nullptr )
+				{
+					mnt_path = mnt->rName() + "/" + mnt_path;
+					mnt = mnt->getParent();
+				}
+				mnt_path = mnt_path.substr( 1, mnt_path.size() - 1 );
+
 				root->setParent( mount->getParent() );
 				mount->getParent()->getChildren()[ mount->rName() ] = fatfs->getRoot();
 				for ( auto it : mount->getChildren() )
 				{
 					log_info( "RamFS::mount: %s", it.second->rName().c_str() );
 				}
+
+				fs::mnt_table[ mnt_path ] = fatfs;
 			}
 			else if ( fstype == "ext4" )
 			{
@@ -156,12 +175,24 @@ namespace fs
 				dentry *root = ext4fs->getRoot();
 				[[maybe_unused]] dentry *parent = mount->getParent();
 
+				dentry *mnt = mount;
+				eastl::string mnt_path;
+				while( mnt != nullptr )
+				{
+					mnt_path = mnt->rName() + "/" + mnt_path;
+					mnt = mnt->getParent();
+				}
+
+				mnt_path = mnt_path.substr( 1, mnt_path.size() - 2 );
+
 				root->setParent( mount->getParent() );
 				mount->getParent()->getChildren()[ mount->rName() ] = ext4fs->getRoot();
 				for ( auto it : mount->getChildren() )
 				{
 					log_info( "RamFS::mount: %s", it.second->rName().c_str() );
 				}
+
+				fs::mnt_table[ mnt_path ] = ext4fs;
 			}
 			else
 			{
