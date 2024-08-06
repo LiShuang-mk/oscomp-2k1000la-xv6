@@ -10,7 +10,7 @@
 # interrupts and exceptions while in privilege0
 # push all registers, call kerneltrap(), restore, return.
 #
-.section k_eentry
+.section .text.k_eentry
 .globl _wrp_kernel_trap
 .globl kernelvec
 .align 4

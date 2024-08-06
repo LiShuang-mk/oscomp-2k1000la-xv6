@@ -8,7 +8,7 @@
 
 #include "asm.h"
 
-.section tlbrentry
+.section .text.tlbrentry
 .globl handle_tlbr
 .align 0x4
 handle_tlbr:

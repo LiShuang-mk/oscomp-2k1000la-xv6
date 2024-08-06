@@ -80,6 +80,11 @@ namespace loongarch
 		cpu->write_csr( csr::tlbrentry, ( uint64 ) handle_tlbr );
 		cpu->write_csr( csr::merrentry, ( uint64 ) handle_merr );
 
+		hsai_printf( "keentry: %p\n", ( u64 ) kernelvec );
+		hsai_printf( "ueentry: %p\n", ( u64 ) uservec );
+		hsai_printf( "teentry: %p\n", ( u64 ) handle_tlbr );
+		hsai_printf( "meentry: %p\n", ( u64 ) handle_merr );
+
 		_init_exception_handler();
 
 		// syscall::k_syscall_handler.init();

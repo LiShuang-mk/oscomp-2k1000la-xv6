@@ -13,20 +13,26 @@ SECTIONS
 	PROVIDE(_startup_text_e = .);
 
 	PROVIDE(_common_text_s = .);
-    *(.text .text.*)
+
     . = ALIGN(0x1000);
     _keentry = .;
-    *(k_eentry)
+    *(.text.k_eentry)
+
     . = ALIGN(0x1000);
     _ueentry = .;
-    *(u_eentry)
+    *(.text.u_eentry)
+
     . = ALIGN(0x1000);
     _tlbrentry = .;
-    *(tlbrentry)
+    *(.text.tlbrentry)
+
     . = ALIGN(0x1000);
     _merrentry = .;
-    *(merrentry)
+    *(.text.merrentry)
+
     . = ALIGN(0x1000);
+    *(.text .text.*)
+	
 	PROVIDE(_common_text_e = .);
 
     PROVIDE(etext = .);
