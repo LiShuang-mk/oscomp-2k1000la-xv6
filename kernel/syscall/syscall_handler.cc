@@ -113,6 +113,7 @@ namespace syscall
 		BIND_SYSCALL(sendfile);
 		BIND_SYSCALL(exit_group);
 		BIND_SYSCALL(statfs);
+		BIND_SYSCALL(syslog);
 	}
 
 	uint64 SyscallHandler::invoke_syscaller(uint64 sys_num)
@@ -1202,6 +1203,51 @@ namespace syscall
 
 		if ( mm::k_vmm.copyout(*pt, statfsaddr, &statfs_, sizeof(statfs_)) < 0 ) 
 			return -1;
+		return 0;
+	}
+
+	uint64 SyscallHandler::_sys_syslog()
+	{
+		enum sys_log_type{
+
+			SYSLOG_ACTION_CLOSE = 0,
+			SYSLOG_ACTION_OPEN = 1,
+			SYSLOG_ACTION_READ = 2,
+			SYSLOG_ACTION_READ_ALL = 3,
+			SYSLOG_ACTION_READ_CLEAR = 4,
+			SYSLOG_ACTION_CLEAR = 5,
+			SYSLOG_ACTION_CONSOLE_OFF = 6,
+			SYSLOG_ACTION_CONSOLE_ON = 7,
+			SYSLOG_ACTION_CONSOLE_LEVEL = 8,
+			SYSLOG_ACTION_SIZE_UNREAD = 9,
+			SYSLOG_ACTION_SIZE_BUFFER = 10
+
+		};
+
+		int prio;
+		eastl::string fmt;
+		uint64 fmt_addr;
+		eastl::string msg = "Spectre V2 : Update user space SMT mitigation: STIBP always-on\n"
+							"process_manager : execve set stack-base = 0x0000_0000_9194_5000\n"
+							"pm/process_manager : execve set page containing sp is 0x0000_0000_9196_4000";
+		[[maybe_unused]]pm::Pcb *p = pm::k_pm.get_cur_pcb();
+		[[maybe_unused]]mm::PageTable *pt = p->get_pagetable();
+		
+		if( _arg_int(0, prio) < 0 ) 
+			return -1;
+		
+		if( _arg_addr(1, fmt_addr) < 0 ) 
+			return -1;
+		
+
+		if( prio == SYSLOG_ACTION_SIZE_BUFFER ) 
+			return msg.size();  // 返回buffer的长度
+		else if( prio == SYSLOG_ACTION_READ_ALL )
+		{	
+			mm::k_vmm.copyout(*pt, fmt_addr, msg.c_str(), msg.size());
+			return msg.size();
+		}	
+
 		return 0;
 	}
 } // namespace syscall

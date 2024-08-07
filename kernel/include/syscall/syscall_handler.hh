@@ -118,6 +118,7 @@ namespace syscall
 		uint64 _sys_sendfile();
 		uint64 _sys_exit_group();
 		uint64 _sys_statfs();
+		uint64 _sys_syslog();
 	};
 
 	extern SyscallHandler k_syscall_handler;
