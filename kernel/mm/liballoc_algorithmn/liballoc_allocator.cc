@@ -37,11 +37,11 @@ namespace mm
 			printf( "L-allocator : Try to allocate 0 byte memory. Null will be returned." );
 			return nullptr;
 		}
-		if ( size >= ( int64 ) mm::vml::vm_kernel_heap_size )
-		{
-			printf( "L-allocator : request size too big : %d Bytes", size );
-			return nullptr;
-		}
+		// if ( size >= ( int64 ) mm::vml::vm_kernel_heap_size )
+		// {
+		// 	printf( "L-allocator : request size too big : %d Bytes", size );
+		// 	return nullptr;
+		// }
 		if ( _use_align_ )
 			size = _size_align( size );
 

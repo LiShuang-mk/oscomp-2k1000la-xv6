@@ -6,7 +6,7 @@
 // --------------------------------------------------------------
 //
 
-.section merrentry
+.section .text.merrentry
 .globl _wrp_machine_trap
 .globl handle_merr
 .align 0x4

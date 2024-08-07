@@ -14,7 +14,7 @@
 
 #include "asm.h"
 
-.section u_eentry
+.section .text.u_eentry
 .globl uservec
 .align 4
 

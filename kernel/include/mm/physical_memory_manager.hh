@@ -37,12 +37,12 @@ namespace mm
 		PhysicalMemoryManager() = default;
 		PhysicalMemoryManager( const char * name );
 
-		virtual void *alloc_pages( uint cnt ) override;
+		virtual void *alloc_pages( ulong cnt ) override;
 		virtual int free_pages( void *pa ) override;
 
 		void *alloc_page();
 		void clear_page( void *pa );
-		void clear_pages( void *pa, uint cnt );
+		void clear_pages( void *pa, ulong cnt );
 
 		inline uint64 trace_free_pages_count() { return _trace_page_cnt; }
 

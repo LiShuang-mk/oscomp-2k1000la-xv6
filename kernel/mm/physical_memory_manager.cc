@@ -43,7 +43,7 @@ namespace mm
 		_allocator = ( VirtualPageAllocator * ) &k_phy_alloc;
 	}
 
-	void * PhysicalMemoryManager::alloc_pages( uint cnt )
+	void * PhysicalMemoryManager::alloc_pages( ulong cnt )
 	{
 		void * pgs = _allocator->alloc_pages( cnt );
 		if ( pgs == nullptr )
@@ -77,7 +77,7 @@ namespace mm
 		_fill_junk( pa, MemJunk::null_junk );
 	}
 
-	void PhysicalMemoryManager::clear_pages( void *pa, uint cnt )
+	void PhysicalMemoryManager::clear_pages( void *pa, ulong cnt )
 	{
 		ulong a = ( ulong ) pa;
 		for ( ; cnt > 0; a += hsai::page_size, cnt-- )

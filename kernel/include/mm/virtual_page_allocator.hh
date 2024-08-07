@@ -13,7 +13,7 @@ namespace mm
 	class VirtualPageAllocator
 	{
 	public:
-		virtual void * alloc_pages( uint cnt ) = 0;
+		virtual void * alloc_pages( ulong cnt ) = 0;
 		virtual int free_pages( void * pages_ptr ) = 0;
 	};
 
