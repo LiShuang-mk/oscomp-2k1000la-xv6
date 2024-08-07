@@ -1089,14 +1089,14 @@ namespace pm
 
 	int ProcessManager::open(int dir_fd, eastl::string path, uint flags)
 	{
-		enum OpenFlags : uint
-		{
-			O_RDONLY	= 0x000U,
-			O_WRONLY	= 0x001U,
-			O_RDWR		= 0x002U,
-			O_CREATE	= 0x040U,
-			O_DIRECTORY = 0x020'0000U
-		};
+		// enum OpenFlags : uint
+		// {
+		// 	O_RDONLY	= 0x000U,
+		// 	O_WRONLY	= 0x001U,
+		// 	O_RDWR		= 0x002U,
+		// 	O_CREATE	= 0x040U,
+		// 	O_DIRECTORY = 0x020'0000U
+		// };
 
 		Pcb *p = get_cur_pcb();
 

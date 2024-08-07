@@ -64,5 +64,15 @@ namespace fs{
                 size_t nodeRead( uint64 dst_, size_t off_, size_t len_ ) override ;
         };
 
+        class SymbleLink : public RamInode
+        {   
+            private:
+                eastl::string target_path;  //
+            public:
+                SymbleLink( RamFS *fs, uint ino, FileAttrs attrs, eastl::string target ) : ramfs::RamInode( fs, ino, attrs ), target_path( target ) {};
+                size_t nodeRead( uint64 dst, size_t off_, size_t len_ ) override;
+                eastl::string rTargetPath() { return target_path; }; 
+        };
+
     }
 }

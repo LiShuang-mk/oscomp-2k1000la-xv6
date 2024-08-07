@@ -114,5 +114,10 @@ namespace fs
 			return readbts;
 		}
 		
+		size_t SymbleLink::nodeRead( uint64 dst_, size_t off_, size_t len_ )
+		{
+			fs::Path path( target_path );  		/// @todo 检查目标文件存在与否，不存在就删除此符号链接
+			return path.pathSearch()->getNode()->nodeRead( dst_, off_, len_ );
+		}
 	}
 }

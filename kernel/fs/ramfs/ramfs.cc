@@ -53,6 +53,8 @@ namespace fs
 			_root->EntryCreate( "sys", attrs );
 			_root->EntryCreate( "tmp", attrs );
 			_root->EntryCreate( "mnt", attrs );
+			_root->EntryCreate( "bin", attrs );
+
 			dentry * etc_dent = _root->EntryCreate( "etc", attrs );
 			dentry * conf_dent = etc_dent->EntryCreate( "busybox.conf", attrs );
 			( ( RamInode * ) conf_dent->getNode() )->readable = true;
@@ -103,6 +105,22 @@ namespace fs
 			dentry *mounts = proc->EntryCreate( "mounts", FileAttrs( FileTypes::FT_DIRECT, 0444 ) );
 			Mount *mnt_ = new Mount( static_cast<RamFS*>(mounts->getNode()->getFS()), 11, FileAttrs( FileTypes::FT_NORMAL, 0444 ) );
 			mounts->setNode( mnt_ );
+
+
+			// init bin
+			dentry *bin = _root->EntrySearch( "bin" );
+            if (!bin )
+            {
+                log_error( "RamFS::initfd: bin is nullptr" );
+                return;
+            }
+
+            dentry *ls = bin->EntryCreate( "ls", attrs ); // 创建ls
+			SymbleLink *ls_link_ = new SymbleLink( static_cast<RamFS*>(mounts->getNode()->getFS()), 
+													11,
+													FileAttrs( FileTypes::FT_NORMAL, 0777 ),  // 这里应该是一个SYMBLE_LINK
+                                                    "/mnt/sdcard/busybox" );
+			ls->setNode( ls_link_ );
 
 			return;
 		}

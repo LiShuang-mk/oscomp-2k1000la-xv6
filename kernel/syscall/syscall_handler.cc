@@ -14,7 +14,7 @@
 
 #include <EASTL/random.h>
 #include <asm-generic/poll.h>
-#include <fcntl.h>
+
 #include <sys/ioctl.h>
 
 #include <hsai_global.hh>
@@ -114,6 +114,7 @@ namespace syscall
 		BIND_SYSCALL(exit_group);
 		BIND_SYSCALL(statfs);
 		BIND_SYSCALL(syslog);
+		BIND_SYSCALL(faccessat);
 	}
 
 	uint64 SyscallHandler::invoke_syscaller(uint64 sys_num)
@@ -622,6 +623,8 @@ namespace syscall
 		using __u32 = uint32;
 		using __s64 = int64;
 		using __u64 = uint64;
+
+		
 		struct statx_timestamp
 		{
 			__s64 tv_sec;  /* Seconds since the Epoch (UNIX time) */
@@ -694,6 +697,7 @@ namespace syscall
 			pm::k_pm.fstat(ffd, &kst);
 			pm::k_pm.close(ffd);
 			stx.stx_size	  = kst.size;
+			stx.stx_mode 	  = kst.mode;
 			mm::PageTable *pt = pm::k_pm.get_cur_pcb()->get_pagetable();
 			if ( mm::k_vmm.copyout(*pt, kst_addr, &stx, sizeof(stx)) < 0 ) return -1;
 			return 0;
@@ -918,7 +922,6 @@ namespace syscall
 		}
 		return ret;
 	}
-
 
 	uint64 SyscallHandler::_sys_ioctl()
 	{
@@ -1248,6 +1251,67 @@ namespace syscall
 			return msg.size();
 		}	
 
+		return 0;
+	}
+
+	uint64 SyscallHandler::_sys_faccessat()
+	{
+		int _dirfd;
+		uint64 _pathaddr;
+		eastl::string _pathname;
+		int _mode;
+		int _flags;
+
+		if( _arg_int(0, _dirfd) < 0 ) 
+			return -1;
+
+		if( _arg_addr(1, _pathaddr) < 0 ) 
+			return -1;
+		
+		if( _arg_int(2, _mode) < 0 ) 
+			return -1;
+		
+		if( _arg_int(3, _flags) < 0 ) 
+			return -1;
+		pm::Pcb *cur_proc = pm::k_pm.get_cur_pcb();
+		mm::PageTable *pt = cur_proc->get_pagetable();
+
+		if( mm::k_vmm.copy_str_in(*pt, _pathname, _pathaddr, 100) < 0 ) 
+			return -1;
+		if( _pathname.empty() ) 
+			return -1;
+		
+		[[maybe_unused]]int flags = 0;
+		// if( ( _mode & ( R_OK | X_OK )) && ( _mode & W_OK ) )
+		// 	flags = 6;    	//O_RDWR;
+		// else if( _mode & W_OK )
+		// 	flags = 2;		//O_WRONLY + 1;
+		// else if( _mode & ( R_OK | X_OK ))
+		// 	flags = 4		//O_RDONLY + 1;
+
+		if( _mode & R_OK )
+			flags |= 4;
+		if( _mode & W_OK )
+			flags |= 2;
+		if( _mode & X_OK )
+		    flags |= 1;
+
+		fs::Path path;
+		if( _dirfd == -100 ) //AT_CWD
+			new ( &path ) fs::Path(_pathname, cur_proc->_cwd );
+		else	
+			new ( &path ) fs::Path(_pathname, cur_proc->_ofile[_dirfd]);
+
+		int fd = path.open( fs::FileAttrs( flags ) );
+		
+		if( fd < 0 )
+			return -1;
+		else
+		{
+				cur_proc->_ofile[fd]->free_file();
+				cur_proc->_ofile[fd] = nullptr;
+		}
+		
 		return 0;
 	}
 } // namespace syscall
