@@ -94,6 +94,12 @@ namespace fs
 			
 			proc->EntryCreate( "self", FileAttrs( FileTypes::FT_DIRECT, 0444) );
 			
+			// init /proc/meminfo
+			dentry *meminfo = proc->EntryCreate( "meminfo", FileAttrs( FileTypes::FT_NORMAL, 0444 ) );
+			MemInfo *meminfo_ = new MemInfo( static_cast<RamFS*>(meminfo->getNode()->getFS()), 11 );
+			meminfo->setNode( meminfo_ );
+
+			
 			dentry *self = proc->EntrySearch( "self" );
 			// init exe
 			dentry *exe = self->EntryCreate( "exe", FileAttrs( FileTypes::FT_NORMAL, 0444 ) );
@@ -103,7 +109,7 @@ namespace fs
 
 			//init mount
 			dentry *mounts = proc->EntryCreate( "mounts", FileAttrs( FileTypes::FT_DIRECT, 0444 ) );
-			Mount *mnt_ = new Mount( static_cast<RamFS*>(mounts->getNode()->getFS()), 11, FileAttrs( FileTypes::FT_NORMAL, 0444 ) );
+			Mount *mnt_ = new Mount( static_cast<RamFS*>(mounts->getNode()->getFS()), 11, FileAttrs( FileTypes::FT_SYMLINK, 0444 ) );
 			mounts->setNode( mnt_ );
 
 

@@ -74,5 +74,11 @@ namespace fs{
                 eastl::string rTargetPath() { return target_path; }; 
         };
 
+        class MemInfo : public RamInode
+        {
+            public:
+                MemInfo( RamFS *fs, uint ino ) : ramfs::RamInode( fs, ino, false ) {};
+                size_t nodeRead( uint64 dst_, size_t off_, size_t len_ ) override;
+        };
     }
 }

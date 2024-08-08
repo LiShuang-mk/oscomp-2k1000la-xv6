@@ -120,6 +120,7 @@ namespace syscall
 		uint64 _sys_statfs();
 		uint64 _sys_syslog();
 		uint64 _sys_faccessat();
+		uint64 _sys_sysinfo();
 	};
 
 	extern SyscallHandler k_syscall_handler;

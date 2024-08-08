@@ -9,7 +9,6 @@
 #pragma once
 
 #include "types.hh"
-#include "klib/klib.h"
 
 namespace fs
 {

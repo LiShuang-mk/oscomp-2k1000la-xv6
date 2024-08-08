@@ -14,7 +14,7 @@
 
 #include <EASTL/random.h>
 #include <asm-generic/poll.h>
-
+#include <linux/sysinfo.h>
 #include <sys/ioctl.h>
 
 #include <hsai_global.hh>
@@ -40,7 +40,6 @@
 #include "pm/scheduler.hh"
 #include "tm/time.hh"
 #include "tm/timer_manager.hh"
-
 namespace syscall
 {
 	SyscallHandler k_syscall_handler;
@@ -115,6 +114,7 @@ namespace syscall
 		BIND_SYSCALL(statfs);
 		BIND_SYSCALL(syslog);
 		BIND_SYSCALL(faccessat);
+		BIND_SYSCALL(sysinfo);
 	}
 
 	uint64 SyscallHandler::invoke_syscaller(uint64 sys_num)
@@ -527,6 +527,7 @@ namespace syscall
 		uint64	  buf_addr;
 		int		  buf_len;
 
+		/// @todo:  补充对 FT_DIRECT 的读
 		if ( _arg_fd(0, nullptr, &f) < 0 ) return -1;
 		if ( _arg_addr(1, buf_addr) < 0 ) return -1;
 		if ( _arg_int(2, buf_len) < 0 ) return -1;
@@ -685,8 +686,10 @@ namespace syscall
 		if ( fd > 0 )
 		{
 			pm::k_pm.fstat(fd, &kst);
+			stx.stx_mode = kst.mode;
+			stx.stx_size = kst.size;
 			mm::PageTable *pt = pm::k_pm.get_cur_pcb()->get_pagetable();
-			if ( mm::k_vmm.copyout(*pt, kst_addr, &kst, sizeof(kst)) < 0 ) return -1;
+			if ( mm::k_vmm.copyout(*pt, kst_addr, &stx, sizeof(stx)) < 0 ) return -1;
 			return 0;
 		}
 		else
@@ -1314,4 +1317,57 @@ namespace syscall
 		
 		return 0;
 	}
+
+	uint64 SyscallHandler::_sys_sysinfo()
+	{
+		// struct sysinfo {
+		// 	__kernel_long_t uptime;		/* Seconds since boot */
+		// 	__kernel_ulong_t loads[3];	/* 1, 5, and 15 minute load averages */
+		// 	__kernel_ulong_t totalram;	/* Total usable main memory size */
+		// 	__kernel_ulong_t freeram;	/* Available memory size */
+		// 	__kernel_ulong_t sharedram;	/* Amount of shared memory */
+		// 	__kernel_ulong_t bufferram;	/* Memory used by buffers */
+		// 	__kernel_ulong_t totalswap;	/* Total swap space size */
+		// 	__kernel_ulong_t freeswap;	/* swap space still available */
+		// 	__u16 procs;		   	/* Number of current processes */
+		// 	__u16 pad;		   	/* Explicit padding for m68k */
+		// 	__kernel_ulong_t totalhigh;	/* Total high memory size */
+		// 	__kernel_ulong_t freehigh;	/* Available high memory size */
+		// 	__u32 mem_unit;			/* Memory unit size in bytes */
+		// 	char _f[20-2*sizeof(__kernel_ulong_t)-sizeof(__u32)];	/* Padding: libc5 uses this.. */
+		// };
+
+
+		uint64 sysinfoaddr;
+		[[maybe_unused]]sysinfo sysinfo_;
+
+		if( _arg_addr(0, sysinfoaddr) < 0 ) 
+			return -1;
+		
+		pm::Pcb *cur_proc = pm::k_pm.get_cur_pcb();
+		mm::PageTable *pt = cur_proc->get_pagetable();
+
+		    memset(&sysinfo_, 0, sizeof(sysinfo_));
+			sysinfo_.uptime = 0;
+			sysinfo_.loads[0] = 0;  //负载均值  1min 5min 15min
+			sysinfo_.loads[1] = 0;
+			sysinfo_.loads[2] = 0;
+			sysinfo_.totalram = 0;	//总内存
+			sysinfo_.freeram = 0; 	
+			sysinfo_.sharedram = 0;
+			sysinfo_.bufferram = 0;
+			sysinfo_.totalswap = 0;
+			sysinfo_.freeswap = 0;
+			sysinfo_.procs = 0;		
+			sysinfo_.pad = 0;
+			sysinfo_.totalhigh = 0;
+			sysinfo_.freehigh = 0;
+			sysinfo_.mem_unit = 1; // 内存单位为 1 字节
+
+		if( mm::k_vmm.copyout(*pt, sysinfoaddr, &sysinfo_, sizeof(sysinfo_)) < 0 ) 
+			return -1;	
+
+		return 0;
+	}	
+
 } // namespace syscall
