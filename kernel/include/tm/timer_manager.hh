@@ -10,7 +10,6 @@
 
 #include "types.hh"
 #include "tm/time.hh"
-
 #include <smp/spin_lock.hh>
 
 namespace tmm
@@ -28,12 +27,33 @@ namespace tmm
 	// 这个结构体来自Linux的定义 
 	struct tms
 	{
-		uint64 tms_utime;
-		uint64 tms_stime;
-		uint64 tms_cutime;
-		uint64 tms_cstime;
+		uint64 tms_utime;   // 用户态运行时间
+		uint64 tms_stime;   // 内核态运行时间
+		uint64 tms_cutime;  // 子进程的用户态运行时间
+		uint64 tms_cstime;  // 子进程的内核态运行时间
 	};
 
+	/* ISO C `broken-down time' structure.  */
+	struct tm
+	{
+	int tm_sec;			/* Seconds.	[0-60] (1 leap second) */
+	int tm_min;			/* Minutes.	[0-59] */
+	int tm_hour;			/* Hours.	[0-23] */
+	int tm_mday;			/* Day.		[1-31] */
+	int tm_mon;			/* Month.	[0-11] */
+	int tm_year;			/* Year	- 1900.  */
+	int tm_wday;			/* Day of week.	[0-6] */
+	int tm_yday;			/* Days in year.[0-365]	*/
+	int tm_isdst;			/* DST.		[-1/0/1]*/
+
+	# ifdef	__USE_MISC
+	long int tm_gmtoff;		/* Seconds east of UTC.  */
+	const char *tm_zone;		/* Timezone abbreviation.  */
+	# else
+	long int __tm_gmtoff;		/* Seconds east of UTC.  */
+	const char *__tm_zone;	/* Timezone abbreviation.  */
+	# endif
+	};
 	class TimerManager
 	{
 	private:

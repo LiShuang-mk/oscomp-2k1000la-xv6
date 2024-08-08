@@ -80,5 +80,15 @@ namespace fs{
                 MemInfo( RamFS *fs, uint ino ) : ramfs::RamInode( fs, ino, false ) {};
                 size_t nodeRead( uint64 dst_, size_t off_, size_t len_ ) override;
         };
+
+        class RTC : public RamInode
+        {   
+            private:
+                dev_t dev_;
+            public:
+                RTC( RamFS *fs, uint ino, dev_t dev ) : ramfs::RamInode( fs, ino, false ) , dev_(dev) {};
+                size_t nodeRead( uint64 dst_, size_t off_, size_t len_ ) override;
+                dev_t rDev() const override { return dev_; };
+        };
     }
 }

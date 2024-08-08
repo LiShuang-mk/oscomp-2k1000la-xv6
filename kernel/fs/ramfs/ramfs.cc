@@ -63,6 +63,12 @@ namespace fs
 
 			// init fat
 			dentry* dev = _root->EntrySearch( "dev" );
+			if ( !dev )
+			{
+				log_error( "RamFS::initfd: mnt is nullptr" );
+				return;
+			}
+
 			char ** dev_table = new char*[ DEV_TBL_LEN ];
 
 			for ( int i = 0; i < DEV_TBL_LEN; i++ )
@@ -76,13 +82,10 @@ namespace fs
 					break;
 				dev->EntryCreate( dev_table[ i ], _super_block->rDefaultMod(), dev_table[ i ] );
 			}
-			if ( !dev )
-			{
-				log_error( "RamFS::initfd: mnt is nullptr" );
-				return;
-			}
-			_root->printChildrenInfo();
 			
+			dentry *rtc = dev->EntryCreate( "rtc", FileAttrs( FileTypes::FT_DEVICE, 0444 ) );
+			RTC *rtc_ = new RTC( static_cast<RamFS*>(rtc->getNode()->getFS()), 9, 100);
+			rtc->setNode( rtc_ );
 
 			// init /proc
 			dentry *proc = _root->EntrySearch( "proc" );
@@ -96,10 +99,10 @@ namespace fs
 			
 			// init /proc/meminfo
 			dentry *meminfo = proc->EntryCreate( "meminfo", FileAttrs( FileTypes::FT_NORMAL, 0444 ) );
-			MemInfo *meminfo_ = new MemInfo( static_cast<RamFS*>(meminfo->getNode()->getFS()), 11 );
+			MemInfo *meminfo_ = new MemInfo( static_cast<RamFS*>(meminfo->getNode()->getFS()), 10 );
 			meminfo->setNode( meminfo_ );
 
-			
+
 			dentry *self = proc->EntrySearch( "self" );
 			// init exe
 			dentry *exe = self->EntryCreate( "exe", FileAttrs( FileTypes::FT_NORMAL, 0444 ) );
@@ -109,7 +112,7 @@ namespace fs
 
 			//init mount
 			dentry *mounts = proc->EntryCreate( "mounts", FileAttrs( FileTypes::FT_DIRECT, 0444 ) );
-			Mount *mnt_ = new Mount( static_cast<RamFS*>(mounts->getNode()->getFS()), 11, FileAttrs( FileTypes::FT_SYMLINK, 0444 ) );
+			Mount *mnt_ = new Mount( static_cast<RamFS*>(mounts->getNode()->getFS()), 12, FileAttrs( FileTypes::FT_SYMLINK, 0444 ) );
 			mounts->setNode( mnt_ );
 
 
@@ -123,11 +126,13 @@ namespace fs
 
             dentry *ls = bin->EntryCreate( "ls", attrs ); // 创建ls
 			SymbleLink *ls_link_ = new SymbleLink( static_cast<RamFS*>(mounts->getNode()->getFS()), 
-													11,
+													13,
 													FileAttrs( FileTypes::FT_NORMAL, 0777 ),  // 这里应该是一个SYMBLE_LINK
                                                     "/mnt/sdcard/busybox" );
 			ls->setNode( ls_link_ );
 
+
+			_root->printChildrenInfo();
 			return;
 		}
 

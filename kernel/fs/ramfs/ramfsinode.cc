@@ -3,12 +3,16 @@
 #include "fs/path.hh"
 
 #include "pm/process_manager.hh"
+#include "tm/timer_manager.hh"
 
 #include "klib/klib.hh"
 #include "hsai_global.hh"
 #include "device_manager.hh"
 
 #include <mntent.h>
+
+#include <EASTL/chrono.h>
+
 namespace fs
 {
 
@@ -154,6 +158,26 @@ namespace fs
 				cnt++;
 			}
 			return readbts;
+		}
+
+		size_t RTC::nodeRead( uint64 dst_, size_t off_, size_t len_ )
+		{
+			[[maybe_unused]]tmm::tm tm_;
+			int rdbytes = 0;
+			uint32 off = off_;
+
+			auto cur = eastl::chrono::system_clock::now();
+			auto time = cur.time_since_epoch().count();
+			auto bytes = sizeof( time );
+			if( off < bytes )
+			{
+				memcpy( (void *)dst_, &time, bytes );
+				dst_ += rdbytes;
+				rdbytes += bytes;	
+			}
+
+			if( off > 0 ) off -= bytes;
+			return rdbytes;
 		}
 	}
 }

@@ -527,7 +527,7 @@ namespace syscall
 		uint64	  buf_addr;
 		int		  buf_len;
 
-		/// @todo:  补充对 FT_DIRECT 的读
+		/// @todo:  补充对 FT_DIRECT 
 		if ( _arg_fd(0, nullptr, &f) < 0 ) return -1;
 		if ( _arg_addr(1, buf_addr) < 0 ) return -1;
 		if ( _arg_int(2, buf_len) < 0 ) return -1;
