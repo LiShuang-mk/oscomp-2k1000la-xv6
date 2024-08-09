@@ -64,5 +64,31 @@ namespace fs{
                 size_t nodeRead( uint64 dst_, size_t off_, size_t len_ ) override ;
         };
 
+        class SymbleLink : public RamInode
+        {   
+            private:
+                eastl::string target_path;  //
+            public:
+                SymbleLink( RamFS *fs, uint ino, FileAttrs attrs, eastl::string target ) : ramfs::RamInode( fs, ino, attrs ), target_path( target ) {};
+                size_t nodeRead( uint64 dst, size_t off_, size_t len_ ) override;
+                eastl::string rTargetPath() { return target_path; }; 
+        };
+
+        class MemInfo : public RamInode
+        {
+            public:
+                MemInfo( RamFS *fs, uint ino ) : ramfs::RamInode( fs, ino, false ) {};
+                size_t nodeRead( uint64 dst_, size_t off_, size_t len_ ) override;
+        };
+
+        class RTC : public RamInode
+        {   
+            private:
+                dev_t dev_;
+            public:
+                RTC( RamFS *fs, uint ino, dev_t dev ) : ramfs::RamInode( fs, ino, false ) , dev_(dev) {};
+                size_t nodeRead( uint64 dst_, size_t off_, size_t len_ ) override;
+                dev_t rDev() const override { return dev_; };
+        };
     }
 }

@@ -1,5 +1,6 @@
 #include "fs/dentrycache.hh"
 #include "fs/inode.hh"
+#include "fs/dstat.hh"
 
 #include "fs/fat/fat32inode.hh"
 
@@ -125,5 +126,11 @@ namespace fs
     void dentry::unlink()
     {
         /// @todo node->unlink(); linkcnt--;
+    }
+
+    int dentry::readDir( Dstat *dst, size_t off, size_t len )
+    {
+        /// @todo : readDir
+        return 0; 
     }
 }// namespace fs

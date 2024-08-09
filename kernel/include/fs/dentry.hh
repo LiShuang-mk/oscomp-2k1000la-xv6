@@ -20,6 +20,7 @@ using eastl::vector;
 namespace fs
 {
 	class Inode;
+	class Dstat;
 	namespace dentrycache
 	{
 		class dentryCache;
@@ -74,6 +75,7 @@ namespace fs
 		void setParent( dentry *parent ) { this->parent = parent; };
 		void unlink();
 		void setNode( Inode * node_ ) { _node = node_; };
+		int readDir( Dstat *dst, size_t off, size_t len );
 
 	public:
 

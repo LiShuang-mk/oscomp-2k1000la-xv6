@@ -14,7 +14,7 @@
 
 #include <EASTL/random.h>
 #include <asm-generic/poll.h>
-#include <fcntl.h>
+#include <linux/sysinfo.h>
 #include <sys/ioctl.h>
 
 #include <hsai_global.hh>
@@ -42,7 +42,6 @@
 #include "pm/scheduler.hh"
 #include "tm/time.hh"
 #include "tm/timer_manager.hh"
-
 namespace syscall
 {
 	SyscallHandler k_syscall_handler;
@@ -116,6 +115,9 @@ namespace syscall
 		BIND_SYSCALL( sendfile );
 		BIND_SYSCALL( exit_group );
 		BIND_SYSCALL( statfs );
+		BIND_SYSCALL( syslog );
+		BIND_SYSCALL( faccessat );
+		BIND_SYSCALL( sysinfo );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -578,6 +580,7 @@ namespace syscall
 		uint64	  buf_addr;
 		int		  buf_len;
 
+		/// @todo:  补充对 FT_DIRECT
 		if ( _arg_fd( 0, nullptr, &f ) < 0 ) return -1;
 		if ( _arg_addr( 1, buf_addr ) < 0 ) return -1;
 		if ( _arg_int( 2, buf_len ) < 0 ) return -1;
@@ -677,6 +680,8 @@ namespace syscall
 		using __u32 = uint32;
 		using __s64 = int64;
 		using __u64 = uint64;
+
+
 		struct statx_timestamp
 		{
 			__s64 tv_sec;  /* Seconds since the Epoch (UNIX time) */
@@ -737,8 +742,10 @@ namespace syscall
 		if ( fd > 0 )
 		{
 			pm::k_pm.fstat( fd, &kst );
+			stx.stx_mode	  = kst.mode;
+			stx.stx_size	  = kst.size;
 			mm::PageTable *pt = pm::k_pm.get_cur_pcb()->get_pagetable();
-			if ( mm::k_vmm.copyout( *pt, kst_addr, &kst, sizeof( kst ) ) < 0 )
+			if ( mm::k_vmm.copyout( *pt, kst_addr, &stx, sizeof( stx ) ) < 0 )
 				return -1;
 			return 0;
 		}
@@ -750,6 +757,7 @@ namespace syscall
 			pm::k_pm.fstat( ffd, &kst );
 			pm::k_pm.close( ffd );
 			stx.stx_size	  = kst.size;
+			stx.stx_mode	  = kst.mode;
 			mm::PageTable *pt = pm::k_pm.get_cur_pcb()->get_pagetable();
 			if ( mm::k_vmm.copyout( *pt, kst_addr, &stx, sizeof( stx ) ) < 0 )
 				return -1;
@@ -991,7 +999,6 @@ namespace syscall
 		}
 		return ret;
 	}
-
 
 	uint64 SyscallHandler::_sys_ioctl()
 	{
@@ -1289,4 +1296,155 @@ namespace syscall
 			return -1;
 		return 0;
 	}
+
+	uint64 SyscallHandler::_sys_syslog()
+	{
+		enum sys_log_type
+		{
+
+			SYSLOG_ACTION_CLOSE			= 0,
+			SYSLOG_ACTION_OPEN			= 1,
+			SYSLOG_ACTION_READ			= 2,
+			SYSLOG_ACTION_READ_ALL		= 3,
+			SYSLOG_ACTION_READ_CLEAR	= 4,
+			SYSLOG_ACTION_CLEAR			= 5,
+			SYSLOG_ACTION_CONSOLE_OFF	= 6,
+			SYSLOG_ACTION_CONSOLE_ON	= 7,
+			SYSLOG_ACTION_CONSOLE_LEVEL = 8,
+			SYSLOG_ACTION_SIZE_UNREAD	= 9,
+			SYSLOG_ACTION_SIZE_BUFFER	= 10
+
+		};
+
+		int			  prio;
+		eastl::string fmt;
+		uint64		  fmt_addr;
+		eastl::string msg = "Spectre V2 : Update user space SMT mitigation: STIBP always-on\n"
+							"process_manager : execve set stack-base = 0x0000_0000_9194_5000\n"
+							"pm/process_manager : execve set page containing sp is 0x0000_0000_9196_4000";
+		[[maybe_unused]] pm::Pcb	   *p  = pm::k_pm.get_cur_pcb();
+		[[maybe_unused]] mm::PageTable *pt = p->get_pagetable();
+
+		if ( _arg_int( 0, prio ) < 0 ) return -1;
+
+		if ( _arg_addr( 1, fmt_addr ) < 0 ) return -1;
+
+
+		if ( prio == SYSLOG_ACTION_SIZE_BUFFER )
+			return msg.size(); // 返回buffer的长度
+		else if ( prio == SYSLOG_ACTION_READ_ALL )
+		{
+			mm::k_vmm.copyout( *pt, fmt_addr, msg.c_str(), msg.size() );
+			return msg.size();
+		}
+
+		return 0;
+	}
+
+	uint64 SyscallHandler::_sys_faccessat()
+	{
+		int			  _dirfd;
+		uint64		  _pathaddr;
+		eastl::string _pathname;
+		int			  _mode;
+		int			  _flags;
+
+		if ( _arg_int( 0, _dirfd ) < 0 ) return -1;
+
+		if ( _arg_addr( 1, _pathaddr ) < 0 ) return -1;
+
+		if ( _arg_int( 2, _mode ) < 0 ) return -1;
+
+		if ( _arg_int( 3, _flags ) < 0 ) return -1;
+		pm::Pcb		  *cur_proc = pm::k_pm.get_cur_pcb();
+		mm::PageTable *pt		= cur_proc->get_pagetable();
+
+		if ( mm::k_vmm.copy_str_in( *pt, _pathname, _pathaddr, 100 ) < 0 )
+			return -1;
+		if ( _pathname.empty() ) return -1;
+
+		[[maybe_unused]] int flags = 0;
+		// if( ( _mode & ( R_OK | X_OK )) && ( _mode & W_OK ) )
+		// 	flags = 6;    	//O_RDWR;
+		// else if( _mode & W_OK )
+		// 	flags = 2;		//O_WRONLY + 1;
+		// else if( _mode & ( R_OK | X_OK ))
+		// 	flags = 4		//O_RDONLY + 1;
+
+		if ( _mode & R_OK ) flags |= 4;
+		if ( _mode & W_OK ) flags |= 2;
+		if ( _mode & X_OK ) flags |= 1;
+
+		fs::Path path;
+		if ( _dirfd == -100 ) // AT_CWD
+			new ( &path ) fs::Path( _pathname, cur_proc->_cwd );
+		else
+			new ( &path ) fs::Path( _pathname, cur_proc->_ofile[_dirfd] );
+
+		int fd = path.open( fs::FileAttrs( flags ) );
+
+		if ( fd < 0 )
+			return -1;
+		else
+		{
+			cur_proc->_ofile[fd]->free_file();
+			cur_proc->_ofile[fd] = nullptr;
+		}
+
+		return 0;
+	}
+
+	uint64 SyscallHandler::_sys_sysinfo()
+	{
+		// struct sysinfo {
+		// 	__kernel_long_t uptime;		/* Seconds since boot */
+		// 	__kernel_ulong_t loads[3];	/* 1, 5, and 15 minute load averages */
+		// 	__kernel_ulong_t totalram;	/* Total usable main memory size */
+		// 	__kernel_ulong_t freeram;	/* Available memory size */
+		// 	__kernel_ulong_t sharedram;	/* Amount of shared memory */
+		// 	__kernel_ulong_t bufferram;	/* Memory used by buffers */
+		// 	__kernel_ulong_t totalswap;	/* Total swap space size */
+		// 	__kernel_ulong_t freeswap;	/* swap space still available */
+		// 	__u16 procs;		   	/* Number of current processes */
+		// 	__u16 pad;		   	/* Explicit padding for m68k */
+		// 	__kernel_ulong_t totalhigh;	/* Total high memory size */
+		// 	__kernel_ulong_t freehigh;	/* Available high memory size */
+		// 	__u32 mem_unit;			/* Memory unit size in bytes */
+		// 	char _f[20-2*sizeof(__kernel_ulong_t)-sizeof(__u32)];	/* Padding:
+		// libc5 uses this.. */
+		// };
+
+
+		uint64					 sysinfoaddr;
+		[[maybe_unused]] sysinfo sysinfo_;
+
+		if ( _arg_addr( 0, sysinfoaddr ) < 0 ) return -1;
+
+		pm::Pcb		  *cur_proc = pm::k_pm.get_cur_pcb();
+		mm::PageTable *pt		= cur_proc->get_pagetable();
+
+		memset( &sysinfo_, 0, sizeof( sysinfo_ ) );
+		sysinfo_.uptime	   = 0;
+		sysinfo_.loads[0]  = 0; // 负载均值  1min 5min 15min
+		sysinfo_.loads[1]  = 0;
+		sysinfo_.loads[2]  = 0;
+		sysinfo_.totalram  = 0; // 总内存
+		sysinfo_.freeram   = 0;
+		sysinfo_.sharedram = 0;
+		sysinfo_.bufferram = 0;
+		sysinfo_.totalswap = 0;
+		sysinfo_.freeswap  = 0;
+		sysinfo_.procs	   = 0;
+		sysinfo_.pad	   = 0;
+		sysinfo_.totalhigh = 0;
+		sysinfo_.freehigh  = 0;
+		sysinfo_.mem_unit  = 1; // 内存单位为 1 字节
+
+		if ( mm::k_vmm.copyout( *pt, sysinfoaddr, &sysinfo_,
+								sizeof( sysinfo_ ) ) < 0 )
+			return -1;
+
+		return 0;
+	}
+
 } // namespace syscall

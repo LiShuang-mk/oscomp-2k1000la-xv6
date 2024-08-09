@@ -230,7 +230,10 @@ namespace fs
 		if( attrs_.filetype == FileTypes::FT_DIRECT 
 			&& attrs.filetype != FileTypes::FT_DIRECT )
 			log_error(" try to open a not directory file as directory ");
-		
+		if( attrs_.o_write > attrs.o_write &&
+			attrs_.o_read > attrs.o_read   &&
+			attrs_.o_exec > attrs.o_exec )
+			return -1; // 权限校验失败
 	    fs::normal_file *f = new fs::normal_file( attrs_, den );
 		pm::Pcb *cur_proc = pm::k_pm.get_cur_pcb();
 		int fd = pm::k_pm.alloc_fd( cur_proc, f );

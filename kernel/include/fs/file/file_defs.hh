@@ -8,17 +8,20 @@
 
 #pragma once
 
+#include <fcntl.h>
 namespace fs
 {
 
 	#define AT_FDCWD		-100 //current dir
+	
 	enum FileTypes
 	{
 		FT_NONE,
 		FT_PIPE,
 		FT_DEVICE,
 		FT_DIRECT,
-		FT_NORMAL
+		FT_NORMAL,
+		FT_SYMLINK
 	};
 
 	enum FileOp : uint16
@@ -82,8 +85,21 @@ namespace fs
 		FileAttrs(FileTypes type_, mode_t mode_) : filetype(type_), _value( mode_){}
 
 		mode_t transMode()
-		{
-			return _value & 0x01FF;
+		{	
+			mode_t mode;
+			if( filetype == FT_NORMAL )
+				mode = S_IFREG;
+			else if( filetype == FT_DIRECT )
+				mode = S_IFDIR;
+			else if( filetype == FT_SYMLINK )
+				mode = S_IFLNK;
+			else if( filetype == FT_PIPE )
+				mode = S_IFIFO;
+			else if( filetype == FT_DEVICE )  // 应该区分字符设备和块设备
+				mode = S_IFCHR;
+			else
+				mode = 0;
+			return mode |= ( _value & 0x1ff );
 		}
 	};
 	
