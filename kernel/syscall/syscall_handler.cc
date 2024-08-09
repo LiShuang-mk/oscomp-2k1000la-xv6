@@ -118,6 +118,7 @@ namespace syscall
 		BIND_SYSCALL( syslog );
 		BIND_SYSCALL( faccessat );
 		BIND_SYSCALL( sysinfo );
+		BIND_SYSCALL(nanosleep);
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -1444,6 +1445,47 @@ namespace syscall
 								sizeof( sysinfo_ ) ) < 0 )
 			return -1;
 
+		return 0;
+	}	
+
+	uint64 SyscallHandler::_sys_nanosleep()
+	{
+		int clockid;
+		int flags;
+		timespec dur;
+		uint64 dur_addr;
+		timespec rem;
+		uint64 rem_addr;
+
+		if( _arg_int(0, clockid) < 0 )
+			return -1;
+
+		if( _arg_int(1, flags) < 0 )
+			return -1;
+		
+		if( _arg_addr(2, dur_addr) < 0 )
+			return -1;
+		
+		if( _arg_addr(3, rem_addr) < 0 )
+			return -2;
+		
+		pm::Pcb *cur_proc = pm::k_pm.get_cur_pcb();
+		mm::PageTable *pt = cur_proc->get_pagetable();
+		
+		if( dur_addr != 0 )
+			if( mm::k_vmm.copy_in(*pt, &dur, dur_addr, sizeof(dur)) < 0 )
+				return -1;
+
+		if( rem_addr != 0 )
+			if( mm::k_vmm.copy_in(*pt, &rem, rem_addr, sizeof(rem)) < 0 )
+				return -1;
+		
+		tmm::timeval tm_;
+		tm_.tv_sec = dur.tv_sec;
+		tm_.tv_usec = dur.tv_nsec / 1000;
+
+		tmm::k_tm.sleep_from_tv( tm_ );
+		
 		return 0;
 	}
 
