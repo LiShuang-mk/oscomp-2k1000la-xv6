@@ -105,7 +105,8 @@ namespace pm
 		void kill_proc( Pcb * p ) { p->_killed = 1; }
 
 	private:
-		void _proc_create_vm( Pcb * p );
+		void _proc_create_vm( Pcb *p, mm::PageTable &pt );
+		void _proc_create_vm( Pcb *p );
 
 	public: // ================ test functions ================
 		void vectortest();

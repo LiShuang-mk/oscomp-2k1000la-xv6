@@ -116,6 +116,8 @@ int init_main( void )
 {
 	write( 1, str, sizeof( str ) - 1 );
 
+	// while ( 1 );
+
 	__attribute__( ( __unused__ ) ) int pid;
 
 	__attribute__( ( __unused__ ) ) const char *bb_sh[ 8 ] = { 0 };
@@ -143,7 +145,7 @@ int init_main( void )
 		int child_exit_state = -100;
 		if ( wait( -1, &child_exit_state ) < 0 )
 			write( 1, wait_fail, sizeof( wait_fail ) );
-		write( 1, "execve busybox sh fail", 21 );
+		// write( 1, exec_fail_str, 21 );
 	}
 
 	pid = fork();
@@ -170,7 +172,7 @@ int init_main( void )
 		int child_exit_state = -100;
 		if ( wait( -1, &child_exit_state ) < 0 )
 			write( 1, wait_fail, sizeof( wait_fail ) );
-		write( 1, "execve busybox sh fail", 21 );
+		// write( 1, exec_fail_str, 21 );
 	}
 
 	while ( 1 );
