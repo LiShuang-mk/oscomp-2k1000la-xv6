@@ -146,11 +146,13 @@ namespace mm
 
 		if ( info.area_flag == 0 )					// 这是一个页指针，分配和回收动作对其无效
 		{
+			_lock.release();
 			return 0;
 		}
 		if ( info.in_use == 0 )
 		{
 			printf( "repeat free %p", ptr );
+			_lock.release();
 			return -3;
 		}
 		assert( info.order <= _buddy_max_order, "[buddy] 释放的页面似乎元数据失效？(%p)", ptr );		// bad order
