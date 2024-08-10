@@ -179,9 +179,30 @@ namespace pm
 		p->_trapframe = 0;
 		if ( !p->_pt.is_null() )
 		{
-			// mm::k_vmm.vmunmap( p->_pt, hsai::page_size, 1, 0 );
-			// mm::k_vmm.vmfree( p->_pt, p->_sz );
-			p->_pt.freewalk_mapped();
+			ulong sec_start, sec_size;
+			for ( int i = 0; i < p->_prog_section_cnt; ++i )
+			{
+				auto &sec = p->_prog_sections[i];
+				sec_start = hsai::page_round_down( (ulong)sec._sec_start );
+				sec_size  = hsai::page_round_up( (ulong) sec._sec_start +
+												 sec._sec_size - sec_start );
+				mm::k_vmm.vm_unmap( p->_pt, sec_start,
+									sec_size / hsai::page_size, 1 );
+			}
+
+			ulong stack_page_cnt = default_proc_ustack_pages;
+			ulong stackbase =
+				mm::vm_ustack_end - stack_page_cnt * hsai::page_size;
+			mm::k_vmm.vm_unmap( p->_pt, stackbase - hsai::page_size,
+								stack_page_cnt + 1, 1 );
+
+			ulong heapbase = p->_heap_start;
+			ulong heapsize =
+				hsai::page_round_up( p->_heap_ptr - p->_heap_start );
+			mm::k_vmm.vm_unmap( p->_pt, heapbase, heapsize / hsai::page_size,
+								1 );
+
+			p->_pt.freewalk();
 		}
 		p->_pt.set_base( 0 );
 		p->_prog_section_cnt = 0;
@@ -199,7 +220,7 @@ namespace pm
 		{
 			if ( p->_ofile[i] != nullptr && p->_ofile[i]->refcnt > 0 )
 			{
-				p->_ofile[i]->refcnt--;
+				p->_ofile[i]->free_file();
 				p->_ofile[i] = nullptr;
 			}
 		}
@@ -744,7 +765,7 @@ namespace pm
 			ph_psd._debug_name = "program headers";
 			new_sec_cnt++;
 
-			new_sz += hsai::page_round_up( phsz);
+			new_sz += hsai::page_round_up( phsz );
 		}
 
 		// allocate two pages , the second is used for the user stack

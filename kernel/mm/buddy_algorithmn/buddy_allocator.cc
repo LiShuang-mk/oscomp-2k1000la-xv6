@@ -122,6 +122,8 @@ namespace mm
 
 		_record_info( node, order, 1, 1 );
 
+		_alloc_size += ( 1UL << order ) * hsai::page_size;
+
 		_lock.release();
 
 		return ( void * ) node;
@@ -159,6 +161,7 @@ namespace mm
 		info.in_use = 0;
 
 		int order = info.order;
+		_alloc_size -= ( 1UL << order ) * hsai::page_size;
 
 		BuddyNode *node = ( BuddyNode * ) ptr;
 		BuddyDesc *bd = _belong_area( node );

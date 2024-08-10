@@ -118,7 +118,7 @@ namespace syscall
 		BIND_SYSCALL( syslog );
 		BIND_SYSCALL( faccessat );
 		BIND_SYSCALL( sysinfo );
-		BIND_SYSCALL(nanosleep);
+		BIND_SYSCALL( nanosleep );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -127,12 +127,14 @@ namespace syscall
 		if ( sys_num != SYS_write )
 		{
 			if ( _syscall_name[sys_num] != nullptr )
-				printf( YELLOW_COLOR_PRINT "syscall %s\n" CLEAR_COLOR_PRINT,
+				printf( YELLOW_COLOR_PRINT "syscall %16s",
 						_syscall_name[sys_num] );
 			else
-				printf( BRIGHT_YELLOW_COLOR_PRINT
-						"unknown sycall %d\n" CLEAR_COLOR_PRINT,
+				printf( BRIGHT_YELLOW_COLOR_PRINT "unknown sycall %d\t",
 						sys_num );
+			auto [usg, rst] = mm::k_pmm.mem_desc();
+			printf( "mem-usage: %_-10ld mem-rest: %_-10ld\n" CLEAR_COLOR_PRINT,
+					usg, rst );
 		}
 #endif
 		return _syscall_funcs[sys_num]();
@@ -663,12 +665,23 @@ namespace syscall
 
 	uint64 SyscallHandler::_sys_mmap()
 	{
-		int map_size;
+		u64 addr;
+		if ( _arg_addr( 0, addr ) < 0 ) return -1;
+
+		size_t map_size;
+		if ( _arg_addr( 1, map_size ) < 0 ) return -1;
+
+		int prot;
+		if ( _arg_int( 2, prot ) < 0 ) return -1;
+
+		int flags;
+		if ( _arg_int( 3, flags ) < 0 ) return -1;
+
 		int fd;
-
-		if ( _arg_int( 1, map_size ) < 0 ) return -1;
-
 		if ( _arg_int( 4, fd ) < 0 ) return -1;
+
+		size_t length;
+		if ( _arg_addr( 5, length ) < 0 ) return -1;
 
 		return pm::k_pm.mmap( fd, map_size );
 	}
@@ -1446,46 +1459,42 @@ namespace syscall
 			return -1;
 
 		return 0;
-	}	
+	}
 
 	uint64 SyscallHandler::_sys_nanosleep()
 	{
-		int clockid;
-		int flags;
+		int		 clockid;
+		int		 flags;
 		timespec dur;
-		uint64 dur_addr;
+		uint64	 dur_addr;
 		timespec rem;
-		uint64 rem_addr;
+		uint64	 rem_addr;
 
-		if( _arg_int(0, clockid) < 0 )
-			return -1;
+		if ( _arg_int( 0, clockid ) < 0 ) return -1;
 
-		if( _arg_int(1, flags) < 0 )
-			return -1;
-		
-		if( _arg_addr(2, dur_addr) < 0 )
-			return -1;
-		
-		if( _arg_addr(3, rem_addr) < 0 )
-			return -2;
-		
-		pm::Pcb *cur_proc = pm::k_pm.get_cur_pcb();
-		mm::PageTable *pt = cur_proc->get_pagetable();
-		
-		if( dur_addr != 0 )
-			if( mm::k_vmm.copy_in(*pt, &dur, dur_addr, sizeof(dur)) < 0 )
+		if ( _arg_int( 1, flags ) < 0 ) return -1;
+
+		if ( _arg_addr( 2, dur_addr ) < 0 ) return -1;
+
+		if ( _arg_addr( 3, rem_addr ) < 0 ) return -2;
+
+		pm::Pcb		  *cur_proc = pm::k_pm.get_cur_pcb();
+		mm::PageTable *pt		= cur_proc->get_pagetable();
+
+		if ( dur_addr != 0 )
+			if ( mm::k_vmm.copy_in( *pt, &dur, dur_addr, sizeof( dur ) ) < 0 )
 				return -1;
 
-		if( rem_addr != 0 )
-			if( mm::k_vmm.copy_in(*pt, &rem, rem_addr, sizeof(rem)) < 0 )
+		if ( rem_addr != 0 )
+			if ( mm::k_vmm.copy_in( *pt, &rem, rem_addr, sizeof( rem ) ) < 0 )
 				return -1;
-		
+
 		tmm::timeval tm_;
-		tm_.tv_sec = dur.tv_sec;
+		tm_.tv_sec	= dur.tv_sec;
 		tm_.tv_usec = dur.tv_nsec / 1000;
 
 		tmm::k_tm.sleep_from_tv( tm_ );
-		
+
 		return 0;
 	}
 

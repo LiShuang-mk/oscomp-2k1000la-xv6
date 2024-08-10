@@ -36,7 +36,6 @@ namespace mm
 		_ram_base = hsai::k_mem->mem_start();
 		_ram_end = _ram_base + hsai::k_mem->mem_size();
 		_free_list = nullptr;
-		_trace_page_cnt = 0;
 		_free_range( ( void* ) _ram_base, ( void * ) _ram_end );
 
 		new ( &k_phy_alloc ) BuddyAllocator( ( void * ) _ram_base, _ram_end - _ram_base );

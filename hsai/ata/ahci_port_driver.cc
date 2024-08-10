@@ -34,9 +34,11 @@ namespace hsai
 			/*call back*/[ & ] () -> int
 		{
 			finish = true;
+			// hsai_info( "ahci port read handler" );
 			return 0;
 		} );
-		while ( !finish );
+		// while ( !finish );
+		while ( _cmd_slot_busy( 0 ) || _task_busy() );
 		return 0;
 	}
 
@@ -280,7 +282,7 @@ namespace hsai
 		fis_h2d->c = 1;											// 表示这是一个主机发给设备的命令帧
 		fis_h2d->command = ata_cmd_read_dma;					// 配置为 read(DMA) 命令
 		fis_h2d->features = fis_h2d->features_exp = 0;			// refer to ATA8-ACS, this field should be N/A ( or 0 ) when the command is 'read dma' 
-		fis_h2d->device = 1 << 6;									// refer to ATA8-ACS, bit 6 of this field should be set when the command is 'read dma' 
+		fis_h2d->device = 1 << 6;								// refer to ATA8-ACS, bit 6 of this field should be set when the command is 'read dma' 
 		_fill_fis_h2d_lba( fis_h2d, lba );
 		fis_h2d->sector_cnt = ( u32 ) ( blk_cnt >> 0 );
 		fis_h2d->sector_cnt_exp = ( u32 ) ( blk_cnt >> 32 );
@@ -308,7 +310,7 @@ namespace hsai
 			}
 			prd->dba = hsai::k_mem->to_dma( dba );
 			prd->dbc = dbc - 1;
-			prd->interrupt = 1;
+			prd->interrupt = 0;
 		}
 
 		// 设置中断回调函数

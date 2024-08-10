@@ -60,6 +60,10 @@ namespace fs
 		/// @return 标记失败返回负值
 		int dirt_buffer( Buffer &buf );
 
+		/// @brief 刷新一块buffer到磁盘
+		/// @return 刷新失败返回负数
+		int flush_buffer( Buffer &buf );
+
 		/// @brief 同步方法，比较费时，应当在调度开始前供内核使用
 		void release_buffer_sync( Buffer &buf )
 		{
