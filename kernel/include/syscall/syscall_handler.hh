@@ -122,6 +122,7 @@ namespace syscall
 		uint64 _sys_faccessat();
 		uint64 _sys_sysinfo();
 		uint64 _sys_nanosleep();
+		uint64 _sys_getrusage();
 	};
 
 	extern SyscallHandler k_syscall_handler;

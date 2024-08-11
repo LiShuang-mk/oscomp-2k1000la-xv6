@@ -16,6 +16,7 @@
 #include <asm-generic/poll.h>
 #include <linux/sysinfo.h>
 #include <sys/ioctl.h>
+//#include <sys/resource.h>
 
 #include <hsai_global.hh>
 #include <mem/virtual_memory.hh>
@@ -119,6 +120,7 @@ namespace syscall
 		BIND_SYSCALL( faccessat );
 		BIND_SYSCALL( sysinfo );
 		BIND_SYSCALL( nanosleep );
+		BIND_SYSCALL( getrusage );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -1480,6 +1482,178 @@ namespace syscall
 
 		tmm::k_tm.sleep_from_tv( tm_ );
 
+		return 0;
+	}
+
+	uint64 SyscallHandler::_sys_getrusage()
+	{
+		struct rusage
+		{
+			/* Total amount of user time used.  */
+			struct timeval ru_utime;
+			/* Total amount of system time used.  */
+			struct timeval ru_stime;
+			/* Maximum resident set size (in kilobytes).  */
+			__extension__ union
+			{
+			long int ru_maxrss;
+			__syscall_slong_t __ru_maxrss_word;
+			};
+			/* Amount of sharing of text segment memory
+			with other processes (kilobyte-seconds).  */
+			__extension__ union
+			{
+			long int ru_ixrss;
+			__syscall_slong_t __ru_ixrss_word;
+			};
+			/* Amount of data segment memory used (kilobyte-seconds).  */
+			__extension__ union
+			{
+			long int ru_idrss;
+			__syscall_slong_t __ru_idrss_word;
+			};
+			/* Amount of stack memory used (kilobyte-seconds).  */
+			__extension__ union
+			{
+			long int ru_isrss;
+			__syscall_slong_t __ru_isrss_word;
+			};
+			/* Number of soft page faults (i.e. those serviced by reclaiming
+			a page from the list of pages awaiting reallocation.  */
+			__extension__ union
+			{
+			long int ru_minflt;
+			__syscall_slong_t __ru_minflt_word;
+			};
+			/* Number of hard page faults (i.e. those that required I/O).  */
+			__extension__ union
+			{
+			long int ru_majflt;
+			__syscall_slong_t __ru_majflt_word;
+			};
+			/* Number of times a process was swapped out of physical memory.  */
+			__extension__ union
+			{
+			long int ru_nswap;
+			__syscall_slong_t __ru_nswap_word;
+			};
+			/* Number of input operations via the file system.  Note: This
+			and `ru_oublock' do not include operations with the cache.  */
+			__extension__ union
+			{
+			long int ru_inblock;
+			__syscall_slong_t __ru_inblock_word;
+			};
+			/* Number of output operations via the file system.  */
+			__extension__ union
+			{
+			long int ru_oublock;
+			__syscall_slong_t __ru_oublock_word;
+			};
+			/* Number of IPC messages sent.  */
+			__extension__ union
+			{
+			long int ru_msgsnd;
+			__syscall_slong_t __ru_msgsnd_word;
+			};
+			/* Number of IPC messages received.  */
+			__extension__ union
+			{
+			long int ru_msgrcv;
+			__syscall_slong_t __ru_msgrcv_word;
+			};
+			/* Number of signals delivered.  */
+			__extension__ union
+			{
+			long int ru_nsignals;
+			__syscall_slong_t __ru_nsignals_word;
+			};
+			/* Number of voluntary context switches, i.e. because the process
+			gave up the process before it had to (usually to wait for some
+			resource to be available).  */
+			__extension__ union
+			{
+			long int ru_nvcsw;
+			__syscall_slong_t __ru_nvcsw_word;
+			};
+			/* Number of involuntary context switches, i.e. a higher priority process
+			became runnable or the current process used up its time slice.  */
+			__extension__ union
+			{
+			long int ru_nivcsw;
+			__syscall_slong_t __ru_nivcsw_word;
+			};
+		};
+
+		enum __rusage_who
+		{
+			/* The calling process.  */
+			RUSAGE_SELF = 0,
+			#define RUSAGE_SELF RUSAGE_SELF
+
+			/* All of its terminated child processes.  */
+			RUSAGE_CHILDREN = -1
+			#define RUSAGE_CHILDREN RUSAGE_CHILDREN
+
+			#ifdef __USE_GNU
+			,
+			/* The calling thread.  */
+			RUSAGE_THREAD = 1
+			# define RUSAGE_THREAD RUSAGE_THREAD
+			/* Name for the same functionality on Solaris.  */
+			# define RUSAGE_LWP RUSAGE_THREAD
+			#endif
+		};
+
+		int who;
+		uint64 rusage_addr;
+
+		if( _arg_int( 0, who ) < 0 ) 
+			return -1;
+		
+		if( _arg_addr( 1, rusage_addr ) < 0 ) 
+			return -1;
+		
+		
+		rusage rusage_;
+		pm::Pcb *cur_proc = pm::k_pm.get_cur_pcb();
+		mm::PageTable *pt = cur_proc->get_pagetable();
+		tmm::tms tms;
+		pm::k_pm.get_cur_proc_tms( &tms );
+
+		 switch (who) {
+			case RUSAGE_SELF:
+				rusage_.ru_utime.tv_sec = tms.tms_utime;
+				rusage_.ru_utime.tv_usec = tms.tms_cutime;
+				rusage_.ru_maxrss = cur_proc->get_max_rss();
+				break;
+			case RUSAGE_CHILDREN:
+				// 添加对 RUSAGE_CHILDREN 的处理逻辑
+				// 假设有一个函数 get_children_rusage() 来获取子进程的资源使用情况
+				//rusage_ = cur_proc->get_children_rusage();
+				break;
+			default:
+				log_error("get_rusage: invalid who\n");
+				return -1;
+			
+		}
+		rusage_.ru_ixrss = 0;
+		rusage_.ru_idrss = 0;
+		rusage_.ru_isrss = 0;
+		rusage_.ru_minflt = 0;   /// @todo: 缺页中断的次数
+		rusage_.ru_majflt = 0;   /// @todo: 页错误次数
+		rusage_.ru_nswap = 0;
+		rusage_.ru_inblock = 0;
+		rusage_.ru_oublock = 0;
+		rusage_.ru_msgsnd = 0;
+		rusage_.ru_msgrcv = 0;
+		rusage_.ru_nsignals = 0;
+		rusage_.ru_nvcsw = 0;
+		rusage_.ru_nivcsw = 0;
+
+        if( mm::k_vmm.copyout( *pt, rusage_addr, &rusage_, sizeof( rusage_ ) ) < 0 )
+			return -1;
+		
 		return 0;
 	}
 
