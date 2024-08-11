@@ -161,7 +161,7 @@ int init_main( void )
 		bb_sh[ 2 ] = 0;
 		bb_sh[ 3 ] = 0;
 		bb_sh[ 4 ] = 0;
-		if ( execv( exec_time_test, 0 ) < 0 )
+		if ( execv( exec_busybox_unstrp, bb_sh ) < 0 )
 		{
 			write( 1, exec_fail_str, sizeof( exec_fail_str ) );
 		}

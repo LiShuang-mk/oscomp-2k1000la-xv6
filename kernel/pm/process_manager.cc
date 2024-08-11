@@ -183,7 +183,7 @@ namespace pm
 			for ( int i = 0; i < p->_prog_section_cnt; ++i )
 			{
 				auto &sec = p->_prog_sections[i];
-				sec_start = hsai::page_round_down( (ulong)sec._sec_start );
+				sec_start = hsai::page_round_down( (ulong) sec._sec_start );
 				sec_size  = hsai::page_round_up( (ulong) sec._sec_start +
 												 sec._sec_size - sec_start );
 				mm::k_vmm.vm_unmap( p->_pt, sec_start,
@@ -319,6 +319,11 @@ namespace pm
 			ps_cnt++;
 
 			p->_prog_section_cnt = ps_cnt;
+
+			// set heap ptr
+			p->_heap_ptr = p->_heap_start = hsai::page_round_up(
+				(ulong) p->_prog_sections[ps_cnt - 1]._sec_start +
+				p->_prog_sections[ps_cnt - 1]._sec_size );
 		}
 
 		// p->_trapframe->era = ( uint64 ) &init_main - ( uint64 )
@@ -1025,9 +1030,9 @@ namespace pm
 		}
 
 		// commit to the user image.
-		proc->exe		  = ab_path;
-		proc->_sz		  = new_sz;
-		proc->_heap_start = 0;
+		proc->exe = ab_path;
+		proc->_sz = new_sz;
+		// unmap program sections
 		for ( int i = 0; i < proc->_prog_section_cnt; i++ )
 		{
 			auto &osc = proc->_prog_sections[i];
@@ -1038,6 +1043,19 @@ namespace pm
 			mm::k_vmm.vm_unmap( proc->_pt, sec_start,
 								( sec_end - sec_start ) / hsai::page_size, 1 );
 		}
+		{ // unmap heap
+			ulong start = hsai::page_round_down( proc->_heap_start );
+			ulong end =
+				hsai::page_round_up( proc->_heap_ptr );
+			mm::k_vmm.vm_unmap( proc->_pt, start,
+								( end - start ) / hsai::page_size, 1 );
+		}
+		{ // unmap stack
+			ulong pgs	= default_proc_ustack_pages + 1;
+			ulong start = mm::vm_ustack_end - pgs * hsai::page_size;
+			mm::k_vmm.vm_unmap( proc->_pt, start, pgs, 1 );
+		}
+		proc->_heap_start = 0;
 		for ( int i = 0; i < new_sec_cnt; ++i )
 		{
 			auto &sec				= new_sec_desc[i];
