@@ -179,6 +179,10 @@ namespace pm
 		void set_user_ticks(uint64 ticks) { _user_ticks = ticks; }
 
 		bool is_killed() { return _killed != 0; }
+		int get_max_rss()
+		{
+			return _rlim_vec[RLIMIT_RSS].rlim_cur;
+		}
 	};
 
 	extern Pcb k_proc_pool[num_process];

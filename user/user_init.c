@@ -70,6 +70,7 @@ __attribute__( ( section( ".user.init.data" ) ) ) const char cat_name[] = "cat";
 __attribute__( ( section( ".user.init.data" ) ) ) const char hello_busybox_str[] = "hello, busybox!\n";
 __attribute__( ( section( ".user.init.data" ) ) ) const char busybox_testcode_str[] = "/mnt/sdcard/busybox_testcode.sh";
 __attribute__( ( section( ".user.init.data" ) ) ) const char test_sh_str[] = "/mnt/sdcard/test.sh";
+__attribute__( ( section( ".user.init.data" ) ) ) const char lua_test_sh[] = "/mnt/sdcard/lua/test.sh";
 __attribute__( ( section( ".user.init.data" ) ) ) const char busybox_path[] = "/mnt/sdcard/";
 // __attribute__( ( section( ".user.init.data.p" ) ) ) const char *bb_sh[] = { sh_name, 0 };
 

@@ -55,6 +55,7 @@ namespace syscall
 		_build_sysnum_enum_(setpgid, 154),
 		_build_sysnum_enum_(getpgid, 155),
 		_build_sysnum_enum_(uname, 160),
+		_build_sysnum_enum_(getrusage, 165),
 		_build_sysnum_enum_(gettimeofday, 169),
 		_build_sysnum_enum_(getpid, 172),
 		_build_sysnum_enum_(getppid, 173),
