@@ -5,7 +5,6 @@
 #include "fs/fs.hh"
 #include "fs/ramfs/ramfsSb.hh"
 
-#include <hsai_global.hh>
 
 #include <EASTL/string.h>
 

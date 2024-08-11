@@ -5,7 +5,6 @@
 #include <EASTL/vector.h>
 #include <EASTL/string.h>
 #include <EASTL/unordered_map.h>
-
 namespace fs{
     
     class Kstat;
@@ -88,6 +87,17 @@ namespace fs{
             public:
                 RTC( RamFS *fs, uint ino, dev_t dev ) : ramfs::RamInode( fs, ino, false ) , dev_(dev) {};
                 size_t nodeRead( uint64 dst_, size_t off_, size_t len_ ) override;
+                dev_t rDev() const override { return dev_; };
+        };
+
+        class Device : public RamInode
+        {
+            private:
+                dev_t dev_;
+            public:
+                Device( RamFS *fs, uint ino, dev_t dev ) : ramfs::RamInode( fs, ino, false ) , dev_(dev) {};
+                size_t nodeRead( uint64 dst_, size_t off_, size_t len_ ) override;
+                size_t nodeWrite( uint64 src_, size_t off_, size_t len_ ) override;
                 dev_t rDev() const override { return dev_; };
         };
     }

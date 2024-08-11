@@ -333,22 +333,25 @@ namespace pm
 		hsai::user_proc_init( (void *) p );
 
 		// fs::File *f = fs::k_file_table.alloc_file();
+		fs::Path path( "/dev/stdin" );
 		fs::FileAttrs fAttrsin =
 			fs::FileAttrs( fs::FileTypes::FT_DEVICE, 0444 ); // only read
-		fs::device_file *f_in = new fs::device_file( fAttrsin, DEV_STDIN_NUM );
+		fs::device_file *f_in = new fs::device_file( fAttrsin, DEV_STDIN_NUM, path.pathSearch( ) );
 		assert( f_in != nullptr, "pm: alloc stdin file fail while user init." );
 
+		fs::Path pathout( "/dev/stdout" );
 		fs::FileAttrs fAttrsout =
 			fs::FileAttrs( fs::FileTypes::FT_DEVICE, 0222 ); // only write
 		fs::device_file *f_out =
-			new fs::device_file( fAttrsout, DEV_STDOUT_NUM );
+			new fs::device_file( fAttrsout, DEV_STDOUT_NUM, pathout.pathSearch( ) );
 		assert( f_out != nullptr,
 				"pm: alloc stdout file fail while user init." );
 
+		fs::Path patherr( "/dev/stderr" );
 		fs::FileAttrs fAttrserr =
 			fs::FileAttrs( fs::FileTypes::FT_DEVICE, 0222 ); // only write
 		fs::device_file *f_err =
-			new fs::device_file( fAttrserr, DEV_STDERR_NUM );
+			new fs::device_file( fAttrserr, DEV_STDERR_NUM, patherr.pathSearch( ) );
 		assert( f_err != nullptr,
 				"pm: alloc stderr file fail while user init." );
 
@@ -1373,7 +1376,7 @@ namespace pm
 
 		if ( dev >= 0 ) // dentry is a device
 		{
-			fs::device_file *f = new fs::device_file( attrs, dev );
+			fs::device_file *f = new fs::device_file( attrs, dev, dentry );
 			return alloc_fd( p, f );
 		} // else if( attrs.filetype == fs::FileTypes::FT_DIRECT)
 		// 	fs::directory *f = new fs::directory( attrs, dentry );

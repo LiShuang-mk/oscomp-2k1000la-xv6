@@ -8,6 +8,7 @@
 #include "klib/klib.hh"
 #include "hsai_global.hh"
 #include "device_manager.hh"
+#include "stream_device.hh"
 
 #include <mntent.h>
 
@@ -37,9 +38,7 @@ namespace fs
 
 		dev_t RamInode::rDev() const
 		{
-			if ( dev_name.empty() )
-				log_error( "This is not a valid device file" );
-			return hsai::k_devm.search_device( dev_name.c_str() );
+			return 0; //这里不应该经过， 应该交给Device的rDev()处理
 		}
 
 		static char busybox_conf[] =
@@ -178,6 +177,62 @@ namespace fs
 
 			if( off > 0 ) off -= bytes;
 			return rdbytes;
+		}
+		
+		size_t Device::nodeRead( uint64 dst_, size_t off_, size_t len_ )
+		{
+			int ret;
+	        
+			hsai::StreamDevice *sdev = ( hsai::StreamDevice * ) hsai::k_devm.get_device( dev_ );
+			if ( sdev == nullptr )
+			{
+				log_error( "file write: null device for device number %d", dev_ );
+				return -1;
+			}
+			
+			if ( sdev->type() != hsai::dev_char )
+			{
+				log_error( "file write: device %d is not a char-dev", dev_ );
+				return -1;
+			}
+			
+			if ( !sdev->support_stream() )
+			{
+				log_error( "file write: device %d is not a stream-dev", dev_ );
+				return -1;
+			}
+
+			ret = sdev->read( (void *)dst_, len_ );
+			
+			return ret;
+		}
+
+		size_t Device::nodeWrite( uint64 src_, size_t off_, size_t len_ )
+		{
+			int ret;
+	        
+			hsai::StreamDevice *sdev = ( hsai::StreamDevice * ) hsai::k_devm.get_device( dev_ );
+			if ( sdev == nullptr )
+			{
+				log_error( "file write: null device for device number %d", dev_ );
+				return -1;
+			}
+			
+			if ( sdev->type() != hsai::dev_char )
+			{
+				log_error( "file write: device %d is not a char-dev", dev_ );
+				return -1;
+			}
+			
+			if ( !sdev->support_stream() )
+			{
+				log_error( "file write: device %d is not a stream-dev", dev_ );
+				return -1;
+			}
+
+			ret = sdev->write( (void *)src_, len_ );
+			
+			return ret;
 		}
 	}
 }

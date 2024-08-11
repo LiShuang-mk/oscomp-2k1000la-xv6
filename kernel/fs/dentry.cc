@@ -114,8 +114,8 @@ namespace fs
             current.pop(); 
             attrs = den->getNode()->rMode();
 
-            // printf("dentry name is %s, and it's attr is %d, it is a %d file", den->rName().c_str(), attrs.transMode(), attrs.filetype);            
-            
+            //printf("dentry name is %s, and it's attr is %d, it is a %d file", den->rName().c_str(), attrs.transMode(), attrs.filetype);            
+            printf("dentry name is %s\n", den->rName().c_str());
             eastl::unordered_map<eastl::string, dentry*> children = den->getChildren();
             for (auto &child : children) {
                 current.push(child.second); // 将子节点添加到队列中以便后续处理

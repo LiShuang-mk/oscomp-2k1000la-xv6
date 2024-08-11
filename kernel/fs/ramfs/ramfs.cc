@@ -80,11 +80,13 @@ namespace fs
 			{
 				if ( dev_table[ i ] == nullptr )
 					break;
-				dev->EntryCreate( dev_table[ i ], _super_block->rDefaultMod(), dev_table[ i ] );
+				dentry *device_ = dev->EntryCreate( dev_table[ i ], _super_block->rDefaultMod(), dev_table[ i ] );
+				Device *dev_ = new Device( static_cast<RamFS*>(dev->getNode()->getFS()), alloc_ino(), i );
+				device_->setNode( dev_ );
 			}
 			
 			dentry *rtc = dev->EntryCreate( "rtc", FileAttrs( FileTypes::FT_DEVICE, 0444 ) );
-			RTC *rtc_ = new RTC( static_cast<RamFS*>(rtc->getNode()->getFS()), 9, 100);
+			RTC *rtc_ = new RTC( static_cast<RamFS*>(rtc->getNode()->getFS()), alloc_ino(), alloc_ino());
 			rtc->setNode( rtc_ );
 
 			// init /proc
@@ -99,20 +101,20 @@ namespace fs
 			
 			// init /proc/meminfo
 			dentry *meminfo = proc->EntryCreate( "meminfo", FileAttrs( FileTypes::FT_NORMAL, 0444 ) );
-			MemInfo *meminfo_ = new MemInfo( static_cast<RamFS*>(meminfo->getNode()->getFS()), 10 );
+			MemInfo *meminfo_ = new MemInfo( static_cast<RamFS*>(meminfo->getNode()->getFS()), alloc_ino() );
 			meminfo->setNode( meminfo_ );
 
 
 			dentry *self = proc->EntrySearch( "self" );
 			// init exe
 			dentry *exe = self->EntryCreate( "exe", FileAttrs( FileTypes::FT_NORMAL, 0444 ) );
-			Exe *exe_ = new Exe( static_cast<RamFS*>(self->getNode()->getFS()), 11 );
+			Exe *exe_ = new Exe( static_cast<RamFS*>(self->getNode()->getFS()), alloc_ino() );
 			exe->setNode( exe_ );
 
 
 			//init mount
 			dentry *mounts = proc->EntryCreate( "mounts", FileAttrs( FileTypes::FT_DIRECT, 0444 ) );
-			Mount *mnt_ = new Mount( static_cast<RamFS*>(mounts->getNode()->getFS()), 12, FileAttrs( FileTypes::FT_SYMLINK, 0444 ) );
+			Mount *mnt_ = new Mount( static_cast<RamFS*>(mounts->getNode()->getFS()), alloc_ino(), FileAttrs( FileTypes::FT_SYMLINK, 0444 ) );
 			mounts->setNode( mnt_ );
 
 
@@ -126,7 +128,7 @@ namespace fs
 
             dentry *ls = bin->EntryCreate( "ls", attrs ); // 创建ls
 			SymbleLink *ls_link_ = new SymbleLink( static_cast<RamFS*>(mounts->getNode()->getFS()), 
-													13,
+													alloc_ino(),
 													FileAttrs( FileTypes::FT_NORMAL, 0777 ),  // 这里应该是一个SYMBLE_LINK
                                                     "/mnt/sdcard/busybox" );
 			ls->setNode( ls_link_ );
