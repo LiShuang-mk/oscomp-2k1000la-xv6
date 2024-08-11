@@ -59,6 +59,7 @@ namespace mm
 		RetCode close();
 
 		RetCode errno() { return _errno; }
+		u64		rest_space() { return _end_addr - _ptr; }
 
 		UserspaceStream &operator<<( UsRangeDesc &rd );
 		UserspaceStream &operator>>( UsRangeDesc &rd );
@@ -87,11 +88,12 @@ namespace mm
 		}
 		UserspaceStream &operator<<( char *str )
 		{
-			do {
+			while ( 1 )
+			{
 				*this << *str;
+				if ( *str == '\0' ) break;
 				str++;
 			}
-			while ( *str != 0 );
 			return *this;
 		}
 

@@ -48,7 +48,11 @@ namespace fs{
                     SuperBlock *getSb() const override;
                     FileSystem *getFS() const override;
                     int readlinkat( char *buf, size_t len ) override { return 0; };
-        };
+
+					virtual size_t readSubDir( ubuf &dst, size_t off) override{
+						return 0;
+					}
+		};
 
         class Exe : public RamInode
         {

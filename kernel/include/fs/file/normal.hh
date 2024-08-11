@@ -1,6 +1,11 @@
 #include "fs/file/file.hh"
 #include "fs/dentry.hh"
 
+namespace mm
+{
+	class UserspaceStream;
+}
+
 namespace fs
 {
 	class normal_file : public file
@@ -21,7 +26,9 @@ namespace fs
 		virtual bool read_ready() override;
 		virtual bool write_ready() override;
 
-		dentry *getDentry() { return _den; }
+		using ubuf = mm::UserspaceStream;
+		size_t read_sub_dir( ubuf &dst );
 
+		dentry *getDentry() { return _den; }
 	};
 }
