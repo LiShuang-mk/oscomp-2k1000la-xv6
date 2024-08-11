@@ -36,7 +36,7 @@ namespace fs
 			virtual size_t nodeRead( u64 dst, size_t off, size_t len ) override;
 			virtual size_t nodeWrite( u64 src, size_t off, size_t len ) override { return 0; };
 			virtual int readlinkat( char *buf, size_t len ) override { return 0; };
-
+			
 		public:
 			virtual FileAttrs rMode() const override { return _attrs; };
 			virtual dev_t rDev() const override { return -1; };
