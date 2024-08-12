@@ -561,46 +561,31 @@ namespace syscall
 
 	uint64 SyscallHandler::_sys_getdents()
 	{
-		// 这个定义来自 Linux
-		struct linux_dirent
-		{
-			unsigned long  d_ino;	 /* Inode number */
-			unsigned long  d_off;	 /* Offset to next linux_dirent */
-			unsigned short d_reclen; /* Length of this linux_dirent */
-			unsigned char  d_type;
-			char		   d_name[128 - sizeof( d_ino ) - sizeof( d_off ) -
-						  sizeof( d_reclen ) -
-						  sizeof( d_type )]; /* Filename (null-terminated) */
-			/* length is actually (d_reclen - 2 -
-			   offsetof(struct linux_dirent, d_name)) */
-			/*
-			char           pad;       // Zero padding byte
-			char           d_type;    // File type (only since Linux
-									  // 2.6.4); offset is (d_reclen - 1)
-			*/
-		} dirent;
-		dirent.d_reclen = 128;
-
 		fs::file *f;
 		uint64	  buf_addr;
-		int		  buf_len;
+		uint64	  buf_len;
 
 		if ( _arg_fd( 0, nullptr, &f ) < 0 ) return -1;
 		if ( _arg_addr( 1, buf_addr ) < 0 ) return -1;
-		if ( _arg_int( 2, buf_len ) < 0 ) return -1;
-		
-		if ( f->_attrs.filetype != fs::FileTypes::FT_NORMAL ) return -1;
+		if ( _arg_addr( 2, buf_len ) < 0 ) return -1;
+
+		if ( f->_attrs.filetype != fs::FileTypes::FT_NORMAL &&
+				 f->_attrs.filetype != fs::FileTypes::FT_DIRECT )
+			return -1;
 		// eastl::string name = f->data.get_Entry()->rName();
 		fs::normal_file *normal_f = static_cast<fs::normal_file *>( f );
-		eastl::string	 name	  = normal_f->getDentry()->rName();
 
-		for ( uint i = 0; i < name.size(); ++i ) dirent.d_name[i] = name[i];
+		mm::PageTable *pt  = pm::k_pm.get_cur_pcb()->get_pagetable();
 
-		mm::PageTable *pt = pm::k_pm.get_cur_pcb()->get_pagetable();
-		if ( mm::k_vmm.copyout( *pt, buf_addr, &dirent, sizeof( dirent ) ) < 0 )
-			return -1;
+		mm::UserspaceStream us( (void *) buf_addr, buf_len, pt );
 
-		return sizeof( dirent );
+		us.open();
+		u64 rlen = us.rest_space();
+		normal_f->read_sub_dir( us );
+		rlen -= us.rest_space();
+		us.close();
+
+		return rlen;
 	}
 
 	uint64 SyscallHandler::_sys_mkdir() { return 0; }

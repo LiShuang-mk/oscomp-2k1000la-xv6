@@ -366,6 +366,7 @@ ext4_hash_error:
 } // namespace fs
 // >>>>>>>> hash tree 相关
 
+#include "mm/userspace_stream.hh"
 
 namespace fs
 {
@@ -488,6 +489,78 @@ namespace fs
 			if ( blk_buf != nullptr ) blk_buf->unpin();
 
 			return read_len;
+		}
+
+		size_t Ext4IndexNode::readSubDir( ubuf &dst, size_t off )
+		{
+			linux_dirent64 lxdir;
+
+			ulong  bufrest = dst.rest_space();
+			ulong  blk_sz  = _belong_fs->rBlockSize();
+			size_t off_bk  = off;
+			long   blk_no  = off / blk_sz;
+
+			Ext4Buffer *blk_buf = nullptr;
+			u8		   *blk_ptr = nullptr;
+
+			Ext4DirEntry2 *p_dir = nullptr;
+			while ( bufrest > 0 )
+			{
+				if ( blk_buf == nullptr )
+				{
+					if ( off >= (size_t) _has_size ) break;
+
+					blk_buf = read_logical_block( blk_no, true );
+					if ( blk_buf == nullptr )
+					{
+						log_warn( "ext4-inode : read logical block %d fail",
+								  blk_no );
+						return 0;
+					}
+					blk_ptr = (u8 *) blk_buf->get_data_ptr() + off % blk_sz;
+				}
+				p_dir = (Ext4DirEntry2 *) blk_ptr;
+				if ( p_dir->inode == 0 ) // 遇到无效目录项
+				{
+					if ( p_dir->file_type ==
+						 0xde ) // 这是块内最后一个目录项，保存的内容是checksum
+					{
+						blk_buf->unpin();
+						blk_buf	 = nullptr;
+						off		+= p_dir->rec_len;
+						blk_no	 = off / blk_sz;
+					}
+					else // 这是一个普通的无效目录项
+					{
+						off		+= p_dir->rec_len;
+						blk_ptr += p_dir->rec_len;
+					}
+					continue;
+				}
+
+				ulong dentsz = p_dir->name_len + 1 + sizeof( lxdir );
+
+				if ( dentsz > bufrest ) break; // 用户空间大小不足
+
+				lxdir.d_ino	   = p_dir->inode;
+				lxdir.d_off	   = 0;
+				lxdir.d_reclen = dentsz;
+				lxdir.d_type   = p_dir->file_type;
+				dst << lxdir;
+				dst << p_dir->name;
+
+				blk_ptr += p_dir->rec_len;
+				off		+= p_dir->rec_len;
+				bufrest	 = dst.rest_space();
+			}
+
+			if ( blk_buf != nullptr )
+			{
+				blk_buf->unpin();
+				blk_buf = nullptr;
+			}
+
+			return off - off_bk;
 		}
 
 		Ext4Buffer *Ext4IndexNode::read_logical_block( long block, bool pin )

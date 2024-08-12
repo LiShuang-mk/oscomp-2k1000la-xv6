@@ -1,5 +1,7 @@
 #include "fs/file/normal.hh"
 
+#include "mm/userspace_stream.hh"
+
 namespace fs
 {
 	long normal_file::read( uint64 buf, size_t len, long off, bool upgrade )
@@ -13,14 +15,13 @@ namespace fs
 		Inode *node = _den->getNode();
 		if ( node == nullptr )
 		{
-			log_error( "normal_file:: null inode for dentry %s", _den->rName().c_str() );
+			log_error( "normal_file:: null inode for dentry %s",
+					   _den->rName().c_str() );
 			return -1;
 		}
-		if ( off < 0 )
-			off = _file_ptr;
+		if ( off < 0 ) off = _file_ptr;
 		ret = node->nodeRead( buf, off, len );
-		if ( ret >= 0 && upgrade )
-			_file_ptr += ret;
+		if ( ret >= 0 && upgrade ) _file_ptr += ret;
 		return ret;
 	}
 
@@ -35,35 +36,38 @@ namespace fs
 		Inode *node = _den->getNode();
 		if ( node == nullptr )
 		{
-			log_error( "normal_file:: null inode for dentry %s", _den->rName().c_str() );
+			log_error( "normal_file:: null inode for dentry %s",
+					   _den->rName().c_str() );
 			return -1;
 		}
-		if ( off < 0 )
-			off = _file_ptr;
+		if ( off < 0 ) off = _file_ptr;
 		ret = node->nodeWrite( buf, off, len );
-		if ( ret >= 0 && upgrade )
-			_file_ptr += ret;
+		if ( ret >= 0 && upgrade ) _file_ptr += ret;
 
 		return ret;
 	}
 
 	bool normal_file::read_ready()
 	{
-		if ( _attrs.filetype == FileTypes::FT_DIRECT )
-			return false;
-		if ( _attrs.filetype == FileTypes::FT_NONE )
-			return true;
+		if ( _attrs.filetype == FileTypes::FT_DIRECT ) return false;
+		if ( _attrs.filetype == FileTypes::FT_NONE ) return true;
 		log_warn( "normal file is not a directory or regular file." );
 		return false;
 	}
 
 	bool normal_file::write_ready()
 	{
-		if ( _attrs.filetype == FileTypes::FT_DIRECT )
-			return false;
-		if ( _attrs.filetype == FileTypes::FT_NONE )
-			return true;
+		if ( _attrs.filetype == FileTypes::FT_DIRECT ) return false;
+		if ( _attrs.filetype == FileTypes::FT_NONE ) return true;
 		log_warn( "normal file is not a directory or regular file." );
 		return false;
 	}
-}
+
+	size_t normal_file::read_sub_dir( ubuf &dst )
+	{
+		Inode *ind	 = _den->getNode();
+		size_t rlen	 = ind->readSubDir( dst, _file_ptr );
+		_file_ptr	+= rlen;
+		return rlen;
+	}
+} // namespace fs

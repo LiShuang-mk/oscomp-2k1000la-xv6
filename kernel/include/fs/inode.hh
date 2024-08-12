@@ -12,6 +12,12 @@
 
 #include "fs/file/file_defs.hh"
 #include "types.hh"
+
+namespace mm
+{
+	class UserspaceStream;
+}
+
 namespace fs
 {
 	class DStat;
@@ -41,6 +47,17 @@ namespace fs
 
 		virtual size_t nodeRead( uint64 dst_, size_t off_, size_t len_ )  = 0;
 		virtual size_t nodeWrite( uint64 src_, size_t off_, size_t len_ ) = 0;
+
+		using ubuf = mm::UserspaceStream;
+		struct linux_dirent64
+		{
+			u64	 d_ino;	   /* 64-bit inode number */
+			u64	 d_off;	   /* Not an offset; see getdents() */
+			u16	 d_reclen; /* Size of this dirent */
+			u8	 d_type;   /* File type */
+			char d_name[]; /* Filename (null-terminated) */
+		} __attribute__( ( packed ) );
+		virtual size_t readSubDir( ubuf& dst, size_t off ) = 0;
 
 		// void readvec();
 		// void readPages();
