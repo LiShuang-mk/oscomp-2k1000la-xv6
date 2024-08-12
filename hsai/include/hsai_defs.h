@@ -12,7 +12,9 @@
 #define __hsai_kernel
 #define __hsai_hal
 
-#define NUMCPU 1
+#ifndef NUMCPU
+#define NUMCPU 2
+#endif
 
 #define DEV_TBL_LEN 64			// 设备管理表最大长度
 #define DEV_FIRST_NOT_RSV	3	// 第一个未保留的设备

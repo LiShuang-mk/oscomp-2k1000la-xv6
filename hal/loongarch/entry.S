@@ -32,10 +32,24 @@ _entry:
         mul.d       $a0, $a0, $a1
         add.d       $sp, $sp, $a0
 
+		bnez        $tp, _skip_clear_bss
+		la          $t0, _bss_start_addr
+		la          $t1, _bss_end_addr
+		li.d        $t2, 0
+_loop_clear_bss:
+		bgeu        $t0, $t1, _skip_clear_bss
+		st.d        $t2, $t0, 0
+		addi.d      $t0, $t0, 8
+		b           _loop_clear_bss
+_skip_clear_bss:
+
 _test_init_atexit:
-		bl			__init_atexit_func_entry
+		# bl			__init_atexit_func_entry
 
 		bl			_cpu_init
+
+		# add.d       $t0, $zero, $t0
+		# bl          -4
 
 	# jump to xn6_start_kernel()
         bl          xn6_start_kernel

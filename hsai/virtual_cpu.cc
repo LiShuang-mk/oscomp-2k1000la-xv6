@@ -14,7 +14,7 @@ namespace hsai
 {
 	int VirtualCpu::register_cpu( VirtualCpu * p_cpu, int cpu_id )
 	{
-		hsai_trace( "register cpu %d", cpu_id );
+		// hsai_trace( "register cpu %d", cpu_id );
 		if ( cpu_id < 0 || cpu_id >= NUMCPU )
 			return -1;
 		if ( p_cpu == nullptr )

@@ -453,8 +453,8 @@ namespace klib
 	void Printer::panic( const char *f, uint l, const char *info, ... )
 	{
 		k_printer._locking = 0;
-#ifdef LINUX_BUILD
-		k_printer.printf( BRIGHT_RED_COLOR_PINRT "[ panic ] => " );
+#if LINUX_BUILD && OPEN_COLOR_PRINT
+		k_printer.printf( RED_COLOR_PINRT "[ panic ] => " );
 #else
 		k_printer.printf( "[ panic ] => " );
 #endif
@@ -468,7 +468,7 @@ namespace klib
 		k_printer.vprintf( info, ap );
 		va_end( ap );
 		_trace_flag = 0;
-#ifdef LINUX_BUILD
+#if LINUX_BUILD && OPEN_COLOR_PRINT
 		k_printer.printf( CLEAR_COLOR_PRINT "\n" );
 #else
 		k_printer.printf( "\n" );
@@ -480,8 +480,8 @@ namespace klib
 	void Printer::error( const char *f, uint l, const char *info, ... )
 	{
 		k_printer._locking = 0;
-#ifdef LINUX_BUILD
-		k_printer.printf( BRIGHT_MAGANTA_COLOR_PRINT "[ error ] => " );
+#if LINUX_BUILD && OPEN_COLOR_PRINT
+		k_printer.printf( MAGANTA_COLOR_PRINT "[ error ] => " );
 #else
 		k_printer.printf( "[ error ] => " );
 #endif
@@ -495,7 +495,7 @@ namespace klib
 		k_printer.vprintf( info, ap );
 		va_end( ap );
 		_trace_flag = 0;
-#ifdef LINUX_BUILD
+#if LINUX_BUILD && OPEN_COLOR_PRINT
 		k_printer.printf( CLEAR_COLOR_PRINT "\n" );
 #else
 		k_printer.printf( "\n" );
@@ -506,8 +506,8 @@ namespace klib
 	void Printer::warn( const char *f, uint l, const char *info, ... )
 	{
 		k_printer._locking = 0;
-#ifdef LINUX_BUILD
-		k_printer.printf( BRIGHT_YELLOW_COLOR_PRINT "[ warn ]  => " );
+#if LINUX_BUILD && OPEN_COLOR_PRINT
+		k_printer.printf( YELLOW_COLOR_PRINT "[ warn ]  => " );
 #else
 		k_printer.printf( "[ warn ]  => " );
 #endif
@@ -521,7 +521,7 @@ namespace klib
 		k_printer.vprintf( info, ap );
 		va_end( ap );
 		_trace_flag = 0;
-#ifdef LINUX_BUILD
+#if LINUX_BUILD && OPEN_COLOR_PRINT
 		k_printer.printf( CLEAR_COLOR_PRINT "\n" );
 #else
 		k_printer.printf( "\n" );
@@ -532,8 +532,8 @@ namespace klib
 	void Printer::info( const char *f, uint l, const char *info, ... )
 	{
 		k_printer._locking = 0;
-#ifdef LINUX_BUILD
-		k_printer.printf( BRIGHT_CYAN_COLOR_PINRT "\033[36m[ info ]  => " );
+#if LINUX_BUILD && OPEN_COLOR_PRINT
+		k_printer.printf( CYAN_COLOR_PINRT "[ info ]  => " );
 #else
 		k_printer.printf( "[ info ]  => " );
 #endif
@@ -547,7 +547,7 @@ namespace klib
 		k_printer.vprintf( info, ap );
 		va_end( ap );
 		_trace_flag = 0;
-#ifdef LINUX_BUILD
+#if LINUX_BUILD && OPEN_COLOR_PRINT
 		k_printer.printf( CLEAR_COLOR_PRINT "\n" );
 #else
 		k_printer.printf( "\n" );
@@ -558,8 +558,8 @@ namespace klib
 	void Printer::trace( const char *f, uint l, const char *info, ... )
 	{
 		k_printer._locking = 0;
-#ifdef LINUX_BUILD
-		k_printer.printf( BRIGHT_GREEN_COLOR_PRINT "[ trace ] => " );
+#if LINUX_BUILD && OPEN_COLOR_PRINT
+		k_printer.printf( GREEN_COLOR_PRINT "[ trace ] => " );
 #else
 		k_printer.printf( "[ trace ] => " );
 #endif
@@ -573,7 +573,7 @@ namespace klib
 		k_printer.vprintf( info, ap );
 		va_end( ap );
 		_trace_flag = 0;
-#ifdef LINUX_BUILD
+#if LINUX_BUILD && OPEN_COLOR_PRINT
 		k_printer.printf( CLEAR_COLOR_PRINT "\n" );
 #else
 		k_printer.printf( "\n" );
@@ -594,8 +594,8 @@ namespace klib
 							const char *detail, va_list ap )
 	{
 		k_printer._locking = 0;
-#ifdef LINUX_BUILD
-		k_printer.printf( BRIGHT_BLUE_COLOR_PRINT "[ assert ]=> " );
+#if LINUX_BUILD && OPEN_COLOR_PRINT
+		k_printer.printf( BLUE_COLOR_PRINT "[ assert ]=> " );
 #else
 		k_printer.printf( "[ assert ]=> " );
 #endif
@@ -609,7 +609,7 @@ namespace klib
 		k_printer.printf( "'\n[detail] " );
 		k_printer.vprintf( detail, ap );
 		_trace_flag = 0;
-#ifdef LINUX_BUILD
+#if LINUX_BUILD && OPEN_COLOR_PRINT
 		k_printer.printf( CLEAR_COLOR_PRINT "\n" );
 #else
 		k_printer.printf( "\n" );
@@ -640,8 +640,8 @@ namespace klib
 		{
 			case OutputLevel::out_trace:
 			{
-#ifdef LINUX_BUILD
-				k_printer.printf( BRIGHT_GREEN_COLOR_PRINT "[ trace ] => " );
+#if LINUX_BUILD && OPEN_COLOR_PRINT
+				k_printer.printf( GREEN_COLOR_PRINT "[ trace ] => " );
 #else
 				k_printer.printf( "[ trace ] => " );
 #endif
@@ -649,8 +649,8 @@ namespace klib
 			break;
 			case OutputLevel::out_info:
 			{
-#ifdef LINUX_BUILD
-				k_printer.printf( BRIGHT_CYAN_COLOR_PINRT "[ info ]  => " );
+#if LINUX_BUILD && OPEN_COLOR_PRINT
+				k_printer.printf( CYAN_COLOR_PINRT "[ info ]  => " );
 #else
 				k_printer.printf( "[ info ]  => " );
 #endif
@@ -658,8 +658,8 @@ namespace klib
 			break;
 			case OutputLevel::out_warn:
 			{
-#ifdef LINUX_BUILD
-				k_printer.printf( BRIGHT_YELLOW_COLOR_PRINT "[ warn ]  => " );
+#if LINUX_BUILD && OPEN_COLOR_PRINT
+				k_printer.printf( YELLOW_COLOR_PRINT "[ warn ]  => " );
 #else
 				k_printer.printf( "[ warn ]  => " );
 #endif
@@ -667,8 +667,8 @@ namespace klib
 			break;
 			case OutputLevel::out_error:
 			{
-#ifdef LINUX_BUILD
-				k_printer.printf( BRIGHT_MAGANTA_COLOR_PRINT "[ error ] => " );
+#if LINUX_BUILD && OPEN_COLOR_PRINT
+				k_printer.printf( MAGANTA_COLOR_PRINT "[ error ] => " );
 #else
 				k_printer.printf( "[ error ] => " );
 #endif
@@ -676,8 +676,8 @@ namespace klib
 			break;
 			case OutputLevel::out_panic:
 			{
-#ifdef LINUX_BUILD
-				k_printer.printf( BRIGHT_RED_COLOR_PINRT "[ panic ] => " );
+#if LINUX_BUILD && OPEN_COLOR_PRINT
+				k_printer.printf( RED_COLOR_PINRT "[ panic ] => " );
 #else
 				k_printer.printf( "[ panic ] => " );
 #endif
@@ -686,7 +686,7 @@ namespace klib
 			default: break;
 		}
 		log_output_info( f, l, info, ap );
-#ifdef LINUX_BUILD
+#if LINUX_BUILD && OPEN_COLOR_PRINT
 		k_printer.printf( CLEAR_COLOR_PRINT "\n" );
 #else
 		k_printer.printf( "\n" );

@@ -68,7 +68,7 @@ extern "C" {
 	{
 		int i;
 		asm volatile( "addi.d %0, $tp, 0" : "=r" ( i ) );
-		new ( &loongarch::k_la_cpus[ i ] ) loongarch::Cpu;
+		new ( &loongarch::k_la_cpus[i] ) loongarch::Cpu;
 		loongarch::Cpu::register_cpu( loongarch::k_la_cpus + i, i );
 		
 	}
