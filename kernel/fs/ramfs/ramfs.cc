@@ -81,13 +81,24 @@ namespace fs
 				if ( dev_table[ i ] == nullptr )
 					break;
 				dentry *device_ = dev->EntryCreate( dev_table[ i ], _super_block->rDefaultMod(), dev_table[ i ] );
-				Device *dev_ = new Device( static_cast<RamFS*>(dev->getNode()->getFS()), alloc_ino(), i );
+				Device *dev_ = new Device( static_cast<RamFS*>(dev->getNode()->getFS()), alloc_ino(), FileAttrs( FT_DEVICE, 0666), i );
 				device_->setNode( dev_ );
 			}
 			
-			dentry *rtc = dev->EntryCreate( "rtc", FileAttrs( FileTypes::FT_DEVICE, 0444 ) );
-			RTC *rtc_ = new RTC( static_cast<RamFS*>(rtc->getNode()->getFS()), alloc_ino(), alloc_ino());
+			// init /dev/rtc
+			dentry *rtc = dev->EntryCreate( "rtc", FileAttrs( FileTypes::FT_DEVICE, 0444 ) ); //rw
+			RTC *rtc_ = new RTC( static_cast<RamFS*>(rtc->getNode()->getFS()), alloc_ino(), FileAttrs( FT_DEVICE, 0666), 100);
 			rtc->setNode( rtc_ );
+
+			// init /dev/zero
+			dentry *zero = dev->EntryCreate( "zero", FileAttrs( FileTypes::FT_DEVICE, 0444 ) ); //rw
+			Zero *zero_ = new Zero( static_cast<RamFS*>(zero->getNode()->getFS()), alloc_ino(),FileAttrs( FT_DEVICE, 0666), 101 );
+			zero->setNode( zero_ );
+
+			// init /dev/null
+			dentry *null = dev->EntryCreate( "null", FileAttrs( FileTypes::FT_DEVICE, 0444 ) );  // rw,但是read直接返回-1
+			Null *null_ = new Null( static_cast<RamFS*>(null->getNode()->getFS()), alloc_ino(), FileAttrs( FT_DEVICE, 0666), 102 );
+			null->setNode( null_ );
 
 			// init /proc
 			dentry *proc = _root->EntrySearch( "proc" );
@@ -106,19 +117,19 @@ namespace fs
 
 
 			dentry *self = proc->EntrySearch( "self" );
-			// init exe
+			// init /proc/exe
 			dentry *exe = self->EntryCreate( "exe", FileAttrs( FileTypes::FT_NORMAL, 0444 ) );
 			Exe *exe_ = new Exe( static_cast<RamFS*>(self->getNode()->getFS()), alloc_ino() );
 			exe->setNode( exe_ );
 
 
-			//init mount
+			//init /proc/mount
 			dentry *mounts = proc->EntryCreate( "mounts", FileAttrs( FileTypes::FT_DIRECT, 0444 ) );
 			Mount *mnt_ = new Mount( static_cast<RamFS*>(mounts->getNode()->getFS()), alloc_ino(), FileAttrs( FileTypes::FT_SYMLINK, 0444 ) );
 			mounts->setNode( mnt_ );
 
 
-			// init bin
+			// init /bin
 			dentry *bin = _root->EntrySearch( "bin" );
             if (!bin )
             {
@@ -126,6 +137,7 @@ namespace fs
                 return;
             }
 
+			// init /bin/ls
             dentry *ls = bin->EntryCreate( "ls", attrs ); // 创建ls
 			SymbleLink *ls_link_ = new SymbleLink( static_cast<RamFS*>(mounts->getNode()->getFS()), 
 													alloc_ino(),

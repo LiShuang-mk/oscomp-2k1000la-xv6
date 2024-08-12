@@ -234,5 +234,11 @@ namespace fs
 			
 			return ret;
 		}
+
+		size_t Zero::nodeRead( uint64_t src_, size_t off, size_t len )
+		{
+			memset( (void *)src_, 0, len );
+            return len;
+		}
 	}
 }
