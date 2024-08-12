@@ -38,7 +38,7 @@ namespace fs
 
 		dev_t RamInode::rDev() const
 		{
-			return 0; //这里不应该经过， 应该交给Device的rDev()处理
+			return -1; //这里不应该经过， 应该交给Device的rDev()处理
 		}
 
 		static char busybox_conf[] =
@@ -233,6 +233,12 @@ namespace fs
 			ret = sdev->write( (void *)src_, len_ );
 			
 			return ret;
+		}
+
+		size_t Zero::nodeRead( uint64_t src_, size_t off, size_t len )
+		{
+			memset( (void *)src_, 0, len );
+            return len;
 		}
 	}
 }
