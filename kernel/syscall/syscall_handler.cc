@@ -126,18 +126,18 @@ namespace syscall
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
 	{
 #ifdef OS_DEBUG
-		if ( sys_num != SYS_write )
-		{
-			if ( _syscall_name[sys_num] != nullptr )
-				printf( YELLOW_COLOR_PRINT "syscall %16s",
-						_syscall_name[sys_num] );
-			else
-				printf( BRIGHT_YELLOW_COLOR_PRINT "unknown sycall %d\t",
-						sys_num );
-			auto [usg, rst] = mm::k_pmm.mem_desc();
-			printf( "mem-usage: %_-10ld mem-rest: %_-10ld\n" CLEAR_COLOR_PRINT,
-					usg, rst );
-		}
+		// if ( sys_num != SYS_write )
+		// {
+		// 	if ( _syscall_name[sys_num] != nullptr )
+		// 		printf( YELLOW_COLOR_PRINT "syscall %16s",
+		// 				_syscall_name[sys_num] );
+		// 	else
+		// 		printf( BRIGHT_YELLOW_COLOR_PRINT "unknown sycall %d\t",
+		// 				sys_num );
+		// 	auto [usg, rst] = mm::k_pmm.mem_desc();
+		// 	printf( "mem-usage: %_-10ld mem-rest: %_-10ld\n" CLEAR_COLOR_PRINT,
+		// 			usg, rst );
+		// }
 #endif
 		return _syscall_funcs[sys_num]();
 	}

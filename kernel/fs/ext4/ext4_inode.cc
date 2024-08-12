@@ -547,7 +547,12 @@ namespace fs
 				lxdir.d_reclen = dentsz;
 				lxdir.d_type   = p_dir->file_type;
 				dst << lxdir;
-				dst << p_dir->name;
+				mm::UsRangeDesc rd =
+					std::make_tuple( (mm::UsBufPtr) p_dir->name,
+									(mm::UsBufLen) p_dir->name_len );
+				char null_term = 0;
+				dst << rd << null_term;
+				// dst << p_dir->name;
 
 				blk_ptr += p_dir->rec_len;
 				off		+= p_dir->rec_len;

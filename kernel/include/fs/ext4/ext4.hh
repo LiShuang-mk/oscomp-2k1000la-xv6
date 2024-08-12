@@ -34,9 +34,9 @@ namespace fs
 			uint32	log_block_size;					/* Block size */
 			uint32	log_cluster_size;				/* Allocation cluster size */
 			// 20h
-			uint32	blocks_per_group;				/* # Blocks per group */
-			uint32	clusters_per_group;				/* # Clusters per group */
-			uint32	inodes_per_group;				/* # Inodes per group */
+			uint32	blocks_per_group;				/* Blocks per group */
+			uint32	clusters_per_group;				/* Clusters per group */
+			uint32	inodes_per_group;				/* Inodes per group */
 			uint32	mtime;							/* Mount time */
 			// 30h
 			uint32	wtime;							/* Write time */
