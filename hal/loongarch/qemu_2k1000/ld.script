@@ -73,9 +73,12 @@ SECTIONS
 
   .bss : {
     . = ALIGN(16);
+	_bss_start_addr = .;
     *(.sbss .sbss.*) 
     . = ALIGN(16);
     *(.bss .bss.*)
+	. = ALIGN(16);
+	_bss_end_addr = .;
   }
 
   PROVIDE(xn6_end = .);

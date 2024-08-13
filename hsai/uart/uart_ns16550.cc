@@ -23,7 +23,7 @@ namespace hsai
 		// set baudrate
 		regLCR * lcr = ( regLCR* ) ( _reg_base + LCR );
 		lcr->divisor_access = 1;
-		_write_reg( DLL, 0x03 );
+		_write_reg( DLL, 68 );
 		_write_reg( DLM, 0x00 );
 		lcr->divisor_access = 0;
 

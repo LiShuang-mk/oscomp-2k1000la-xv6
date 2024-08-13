@@ -1,5 +1,5 @@
 # configure 
-CONF_CPU_NUM = 1
+CONF_CPU_NUM = 2
 export CONF_ARCH ?= loongarch
 export CONF_PLATFORM ?= qemu_2k1000
 # CONF_LINUX_BUILD = 1
@@ -37,6 +37,7 @@ export CFLAGS += -MD
 export CFLAGS += -DNUMCPU=$(CONF_CPU_NUM)
 export CFLAGS += -DARCH=$(CONF_ARCH)
 export CFLAGS += -DPLATFORM=$(CONF_PLATFORM)
+export CFLAGS += -DOPEN_COLOR_PRINT=1
 export CFLAGS += -DOS_DEBUG										# open debug output
 ifeq ($(HOST_OS),Linux)
 export CFLAGS += -DLINUX_BUILD=1

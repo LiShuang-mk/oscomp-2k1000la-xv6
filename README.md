@@ -37,3 +37,5 @@
 #### 8. [=> uboot启动与调试](./doc/how_to_uboot.md)
 
 #### 9. [=> 如何适配使用glibc的用户程序](./doc/how_to_adapt_glibc.md)
+
+#### 10. [=> 适配2k1000星云板](./doc/adapt-2k1000la-dp.md)
