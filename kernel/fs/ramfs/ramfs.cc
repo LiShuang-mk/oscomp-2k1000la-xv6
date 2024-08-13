@@ -141,7 +141,7 @@ namespace fs
             dentry *ls = bin->EntryCreate( "ls", attrs ); // 创建ls
 			SymbleLink *ls_link_ = new SymbleLink( static_cast<RamFS*>(mounts->getNode()->getFS()), 
 													alloc_ino(),
-													FileAttrs( FileTypes::FT_SYMLINK, 0777 ),  // 这里应该是一个SYMBLE_LINK
+													FileAttrs( FileTypes::FT_NORMAL, 0777 ),  // 这里应该是一个SYMBLE_LINK
                                                     "/mnt/sdcard/busybox" );
 			ls->setNode( ls_link_ );
 

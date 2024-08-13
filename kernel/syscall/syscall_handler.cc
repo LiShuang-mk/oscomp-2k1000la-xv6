@@ -1386,11 +1386,7 @@ namespace syscall
 
 		if ( fd < 0 )
 			return -1;
-		else
-		{
-			cur_proc->_ofile[fd]->free_file();
-			cur_proc->_ofile[fd] = nullptr;
-		}
+
 
 		return 0;
 	}
