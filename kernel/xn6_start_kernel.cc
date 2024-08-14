@@ -137,7 +137,7 @@ extern "C" {
 			hsai::hardware_secondary_init();
 
 
-			while ( 1 );
+			// while ( 1 );
 
 			// sharemem init
 			// pm::k_shmManager.init( "shm lock" );
@@ -238,7 +238,7 @@ extern "C" {
 
 // <<<< test ext4 fs
 
-			// //while ( 1 );
+			// while ( 1 );
 
 			// test_buffer();
 			// while ( 1 );
@@ -252,7 +252,7 @@ extern "C" {
 			fs::mnt_table[ "/" ] = &fs::ramfs::k_ramfs;
 			log_info( "ramfs init" );
 			fs::Path mnt( "/mnt" );
-			fs::Path dev( "/dev/hdb" );
+			fs::Path dev( "/dev/hdap0" );
 			// mnt.mount( dev, "fat32", 0, 0 );  // for test mount fat32	
 			mnt.mount( dev, "ext4", 0, 0 );
 			// fs::Path test_unlink( "/mnt/read" );
@@ -304,7 +304,7 @@ extern "C" {
 			pm::k_pm.user_init();
 			log_info( "user init" );
 
-			// while ( 1 );
+			while ( 1 );
 
 
 			// tmm::timeval tv;

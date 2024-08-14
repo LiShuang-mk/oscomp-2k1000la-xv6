@@ -75,27 +75,20 @@ namespace hsai
 	// // 按照 CPUCFG.4 的值则恰为 100'000'000
 	constexpr uint64 qemu_fre = 3 * _1M_dec + 125 * _1K_dec;
 	// 由cycles计算出微秒的方法
-	constexpr uint64 qemu_fre_cal_usec( uint64 cycles )
-	{
-		return cycles * 8 / 25;
-	}
+	constexpr uint64 qemu_fre_cal_usec( uint64 cycles ) { return cycles * 8 / 25; }
 	// 由微秒计算出cycles的方法
-	constexpr uint64 qemu_fre_cal_cycles( uint64 usec )
-	{
-		return usec * 25 / 8;
-	}
+	constexpr uint64 qemu_fre_cal_cycles( uint64 usec ) { return usec * 25 / 8; }
 
 	// 100K 分频，则时间片 100K/3.125MHz ~ 32ms
 	// constexpr uint div_fre = 0x80000000UL;
-	constexpr uint div_fre = ( 200 * _1K_dec ) >> 2; // 低两位由硬件补齐
+	constexpr uint div_fre	   = ( 200 * _1K_dec ) >> 2; // 低两位由硬件补齐
 	constexpr uint ms_per_tick = div_fre * _1K_dec / qemu_fre;
 
 	void hardware_abstract_init( void )
 	{
 		// 1. 使用 UART0 作为 debug 输出
-		new ( &qemu2k1000::debug_uart )
-			UartNs16550( (void*) ( (uint64) qemu2k1000::UartAddr::uart0 |
-								   (uint64) qemu2k1000::dmwin::win_1 ) );
+		new ( &qemu2k1000::debug_uart ) UartNs16550(
+			(void*) ( (uint64) qemu2k1000::UartAddr::uart0 | (uint64) qemu2k1000::dmwin::win_1 ) );
 		qemu2k1000::debug_uart.init();
 		register_debug_uart( &qemu2k1000::debug_uart );
 
@@ -110,8 +103,8 @@ namespace hsai
 		Cpu* lacpu = (Cpu*) get_cpu();
 
 		// >> 自动循环
-		ulong tcfg_data = ( ( (uint64) div_fre ) << csr::tcfg_initval_s ) |
-						  ( csr::tcfg_en_m ) | ( csr::tcfg_periodic_m );
+		ulong tcfg_data = ( ( (uint64) div_fre ) << csr::tcfg_initval_s ) | ( csr::tcfg_en_m ) |
+						  ( csr::tcfg_periodic_m );
 
 		// >> 非自动循环
 		// _tcfg_data =
@@ -126,10 +119,23 @@ namespace hsai
 		Cpu*  lacpu = (Cpu*) hsai::get_cpu();
 		ulong tmp	= lacpu->read_csr( csr::misc );
 		hsai_printf( "misc = %p\n", tmp );
-		tmp &= ~0xF000;
+		// tmp &= ~0xF000;
+		tmp |= 0xF000;
 		lacpu->write_csr( csr::misc, tmp );
 		tmp = lacpu->read_csr( csr::misc );
 		hsai_printf( "misc-no_align_check = %p\n", tmp );
+
+		int cpucfg_idx;
+
+		cpucfg_idx = 1;
+		asm volatile( "cpucfg %0, %1" : "=r"( tmp ) : "r"( cpucfg_idx ) );
+		hsai_printf( "cpucfg %d = %#_034b\n", cpucfg_idx, tmp );
+		cpucfg_idx = 4;
+		asm volatile( "cpucfg %0, %1" : "=r"( tmp ) : "r"( cpucfg_idx ) );
+		hsai_printf( "cc-freq = %d\n", tmp );
+		cpucfg_idx = 5;
+		asm volatile( "cpucfg %0, %1" : "=r"( tmp ) : "r"( cpucfg_idx ) );
+		hsai_printf( "cc-mul = %d, cc-div = %d\n", (u16) tmp, (u32) tmp >> 16 );
 
 		// 1. 异常管理初始化
 		loongarch::k_em.init( "exception manager" );
@@ -138,20 +144,53 @@ namespace hsai
 		ulong pci_sata_base = loongarch::qemu2k1000::pci_type0_config_address(
 			loongarch::qemu2k1000::sata_bus, loongarch::qemu2k1000::sata_dev,
 			loongarch::qemu2k1000::sata_fun );
-		pci_sata_base |= loongarch::qemu2k1000::win_1;
-		ulong sata_base =
-			loongarch::qemu2k1000::pci_type0_bar( pci_sata_base, 0 );
+		pci_sata_base	|= loongarch::qemu2k1000::win_1;
+		ulong sata_base	 = loongarch::qemu2k1000::pci_type0_bar( pci_sata_base, 0 ) & ~0xFUL;
+
+		u8* buf;
+		buf = (u8*) pci_sata_base;
+		hsai_trace( "print SATA PCI header (%p)", pci_sata_base );
+		hsai_printf( BLUE_COLOR_PRINT
+					 "buf0\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" CLEAR_COLOR_PRINT );
+		for ( uint i = 0; i < 0x40; ++i )
+		{
+			if ( i % 0x10 == 0 ) hsai_printf( "%B%B\t", i >> 8, i );
+			hsai_printf( "%B ", buf[i] );
+			if ( i % 0x10 == 0xF ) hsai_printf( "\n" );
+		}
+
+		hsai_trace( "SATA PCI enable main device" );
+		loongarch::qemu2k1000::pci_type0_enable_main( pci_sata_base );
+		hsai_trace( "SATA PCI enable memory access" );
+		loongarch::qemu2k1000::pci_type0_enable_mem_access( pci_sata_base );
+		hsai_trace( "SATA PCI enable I/O access" );
+		loongarch::qemu2k1000::pci_type0_enable_io_access( pci_sata_base );
+
+		hsai_trace( "print SATA PCI header (%p)", pci_sata_base );
+		hsai_printf( BLUE_COLOR_PRINT
+					 "buf0\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" CLEAR_COLOR_PRINT );
+		buf = (u8*) pci_sata_base;
+		for ( uint i = 0; i < 0x40; ++i )
+		{
+			if ( i % 0x10 == 0 ) hsai_printf( "%B%B\t", i >> 8, i );
+			hsai_printf( "%B ", buf[i] );
+			if ( i % 0x10 == 0xF ) hsai_printf( "\n" );
+		}
+
 		sata_base |= loongarch::qemu2k1000::win_1;
-		new ( &loongarch::qemu2k1000::ahci_driver )
-			AhciDriver( "AHCI", (void*) sata_base );
+		hsai_trace( "SATA mem base = %p", sata_base );
+		new ( &loongarch::qemu2k1000::ahci_driver ) AhciDriver( "AHCI", (void*) sata_base );
 
 		// 3. 中断管理初始化
 		new ( &loongarch::qemu2k1000::k_im )
 			loongarch::qemu2k1000::InterruptManager( "intr manager" );
+		hsai_info( "im init" );
 
 		// 4. AHCI 识别设备（需要在中断初始化后进行）
 		AhciDriver* ahd = (AhciDriver*) k_devm.get_device( "AHCI driver" );
 		ahd->identify_device();
+
+		// while ( 1 );
 
 
 		// debug
@@ -267,10 +306,7 @@ namespace hsai
 
 	ulong get_main_frequence() { return qemu_fre; }
 
-	ulong get_hw_time_stamp()
-	{
-		return ( (Cpu*) hsai::get_cpu() )->read_csr( csr::tval );
-	}
+	ulong get_hw_time_stamp() { return ( (Cpu*) hsai::get_cpu() )->read_csr( csr::tval ); }
 
 	ulong time_stamp_to_usec( ulong ts ) { return qemu_fre_cal_usec( ts ); }
 

@@ -1,19 +1,20 @@
 //
-// Created by Li Shuang ( pseudonym ) on 2024-07-16 
+// Created by Li Shuang ( pseudonym ) on 2024-07-16
 // --------------------------------------------------------------
-// | Note: This code file just for study, not for commercial use 
-// | Contact Author: lishuang.mk@whu.edu.cn 
+// | Note: This code file just for study, not for commercial use
+// | Contact Author: lishuang.mk@whu.edu.cn
 // --------------------------------------------------------------
 //
 
 #pragma once
 
-#include "smp/spin_lock.hh"
+#include <kernel/klib/function.hh>
+
 #include "ata/ahci.hh"
 #include "ata/sata.hh"
 #include "block_device.hh"
-
-#include <kernel/klib/function.hh>
+#include "disk_partition_device.hh"
+#include "smp/spin_lock.hh"
 
 namespace hsai
 {
@@ -28,18 +29,18 @@ namespace hsai
 	 * >> 各方法功能。
 	 *****************************************************************/
 
-	const char ahci_port_driver_name_template[] = "hd?";
-	constexpr int ahci_port_change_name_number( char * name, int num )
+	const char	  ahci_port_driver_name_template[] = "hd?";
+	constexpr int ahci_port_change_name_number( char *name, int num )
 	{
 		// char c;
 		// c = ( char ) ( num / 10 ) + '0';
 		// name[ sizeof ahci_port_driver_name_template - 3 ] = c;
 		// c = ( char ) ( num % 10 ) + '0';
 		// name[ sizeof ahci_port_driver_name_template - 2 ] = c;
-		char ch = 'a';
-		ch += ( char ) num & 0xFF;
+		char ch	 = 'a';
+		ch		+= (char) num & 0xFF;
 		if ( ch > 'z' ) return -1;
-		name[ 2 ] = ch;
+		name[2] = ch;
 		return 0;
 	}
 
@@ -47,40 +48,55 @@ namespace hsai
 	class AhciPortDriver : public BlockDevice
 	{
 		friend AhciDriver;
+
 	private:
+
 		hsai::SpinLock _lock;
-		const char _dev_name[ sizeof ahci_port_driver_name_template ] = "";
-		int _port_id = 0;
-		AhciPortReg * _regs = nullptr;
-		AhciCmdList * _cmd_ls = nullptr;
-		AhciRevFis * _rev_fis = nullptr;
-		AhciCmdTbl *_cmd_tbl = nullptr;		// 实际上命令槽不只一个，这里简化设计，只使用一个命令槽
+
+		const char _dev_name[sizeof ahci_port_driver_name_template] = "";
+
+		int			 _port_id = 0;
+		AhciPortReg *_regs	  = nullptr;
+		AhciCmdList *_cmd_ls  = nullptr;
+		AhciRevFis	*_rev_fis = nullptr;
+		AhciCmdTbl *_cmd_tbl = nullptr; // 实际上命令槽不只一个，这里简化设计，只使用一个命令槽
 		const int _default_cmd_slot = 0;
-		ulong _block_size = 0;
-		int _is_idtf = false;
+		ulong	  _block_size		= 0;
+		int		  _is_idtf			= false;
 
 		std::function<int( void )> _call_back;
 
-	public:
-		virtual long get_block_size() override { return ( long ) _block_size; };
-		virtual int read_blocks_sync( long start_block, long block_count, BufferDescriptor * buf_list, int buf_count ) override;
-		virtual int read_blocks( long start_block, long block_count, BufferDescriptor * buf_list, int buf_count ) override;
-		virtual int write_blocks_sync( long start_block, long block_count, BufferDescriptor * buf_list, int buf_count ) override;
-		virtual int write_blocks( long start_block, long block_count, BufferDescriptor * buf_list, int buf_count ) override;
-		virtual int handle_intr() override;
+		DiskPartitionDevice _disk_partition[4]; // MBR 硬盘只支持4个分区
 
-		virtual bool read_ready() override { return !_cmd_slot_busy( _default_cmd_slot ) && !_task_busy(); }
-		virtual bool write_ready() override { return !_cmd_slot_busy( _default_cmd_slot ) && !_task_busy(); }
+		char _partition_name[4][sizeof ahci_port_driver_name_template + 2] = {};
 
 	public:
+
+		virtual long get_block_size() override { return (long) _block_size; };
+		virtual int	 read_blocks_sync( long start_block, long block_count,
+									   BufferDescriptor *buf_list, int buf_count ) override;
+		virtual int	 read_blocks( long start_block, long block_count, BufferDescriptor *buf_list,
+								  int buf_count ) override;
+		virtual int	 write_blocks_sync( long start_block, long block_count,
+										BufferDescriptor *buf_list, int buf_count ) override;
+		virtual int	 write_blocks( long start_block, long block_count, BufferDescriptor *buf_list,
+								   int buf_count ) override;
+		virtual int	 handle_intr() override;
+
+		virtual bool read_ready() override
+		{
+			return !_cmd_slot_busy( _default_cmd_slot ) && !_task_busy();
+		}
+		virtual bool write_ready() override
+		{
+			return !_cmd_slot_busy( _default_cmd_slot ) && !_task_busy();
+		}
+
+	public:
+
 		AhciPortDriver() = default;
-		AhciPortDriver(
-			const char * lock_name,
-			int port_id,
-			void * base_addr,
-			void * cmd_list,
-			void * fis_base
-		);
+		AhciPortDriver( const char *lock_name, int port_id, void *base_addr, void *cmd_list,
+						void *fis_base );
 
 		/// @brief 发送identify命令
 		/// @details 这个函数可以作为AHCI给SATA发送命令的编程模板
@@ -98,7 +114,8 @@ namespace hsai
 		/// @param buffer 接受数据的缓存基地址，请注意buffer由调用者来管理
 		/// @param len buffer缓存的大小（不小于512byte）
 		/// @param callback_handler 回调函数指针，为空指针时使用默认回调函数
-		void isu_cmd_identify( void *buffer, uint len, std::function<int( void )> callback_handler );
+		void isu_cmd_identify( void *buffer, uint len,
+							   std::function<int( void )> callback_handler );
 
 		/// @brief 向SATA设备发送read DMA命令
 		/// @param port 端口号
@@ -108,18 +125,14 @@ namespace hsai
 		/// @param set_prd_handler 设置PRD的回调函数
 		/// @param callback_handler 命令结束后中断的回调函数
 		void isu_cmd_read_dma(
-			uint64 lba,
-			uint64 blk_cnt,
-			uint prd_cnt,
+			uint64 lba, uint64 blk_cnt, uint prd_cnt,
 			std::function<void( uint prd_i, uint64 &pr_base, uint32 &pr_size )> set_prd_handler,
-			std::function<int( void )> callback_handler );
+			std::function<int( void )>											callback_handler );
 
 		void isu_cmd_write_dma(
-			uint64 lba,
-			uint64 blk_cnt,
-			uint prd_cnt,
+			uint64 lba, uint64 blk_cnt, uint prd_cnt,
 			std::function<void( uint prd_i, uint64 &pr_base, uint32 &pr_size )> set_prd_handler,
-			std::function<int( void )> callback_handler );
+			std::function<int( void )>											callback_handler );
 
 		/// @brief 尽管当前这个中断处理函数仍在测试中使用，但这个函数在
 		///        正式的代码中应该被废弃
@@ -130,8 +143,10 @@ namespace hsai
 
 		// void set_intr_handler( callback_t f ) { test_call_back = f; }
 
-	// for debugging 
+		// for debugging
+
 	public:
+
 		void debug_print_register();
 
 	private:
@@ -148,10 +163,7 @@ namespace hsai
 			while ( _task_busy() );
 		}
 
-		constexpr bool _cmd_slot_busy( uint cmd_slot )
-		{
-			return _regs->ci & ( 1U << cmd_slot );
-		}
+		constexpr bool _cmd_slot_busy( uint cmd_slot ) { return _regs->ci & ( 1U << cmd_slot ); }
 
 		constexpr bool _task_busy()
 		{
@@ -160,12 +172,12 @@ namespace hsai
 
 		void _fill_fis_h2d_lba( SataFisRegH2D *fis, uint64 lba )
 		{
-			fis->lba_low = ( u8 ) ( ( lba >> 0 ) & 0xFF );
-			fis->lba_mid = ( u8 ) ( ( lba >> 8 ) & 0xFF );
-			fis->lba_high = ( u8 ) ( ( lba >> 16 ) & 0xFF );
-			fis->lba_low_exp = ( u8 ) ( ( lba >> 24 ) & 0xFF );
-			fis->lba_mid_exp = ( u8 ) ( ( lba >> 32 ) & 0xFF );
-			fis->lba_high_exp = ( u8 ) ( ( lba >> 40 ) & 0xFF );
+			fis->lba_low	  = (u8) ( ( lba >> 0 ) & 0xFF );
+			fis->lba_mid	  = (u8) ( ( lba >> 8 ) & 0xFF );
+			fis->lba_high	  = (u8) ( ( lba >> 16 ) & 0xFF );
+			fis->lba_low_exp  = (u8) ( ( lba >> 24 ) & 0xFF );
+			fis->lba_mid_exp  = (u8) ( ( lba >> 32 ) & 0xFF );
+			fis->lba_high_exp = (u8) ( ( lba >> 40 ) & 0xFF );
 		}
 	};
 

@@ -291,7 +291,7 @@ namespace hsai
 		AhciPortReg ports[ ahci_max_port_num ];
 
 	}__attribute__( ( __packed__ ) );
-	// static_assert( ( uint64 )( ( ( HbaMemReg* ) 0x0UL )->ports ) == 0x100 );
+	// static_assert( ( uint64 )( ( &(( AhciMemReg* )(void *) 0x1000UL )->ports) ) == 0x1100 );
 
 
 

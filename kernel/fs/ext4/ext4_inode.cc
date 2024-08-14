@@ -92,10 +92,7 @@ namespace fs
 		{
 			return ( x & y ) | ( x & z ) | ( y & z );
 		}
-		constexpr u32 EXT4_HASH_FUNCTION( H )( u32 x, u32 y, u32 z )
-		{
-			return x ^ y ^ z;
-		}
+		constexpr u32 EXT4_HASH_FUNCTION( H )( u32 x, u32 y, u32 z ) { return x ^ y ^ z; }
 
 		/* ROTATE_LEFT rotates x left n bits */
 		constexpr u32 EXT4_HASH_FUNCTION( rotate_left )( u32 x, u32 n )
@@ -108,22 +105,19 @@ namespace fs
 		 * Rotation is separated from addition to prevent recomputation.
 		 */
 
-		constexpr void EXT4_HASH_FUNCTION( FF )( u32 &a, u32 &b, u32 &c, u32 &d,
-												 u32 &x, u32 s )
+		constexpr void EXT4_HASH_FUNCTION( FF )( u32 &a, u32 &b, u32 &c, u32 &d, u32 &x, u32 s )
 		{
 			a += EXT4_HASH_FUNCTION( F )( b, c, d ) + x;
 			a  = EXT4_HASH_FUNCTION( rotate_left )( a, s );
 		}
 
-		constexpr void EXT4_HASH_FUNCTION( GG )( u32 &a, u32 &b, u32 &c, u32 &d,
-												 u32 &x, u32 s )
+		constexpr void EXT4_HASH_FUNCTION( GG )( u32 &a, u32 &b, u32 &c, u32 &d, u32 &x, u32 s )
 		{
 			a += EXT4_HASH_FUNCTION( G )( b, c, d ) + x + (u32) 0x5A82'7999;
 			a  = EXT4_HASH_FUNCTION( rotate_left )( a, s );
 		}
 
-		constexpr void EXT4_HASH_FUNCTION( HH )( u32 &a, u32 &b, u32 &c, u32 &d,
-												 u32 &x, u32 s )
+		constexpr void EXT4_HASH_FUNCTION( HH )( u32 &a, u32 &b, u32 &c, u32 &d, u32 &x, u32 s )
 		{
 			a += EXT4_HASH_FUNCTION( H )( b, c, d ) + x + (u32) 0x6ED9'EBA1;
 			a  = EXT4_HASH_FUNCTION( rotate_left )( a, s );
@@ -194,10 +188,8 @@ namespace fs
 			while ( n-- > 0 )
 			{
 				sum	 = i * tea_delta;
-				x	+= ( ( y << 4 ) + data[0] ) ^ ( y + sum ) ^
-					 ( ( y >> 5 ) + data[1] );
-				y += ( ( x << 4 ) + data[2] ) ^ ( x + sum ) ^
-					 ( ( x >> 5 ) + data[3] );
+				x	+= ( ( y << 4 ) + data[0] ) ^ ( y + sum ) ^ ( ( y >> 5 ) + data[1] );
+				y	+= ( ( x << 4 ) + data[2] ) ^ ( x + sum ) ^ ( ( x >> 5 ) + data[3] );
 				i++;
 			}
 
@@ -205,8 +197,7 @@ namespace fs
 			hash[1] += y;
 		}
 
-		static u32 ext4_legacy_hash( const char *name, int len,
-									 int unsigned_char )
+		static u32 ext4_legacy_hash( const char *name, int len, int unsigned_char )
 		{
 			u32					 h0, h1 = 0x12A3'FE2D, h2 = 0x37AB'E8F9;
 			u32					 multi = 0x6D'22F5;
@@ -230,11 +221,10 @@ namespace fs
 			return ( h1 << 1 );
 		}
 
-		static void ext4_prep_hashbuf( const char *src, u32 slen, u32 *dst,
-									   int dlen, int unsigned_char )
+		static void ext4_prep_hashbuf( const char *src, u32 slen, u32 *dst, int dlen,
+									   int unsigned_char )
 		{
-			u32 padding =
-				slen | ( slen << 8 ) | ( slen << 16 ) | ( slen << 24 );
+			u32					 padding = slen | ( slen << 8 ) | ( slen << 16 ) | ( slen << 24 );
 			u32					 buf_val;
 			int					 len, i;
 			int					 buf_byte;
@@ -280,9 +270,8 @@ namespace fs
 		}
 
 		[[maybe_unused]]
-		static int ext4_htree_hash( const char *name, int len,
-									const u32 *hash_seed, int hash_version,
-									u32 *hash_major, u32 *hash_minor )
+		static int ext4_htree_hash( const char *name, int len, const u32 *hash_seed,
+									int hash_version, u32 *hash_major, u32 *hash_minor )
 		{
 			u32 hash[4];
 			u32 data[8];
@@ -327,9 +316,7 @@ namespace fs
 				case HashVer::u_legacy:
 					unsigned_char = 1;
 					/* FALLTHRU */
-				case HashVer::legacy:
-					major = ext4_legacy_hash( name, len, unsigned_char );
-					break;
+				case HashVer::legacy: major = ext4_legacy_hash( name, len, unsigned_char ); break;
 				case HashVer::u_half_md4:
 					unsigned_char = 1;
 					/* FALLTHRU */
@@ -348,8 +335,7 @@ namespace fs
 			}
 
 			major &= ~1;
-			if ( major == ( EXT4_HTREE_EOF << 1 ) )
-				major = ( EXT4_HTREE_EOF - 1 ) << 1;
+			if ( major == ( EXT4_HTREE_EOF << 1 ) ) major = ( EXT4_HTREE_EOF - 1 ) << 1;
 			*hash_major = major;
 			if ( hash_minor ) *hash_minor = minor;
 
@@ -380,10 +366,7 @@ namespace fs
 			//_attrs( 0777 );
 		}
 
-		SuperBlock *Ext4IndexNode::getSb() const
-		{
-			return _belong_fs->getSuperBlock();
-		}
+		SuperBlock *Ext4IndexNode::getSb() const { return _belong_fs->getSuperBlock(); }
 
 		Inode *Ext4IndexNode::lookup( eastl::string dirname )
 		{
@@ -404,22 +387,19 @@ namespace fs
 				Ext4Buffer *dirent_buf;
 				Inode	   *res_node;
 
-				for ( long i = 0; i < _has_blocks;
-					  ++i ) // 顺序遍历 linear 目录项
+				for ( long i = 0; i < _has_blocks; ++i ) // 顺序遍历 linear 目录项
 				{
-					dirent_buf =
-						read_logical_block( i, true ); // pin the buffer
+					dirent_buf = read_logical_block( i, true ); // pin the buffer
 					if ( dirent_buf == nullptr )
 					{
 						log_error(
-							"ext4-inode : 访问目录\"%s\"失败\n"
-							"             访问失败的逻辑块号 %d",
+							"ext4-inode : 访问目录\"%s\"失败\n" "             访问失败的逻辑块号 "
+																"%d",
 							dirname.c_str(), i );
 						return nullptr;
 					}
 
-					res_node =
-						_linear_lookup( dirname, dirent_buf->get_data_ptr() );
+					res_node = _linear_lookup( dirname, dirent_buf->get_data_ptr() );
 					dirent_buf->unpin();
 
 					if ( res_node != nullptr ) return res_node;
@@ -448,9 +428,7 @@ namespace fs
 
 			long   b_siz	= _belong_fs->rBlockSize(); // 块大小
 			size_t read_len =							// 需要读取的长度
-				( off + len <= (size_t) _has_size )
-					? len
-					: ( (size_t) _has_size - off );
+				( off + len <= (size_t) _has_size ) ? len : ( (size_t) _has_size - off );
 
 			u8	*d		  = (u8 *) dst;	 // 目标地址
 			long block_no = off / b_siz; // 起始数据块
@@ -470,14 +448,12 @@ namespace fs
 				b_off = ( off + i ) % b_siz;
 				if ( b_off == 0 )
 				{
-					if ( blk_buf != nullptr )
-						blk_buf->unpin(); // unpin the buffer last read
+					if ( blk_buf != nullptr ) blk_buf->unpin(); // unpin the buffer last read
 					blk_buf = read_logical_block( block_no + b_idx,
 												  true ); // pin the buffer
 					if ( blk_buf == nullptr )
 					{
-						log_warn( "ext4-inode : read logical block %d fail",
-								  block_no + b_idx );
+						log_warn( "ext4-inode : read logical block %d fail", block_no + b_idx );
 						return 0;
 					}
 					f = (u8 *) blk_buf->get_data_ptr();
@@ -513,8 +489,7 @@ namespace fs
 					blk_buf = read_logical_block( blk_no, true );
 					if ( blk_buf == nullptr )
 					{
-						log_warn( "ext4-inode : read logical block %d fail",
-								  blk_no );
+						log_warn( "ext4-inode : read logical block %d fail", blk_no );
 						return 0;
 					}
 					blk_ptr = (u8 *) blk_buf->get_data_ptr() + off % blk_sz;
@@ -522,8 +497,7 @@ namespace fs
 				p_dir = (Ext4DirEntry2 *) blk_ptr;
 				if ( p_dir->inode == 0 ) // 遇到无效目录项
 				{
-					if ( p_dir->file_type ==
-						 0xde ) // 这是块内最后一个目录项，保存的内容是checksum
+					if ( p_dir->file_type == 0xde ) // 这是块内最后一个目录项，保存的内容是checksum
 					{
 						blk_buf->unpin();
 						blk_buf	 = nullptr;
@@ -548,8 +522,7 @@ namespace fs
 				lxdir.d_type   = p_dir->file_type;
 				dst << lxdir;
 				mm::UsRangeDesc rd =
-					std::make_tuple( (mm::UsBufPtr) p_dir->name,
-									(mm::UsBufLen) p_dir->name_len );
+					std::make_tuple( (mm::UsBufPtr) p_dir->name, (mm::UsBufLen) p_dir->name_len );
 				char null_term = 0;
 				dst << rd << null_term;
 				// dst << p_dir->name;
@@ -572,16 +545,12 @@ namespace fs
 		{
 			if ( _inode.flags.fl.extents ) // 使用extents方式索引
 			{
-				using ex_node =
-					Ext4Inode::_block_u_t_::_extent_s_t_::_node_u_t_;
+				using ex_node = Ext4Inode::_block_u_t_::_extent_s_t_::_node_u_t_;
 
-				Ext4ExtentHeader *ex_header =
-					&_inode.blocks.extents.header; // extent 头
-				ex_node *st, *ed; // (union) extent 中间节点或叶子节点
-				st = &(
-					_inode.blocks.extents.tree_nodes[0] ); // 节点数组起始元素
-				ed = st + _inode.blocks.extents.header.valid_nodes_count -
-					 1; // 节点数组末尾元素
+				Ext4ExtentHeader *ex_header = &_inode.blocks.extents.header; // extent 头
+				ex_node			 *st, *ed; // (union) extent 中间节点或叶子节点
+				st = &( _inode.blocks.extents.tree_nodes[0] ); // 节点数组起始元素
+				ed = st + _inode.blocks.extents.header.valid_nodes_count - 1; // 节点数组末尾元素
 
 				Ext4Buffer *internal_block = nullptr; // exTree 中间块的 buffer
 
@@ -598,13 +567,11 @@ namespace fs
 						return 1;
 				};
 				// 中间节点二分查找比较函数
-				auto comp_intr = [&]( Ext4ExtentInternalNode *mid,
-									  long *tar ) -> int
+				auto comp_intr = [&]( Ext4ExtentInternalNode *mid, long *tar ) -> int
 				{
 					long t = *tar;
 					if ( t < mid->logical_block_start ) return -1;
-					if ( mid != &( ed->internal ) &&
-						 t >= ( mid + 1 )->logical_block_start )
+					if ( mid != &( ed->internal ) && t >= ( mid + 1 )->logical_block_start )
 						return 1;
 					else
 						return 0;
@@ -618,22 +585,18 @@ namespace fs
 
 						Ext4ExtentLeafNode *dst_node =
 							klib::binary_search<Ext4ExtentLeafNode, long>(
-								&( st->leaf ), &( ed->leaf ), &block,
-								comp_leaf );
+								&( st->leaf ), &( ed->leaf ), &block, comp_leaf );
 						if ( dst_node == nullptr ) // 查找失败
 						{
-							log_error(
-								"ext4-inode : extents leaf binary search "
-								"error" );
+							log_error( "ext4-inode : extents leaf binary search " "error" );
 							if ( internal_block ) // 返回前先将前一个块释放
 								internal_block->unpin();
 							return nullptr;
 						}
 
 						// 目标块的物理块号
-						long phy_block = dst_node->start_lo +
-										 ( (long) dst_node->start_hi << 32 );
-						phy_block += block - dst_node->logical_block_start;
+						long phy_block	= dst_node->start_lo + ( (long) dst_node->start_hi << 32 );
+						phy_block	   += block - dst_node->logical_block_start;
 
 						if ( internal_block ) // 返回前先将前一个块释放
 							internal_block->unpin();
@@ -646,66 +609,56 @@ namespace fs
 
 						Ext4ExtentInternalNode *next_node =
 							klib::binary_search<Ext4ExtentInternalNode, long>(
-								&( st->internal ), &( ed->internal ), &block,
-								comp_intr );
+								&( st->internal ), &( ed->internal ), &block, comp_intr );
 						if ( next_node == nullptr ) // 查找失败
 						{
-							log_error(
-								"ext4-inode : extents internal biary search "
-								"error" );
+							log_error( "ext4-inode : extents internal biary search " "error" );
 							if ( internal_block ) // 返回前先将前一个块释放
 								internal_block->unpin();
 							return nullptr;
 						}
 
-						long next_block =
-							next_node->next_node_address; // 下一个节点所在块号
+						long next_block = next_node->next_node_address; // 下一个节点所在块号
 
 						if ( internal_block ) // 读下一个块之前先将前一个块释放
 							internal_block->unpin();
 
-						internal_block =
-							_belong_fs->read_block( next_block, true );
-						ex_header =
-							(Ext4ExtentHeader *) internal_block->get_data_ptr();
-						st = (ex_node *) ( ex_header + 1 );
-						ed = st + ex_header->valid_nodes_count - 1;
+						internal_block = _belong_fs->read_block( next_block, true );
+						ex_header	   = (Ext4ExtentHeader *) internal_block->get_data_ptr();
+						st			   = (ex_node *) ( ex_header + 1 );
+						ed			   = st + ex_header->valid_nodes_count - 1;
 					}
 				}
 			}
 			else // 使用经典的直接/间接索引
 			{
 				if ( block < 12 ) // 直接索引
-					return _belong_fs->read_block(
-						_inode.blocks.blocks_ptr[block], pin );
+					return _belong_fs->read_block( _inode.blocks.blocks_ptr[block], pin );
 				Ext4Buffer *buf;
 				if ( block > _belong_fs->get_tind_block_start() ) // 三级索引
 				{
-					buf = _belong_fs->read_block(
-						_inode.blocks.blocks_ptr[tind_blocks_idx], true );
-					Ext4Buffer *res = _search_tindirect_block(
-						block, _inode.blocks.blocks_ptr[tind_blocks_idx],
-						buf->get_data_ptr(), pin );
+					buf = _belong_fs->read_block( _inode.blocks.blocks_ptr[tind_blocks_idx], true );
+					Ext4Buffer *res =
+						_search_tindirect_block( block, _inode.blocks.blocks_ptr[tind_blocks_idx],
+												 buf->get_data_ptr(), pin );
 					buf->unpin();
 					return res;
 				}
 				if ( block > _belong_fs->get_dind_block_start() ) // 二级索引
 				{
-					buf = _belong_fs->read_block(
-						_inode.blocks.blocks_ptr[dind_blocks_idx], true );
-					Ext4Buffer *res = _search_dindirect_block(
-						block, _inode.blocks.blocks_ptr[dind_blocks_idx],
-						buf->get_data_ptr(), pin );
+					buf = _belong_fs->read_block( _inode.blocks.blocks_ptr[dind_blocks_idx], true );
+					Ext4Buffer *res =
+						_search_dindirect_block( block, _inode.blocks.blocks_ptr[dind_blocks_idx],
+												 buf->get_data_ptr(), pin );
 					buf->unpin();
 					return res;
 				}
 				if ( block > _belong_fs->get_dind_block_start() ) // 一级索引
 				{
-					buf = _belong_fs->read_block(
-						_inode.blocks.blocks_ptr[sind_blocks_idx], true );
-					Ext4Buffer *res = _search_sindirect_block(
-						block, _inode.blocks.blocks_ptr[sind_blocks_idx],
-						buf->get_data_ptr(), pin );
+					buf = _belong_fs->read_block( _inode.blocks.blocks_ptr[sind_blocks_idx], true );
+					Ext4Buffer *res =
+						_search_sindirect_block( block, _inode.blocks.blocks_ptr[sind_blocks_idx],
+												 buf->get_data_ptr(), pin );
 					buf->unpin();
 					return res;
 				}
@@ -714,23 +667,25 @@ namespace fs
 			}
 		}
 
+		Inode *fs::ext4::Ext4IndexNode::mknode( eastl::string name, FileAttrs attrs,
+												eastl::string dev_name )
+		{
+			return nullptr;
+		}
+
 
 		void Ext4IndexNode::_cal_blocks()
 		{
 			Ext4SuperBlock *ext4_sb = _belong_fs->get_ext4_superblock();
-			if ( ext4_sb->feature_ro_compat.flags
-					 .huge_file ) // 启用 blocks_high
+			if ( ext4_sb->feature_ro_compat.flags.huge_file ) // 启用 blocks_high
 			{
-				if ( _inode.flags.fl
-						 .huge_file ) // inode 中的 blocks 是标准 block 的数量
+				if ( _inode.flags.fl.huge_file ) // inode 中的 blocks 是标准 block 的数量
 				{
-					_has_blocks =
-						_inode.blocks_lo + ( (long) _inode.blocks_high << 32 );
+					_has_blocks = _inode.blocks_lo + ( (long) _inode.blocks_high << 32 );
 				}
 				else // inode 中的 blocks 是 512-bytes block 的数量
 				{
-					_has_blocks =
-						_inode.blocks_lo + ( (long) _inode.blocks_high << 32 );
+					_has_blocks	 = _inode.blocks_lo + ( (long) _inode.blocks_high << 32 );
 					_has_blocks *= 512;
 					_has_blocks /= _belong_fs->rBlockSize();
 				}
@@ -751,71 +706,66 @@ namespace fs
 			else { _has_size = _inode.size_lo; }
 		}
 
-		Ext4Buffer *Ext4IndexNode::_search_direct_block( long  target_block_no,
-														 long  start_block_no,
-														 void *index_block,
-														 bool  pin )
+		Ext4Buffer *Ext4IndexNode::_search_direct_block( long target_block_no, long start_block_no,
+														 void *index_block, bool pin )
 		{
 			u32 *p_block  = (u32 *) index_block;
 			p_block		 += target_block_no - start_block_no;
 			return _belong_fs->read_block( *p_block, pin );
 		}
 
-		Ext4Buffer *Ext4IndexNode::_search_sindirect_block(
-			long target_block_no, long start_block_no, void *index_block,
-			bool pin )
+		Ext4Buffer *Ext4IndexNode::_search_sindirect_block( long target_block_no,
+															long start_block_no, void *index_block,
+															bool pin )
 		{
-			u32 *p_block  = (u32 *) index_block;
-			p_block		 += _cal_sind_index( target_block_no, start_block_no );
-			Ext4Buffer *buf = _belong_fs->read_block( *p_block, true );
-			Ext4Buffer *res = _search_direct_block( target_block_no, *p_block,
-													buf->get_data_ptr(), pin );
+			u32 *p_block	 = (u32 *) index_block;
+			p_block			+= _cal_sind_index( target_block_no, start_block_no );
+			Ext4Buffer *buf	 = _belong_fs->read_block( *p_block, true );
+			Ext4Buffer *res =
+				_search_direct_block( target_block_no, *p_block, buf->get_data_ptr(), pin );
 			buf->unpin();
 			return res;
 		}
 
-		Ext4Buffer *Ext4IndexNode::_search_dindirect_block(
-			long target_block_no, long start_block_no, void *index_block,
-			bool pin )
+		Ext4Buffer *Ext4IndexNode::_search_dindirect_block( long target_block_no,
+															long start_block_no, void *index_block,
+															bool pin )
 		{
-			u32 *p_block  = (u32 *) index_block;
-			p_block		 += _cal_dind_index( target_block_no, start_block_no );
-			Ext4Buffer *buf = _belong_fs->read_block( *p_block, true );
-			Ext4Buffer *res = _search_sindirect_block(
-				target_block_no, *p_block, buf->get_data_ptr(), pin );
+			u32 *p_block	 = (u32 *) index_block;
+			p_block			+= _cal_dind_index( target_block_no, start_block_no );
+			Ext4Buffer *buf	 = _belong_fs->read_block( *p_block, true );
+			Ext4Buffer *res =
+				_search_sindirect_block( target_block_no, *p_block, buf->get_data_ptr(), pin );
 			buf->unpin();
 			return res;
 		}
 
-		Ext4Buffer *Ext4IndexNode::_search_tindirect_block(
-			long target_block_no, long start_block_no, void *index_block,
-			bool pin )
+		Ext4Buffer *Ext4IndexNode::_search_tindirect_block( long target_block_no,
+															long start_block_no, void *index_block,
+															bool pin )
 		{
-			u32 *p_block  = (u32 *) index_block;
-			p_block		 += _cal_tind_index( target_block_no, start_block_no );
-			Ext4Buffer *buf = _belong_fs->read_block( *p_block, true );
-			Ext4Buffer *res = _search_dindirect_block(
-				target_block_no, *p_block, buf->get_data_ptr(), pin );
+			u32 *p_block	 = (u32 *) index_block;
+			p_block			+= _cal_tind_index( target_block_no, start_block_no );
+			Ext4Buffer *buf	 = _belong_fs->read_block( *p_block, true );
+			Ext4Buffer *res =
+				_search_dindirect_block( target_block_no, *p_block, buf->get_data_ptr(), pin );
 			buf->unpin();
 			return res;
 		}
 
-		long Ext4IndexNode::_cal_tind_index( long target_block,
-											 long start_block )
+		long Ext4IndexNode::_cal_tind_index( long target_block, long start_block )
 		{
 			long unit  = _belong_fs->rBlockSize();
 			unit	  *= unit * unit; // block_size ^ 3
 			return ( target_block - start_block ) / unit;
 		}
-		long Ext4IndexNode::_cal_dind_index( long target_block,
-											 long start_block )
+		long Ext4IndexNode::_cal_dind_index( long target_block, long start_block )
 		{
 			long unit  = _belong_fs->rBlockSize();
 			unit	  *= unit; // block_size ^ 2
 			return ( target_block - start_block ) / unit;
 		}
-		long Ext4IndexNode::_cal_sind_index( long target_block,
-											 long start_block )
+		long Ext4IndexNode::_cal_sind_index( long target_block, long start_block )
 		{
 			long unit = _belong_fs->rBlockSize();
 			return ( target_block - start_block ) / unit;
@@ -833,9 +783,8 @@ namespace fs
 				return nullptr;
 			}
 
-			Ext4Buffer *block_buf =
-				read_logical_block( 0, true ); // read root of htree
-			Ext4DxRoot *dxroot = (Ext4DxRoot *) block_buf->get_data_ptr();
+			Ext4Buffer *block_buf = read_logical_block( 0, true ); // read root of htree
+			Ext4DxRoot *dxroot	  = (Ext4DxRoot *) block_buf->get_data_ptr();
 
 			if ( block_buf == nullptr )
 			{
@@ -850,24 +799,20 @@ namespace fs
 			u32 hash_major;
 			u32 hahs_minor;
 			if ( ext4_htree_hash( dir_name.c_str(), dir_name.size(), hash_seed,
-								  (int) dxroot->info.hash_version, &hash_major,
-								  &hahs_minor ) < 0 )
+								  (int) dxroot->info.hash_version, &hash_major, &hahs_minor ) < 0 )
 			{
-				log_error( "ext4-hash fail for dir-name : %s",
-						   dir_name.c_str() );
+				log_error( "ext4-hash fail for dir-name : %s", dir_name.c_str() );
 				block_buf->unpin();
 				return nullptr;
 			}
 
 			// 搜索 Hash Tree
 
-			int ind_lvl =
-				dxroot->info.indirect_levels; // 间接搜索等级（树深度）
+			int ind_lvl = dxroot->info.indirect_levels; // 间接搜索等级（树深度）
 			Ext4DxEntry *st, *ed;
 			Ext4DxNode	*nd;
 			st = dxroot->entries;
-			ed = st + dxroot->count -
-				 2; // count 比实际上的数组长度多一，因为包含 header
+			ed = st + dxroot->count - 2; // count 比实际上的数组长度多一，因为包含 header
 
 			// 二分查找比较函数
 			auto comp = [&]( Ext4DxEntry *mid, u32 *tar ) -> int
@@ -885,8 +830,7 @@ namespace fs
 				}
 				else
 				{
-					log_panic(
-						"binary search : bad mid beyond the end of array" );
+					log_panic( "binary search : bad mid beyond the end of array" );
 					return 0;
 				}
 			};
@@ -895,8 +839,8 @@ namespace fs
 			{
 				// 二分查找
 
-				Ext4DxEntry *target_ent = klib::binary_search<Ext4DxEntry, u32>(
-					st, ed, &hash_major, comp );
+				Ext4DxEntry *target_ent =
+					klib::binary_search<Ext4DxEntry, u32>( st, ed, &hash_major, comp );
 				if ( target_ent == nullptr )
 				{
 					log_error( "binary search fail" );
@@ -916,15 +860,13 @@ namespace fs
 
 			// 达到叶子节点（数据节点），采用 linear 搜索
 
-			Inode *res_node =
-				_linear_lookup( dir_name, block_buf->get_data_ptr() );
+			Inode *res_node = _linear_lookup( dir_name, block_buf->get_data_ptr() );
 			block_buf->unpin();
 
 			return res_node;
 		}
 
-		Inode *Ext4IndexNode::_linear_lookup( eastl::string &dir_name,
-											  void			*block )
+		Inode *Ext4IndexNode::_linear_lookup( eastl::string &dir_name, void *block )
 		{
 			u8			  *idx; // 块内字节索引
 			Ext4DirEntry2 *dirent;
@@ -945,49 +887,37 @@ namespace fs
 					{ // 匹配到目录项
 
 						Ext4Inode dirent_inode;
-						if ( _belong_fs->read_inode( dirent->inode,
-													 dirent_inode ) < 0 )
+						if ( _belong_fs->read_inode( dirent->inode, dirent_inode ) < 0 )
 						{ // 读取子目录项inode失败
 							log_error(
-								"ext4-inode : read sub-inode fail\n"
-								"             sub-inode-no=%d", dirent->inode
-							);
+								"ext4-inode : read sub-inode fail\n" "             sub-inode-no=%d",
+								dirent->inode );
 							return nullptr;
 						}
 
 						// 读取inode成功，返回inode
 
-						Ext4IndexNode *sub_inode =
-							new Ext4IndexNode( dirent_inode, _belong_fs );
+						Ext4IndexNode *sub_inode = new Ext4IndexNode( dirent_inode, _belong_fs );
 						if ( sub_inode == nullptr )
-							log_warn(
-								"ext4-inode : no mem to create sub-inode" );
-						sub_inode->_attrs._value =
-							( dirent_inode.mode ) & 0x1FF;
-						Ext4InodeMode md =
-							(Ext4InodeMode) ( (u16) dirent_inode.mode &
-											  0xF000 );
+							log_warn( "ext4-inode : no mem to create sub-inode" );
+						sub_inode->_attrs._value = ( dirent_inode.mode ) & 0x1FF;
+						Ext4InodeMode md = (Ext4InodeMode) ( (u16) dirent_inode.mode & 0xF000 );
 						switch ( md )
 						{
 							case ext4_imode_fdir:
-								sub_inode->_attrs.filetype =
-									FileTypes::FT_DIRECT;
+								sub_inode->_attrs.filetype = FileTypes::FT_DIRECT;
 								break;
 							case ext4_imode_fchr:
 							case ext4_imode_fblk:
-								sub_inode->_attrs.filetype =
-									FileTypes::FT_DEVICE;
+								sub_inode->_attrs.filetype = FileTypes::FT_DEVICE;
 								break;
 							case ext4_imode_fifo:
 								sub_inode->_attrs.filetype = FileTypes::FT_PIPE;
 								break;
 							case ext4_imode_freg:
-								sub_inode->_attrs.filetype =
-									FileTypes::FT_NORMAL;
+								sub_inode->_attrs.filetype = FileTypes::FT_NORMAL;
 								break;
-							default:
-								sub_inode->_attrs.filetype = FileTypes::FT_NONE;
-								break;
+							default: sub_inode->_attrs.filetype = FileTypes::FT_NONE; break;
 						}
 						return sub_inode;
 					}
@@ -1010,10 +940,9 @@ namespace fs
 			u32		hmajor;
 			u32		hminor;
 			HashVer hv = HashVer::half_md4;
-			ext4_htree_hash( dir_name.c_str(), dir_name.size(), hash_seed,
-							 (int) hv, &hmajor, &hminor );
-			printf( GREEN_COLOR_PRINT
-					"hash dir \"%s\" = 0x%x-0x%x\n" CLEAR_COLOR_PRINT,
+			ext4_htree_hash( dir_name.c_str(), dir_name.size(), hash_seed, (int) hv, &hmajor,
+							 &hminor );
+			printf( GREEN_COLOR_PRINT "hash dir \"%s\" = 0x%x-0x%x\n" CLEAR_COLOR_PRINT,
 					dir_name.c_str(), hmajor, hminor );
 		}
 

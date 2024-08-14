@@ -14,6 +14,7 @@ namespace fs{
         class RamFSSb;
         class RamFS;
 
+#pragma pack(8)
         class RamInode : public Inode{
 
             friend RamFS;
@@ -29,8 +30,11 @@ namespace fs{
                 RamInode() = default;
                     RamInode(   RamFS *fs_, uint ino_, 
                                 FileAttrs attr, eastl::string devname = "" )
-                                : belong_fs( fs_ ), ino( ino_ ), is_dir( attr.filetype == FileTypes::FT_DIRECT ),
-                                attrs( attr ), dev_name(devname) {}
+                                : belong_fs( fs_ )
+								, ino( ino_ )
+								, is_dir( attr.filetype == FileTypes::FT_DIRECT )
+								, attrs( attr )
+								, dev_name(devname) {}
                     RamInode( RamFS *fs_, uint ino_, bool isDir) 
                                 : belong_fs( fs_ ), ino( ino_ ), is_dir( isDir ) {}
                     ~RamInode() = default;
@@ -52,6 +56,9 @@ namespace fs{
 						return 0;
 					}
 		};
+		// int ri = sizeof(RamInode );
+#pragma pack()
+
 
         class Exe : public RamInode
         {

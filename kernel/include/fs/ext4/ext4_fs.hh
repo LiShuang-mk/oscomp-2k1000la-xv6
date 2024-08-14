@@ -100,6 +100,12 @@ namespace fs
 
 			int read_inode( long inode_no, Ext4Inode &node );
 
+			/// @brief 分配一个inode号
+			/// @param fa 
+			/// @param inr 
+			/// @return 
+			int allocate_inode( fs::FileAttrs fa, long &inr );
+
 		public:
 			Ext4IndexNode * debug_get_root_inode() { return _root_inode; }
 		};
