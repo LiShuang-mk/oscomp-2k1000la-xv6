@@ -33,6 +33,7 @@ namespace syscall
 		_build_sysnum_enum_(close, 57),
 		_build_sysnum_enum_(pipe, 59),
 		_build_sysnum_enum_(getdents, 61),
+		_build_sysnum_enum_(lseek, 62),
 		_build_sysnum_enum_(read, 63),
 		_build_sysnum_enum_(write, 64),
 		_build_sysnum_enum_(sendfile, 71),

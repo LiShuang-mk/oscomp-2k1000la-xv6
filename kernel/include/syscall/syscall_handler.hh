@@ -124,6 +124,7 @@ namespace syscall
 		uint64 _sys_nanosleep();
 		uint64 _sys_getrusage();
 		uint64 _sys_utimensat();
+		uint64 _sys_lseek();
 	};
 
 	extern SyscallHandler k_syscall_handler;

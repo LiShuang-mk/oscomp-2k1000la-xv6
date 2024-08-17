@@ -134,6 +134,7 @@ namespace fs{
                 Normal( RamFS *fs, uint ino, FileAttrs attrs ) : ramfs::RamInode( fs, ino, attrs ) { data.clear(); };
                 size_t nodeRead( uint64 dst_, size_t off_, size_t len_ ) override;
                 size_t nodeWrite( uint64 src_, size_t off_, size_t len_ ) override;
+                size_t rFileSize() const override { return data.length(); };
         };
     }
 }

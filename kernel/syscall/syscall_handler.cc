@@ -123,6 +123,7 @@ namespace syscall
 		BIND_SYSCALL( nanosleep );
 		BIND_SYSCALL( getrusage );
 		BIND_SYSCALL( utimensat );
+		BIND_SYSCALL( lseek );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -1714,7 +1715,30 @@ namespace syscall
 		
 		//int fd = path.open();
 		
-
 		return 0;
+	}
+
+	uint64 SyscallHandler::_sys_lseek()
+	{
+		int fd;
+		int offset;
+		int whence;
+
+		if( _arg_int( 0, fd ) < 0 )
+			return -1;
+		
+		if( _arg_int( 1, offset ) < 0 )
+			return -1;
+		
+		if( _arg_int( 2, whence ) < 0 )
+			return -1;
+		
+		pm::Pcb *cur_proc = pm::k_pm.get_cur_pcb();
+		fs::file *f = cur_proc->_ofile[ fd ];
+
+		if( f == nullptr )
+			return -1;
+
+		return f->lseek( offset, whence );
 	}
 } // namespace syscall

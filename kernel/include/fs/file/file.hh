@@ -14,6 +14,7 @@
 #include "pm/ipc/pipe.hh"
 
 #include <EASTL/string.h>
+#include <asm-generic/errno-base.h>
 namespace pm
 {
 	namespace ipc	
@@ -152,11 +153,12 @@ namespace fs
 		virtual void dup() { refcnt++; };
 		virtual bool read_ready() = 0;
 		virtual bool write_ready() = 0;
-
+		virtual off_t lseek( off_t offset, int whence ) = 0;
 
 		long get_file_offset() { return _file_ptr; }
 
 		int readlink( uint64 buf, size_t len );
+		
 		int utimeset( const struct timespec *times );
 		//virtual int readlink( uint64 buf, size_t len ) = 0;
 	};

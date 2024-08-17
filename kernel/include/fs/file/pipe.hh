@@ -25,5 +25,6 @@ namespace fs
 
 		virtual bool read_ready() override { return _pipe->read_is_open(); }
 		virtual bool write_ready() override { return _pipe->write_is_open(); }
+		virtual off_t lseek( off_t offset, int whence ) override { return -ESPIPE; }
 	};
 }
