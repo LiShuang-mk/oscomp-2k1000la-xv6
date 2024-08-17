@@ -26,10 +26,10 @@ namespace fs
 		virtual bool read_ready() override;
 		virtual bool write_ready() override;
 		virtual off_t lseek( off_t offset, int whence ) override;
-		
+
 		using ubuf = mm::UserspaceStream;
 		size_t read_sub_dir( ubuf &dst );
-
+		void setAppend();
 		dentry *getDentry() { return _den; }
 	};
 }

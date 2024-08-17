@@ -1334,38 +1334,8 @@ namespace pm
 		// };
 
 		Pcb *p = get_cur_pcb();
-
-		// // 处理一下path
-		// if ( path[ 0 ] == '.' && path[ 1 ] == '/' )
-		// {
-		// 	path = path.substr( 2 );
-		// }
-
-		// fs::File * f = fs::k_file_table.alloc_file();
-		// if ( f == nullptr )
-		// 	return -2;
-
-		// if ( fs::k_file_table.has_unlinked( path ) )
-		// 	return -5;  //
-
 		fs::dentry *dentry;
-		// if ( dir_fd <= 2 )
-		// {
-		// 	if ( path == "." )
-		// 		dentry = p->_cwd;
-		// 	else
-		// 	{
-		// 		dentry = p->_cwd->EntrySearch( path );
-		// 		if ( dentry == nullptr )
-		// 			return -3;
-		// 	}
-		// }
-		// else
-		// {
-		// 	dentry = p->_ofile[ dir_fd ]->data.get_Entry()->EntrySearch( path );
-		// 	if ( dentry == nullptr )
-		// 		return -4;
-		//}
+
 		fs::Path path_;
 		if (dir_fd == AT_FDCWD) {
 			new (&path_) fs::Path(path, p->_cwd);
@@ -1374,7 +1344,9 @@ namespace pm
 		}
 		dentry = path_.pathSearch();
 
-		if ( dentry == nullptr ) return -1; // file is not found
+		if ( dentry == nullptr && flags & O_CREAT ) 
+			return -1; // @todo create file
+		if (dentry == nullptr) return -1;
 		int			  dev	= dentry->getNode()->rDev();
 		fs::FileAttrs attrs = dentry->getNode()->rMode();
 
@@ -1387,14 +1359,8 @@ namespace pm
 		else // normal file
 		{
 			fs::normal_file *f = new fs::normal_file( attrs, dentry );
-			// log_info( "test normal file read" );
-			// {
-			// 	fs::file *ff = ( fs::file * ) f;
-			// 	char buf[ 8 ];
-			// 	ff->read( ( ulong ) buf, 8 );
-			// 	buf[ 8 ] = 0;
-			// 	printf( "%s\n", buf );
-			// }
+			if( flags & O_APPEND )
+				f->setAppend();
 			return alloc_fd( p, f );
 		} // because of open.c's fileattr defination is not clearly, so here we
 		  // set flags = 7, which means O_RDWR | O_WRONLY | O_RDONLY

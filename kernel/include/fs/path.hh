@@ -72,7 +72,7 @@ namespace fs
 		dentry *pathCreate( uint32 mode );
 		int mount( Path &dev, eastl::string fstype , uint64 flags, uint64 data);
 		int umount( uint64 flags );
-		int open( FileAttrs attrs );
+		int open( FileAttrs attrs, int flags );
 		eastl::string rPathName() { return pathname; }
 	};
 

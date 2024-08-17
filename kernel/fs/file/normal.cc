@@ -97,4 +97,8 @@ namespace fs
 		return _file_ptr;
 	}
 
+	void normal_file::setAppend()
+	{
+		_file_ptr = this->_stat.size;
+	}
 } // namespace fs

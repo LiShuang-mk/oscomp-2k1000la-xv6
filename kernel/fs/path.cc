@@ -214,11 +214,11 @@ namespace fs
 		return -1;
 	}
 
-	int Path::open( FileAttrs attrs_ )
+	int Path::open( FileAttrs attrs_, int flags )
 	{
 		dentry *den = pathSearch();
 
-		if( !den )
+		if( !den && flags & O_CREAT ) // @todo 创建文件
 			return -1;
 		FileAttrs attrs = den->getNode()->rMode();
 		if( attrs.filetype != FileTypes::FT_DIRECT 
@@ -235,6 +235,8 @@ namespace fs
 			attrs_.o_exec > attrs.o_exec )
 			return -1; // 权限校验失败
 	    fs::normal_file *f = new fs::normal_file( attrs_, den );
+		if( flags & O_APPEND ) 
+			f->setAppend();
 		pm::Pcb *cur_proc = pm::k_pm.get_cur_pcb();
 		int fd = pm::k_pm.alloc_fd( cur_proc, f );
 
