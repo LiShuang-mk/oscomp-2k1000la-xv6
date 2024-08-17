@@ -8,6 +8,7 @@
 #include "fs/fat/fat32fs.hh"
 #include "fs/ext4/ext4_fs.hh"
 #include "fs/ramfs/ramfs.hh"
+#include "fs/ramfs/ramfsInode.hh"
 #include "fs/jbd2/journal_super_block.hh"
 #include "fs/buffer_manager.hh"
 #include "fs/file/file.hh"
@@ -137,7 +138,7 @@ extern "C" {
 			hsai::hardware_secondary_init();
 
 
-			while ( 1 );
+			//while ( 1 );
 
 			// sharemem init
 			// pm::k_shmManager.init( "shm lock" );
@@ -255,6 +256,16 @@ extern "C" {
 			fs::Path dev( "/dev/hdb" );
 			// mnt.mount( dev, "fat32", 0, 0 );  // for test mount fat32	
 			mnt.mount( dev, "ext4", 0, 0 );
+			fs::Path sdcard_path( "/mnt/sdcard" );
+			fs::dentry *sdcard = sdcard_path.pathSearch(); 
+			[[maybe_unused]]fs::ramfs::Normal* textnode = new fs::ramfs::Normal( &fs::ramfs::k_ramfs,
+											fs::ramfs::k_ramfs.alloc_ino(),
+											fs::FileAttrs(fs::FileTypes::FT_NORMAL, 0666)
+											);
+			fs::dentry *text = new fs::dentry( "test.txt", textnode, sdcard, false );
+			sdcard->getChildren()["test.txt"] = text;			
+
+			//text->setNode( textnode );
 			// fs::Path test_unlink( "/mnt/read" );
 			// [[maybe_unused]] fs::File* file = new fs::File( test_unlink.pathSearch(), 7 );
 

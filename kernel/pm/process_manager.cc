@@ -1366,8 +1366,12 @@ namespace pm
 		// 	if ( dentry == nullptr )
 		// 		return -4;
 		//}
-
-		fs::Path path_( path );
+		fs::Path path_;
+		if (dir_fd == AT_FDCWD) {
+			new (&path_) fs::Path(path, p->_cwd);
+		} else {
+			new (&path_) fs::Path(path, static_cast<fs::normal_file *>(p->_ofile[dir_fd])->getDentry());
+		}
 		dentry = path_.pathSearch();
 
 		if ( dentry == nullptr ) return -1; // file is not found

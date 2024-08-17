@@ -16,6 +16,7 @@
 #include <asm-generic/poll.h>
 #include <linux/sysinfo.h>
 #include <sys/ioctl.h>
+#include <asm-generic/errno-base.h>
 //#include <sys/resource.h>
 
 #include <hsai_global.hh>
@@ -121,23 +122,24 @@ namespace syscall
 		BIND_SYSCALL( sysinfo );
 		BIND_SYSCALL( nanosleep );
 		BIND_SYSCALL( getrusage );
+		BIND_SYSCALL( utimensat );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
 	{
 #ifdef OS_DEBUG
-		// if ( sys_num != SYS_write )
-		// {
-		// 	if ( _syscall_name[sys_num] != nullptr )
-		// 		printf( YELLOW_COLOR_PRINT "syscall %16s",
-		// 				_syscall_name[sys_num] );
-		// 	else
-		// 		printf( BRIGHT_YELLOW_COLOR_PRINT "unknown sycall %d\t",
-		// 				sys_num );
-		// 	auto [usg, rst] = mm::k_pmm.mem_desc();
-		// 	printf( "mem-usage: %_-10ld mem-rest: %_-10ld\n" CLEAR_COLOR_PRINT,
-		// 			usg, rst );
-		// }
+		if ( sys_num != SYS_write )
+		{
+			if ( _syscall_name[sys_num] != nullptr )
+				printf( YELLOW_COLOR_PRINT "syscall %16s",
+						_syscall_name[sys_num] );
+			else
+				printf( BRIGHT_YELLOW_COLOR_PRINT "unknown sycall %d\t",
+						sys_num );
+			auto [usg, rst] = mm::k_pmm.mem_desc();
+			printf( "mem-usage: %_-10ld mem-rest: %_-10ld\n" CLEAR_COLOR_PRINT,
+					usg, rst );
+		}
 #endif
 		return _syscall_funcs[sys_num]();
 	}
@@ -1653,4 +1655,66 @@ namespace syscall
 		return 0;
 	}
 
+	uint64 SyscallHandler::_sys_utimensat()
+	{
+		int dirfd;
+		uint64 pathaddr;
+		eastl::string pathname;
+		uint64 timespecaddr;
+		timespec atime;
+		timespec mtime;
+		int flags;
+
+		if( _arg_int( 0, dirfd ) < 0 )
+			return -1;
+		
+		if( _arg_addr( 1, pathaddr ) < 0 )
+			return -1;
+		
+		if( _arg_addr( 2, timespecaddr ) < 0 )
+		    return -1;
+
+		if( _arg_int( 3, flags ) < 0 )
+			return -1;
+		
+		pm::Pcb * cur_proc = pm::k_pm.get_cur_pcb();	
+		mm::PageTable *pt = cur_proc->get_pagetable();
+		fs::dentry *base;
+		
+		if( dirfd == AT_FDCWD )
+			base = cur_proc->_cwd;
+		else
+			base = static_cast<fs::normal_file *>( cur_proc->_ofile[dirfd] )->getDentry();
+
+		if( mm::k_vmm.copy_str_in( *pt, pathname, pathaddr, 128 ) < 0 )
+			return -1;
+
+		if( timespecaddr == 0 )
+		{
+			// @todo: 设置为当前时间
+			//atime = NOW;	
+			//mtime = NOw;
+		}	
+		else
+		{
+			if( mm::k_vmm.copy_in( *pt, &atime, timespecaddr, sizeof( atime ) ) < 0 )
+                return -1;
+            
+            if( mm::k_vmm.copy_in( *pt, &mtime, timespecaddr + sizeof( atime ), sizeof( mtime ) ) < 0 )
+                return -1;
+		}
+		
+		if( _arg_int( 3, flags ) < 0 )
+			return -1;
+		
+		fs::Path path( pathname, base );	
+		fs::dentry *den = path.pathSearch();	
+		if( den == nullptr )
+			return ENOENT;
+		
+		//int fd = path.open();
+		
+
+		return 0;
+	}
 } // namespace syscall

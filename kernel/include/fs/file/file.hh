@@ -157,6 +157,7 @@ namespace fs
 		long get_file_offset() { return _file_ptr; }
 
 		int readlink( uint64 buf, size_t len );
+		int utimeset( const struct timespec *times );
 		//virtual int readlink( uint64 buf, size_t len ) = 0;
 	};
 
