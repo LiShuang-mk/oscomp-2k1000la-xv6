@@ -128,6 +128,10 @@ clean:
 	$(MAKE) clean -C hsai
 	$(MAKE) clean -C hal/$(CONF_ARCH)
 
+.PHONY+= clean_module
+clean_module:
+	$(MAKE) clean -C $(mod)
+
 EASTL_test:
 	$(MAKE) test -C thirdparty/EASTL
 

@@ -17,9 +17,8 @@
 
 extern "C" {
 // entry.S needs one stack per CPU.
-char entry_stack[loongarch::entry_stack_size * NUMCPU]
-	__attribute__( ( aligned( 16 ) ) );
-
+char  entry_stack[loongarch::entry_stack_size * NUMCPU] __attribute__( ( aligned( 16 ) ) );
+char* entry_stack_end = entry_stack + loongarch::entry_stack_size * NUMCPU;
 }
 
 namespace loongarch
@@ -40,11 +39,12 @@ namespace loongarch
 		hsai_info( "tlbm init" );
 
 		// 4. 关闭非对齐访存检查
-		
 	}
 
 } // namespace loongarch
 
 namespace hsai
-{} // namespace hsai
+{
+
+} // namespace hsai
 

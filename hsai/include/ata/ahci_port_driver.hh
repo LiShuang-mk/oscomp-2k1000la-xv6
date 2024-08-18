@@ -149,6 +149,10 @@ namespace hsai
 
 		void debug_print_register();
 
+		void debug_print_cmd_head();
+
+		void debug_print_cmd_table( uint cmd_slot );
+
 	private:
 
 		void fill_fis_h2d_lba( SataFisRegH2D *fis, uint64 lba );
@@ -163,7 +167,10 @@ namespace hsai
 			while ( _task_busy() );
 		}
 
-		constexpr bool _cmd_slot_busy( uint cmd_slot ) { return _regs->ci & ( 1U << cmd_slot ); }
+		constexpr bool _cmd_slot_busy( uint cmd_slot )
+		{
+			return ( _regs->ci & ( 1U << cmd_slot ) ) != 0;
+		}
 
 		constexpr bool _task_busy()
 		{

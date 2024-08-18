@@ -8,7 +8,6 @@
 
 #include "qemu_2k1000.hh"
 
-#include <ata/ahci_driver.hh>
 #include <device_manager.hh>
 #include <hsai_global.hh>
 #include <hsai_log.hh>
@@ -18,6 +17,7 @@
 #include <timer_interface.hh>
 #include <uart/uart_ns16550.hh>
 
+#include "ahci_driver_ls.hh"
 #include "context.hh"
 #include "exception_manager.hh"
 #include "interrupt_manager.hh"
@@ -32,7 +32,7 @@ namespace loongarch
 	{
 		hsai::UartNs16550 debug_uart;
 
-		hsai::AhciDriver ahci_driver;
+		AhciDriverLs ahci_driver;
 	} // namespace qemu2k1000
 
 } // namespace loongarch
@@ -55,6 +55,8 @@ extern "C" {
 extern ulong _bss_start_addr;
 extern ulong _bss_end_addr;
 }
+
+using namespace loongarch::qemu2k1000;
 
 namespace hsai
 {
@@ -130,12 +132,67 @@ namespace hsai
 		cpucfg_idx = 1;
 		asm volatile( "cpucfg %0, %1" : "=r"( tmp ) : "r"( cpucfg_idx ) );
 		hsai_printf( "cpucfg %d = %#_034b\n", cpucfg_idx, tmp );
+		cpucfg_idx = 2;
+		asm volatile( "cpucfg %0, %1" : "=r"( tmp ) : "r"( cpucfg_idx ) );
+		hsai_printf( "cpucfg %d = %#_034b\n", cpucfg_idx, tmp );
+		cpucfg_idx = 3;
+		asm volatile( "cpucfg %0, %1" : "=r"( tmp ) : "r"( cpucfg_idx ) );
+		hsai_printf( "cpucfg %d = %#_034b\n", cpucfg_idx, tmp );
 		cpucfg_idx = 4;
 		asm volatile( "cpucfg %0, %1" : "=r"( tmp ) : "r"( cpucfg_idx ) );
 		hsai_printf( "cc-freq = %d\n", tmp );
 		cpucfg_idx = 5;
 		asm volatile( "cpucfg %0, %1" : "=r"( tmp ) : "r"( cpucfg_idx ) );
 		hsai_printf( "cc-mul = %d, cc-div = %d\n", (u16) tmp, (u32) tmp >> 16 );
+
+		{
+			// print secondary X-windows
+			long		  winid	 = 0;
+			volatile u64* winptr = nullptr;
+
+			hsai_printf( BLUE_COLOR_PRINT
+						 "打印CPU访问二级交叉开关配置: base mask mmap\n" CLEAR_COLOR_PRINT );
+			for ( winptr = (volatile u64*) loongarch::qemu2k1000::SecondWin::cpu_win0_base,
+				  winid	 = 0;
+				  winid < 8; winid++, winptr++ )
+			{
+				hsai_printf( "win%d %p %p %p\n", winid, *winptr, *( winptr + 8 ),
+							 *( winptr + 16 ) );
+			}
+
+			hsai_printf( BLUE_COLOR_PRINT
+						 "打印IO DMA访问二级交叉开关配置: base mask mmap\n" CLEAR_COLOR_PRINT );
+			for ( winptr = (volatile u64*) loongarch::qemu2k1000::SecondWin::pci_win0_base,
+				  winid	 = 0;
+				  winid < 8; winid++, winptr++ )
+			{
+				hsai_printf( "win%d %p %p %p\n", winid, *winptr, *( winptr + 8 ),
+							 *( winptr + 16 ) );
+			}
+
+			hsai_printf( BLUE_COLOR_PRINT
+						 "打印IO互连网络地址窗口配置: base mask mmap\n" CLEAR_COLOR_PRINT );
+			for ( winptr = (volatile u64*) loongarch::qemu2k1000::XbarWin::xwin4_base0, winid = 0;
+				  winid < 8; winid++, winptr++ )
+			{
+				hsai_printf( "win4-%d %p %p %p\n", winid, *winptr, *( winptr + 8 ),
+							 *( winptr + 16 ) );
+			}
+
+			// hsai_printf( "xbarwin-base: %p\n",
+			// 			 *(volatile uint64*) loongarch::qemu2k1000::XbarWin::xwin4_base0 );
+			// hsai_printf( "xbarwin-mask: %p\n",
+			// 			 *(volatile uint64*) loongarch::qemu2k1000::XbarWin::xwin4_mask0 );
+			// hsai_printf( "xbarwin-mmap: %p\n",
+			// 			 *(volatile uint64*) loongarch::qemu2k1000::XbarWin::xwin4_mmap0 );
+
+			// hsai_printf( "pciwin0-base: %p\n",
+			// 			 *(volatile uint64*) loongarch::qemu2k1000::SecondWin::pci_win0_base );
+			// hsai_printf( "pciwin0-mask: %p\n",
+			// 			 *(volatile uint64*) loongarch::qemu2k1000::SecondWin::pci_win0_mask );
+			// hsai_printf( "pciwin0-mmap: %p\n",
+			// 			 *(volatile uint64*) loongarch::qemu2k1000::SecondWin::pci_win0_mmap );
+		}
 
 		// 1. 异常管理初始化
 		loongarch::k_em.init( "exception manager" );
@@ -179,7 +236,7 @@ namespace hsai
 
 		sata_base |= loongarch::qemu2k1000::win_1;
 		hsai_trace( "SATA mem base = %p", sata_base );
-		new ( &loongarch::qemu2k1000::ahci_driver ) AhciDriver( "AHCI", (void*) sata_base );
+		new ( &ahci_driver ) AhciDriverLs( "AHCI", (void*) sata_base );
 
 		// 3. 中断管理初始化
 		new ( &loongarch::qemu2k1000::k_im )
@@ -187,7 +244,7 @@ namespace hsai
 		hsai_info( "im init" );
 
 		// 4. AHCI 识别设备（需要在中断初始化后进行）
-		AhciDriver* ahd = (AhciDriver*) k_devm.get_device( "AHCI driver" );
+		AhciDriverLs* ahd = (AhciDriverLs*) k_devm.get_device( "AHCI driver" );
 		ahd->identify_device();
 
 		// while ( 1 );

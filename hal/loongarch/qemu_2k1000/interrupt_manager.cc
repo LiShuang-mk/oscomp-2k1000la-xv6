@@ -1,21 +1,23 @@
 //
-// Created by Li shuang ( pseudonym ) on 2024-04-05 
+// Created by Li shuang ( pseudonym ) on 2024-04-05
 // --------------------------------------------------------------
-// | Note: This code file just for study, not for commercial use 
-// | Contact Author: lishuang.mk@whu.edu.cn 
+// | Note: This code file just for study, not for commercial use
+// | Contact Author: lishuang.mk@whu.edu.cn
 // --------------------------------------------------------------
 //
 
-#include "qemu_2k1000.hh"
 #include "interrupt_manager.hh"
-#include "la_cpu.hh"
 
-#include <hsai_global.hh>
 #include <hsai_defs.h>
-#include <device_manager.hh>
-#include <uart/uart_ns16550.hh>
+
 #include <ata/ahci_driver.hh>
+#include <device_manager.hh>
+#include <hsai_global.hh>
 #include <hsai_log.hh>
+#include <uart/uart_ns16550.hh>
+
+#include "la_cpu.hh"
+#include "qemu_2k1000.hh"
 
 namespace loongarch
 {
@@ -40,19 +42,12 @@ namespace loongarch
 			write_itr_cfg( ItrCfg::itr_aut_l, 0x0U );
 			write_itr_cfg( ItrCfg::itr_aut_h, 0x0U );
 
-			write_itr_cfg(
-				ItrCfg::itr_enr_l,
-				ItrCfg::itr_bit_uart0_m |
-				ItrCfg::itr_bit_sata_m
-			);
-			write_itr_cfg_8b(
-				ItrCfg::itr_route_uart0,
-				itr_route_xy( 0, 2 )
-			);
-			write_itr_cfg_8b(
-				ItrCfg::itr_route_sata,
-				itr_route_xy( 0, 3 )
-			);
+			write_itr_cfg( ItrCfg::itr_enr_l, ItrCfg::itr_bit_uart0_m | ItrCfg::itr_bit_sata_m );
+
+			hsai_info( "\e[5m" "intr enable set: %#_010x", *(volatile u32 *) itr_enr_l );
+
+			write_itr_cfg_8b( ItrCfg::itr_route_uart0, itr_route_xy( 0, 2 ) );
+			write_itr_cfg_8b( ItrCfg::itr_route_sata, itr_route_xy( 0, 3 ) );
 
 			if ( register_interrupt_manager( this ) < 0 )
 			{
@@ -67,17 +62,12 @@ namespace loongarch
 
 		void InterruptManager::intr_init()
 		{
-			_uart0 = ( hsai::UartNs16550 * ) hsai::k_devm.get_char_device( DEFAULT_DEBUG_CONSOLE_NAME );
-			if ( _uart0 == nullptr )
-			{
-				hsai_panic( "couldn't find console device" );
-			}
+			_uart0 =
+				(hsai::UartNs16550 *) hsai::k_devm.get_char_device( DEFAULT_DEBUG_CONSOLE_NAME );
+			if ( _uart0 == nullptr ) { hsai_panic( "couldn't find console device" ); }
 
-			_sata = ( hsai::AhciDriver * ) hsai::k_devm.get_device( "AHCI driver" );
-			if ( _sata == nullptr )
-			{
-				hsai_panic( "couldn't find AHCI device" );
-			}
+			_sata = (hsai::AhciDriver *) hsai::k_devm.get_device( "AHCI driver" );
+			if ( _sata == nullptr ) { hsai_panic( "couldn't find AHCI device" ); }
 		}
 
 		void InterruptManager::clear_uart0_intr()
@@ -106,11 +96,10 @@ namespace loongarch
 		}
 
 
-
 		int InterruptManager::handle_dev_intr()
 		{
 
-			uint32 irq = *( volatile uint32 * ) ( itr_isr_l );
+			uint32 irq = *(volatile uint32 *) ( itr_isr_l );
 
 			if ( irq & itr_bit_uart0_m )
 			{
@@ -118,10 +107,7 @@ namespace loongarch
 				// hsai_warn( "uart intr not implement" );
 				_uart0->handle_intr();
 			}
-			if ( irq & itr_bit_sata_m )
-			{
-				_sata->handle_intr();
-			}
+			if ( irq & itr_bit_sata_m ) { _sata->handle_intr(); }
 			// if ( irq )
 			// {
 			// 	hsai_error( "unexpected interrupt irq=%d\n", irq );
@@ -134,4 +120,4 @@ namespace loongarch
 		}
 	} // namespace qemu2k1000
 
-} // namespace im
+} // namespace loongarch

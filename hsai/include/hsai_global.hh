@@ -56,4 +56,8 @@ namespace hsai
 	extern ConsoleStdout k_stdout;
 	extern ConsoleStderr k_stderr;
 
+	// about architecture
+
+	void * __hsai_hal get_ra();
+
 } // namespace hsai

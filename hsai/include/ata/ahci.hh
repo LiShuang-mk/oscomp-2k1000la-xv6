@@ -96,8 +96,8 @@ namespace hsai
 		dword is;
 		dword ie;
 		dword cmd;
-		dword tfd;
 		dword resv0;
+		dword tfd;
 		dword sig;
 		dword ssts;
 		dword sctl;
@@ -314,7 +314,7 @@ namespace hsai
 		byte b : 1;			// BIST 
 		byte c : 1;			// Clear Busy upon R_OK 
 		byte rsv : 1; 		// [x] reserve 
-		byte pmp : 3;		// Port Multiplier Port 
+		byte pmp : 4;		// Port Multiplier Port 
 		word prdtl;			// Physical Region Descriptor Table Length 
 
 		// DW1 

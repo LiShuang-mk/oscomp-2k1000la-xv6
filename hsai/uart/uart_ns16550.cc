@@ -105,6 +105,7 @@ namespace hsai
 			if ( lsr->data_ready == 1 )
 			{
 				c = _read_reg( THR );
+				// hsai_info( "uartns16550 intr: %c", c );
 				_read_buffer_put( c );
 			}
 			else break;

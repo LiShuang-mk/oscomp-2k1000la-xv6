@@ -84,6 +84,8 @@ uservec:
 	ld.d   $t1, $a0, 280
 	csrwr  $t1, LOONGARCH_CSR_PGDL
 
+	li.d   $fp, 0
+
 	# csrrd  $t1, 0x0 
 	# ori    $t1, $t1, 0x4 
 	# csrwr  $t1, 0x0

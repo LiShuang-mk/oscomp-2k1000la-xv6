@@ -74,7 +74,7 @@ namespace hsai
 		byte control;
 
 		// Dword 4 
-		byte rsv2[ 4 ];					// [x] reserve 
+		u32 rsv2;					// [x] reserve 
 	}__attribute__( ( __packed__ ) );
 	static_assert( sizeof( SataFisRegH2D ) == 20 );
 

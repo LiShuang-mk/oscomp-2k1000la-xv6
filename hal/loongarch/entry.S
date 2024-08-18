@@ -51,6 +51,8 @@ _test_init_atexit:
 		# add.d       $t0, $zero, $t0
 		# bl          -4
 
+		li.d		$fp, 0
+
 	# jump to xn6_start_kernel()
         bl          xn6_start_kernel
 spin:
