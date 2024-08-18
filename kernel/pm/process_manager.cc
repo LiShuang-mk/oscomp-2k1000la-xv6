@@ -1337,6 +1337,9 @@ namespace pm
 
 		Pcb *p = get_cur_pcb();
 		fs::dentry *dentry;
+		
+		if( path == "" )
+			return dir_fd;
 
 		fs::Path path_;
 		if (dir_fd == AT_FDCWD) {
