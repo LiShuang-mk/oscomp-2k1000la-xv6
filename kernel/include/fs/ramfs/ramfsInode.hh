@@ -36,7 +36,7 @@ namespace fs{
                     ~RamInode() = default;
                     
                     Inode *lookup( eastl::string dirname ) override { return nullptr ; } ;
-                    Inode *mknode( eastl::string dirname, FileAttrs attrs, eastl::string dev_name = "" ) override  ;
+                    Inode *mknode( eastl::string dirname, FileAttrs attrs, eastl::string dev_name = "" ) override;
                     size_t nodeRead( uint64 dst_, size_t off_, size_t len_ ) override;
                     size_t nodeWrite( uint64 src_, size_t off_, size_t len_ ) override { return  0; } ;
 

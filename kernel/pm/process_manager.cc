@@ -31,6 +31,8 @@
 #include <EASTL/string.h>
 #include <EASTL/vector.h>
 
+//#include <asm/fcntl.h>
+
 #include <device_manager.hh>
 #include <hsai_global.hh>
 #include <mem/virtual_memory.hh>
@@ -1345,7 +1347,25 @@ namespace pm
 		dentry = path_.pathSearch();
 
 		if ( dentry == nullptr && flags & O_CREAT ) 
-			return -1; // @todo create file
+		{
+			// @todo: create file
+			fs::dentry *par_ = path_.pathSearch( true );
+			if( par_ == nullptr )
+			    return -1;
+			fs::FileAttrs attrs;
+			if ((flags & __S_IFMT) == S_IFDIR)
+				attrs.filetype = fs::FileTypes::FT_DIRECT;
+			else	
+				attrs.filetype = fs::FileTypes::FT_NORMAL;
+			attrs._value = 0777;
+			if( ( dentry = par_->EntryCreate( path_.rFileName(), attrs ) ) == nullptr )
+			{
+				printf("Error creating new dentry %s failed\n", path_.rFileName() );
+				return -1;
+			}
+
+		}
+
 		if (dentry == nullptr) return -1;
 		int			  dev	= dentry->getNode()->rDev();
 		fs::FileAttrs attrs = dentry->getNode()->rMode();

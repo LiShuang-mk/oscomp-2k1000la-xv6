@@ -256,15 +256,20 @@ extern "C" {
 			fs::Path dev( "/dev/hdb" );
 			// mnt.mount( dev, "fat32", 0, 0 );  // for test mount fat32	
 			mnt.mount( dev, "ext4", 0, 0 );
-			fs::Path sdcard_path( "/mnt/sdcard" );
-			fs::dentry *sdcard = sdcard_path.pathSearch(); 
-			[[maybe_unused]]fs::ramfs::Normal* textnode = new fs::ramfs::Normal( &fs::ramfs::k_ramfs,
-											fs::ramfs::k_ramfs.alloc_ino(),
-											fs::FileAttrs(fs::FileTypes::FT_NORMAL, 0666)
-											);
-			fs::dentry *text = new fs::dentry( "test.txt", textnode, sdcard, false );
-			sdcard->getChildren()["test.txt"] = text;			
-
+			// fs::Path sdcard_path( "/mnt/sdcard" );
+			// fs::dentry *sdcard = sdcard_path.pathSearch(); 
+			// [[maybe_unused]]fs::ramfs::Normal* textnode = new fs::ramfs::Normal( &fs::ramfs::k_ramfs,
+			// 								fs::ramfs::k_ramfs.alloc_ino(),
+			// 								fs::FileAttrs(fs::FileTypes::FT_NORMAL, 0666)
+			// 								);
+			// fs::dentry *text = new fs::dentry( "test.txt", textnode, sdcard, false );
+			// sdcard->getChildren()["test.txt"] = text;			
+			// [[maybe_unused]]fs::ramfs::Normal* busyboxcmdbak = new fs::ramfs::Normal( &fs::ramfs::k_ramfs,
+			// 								fs::ramfs::k_ramfs.alloc_ino(),
+			// 								fs::FileAttrs(fs::FileTypes::FT_NORMAL, 0666)
+			// 								);
+			// fs::dentry *busybox = new fs::dentry( "busybox_cmd.bak", textnode, sdcard, false );
+			// sdcard->getChildren()["busybox_cmd.bak"] = busybox;
 			//text->setNode( textnode );
 			// fs::Path test_unlink( "/mnt/read" );
 			// [[maybe_unused]] fs::File* file = new fs::File( test_unlink.pathSearch(), 7 );

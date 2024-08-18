@@ -74,6 +74,7 @@ namespace fs
 		int umount( uint64 flags );
 		int open( FileAttrs attrs, int flags );
 		eastl::string rPathName() { return pathname; }
+		eastl::string rFileName() { return dirname[ dirname.size() - 1 ]; }
 	};
 
 	extern eastl::unordered_map<eastl::string, FileSystem *> mnt_table;

@@ -268,7 +268,7 @@ namespace fs
 			char *writecontent = new char[ len ];
 			memset( writecontent, 0, len );
 			memcpy( writecontent, (void *)src_, len );
-			printf("test.txt write: %s\n", writecontent);
+			//printf("test.txt write: %s\n", writecontent);
 			for (size_t i = 0; i < write_len; ++i) {
 				if (off + i < data.size()) {
 					data[off + i] = writecontent[i];

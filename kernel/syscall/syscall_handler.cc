@@ -1385,7 +1385,7 @@ namespace syscall
 		else
 			new ( &path ) fs::Path( _pathname, cur_proc->_ofile[_dirfd] );
 
-		int fd = path.open( fs::FileAttrs( flags ), f );
+		int fd = path.open( fs::FileAttrs( flags ), flags );
 
 		if ( fd < 0 )
 			return -1;
@@ -1711,7 +1711,7 @@ namespace syscall
 		fs::Path path( pathname, base );	
 		fs::dentry *den = path.pathSearch();	
 		if( den == nullptr )
-			return ENOENT;
+			return -ENOENT;
 		
 		//int fd = path.open();
 		
