@@ -45,11 +45,11 @@ namespace loongarch
 				ItrCfg::itr_bit_uart0_m |
 				ItrCfg::itr_bit_sata_m
 			);
-			write_itr_cfg(
+			write_itr_cfg_8b(
 				ItrCfg::itr_route_uart0,
 				itr_route_xy( 0, 2 )
 			);
-			write_itr_cfg(
+			write_itr_cfg_8b(
 				ItrCfg::itr_route_sata,
 				itr_route_xy( 0, 3 )
 			);

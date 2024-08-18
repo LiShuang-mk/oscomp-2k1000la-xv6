@@ -1,15 +1,15 @@
 //
-// Created by Li shuang ( pseudonym ) on 2024-04-05 
+// Created by Li shuang ( pseudonym ) on 2024-04-05
 // --------------------------------------------------------------
-// | Note: This code file just for study, not for commercial use 
-// | Contact Author: lishuang.mk@whu.edu.cn 
+// | Note: This code file just for study, not for commercial use
+// | Contact Author: lishuang.mk@whu.edu.cn
 // --------------------------------------------------------------
 //
 
-#include "loongarch.hh"
-#include "la_cpu.hh"
-
 #include "exception_manager.hh"
+
+#include "la_cpu.hh"
+#include "loongarch.hh"
 #include "trap_wrapper.hh"
 
 // #include "kernel/tm/timer_manager.hh"
@@ -29,29 +29,29 @@
 
 #include <hsai_global.hh>
 #include <hsai_log.hh>
-#include <virtual_cpu.hh>
-#include <syscall_interface.hh>
-#include <process_interface.hh>
-#include <timer_interface.hh>
+#include <intr/virtual_interrupt_manager.hh>
 #include <mem/page.hh>
 #include <mem/virtual_memory.hh>
 #include <mem/virtual_page_table.hh>
-#include <intr/virtual_interrupt_manager.hh>
+#include <process_interface.hh>
+#include <syscall_interface.hh>
+#include <timer_interface.hh>
+#include <virtual_cpu.hh>
 
 extern "C" {
 #include "la_estat.h"
 
-	extern void kernelvec();
-	extern void handle_tlbr();
-	extern void handle_merr();
-	extern void uservec();
-	extern void userret( uint64, uint64 );
+extern void kernelvec();
+extern void handle_tlbr();
+extern void handle_merr();
+extern void uservec();
+extern void userret( uint64, uint64 );
 }
 
 namespace loongarch
 {
 	ExceptionManager k_em;
-	char _user_or_kernel;
+	char			 _user_or_kernel;
 
 	void ExceptionManager::init( const char *lock_name )
 	{
@@ -59,31 +59,27 @@ namespace loongarch
 
 		for ( auto &f : _exception_handlers )
 		{
-			f = [] ( uint32 ) -> void
-			{
-				hsai_panic( "not implement" );
-			};
+			f = []( uint32 ) -> void { hsai_panic( "not implement" ); };
 		}
 
-		uint32 ecfg_data =
-			( 0x0U << csr::ecfg_vs_s ) |
-			( csr::itr_hwi_m << csr::ecfg_lie_s ) |
-			( csr::itr_ti_m << csr::ecfg_lie_s );
+		uint32 ecfg_data = ( 0x0U << csr::ecfg_vs_s ) |
+						   ( csr::itr_hwi_m << csr::ecfg_lie_s ) |
+						   ( csr::itr_ti_m << csr::ecfg_lie_s );
 		// uint32 ecfg_data =
 		// 	( 0x0U << csr::ecfg_vs_s ) |
 		// 	( csr::itr_hwi_m << csr::ecfg_lie_s );
 
-		Cpu * cpu = Cpu::get_la_cpu();
+		Cpu *cpu = Cpu::get_la_cpu();
 
 		cpu->write_csr( csr::ecfg, ecfg_data );
-		cpu->write_csr( csr::eentry, ( uint64 ) kernelvec );
-		cpu->write_csr( csr::tlbrentry, ( uint64 ) handle_tlbr );
-		cpu->write_csr( csr::merrentry, ( uint64 ) handle_merr );
+		cpu->write_csr( csr::eentry, (uint64) kernelvec );
+		cpu->write_csr( csr::tlbrentry, (uint64) handle_tlbr );
+		cpu->write_csr( csr::merrentry, (uint64) handle_merr );
 
-		hsai_printf( "keentry: %p\n", ( u64 ) kernelvec );
-		hsai_printf( "ueentry: %p\n", ( u64 ) uservec );
-		hsai_printf( "teentry: %p\n", ( u64 ) handle_tlbr );
-		hsai_printf( "meentry: %p\n", ( u64 ) handle_merr );
+		hsai_printf( "keentry: %p\n", (u64) kernelvec );
+		hsai_printf( "ueentry: %p\n", (u64) uservec );
+		hsai_printf( "teentry: %p\n", (u64) handle_tlbr );
+		hsai_printf( "meentry: %p\n", (u64) handle_merr );
 
 		_init_exception_handler();
 
@@ -100,38 +96,35 @@ namespace loongarch
 
 		// hsai_info( "enter kernel trap" );
 		// printf( "\033[33m k trap \033[0m" );
-		Cpu * cpu = Cpu::get_la_cpu();
+		Cpu *cpu = Cpu::get_la_cpu();
 		// cpu->intr_off();
 
-		[[maybe_unused]] u32 crmd = ( u32 ) cpu->read_csr( csr::crmd );
-		if ( crmd & ( 1 << 2 ) )
-		{
-			hsai_panic( "kernel trap : intr on!" );
-		}
+		[[maybe_unused]] u32 crmd = (u32) cpu->read_csr( csr::crmd );
+		if ( crmd & ( 1 << 2 ) ) { hsai_panic( "kernel trap : intr on!" ); }
 
 		kernel_trap_cnt++;
 
-		if ( kernel_trap_cnt > 4 )
-			hsai_panic( "kernel trap" );
+		if ( kernel_trap_cnt > 4 ) hsai_panic( "kernel trap" );
 
-		ulong era = cpu->read_csr( csr::era );
+		ulong era  = cpu->read_csr( csr::era );
 		ulong prmd = cpu->read_csr( csr::prmd );
 
-		uint32 estat = ( uint32 ) cpu->read_csr( csr::estat );
-		[[maybe_unused]] uint32 ecfg = ( uint32 ) cpu->read_csr( csr::ecfg );
+		uint32					estat = (uint32) cpu->read_csr( csr::estat );
+		[[maybe_unused]] uint32 ecfg  = (uint32) cpu->read_csr( csr::ecfg );
 
 		if ( ( ( prmd & csr::prmd_pplv_m ) >> csr::prmd_pplv_s ) != 0 )
 			hsai_panic( "kerneltrap: not from privilege0" );
 		if ( cpu->is_interruptible() )
 			hsai_panic( "kerneltrap: interrupts enabled" );
 
-		void * proc = nullptr;
-		proc = hsai::get_cur_proc();
+		void *proc = nullptr;
+		proc	   = hsai::get_cur_proc();
 
 		if ( estat & ecfg & ( csr::itr_hwi_m | csr::itr_ti_m ) )
 		{
 			int which_dev = dev_intr();
-			if ( ( ( which_dev & ( 1 << 1 ) ) != 0 ) && proc && hsai::proc_is_running( proc ) )
+			if ( ( ( which_dev & ( 1 << 1 ) ) != 0 ) && proc &&
+				 hsai::proc_is_running( proc ) )
 			{
 				hsai::sched_proc( proc );
 			}
@@ -139,12 +132,14 @@ namespace loongarch
 
 		if ( estat & csr::Estat::estat_ecode_m )
 		{
-			uint ecode = ( estat & csr::Estat::estat_ecode_m ) >> csr::Estat::estat_ecode_s;
-			hsai_assert( ecode < _LA_ECODE_MAX_NUM_, "unknown ecode : %d", ecode );
-			hsai_info( _la_ecode_spec_[ ecode ] );
+			uint ecode = ( estat & csr::Estat::estat_ecode_m ) >>
+						 csr::Estat::estat_ecode_s;
+			hsai_assert( ecode < _LA_ECODE_MAX_NUM_, "unknown ecode : %d",
+						 ecode );
+			hsai_info( _la_ecode_spec_[ecode] );
 			_user_or_kernel = 'k';
 			// printf( "%d", ecode );
-			_exception_handlers[ ecode ]( estat );
+			_exception_handlers[ecode]( estat );
 			// hsai_panic( "not implement" );}
 		}
 
@@ -163,31 +158,33 @@ namespace loongarch
 	{
 		// printf( "\033[32m u trap \033[0m" );
 		// tmm::k_tm.close_ti_intr();
-		Cpu *cpu = Cpu::get_la_cpu();
-		u64 estat = cpu->read_csr( csr::estat );
+		Cpu *cpu   = Cpu::get_la_cpu();
+		u64	 estat = cpu->read_csr( csr::estat );
 
-		int which_dev = 0;
-		uint64 dbg_prmd = cpu->read_csr( csr::CsrAddr::prmd );
+		int	   which_dev = 0;
+		uint64 dbg_prmd	 = cpu->read_csr( csr::CsrAddr::prmd );
 		if ( ( dbg_prmd & 0x03 ) == 0 )
 			hsai_panic( "Usertrap: not from user mode" );
 
-		// 
-		cpu->write_csr( csr::CsrAddr::eentry, ( uint64 ) kernelvec );
+		//
+		cpu->write_csr( csr::CsrAddr::eentry, (uint64) kernelvec );
 
 		// proc->set_user_ticks(
 		// 	proc->get_user_ticks() +
 		// 	( hsai::get_ticks() - proc->get_last_user_tick() )
 		// );
 
-		void * proc = hsai::get_cur_proc();
-		TrapFrame* trapframe = ( TrapFrame* ) hsai::get_trap_frame_from_proc( proc );
+		void	  *proc = hsai::get_cur_proc();
+		TrapFrame *trapframe =
+			(TrapFrame *) hsai::get_trap_frame_from_proc( proc );
 		trapframe->era = cpu->read_csr( csr::CsrAddr::era );
 
-		// printf( "\nestat=0x%x a7=%d era=0x%x\n", estat, trapframe->a7, cpu->read_csr( csr::era ) );
+		// printf( "\nestat=0x%x a7=%d era=0x%x\n", estat, trapframe->a7,
+		// cpu->read_csr( csr::era ) );
 
 		if ( ( estat & csr::Estat::estat_is_m ) )
 		{
-// device trap
+			// device trap
 			which_dev = dev_intr();
 			// ok
 		}
@@ -195,27 +192,28 @@ namespace loongarch
 		if ( estat & csr::Estat::estat_ecode_m )
 		{
 
-			uint ecode = ( estat & csr::Estat::estat_ecode_m ) >> csr::Estat::estat_ecode_s;
+			uint ecode = ( estat & csr::Estat::estat_ecode_m ) >>
+						 csr::Estat::estat_ecode_s;
 			if ( ecode != 0xb )
 			{
-				hsai_error( "unexcepted usertrapcause estat=%x pid=%d\n, era=%p",
-					cpu->read_csr( csr::CsrAddr::estat ),
-					hsai::get_pid( proc ),
+				hsai_error(
+					"unexcepted usertrapcause estat=%x pid=%d\n, era=%p",
+					cpu->read_csr( csr::CsrAddr::estat ), hsai::get_pid( proc ),
 					cpu->read_csr( csr::CsrAddr::era ) );
 				hsai_assert( ecode < _LA_ECODE_MAX_NUM_, "" );
-				hsai_info( _la_ecode_spec_[ ecode ] );
+				hsai_info( _la_ecode_spec_[ecode] );
 			}
 
 			_user_or_kernel = 'u';
 
-			_exception_handlers[ ecode ]( estat );
+			_exception_handlers[ecode]( estat );
 			// pm::k_pm.kill_proc( proc );
 		}
 
-		if ( hsai::proc_is_killed( proc ) )
-			hsai::exit_proc( proc, -1 );
+		if ( hsai::proc_is_killed( proc ) ) hsai::exit_proc( proc, -1 );
 
-		if ( ( ( which_dev & ( 1 << 1 ) ) != 0 ) && proc && hsai::proc_is_running( proc ) )
+		if ( ( ( which_dev & ( 1 << 1 ) ) != 0 ) && proc &&
+			 hsai::proc_is_running( proc ) )
 		{
 			hsai::sched_proc( proc );
 		}
@@ -229,21 +227,23 @@ namespace loongarch
 	{
 		Cpu *cur_cpu = Cpu::get_la_cpu();
 
-		//turn off interrupts until back to user space
+		// turn off interrupts until back to user space
 		cur_cpu->intr_off();
 
-		cur_cpu->write_csr( csr::CsrAddr::eentry, ( uint64 ) uservec );
+		cur_cpu->write_csr( csr::CsrAddr::eentry, (uint64) uservec );
 
-		void * cur_proc = hsai::get_cur_proc();
-		TrapFrame* trapframe = ( TrapFrame * ) hsai::get_trap_frame_from_proc( cur_proc );
+		void	  *cur_proc = hsai::get_cur_proc();
+		TrapFrame *trapframe =
+			(TrapFrame *) hsai::get_trap_frame_from_proc( cur_proc );
 		trapframe->kernel_pgdl = cur_cpu->read_csr( csr::CsrAddr::pgdl );
-		trapframe->kernel_sp = hsai::get_kstack_from_proc( cur_proc ) + hsai::get_kstack_size( cur_proc );
-		trapframe->kernel_trap = ( uint64 ) &_wrp_user_trap;
+		trapframe->kernel_sp   = hsai::get_kstack_from_proc( cur_proc ) +
+							   hsai::get_kstack_size( cur_proc );
+		trapframe->kernel_trap	 = (uint64) &_wrp_user_trap;
 		trapframe->kernel_hartid = cur_cpu->get_cpu_id();
 
-		uint32 x = ( uint32 ) cur_cpu->read_csr( csr::CsrAddr::prmd );
-		x |= ( 0x3U << csr::Prmd::prmd_pplv_s );  // set priv to 3, user mode
-		x |= csr::Prmd::prmd_pie_m;					// enable interrupts in user mode
+		uint32 x = (uint32) cur_cpu->read_csr( csr::CsrAddr::prmd );
+		x |= ( 0x3U << csr::Prmd::prmd_pplv_s ); // set priv to 3, user mode
+		x |= csr::Prmd::prmd_pie_m; // enable interrupts in user mode
 		cur_cpu->write_csr( csr::CsrAddr::prmd, x );
 
 		cur_cpu->write_csr( csr::era, trapframe->era );
@@ -256,12 +256,11 @@ namespace loongarch
 	}
 
 
-
 	int ExceptionManager::dev_intr()
 	{
-		Cpu * cpu = Cpu::get_la_cpu();
+		Cpu	  *cpu	 = Cpu::get_la_cpu();
 		uint64 estat = cpu->read_csr( csr::estat );
-		uint64 ecfg = cpu->read_csr( csr::ecfg );
+		uint64 ecfg	 = cpu->read_csr( csr::ecfg );
 
 		int rc;
 		int dev = 0;
@@ -290,22 +289,13 @@ namespace loongarch
 				}
 			}
 
-			cpu->write_csr(
-				csr::ticlr,
-				cpu->read_csr( csr::ticlr ) | 1
-			);
+			cpu->write_csr( csr::ticlr, cpu->read_csr( csr::ticlr ) | 1 );
 			dev |= 1 << 1;
 		}
 
-		if ( estat & ecfg & csr::itr_ipi_m )
-		{
-			return -101;
-		}
+		if ( estat & ecfg & csr::itr_ipi_m ) { return -101; }
 
-		if ( estat & ecfg & csr::itr_pmi_m )
-		{
-			return -201;
-		}
+		if ( estat & ecfg & csr::itr_pmi_m ) { return -201; }
 
 		// else
 		// {
@@ -325,10 +315,7 @@ namespace loongarch
 	}
 
 
-	void ExceptionManager::machine_trap()
-	{
-		hsai_panic( "not implement" );
-	}
+	void ExceptionManager::machine_trap() { hsai_panic( "not implement" ); }
 
 	void ExceptionManager::ahci_read_handle()
 	{
@@ -340,7 +327,7 @@ namespace loongarch
 		hsai_panic( "ahci intr" );
 	}
 
-// ---------------- private helper functions ----------------
+	// ---------------- private helper functions ----------------
 
 	// void ExceptionManager::handle_pif()
 	// {
@@ -355,13 +342,14 @@ namespace loongarch
 
 	void ExceptionManager::_init_exception_handler()
 	{
-		_exception_handlers[ csr::ecode_int ] = std::bind( &ExceptionManager::dev_intr, this );
+		_exception_handlers[csr::ecode_int] =
+			std::bind( &ExceptionManager::dev_intr, this );
 
-		_exception_handlers[ csr::ecode_brk ] = [] ( uint32 ) ->void
+		_exception_handlers[csr::ecode_brk] = []( uint32 ) -> void
 		{
 			Cpu *cpu = Cpu::get_la_cpu();
-			//uint64 estat = cpu->read_csr( csr::estat );
-			//uint64 ecfg = cpu->read_csr( csr::ecfg );
+			// uint64 estat = cpu->read_csr( csr::estat );
+			// uint64 ecfg = cpu->read_csr( csr::ecfg );
 
 			hsai_panic( "exception BRK:\n"
 				"era: %p\n"
@@ -376,24 +364,29 @@ namespace loongarch
 			return;
 		};
 
-		_exception_handlers[ csr::ecode_pil ] = [ this ] ( uint32 estat ) ->void
+		_exception_handlers[csr::ecode_pil] = [this]( uint32 estat ) -> void
 		{
 			// printf( ( _user_or_kernel == 'u' ) ? "u" : "k" );
 			// printf( "PIL" );
 			// printf( "0x%x", cpu->read_csr( csr::era ) );
-			Cpu * cpu = Cpu::get_la_cpu();
+			Cpu					   *cpu	 = Cpu::get_la_cpu();
 			[[maybe_unused]] uint64 badv = cpu->read_csr( csr::badv );
-			[[maybe_unused]] uint64 era = cpu->read_csr( csr::era );
+			[[maybe_unused]] uint64 era	 = cpu->read_csr( csr::era );
 
-			void * proc = hsai::get_cur_proc();
-			// [[maybe_unused]] hsai::Pte pte = hsai::get_pt_from_proc( proc )->walk( badv, false );
-			TrapFrame *tf = ( TrapFrame* ) hsai::get_trap_frame_from_proc( proc );
+			void	  *proc = hsai::get_cur_proc();
+			// [[maybe_unused]] hsai::Pte pte = hsai::get_pt_from_proc( proc
+			// )->walk( badv, false );
+			TrapFrame *tf =
+				(TrapFrame *) hsai::get_trap_frame_from_proc( proc );
 			[[maybe_unused]] uint64 usp = tf->sp;
 
-			hsai_printf( YELLOW_COLOR_PRINT "load bad virtual address : %p\n" CLEAR_COLOR_PRINT, badv );
+			hsai_printf( YELLOW_COLOR_PRINT
+						 "load bad virtual address : %p\n" CLEAR_COLOR_PRINT,
+						 badv );
 
-			// hsai_printf( YELLOW_COLOR_PRINT "print the page at address a0(%p)\n" CLEAR_COLOR_PRINT, tf->a0 );
-			// this->_print_va_page( proc, tf->a0 );
+			// hsai_printf( YELLOW_COLOR_PRINT "print the page at address
+			// a0(%p)\n" CLEAR_COLOR_PRINT, tf->a0 ); this->_print_va_page(
+			// proc, tf->a0 );
 
 			if ( ( era >> 60 ) == 0 )
 				this->_print_va_page( proc, era );
@@ -404,8 +397,8 @@ namespace loongarch
 			this->_print_trap_frame( proc );
 
 			// ulong iofbadv = this->_get_user_data( proc, badv );
-			// hsai_printf( BLUE_COLOR_PRINT "read data(u64) from badv %p = %#lx\n" CLEAR_COLOR_PRINT,
-			// 	badv, iofbadv );
+			// hsai_printf( BLUE_COLOR_PRINT "read data(u64) from badv %p =
+			// %#lx\n" CLEAR_COLOR_PRINT, 	badv, iofbadv );
 
 			hsai_panic(
 				"handle exception PIL :\n"
@@ -425,22 +418,26 @@ namespace loongarch
 			);
 		};
 
-		_exception_handlers[ csr::ecode_pis ] = [ this ] ( uint32 estat ) ->void
+		_exception_handlers[csr::ecode_pis] = [this]( uint32 estat ) -> void
 		{
-			// [[maybe_unused]] mm::Pte pte = Cpu::get_cpu()->get_cur_proc()->get_pagetable().walk( badv, 0 );
+			// [[maybe_unused]] mm::Pte pte =
+			// Cpu::get_cpu()->get_cur_proc()->get_pagetable().walk( badv, 0 );
 			hsai_trace( "trace kernel trap count = %d", kernel_trap_cnt );
 
-			Cpu * cpu = Cpu::get_la_cpu();
+			Cpu					   *cpu	 = Cpu::get_la_cpu();
 			[[maybe_unused]] uint64 badv = cpu->read_csr( csr::badv );
-			[[maybe_unused]] uint64 era = cpu->read_csr( csr::era );
+			[[maybe_unused]] uint64 era	 = cpu->read_csr( csr::era );
 
-			void * proc = hsai::get_cur_proc();
-			// [[maybe_unused]] hsai::Pte pte = hsai::get_pt_from_proc( proc )->walk( badv, false );
-			TrapFrame *tf = ( TrapFrame* ) hsai::get_trap_frame_from_proc( proc );
+			void	  *proc = hsai::get_cur_proc();
+			// [[maybe_unused]] hsai::Pte pte = hsai::get_pt_from_proc( proc
+			// )->walk( badv, false );
+			TrapFrame *tf =
+				(TrapFrame *) hsai::get_trap_frame_from_proc( proc );
 			[[maybe_unused]] uint64 usp = tf->sp;
 
-			// hsai_printf( YELLOW_COLOR_PRINT "print the page at address a0(%p)\n" CLEAR_COLOR_PRINT, tf->a0 );
-			// this->_print_va_page( proc, tf->a0 );
+			// hsai_printf( YELLOW_COLOR_PRINT "print the page at address
+			// a0(%p)\n" CLEAR_COLOR_PRINT, tf->a0 ); this->_print_va_page(
+			// proc, tf->a0 );
 
 			if ( ( era >> 60 ) == 0 )
 				this->_print_va_page( proc, era );
@@ -451,12 +448,15 @@ namespace loongarch
 			this->_print_trap_frame( proc );
 
 			ulong iofbadv = this->_get_user_data( proc, badv );
-			hsai_printf( BLUE_COLOR_PRINT "read data(u64) from badv %p = %#lx\n" CLEAR_COLOR_PRINT,
+			hsai_printf(
+				BLUE_COLOR_PRINT
+				"read data(u64) from badv %p = %#lx\n" CLEAR_COLOR_PRINT,
 				badv, iofbadv );
 
 			hsai::Pte pte = hsai::get_pt_from_proc( proc )->walk( badv, false );
-			hsai_printf( YELLOW_COLOR_PRINT "pte corresponding to badv is %p\n" CLEAR_COLOR_PRINT,
-				pte.get_data() );
+			hsai_printf( YELLOW_COLOR_PRINT
+						 "pte corresponding to badv is %p\n" CLEAR_COLOR_PRINT,
+						 pte.get_data() );
 
 			hsai_panic(
 				"handle exception PIS :\n"
@@ -475,9 +475,9 @@ namespace loongarch
 			);
 		};
 
-		_exception_handlers[ csr::ecode_pif ] = [] ( uint32 ) -> void
+		_exception_handlers[csr::ecode_pif] = []( uint32 ) -> void
 		{
-			Cpu * cpu = Cpu::get_la_cpu();
+			Cpu *cpu = Cpu::get_la_cpu();
 			hsai_panic(
 				"handle exception PIF :\n"
 				"    badv : 0x%x\n"
@@ -493,12 +493,13 @@ namespace loongarch
 			);
 		};
 
-		_exception_handlers[ csr::ecode_pme ] = [] ( uint32 estat ) ->void
+		_exception_handlers[csr::ecode_pme] = []( uint32 estat ) -> void
 		{
-			Cpu * cpu = Cpu::get_la_cpu();
-			uint64 badv = cpu->read_csr( csr::badv );
-			void * proc = hsai::get_cur_proc();
-			[[maybe_unused]] hsai::Pte pte = hsai::get_pt_from_proc( proc )->walk( badv, 0 );
+			Cpu						  *cpu	= Cpu::get_la_cpu();
+			uint64					   badv = cpu->read_csr( csr::badv );
+			void					  *proc = hsai::get_cur_proc();
+			[[maybe_unused]] hsai::Pte pte =
+				hsai::get_pt_from_proc( proc )->walk( badv, 0 );
 			hsai_panic(
 				"handle exception PME :\n"
 				"    badv : %x\n"
@@ -510,12 +511,25 @@ namespace loongarch
 			);
 		};
 
-		_exception_handlers[ csr::ecode_ppi ] = [] ( uint32 estat ) ->void
+		_exception_handlers[csr::ecode_pnx] = []( uint32 ) -> void
 		{
-			Cpu * cpu = Cpu::get_la_cpu();
-			uint64 badv = cpu->read_csr( csr::badv );
-			void * proc = hsai::get_cur_proc();
-			[[maybe_unused]] hsai::Pte pte = hsai::get_pt_from_proc( proc )->walk( badv, 0 );
+			Cpu *cpu = Cpu::get_la_cpu();
+			hsai_panic(
+				"handle exception PNX :\n"
+				"    badv : %x\n"
+				"    badi : %x",
+				cpu->read_csr( csr::badv ),
+				cpu->read_csr( csr::badi )
+			);
+		};
+
+		_exception_handlers[csr::ecode_ppi] = []( uint32 estat ) -> void
+		{
+			Cpu						  *cpu	= Cpu::get_la_cpu();
+			uint64					   badv = cpu->read_csr( csr::badv );
+			void					  *proc = hsai::get_cur_proc();
+			[[maybe_unused]] hsai::Pte pte =
+				hsai::get_pt_from_proc( proc )->walk( badv, 0 );
 			hsai_panic(
 				"handle exception PPI :\n"
 				"    badv : %x\n"
@@ -527,22 +541,24 @@ namespace loongarch
 			);
 		};
 
-		_exception_handlers[ csr::ecode_ade ] = [ this ] ( uint32 estat ) -> void
+		_exception_handlers[csr::ecode_ade] = [this]( uint32 estat ) -> void
 		{
-			Cpu * cpu = Cpu::get_la_cpu();
+			Cpu					 *cpu = Cpu::get_la_cpu();
 			[[maybe_unused]] uint e_sub_code =
-				( estat & ( csr::Estat::estat_esubcode_m ) )
-				>> csr::Estat::estat_esubcode_s;
+				( estat & ( csr::Estat::estat_esubcode_m ) ) >>
+				csr::Estat::estat_esubcode_s;
 
-			u64 era = cpu->read_csr( csr::era );
-			void * proc = hsai::get_cur_proc();
+			u64	  era  = cpu->read_csr( csr::era );
+			void *proc = hsai::get_cur_proc();
 
 			u32 bad_instr;
 			if ( ( era >> 60 ) == 0 )
-				bad_instr = ( u32 ) this->_get_user_data( proc, era );
+				bad_instr = (u32) this->_get_user_data( proc, era );
 			else
-				bad_instr = *( u32 * ) era;
-			hsai_printf( BLUE_COLOR_PRINT "出错指令: %#010x\n" CLEAR_COLOR_PRINT, bad_instr );
+				bad_instr = *(u32 *) era;
+			hsai_printf( BLUE_COLOR_PRINT
+						 "出错指令: %#010x\n" CLEAR_COLOR_PRINT,
+						 bad_instr );
 			hsai_panic(
 				"handle exception ADE :\n"
 				"    type : %s\n"
@@ -560,23 +576,59 @@ namespace loongarch
 			);
 		};
 
-		_exception_handlers[ csr::ecode_pnx ] = [] ( uint32 ) -> void
+		_exception_handlers[csr::ecode_ale] = [this]( uint32 ) -> void
 		{
-			Cpu * cpu = Cpu::get_la_cpu();
+			Cpu					   *cpu	 = Cpu::get_la_cpu();
+			[[maybe_unused]] uint64 badv = cpu->read_csr( csr::badv );
+			[[maybe_unused]] uint64 era	 = cpu->read_csr( csr::era );
+
+			void				   *proc = hsai::get_cur_proc();
+			TrapFrame			   *tf	 = nullptr;
+			[[maybe_unused]] uint64 usp	 = 0;
+
+			if ( proc != nullptr )
+			{
+				tf	= (TrapFrame *) hsai::get_trap_frame_from_proc( proc );
+				usp = tf->sp;
+			}
+
+			hsai_printf( YELLOW_COLOR_PRINT
+						 "access bad virtual address : %p\n" CLEAR_COLOR_PRINT,
+						 badv );
+
+			if ( ( era >> 60 ) == 0 )
+				this->_print_va_page( proc, era );
+			else
+				this->_print_pa_page( era );
+
+			if ( usp != 0 ) this->_print_va_page( proc, usp );
+
+			if ( proc != nullptr ) this->_print_trap_frame( proc );
+
 			hsai_panic(
-				"handle exception PNX :\n"
-				"    badv : %x\n"
-				"    badi : %x",
-				cpu->read_csr( csr::badv ),
-				cpu->read_csr( csr::badi )
+				"handle exception ALE :\n"
+				"    badv : %p\n"
+				"    badi : %#010x\n"
+				"    crmd : %#010x\n"
+				"    era  : %p\n"
+				"    tick : %d\n"
+				"    sp   : %p\n",
+				badv,
+				cpu->read_csr( csr::badi ),
+				cpu->read_csr( csr::crmd ),
+				cpu->read_csr( csr::era ),
+				hsai::get_ticks(),
+				usp
 			);
 		};
 
-		_exception_handlers[ csr::ecode_sys ] = std::bind( &ExceptionManager::_syscall, this );
 
-		_exception_handlers[ csr::ecode_ine ] = [] ( uint32 ) -> void
+		_exception_handlers[csr::ecode_sys] =
+			std::bind( &ExceptionManager::_syscall, this );
+
+		_exception_handlers[csr::ecode_ine] = []( uint32 ) -> void
 		{
-			Cpu * cpu = Cpu::get_la_cpu();
+			Cpu *cpu = Cpu::get_la_cpu();
 			hsai_panic(
 				"handle exception INE :\n"
 				"    badv : 0x%x\n"
@@ -595,23 +647,23 @@ namespace loongarch
 
 	void ExceptionManager::_syscall()
 	{
-		void * p = hsai::get_cur_proc();
-		TrapFrame * tf = ( TrapFrame * ) hsai::get_trap_frame_from_proc( p );
+		void	  *p  = hsai::get_cur_proc();
+		TrapFrame *tf = (TrapFrame *) hsai::get_trap_frame_from_proc( p );
 
-		if ( hsai::proc_is_killed( p ) )
-			hsai::exit_proc( p, -1 );
+		if ( hsai::proc_is_killed( p ) ) hsai::exit_proc( p, -1 );
 
-		//update pc
+		// update pc
 		tf->era += 4;
 
 		// tmm::k_tm.close_ti_intr();
 
-		Cpu * cpu = Cpu::get_la_cpu();
+		Cpu *cpu = Cpu::get_la_cpu();
 		cpu->intr_on();
 
 		uint64 num;
 
-		// printf( "sys a0=0x%x a7=%d\n", p->get_trapframe()->a0, p->get_trapframe()->a7 );
+		// printf( "sys a0=0x%x a7=%d\n", p->get_trapframe()->a0,
+		// p->get_trapframe()->a7 );
 		num = tf->a7;
 		if ( num > 0 && num < hsai::get_syscall_max_num() )
 		{
@@ -620,67 +672,70 @@ namespace loongarch
 		}
 		else
 		{
-			hsai_printf( "%d : unknown sys call %d\n",
-				hsai::get_pid( p ), num );
+			hsai_printf( "%d : unknown sys call %d\n", hsai::get_pid( p ),
+						 num );
 			tf->a0 = -1;
 		}
 
 		// tmm::k_tm.open_ti_intr();
-
 	}
 
-	ulong ExceptionManager::_get_user_data( void * proc, u64 virt_addr )
+	ulong ExceptionManager::_get_user_data( void *proc, u64 virt_addr )
 	{
-		hsai::VirtualPageTable * pt = hsai::get_pt_from_proc( proc );
-		u64 pa = pt->walk_addr( virt_addr );
-		pa = hsai::k_mem->to_vir( pa );
-		return *( ( ulong * ) pa );
+		hsai::VirtualPageTable *pt = hsai::get_pt_from_proc( proc );
+		u64						pa = pt->walk_addr( virt_addr );
+		pa						   = hsai::k_mem->to_vir( pa );
+		return *( (ulong *) pa );
 	}
 
-	void ExceptionManager::_print_va_page( void * proc, u64 virt_addr )
+	void ExceptionManager::_print_va_page( void *proc, u64 virt_addr )
 	{
-		hsai::VirtualPageTable * pt = hsai::get_pt_from_proc( proc );
-		u64 pa = pt->walk_addr( virt_addr );
-		pa = hsai::page_round_down( pa );
-		pa = hsai::k_mem->to_vir( pa );
+		hsai::VirtualPageTable *pt = hsai::get_pt_from_proc( proc );
+		u64						pa = pt->walk_addr( virt_addr );
+		pa						   = hsai::page_round_down( pa );
+		pa						   = hsai::k_mem->to_vir( pa );
 
-		u8 * p = ( u8* ) pa;
+		u8 *p		 = (u8 *) pa;
 		u64 va_start = hsai::page_round_down( virt_addr );
 
-		hsai_printf( BLUE_COLOR_PRINT "print the page data containing va(%p)\n" CLEAR_COLOR_PRINT, virt_addr );
-		hsai_printf( "%p(ph)  00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n", pa );
+		hsai_printf(
+			BLUE_COLOR_PRINT
+			"print the page data containing va(%p)\n" CLEAR_COLOR_PRINT,
+			virt_addr );
+		hsai_printf(
+			"%p(ph)  00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n", pa );
 		for ( uint i = 0; i < hsai::page_size; ++i )
 		{
-			if ( i % 0x10 == 0 )
-				hsai_printf( "%p      ", va_start + i );
-			hsai_printf( "%B ", p[ i ] );
-			if ( i % 0x10 == 0xF )
-				hsai_printf( "\n" );
+			if ( i % 0x10 == 0 ) hsai_printf( "%p      ", va_start + i );
+			hsai_printf( "%B ", p[i] );
+			if ( i % 0x10 == 0xF ) hsai_printf( "\n" );
 		}
 	}
 
 	void ExceptionManager::_print_pa_page( u64 phys_addr )
 	{
 		phys_addr = hsai::k_mem->to_vir( phys_addr );
-		u64 pa = hsai::page_round_down( phys_addr );
+		u64 pa	  = hsai::page_round_down( phys_addr );
 
-		u8 * p = ( u8* ) pa;
+		u8 *p = (u8 *) pa;
 
-		hsai_printf( BLUE_COLOR_PRINT "print the page data containing pa(%p)\n" CLEAR_COLOR_PRINT, phys_addr );
-		hsai_printf( "%p(ph)  00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n", pa );
+		hsai_printf(
+			BLUE_COLOR_PRINT
+			"print the page data containing pa(%p)\n" CLEAR_COLOR_PRINT,
+			phys_addr );
+		hsai_printf(
+			"%p(ph)  00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n", pa );
 		for ( uint i = 0; i < hsai::page_size; ++i )
 		{
-			if ( i % 0x10 == 0 )
-				hsai_printf( "%p      ", pa + i );
-			hsai_printf( "%B ", p[ i ] );
-			if ( i % 0x10 == 0xF )
-				hsai_printf( "\n" );
+			if ( i % 0x10 == 0 ) hsai_printf( "%p      ", pa + i );
+			hsai_printf( "%B ", p[i] );
+			if ( i % 0x10 == 0xF ) hsai_printf( "\n" );
 		}
 	}
 
-	void ExceptionManager::_print_trap_frame( void * proc )
+	void ExceptionManager::_print_trap_frame( void *proc )
 	{
-		TrapFrame *tf = ( TrapFrame * ) hsai::get_trap_frame_from_proc( proc );
+		TrapFrame *tf = (TrapFrame *) hsai::get_trap_frame_from_proc( proc );
 		hsai_printf( BLUE_COLOR_PRINT "print trap frame:\n" );
 		hsai_printf( "\tra(r1)  = %p\n", tf->ra );
 		hsai_printf( "\ttp(r2)  = %p\n", tf->tp );
@@ -716,5 +771,5 @@ namespace loongarch
 		hsai_printf( CLEAR_COLOR_PRINT );
 	}
 
-}// namespace loongarch
+} // namespace loongarch
 

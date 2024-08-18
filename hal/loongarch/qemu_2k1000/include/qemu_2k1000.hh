@@ -1,12 +1,12 @@
 //
-// Created by Li shuang ( pseudonym ) on 2024-04-05 
+// Created by Li shuang ( pseudonym ) on 2024-04-05
 // --------------------------------------------------------------
-// | Note: This code file just for study, not for commercial use 
-// | Contact Author: lishuang.mk@whu.edu.cn 
+// | Note: This code file just for study, not for commercial use
+// | Contact Author: lishuang.mk@whu.edu.cn
 // --------------------------------------------------------------
 //
 
-#pragma once 
+#pragma once
 
 #include <kernel/types.hh>
 
@@ -30,39 +30,40 @@ namespace loongarch
 			return virt & ~dmwin_mask;
 		}
 
-		/// @brief Uart address 
+		/// @brief Uart address
 		enum UartAddr : uint64
 		{
-			uart0 = 0x1fe20000UL,
+			uart0 = 0x1fe2'0000UL,
 			// uart0 = 0x1fe001e0UL | dmwin::win_0,
 		};
 
 		enum memory : uint64
 		{
-			mem_start = ( 0x90000000UL + _1M * 512 ) | dmwin::win_0,		// 起始的512MiB留给内核
-			// mem_size = CommonSize::_1M << 7, 			// 128M 
-			// mem_size = _1M * 256, 			// 256M 
-			mem_size = _1M * 512, 							// 512M 
-			mem_end = mem_start + mem_size
+			mem_start = ( 0x9000'0000UL + _1M * 512 ) |
+						dmwin::win_0, // 起始的512MiB留给内核
+			// mem_size = CommonSize::_1M << 7, 			// 128M
+			// mem_size = _1M * 256, 			// 256M
+			mem_size = _1M * 512, // 512M
+			mem_end	 = mem_start + mem_size
 		};
 
-		/// @brief 2k1000la configure registers base address 
-		constexpr uint64 config_reg_base = 0x1fe00000UL | dmwin::win_0;
+		/// @brief 2k1000la configure registers base address
+		constexpr uint64 config_reg_base = 0x1fe0'0000UL | dmwin::win_0;
 
-		/// @brief interrupt configure  
+		/// @brief interrupt configure
 		enum ItrCfg : uint64
 		{
-			itr_low_bit = 0x1420UL + config_reg_base,
-			itr_high_bit = 0x1460UL + config_reg_base,
+			itr_low_bit	   = 0x1420UL + config_reg_base,
+			itr_high_bit   = 0x1460UL + config_reg_base,
 			itr_route_base = 0x1400UL + config_reg_base,
 
 			itr_bit_uart0_s = 0,
 			itr_bit_uart0_m = 0x1UL << itr_bit_uart0_s,
-			itr_bit_sata_s = 19,
-			itr_bit_sata_m = 0x1UL << itr_bit_sata_s,
+			itr_bit_sata_s	= 19,
+			itr_bit_sata_m	= 0x1UL << itr_bit_sata_s,
 
 			itr_route_uart0 = 0x0UL + itr_route_base,
-			itr_route_sata = 0x13UL + itr_route_base,
+			itr_route_sata	= 0x13UL + itr_route_base,
 
 			itr_isr_l = 0x00UL + itr_low_bit,
 			itr_isr_h = 0x00UL + itr_high_bit,
@@ -82,10 +83,10 @@ namespace loongarch
 			itr_aut_h = 0x1cUL + itr_high_bit,
 		};
 
-		/// @brief route function 
-		/// @param x > core number 
-		/// @param y > pin number 
-		/// @return 
+		/// @brief route function
+		/// @param x > core number
+		/// @param y > pin number
+		/// @return
 		constexpr inline uchar itr_route_xy( uchar x, uchar y )
 		{
 			return ( ( 0x1U << x ) << 0 ) | ( ( 0x1U << y ) << 4 );
@@ -93,29 +94,38 @@ namespace loongarch
 
 		constexpr inline void write_itr_cfg( ItrCfg itrReg, uint32 data )
 		{
-			*( volatile uint32 * ) itrReg = data;
+			*(volatile uint32 *) itrReg = data;
 		}
-		inline uint32 read_itr_cfg( ItrCfg itrReg )
+		constexpr inline uint32 read_itr_cfg( ItrCfg itrReg )
 		{
-			return *( ( volatile uint32 * ) itrReg );
+			return *( (volatile uint32 *) itrReg );
 		}
 
-		constexpr uint64 pci_type0_base = 0xFE00000000 | dmwin::win_0;
-		constexpr uint64 pci_type1_base = 0xFE10000000 | dmwin::win_1;
+		constexpr inline void write_itr_cfg_8b( ItrCfg itr_reg, u8 data )
+		{
+			*(volatile u8 *) itr_reg = data;
+		}
+		constexpr inline u8 read_itr_cfg_8b( ItrCfg itr_reg )
+		{
+			return *( (volatile u8 *) itr_reg );
+		}
+
+		constexpr uint64 pci_type0_base = 0xFE'0000'0000 | dmwin::win_0;
+		constexpr uint64 pci_type1_base = 0xFE'1000'0000 | dmwin::win_1;
 
 		enum PciCfg : uint64
 		{
-			pci_cfg_offseth_s = 24,		// offset[11:8]
-			pci_cfg_offsetl_s = 0,		// offset[7:0]
-			pci_cfg_busnum_s = 16,
-			pci_cfg_devnum_s = 11,
-			pci_cfg_funnum_s = 8,
+			pci_cfg_offseth_s = 24, // offset[11:8]
+			pci_cfg_offsetl_s = 0,	// offset[7:0]
+			pci_cfg_busnum_s  = 16,
+			pci_cfg_devnum_s  = 11,
+			pci_cfg_funnum_s  = 8,
 
 			pci_cfg_offseth_m = 0xFUL << pci_cfg_offseth_s,
 			pci_cfg_offsetl_m = 0xFFUL << pci_cfg_offsetl_s,
-			pci_cfg_busnum_m = 0xFFUL << pci_cfg_busnum_s,
-			pci_cfg_devnum_m = 0x1FUL << pci_cfg_devnum_s,
-			pci_cfg_funnum_m = 0x7UL << pci_cfg_funnum_s,
+			pci_cfg_busnum_m  = 0xFFUL << pci_cfg_busnum_s,
+			pci_cfg_devnum_m  = 0x1FUL << pci_cfg_devnum_s,
+			pci_cfg_funnum_m  = 0x7UL << pci_cfg_funnum_s,
 		};
 
 		enum PciDev : uint
@@ -189,7 +199,10 @@ namespace loongarch
 			dma_fun = 0x0,
 		};
 
-#define _build_pci_cfg_base_(name) pci_cfg_##name = pci_type0_base | ( name##_bus << pci_cfg_busnum_s ) | ( name##_dev << pci_cfg_devnum_s ) | ( name##_fun << pci_cfg_funnum_s )
+#define _build_pci_cfg_base_( name )                                       \
+	pci_cfg_##name = pci_type0_base | ( name##_bus << pci_cfg_busnum_s ) | \
+					 ( name##_dev << pci_cfg_devnum_s ) |                  \
+					 ( name##_fun << pci_cfg_funnum_s )
 
 		enum PciCfgDevAddr : uint64
 		{
@@ -214,7 +227,7 @@ namespace loongarch
 
 #undef _build_pci_cfg_base_
 
-		constexpr uint64 xbar_win4_cfg_base = 0x1fe02400UL | dmwin::win_1;
+		constexpr uint64 xbar_win4_cfg_base = 0x1fe0'2400UL | dmwin::win_1;
 
 		constexpr uint64 iodma_win_base = 0x0UL << 60;
 		constexpr uint64 iodma_win_mask = ~( 0x0UL ) << 32;
@@ -262,35 +275,26 @@ namespace loongarch
 			xbar_win_ena_m = 0x1 << xbar_win_ena_s,
 		};
 
-		constexpr uint64 second_cpu_win_cfg_base = 0x1fe02000UL | dmwin::win_1;
-		constexpr uint64 second_pci_win_cfg_base = 0x1fe02100UL | dmwin::win_1;
-#define _build_cpu_win_( num ) \
+		constexpr uint64 second_cpu_win_cfg_base = 0x1fe0'2000UL | dmwin::win_1;
+		constexpr uint64 second_pci_win_cfg_base = 0x1fe0'2100UL | dmwin::win_1;
+#define _build_cpu_win_( num )                                        \
 	cpu_win##num##_base = second_cpu_win_cfg_base + 0x00UL + num * 8, \
 	cpu_win##num##_mask = second_cpu_win_cfg_base + 0x40UL + num * 8, \
 	cpu_win##num##_mmap = second_cpu_win_cfg_base + 0x80UL + num * 8,
-#define _build_pci_win_( num ) \
+#define _build_pci_win_( num )                                        \
 	pci_win##num##_base = second_pci_win_cfg_base + 0x00UL + num * 8, \
 	pci_win##num##_mask = second_pci_win_cfg_base + 0x40UL + num * 8, \
-	pci_win##num##_mmap = second_pci_win_cfg_base + 0x80UL + num * 8, 
+	pci_win##num##_mmap = second_pci_win_cfg_base + 0x80UL + num * 8,
 		enum SecondWin : uint64
 		{
-			_build_cpu_win_( 0 )
-			_build_cpu_win_( 1 )
-			_build_cpu_win_( 2 )
-			_build_cpu_win_( 3 )
-			_build_cpu_win_( 4 )
-			_build_cpu_win_( 5 )
-			_build_cpu_win_( 6 )
-			_build_cpu_win_( 7 )
+			_build_cpu_win_( 0 ) _build_cpu_win_( 1 ) _build_cpu_win_( 2 )
+				_build_cpu_win_( 3 ) _build_cpu_win_( 4 ) _build_cpu_win_( 5 )
+					_build_cpu_win_( 6 ) _build_cpu_win_( 7 )
 
-			_build_pci_win_( 0 )
-			_build_pci_win_( 1 )
-			_build_pci_win_( 2 )
-			_build_pci_win_( 3 )
-			_build_pci_win_( 4 )
-			_build_pci_win_( 5 )
-			_build_pci_win_( 6 )
-			_build_pci_win_( 7 )
+						_build_pci_win_( 0 ) _build_pci_win_( 1 )
+							_build_pci_win_( 2 ) _build_pci_win_( 3 )
+								_build_pci_win_( 4 ) _build_pci_win_( 5 )
+									_build_pci_win_( 6 ) _build_pci_win_( 7 )
 		};
 #undef _build_cpu_win_
 #undef _build_pci_win_
@@ -299,10 +303,10 @@ namespace loongarch
 		constexpr uint64 sec_win_route_spi = 2;
 		enum SecondWinMmap : uint64
 		{
-			sec_win_rt_s = 0,	// route 
-			sec_win_fi_s = 4, 	// allow fetch instructions 
-			sec_win_br_s = 5,	// allow block read 
-			sec_win_en_s = 7, 	// enable 
+			sec_win_rt_s = 0, // route
+			sec_win_fi_s = 4, // allow fetch instructions
+			sec_win_br_s = 5, // allow block read
+			sec_win_en_s = 7, // enable
 
 			sec_win_rt_m = 0x7UL << sec_win_rt_s,
 			sec_win_fi_m = 0x1UL << sec_win_fi_s,
@@ -311,6 +315,6 @@ namespace loongarch
 		};
 
 
-	} // namespace qemuls2k
+	} // namespace qemu2k1000
 
-} // namespace name
+} // namespace loongarch
