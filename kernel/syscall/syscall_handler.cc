@@ -1772,22 +1772,36 @@ namespace syscall
 		
 		pm::Pcb *cur_proc = pm::k_pm.get_cur_pcb();
 		mm::PageTable *pt = cur_proc->get_pagetable();
-		[[maybe_unused]] int off_in;
-		[[maybe_unused]] int off_out;
+		[[maybe_unused]] int off_in = 0;
+		[[maybe_unused]] int off_out = 0;
 
 		if( off_in_addr != 0 )
 		{
 			if( mm::k_vmm.copy_in( *pt, &off_in, off_in_addr, sizeof( int ) ) < 0 )
 				return -1; 
 		}
-
+		
 		if( off_out_addr != 0 )
 		{
 			if( mm::k_vmm.copy_in( *pt, &off_out, off_out_addr, sizeof( int ) ) < 0 )
 				return -1; 
 		}
 
+		if( off_in < 0 || off_out < 0 )
+			return -1;
+		
+		/// @todo 处理 offin > fd_in.size	
+		if( len == 0 ) // don't need to copy
+			return len;
+		
+		char *buf = new char[ len ];
+		 
+		int ret = 0;
 
-		return 0;
+		cur_proc->_ofile[ fd_in ]->read( (uint64) buf, len, off_in, false );
+
+		ret = cur_proc->_ofile[ fd_out ]->write( (uint64) buf, len, off_out, false );
+		
+		return ret;
 	}
 } // namespace syscall

@@ -19,7 +19,7 @@ namespace fs
 		long read( uint64 buf, size_t len, long off, bool upgrade ) override { return _pipe->read( buf, len ); };
 
 		/// @note pipe write 没有偏移的概念
-		long write( uint64 buf, size_t len, long off, bool upgrade ) override { return _pipe->write( buf, len ); };
+		long write( uint64 buf, size_t len, long off, bool upgrade ) override { return _pipe->write_in_kernel( buf, len ); };
 
 		int write_in_kernel( uint64 buf, size_t len ) { return _pipe->write_in_kernel( buf, len ); }
 

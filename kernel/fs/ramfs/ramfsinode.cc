@@ -277,7 +277,7 @@ namespace fs
 				}
 			}
 			printf("data is %s\n", data.c_str());
-			printf("data size is %d", data.length());
+			printf("data size is %d\n", data.length());
 			return write_len;
 		}
 	}
