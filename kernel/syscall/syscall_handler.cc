@@ -124,6 +124,7 @@ namespace syscall
 		BIND_SYSCALL( getrusage );
 		BIND_SYSCALL( utimensat );
 		BIND_SYSCALL( lseek );
+		BIND_SYSCALL( splice );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -1740,5 +1741,53 @@ namespace syscall
 			return -1;
 
 		return f->lseek( offset, whence );
+	}
+
+	uint64 SyscallHandler::_sys_splice()
+	{
+		int fd_in;
+		uint64 off_in_addr;
+		int fd_out;
+		uint64 off_out_addr;
+		[[maybe_unused]] int len;
+		[[maybe_unused]] int flags;
+
+		if( _arg_int( 0, fd_in ) < 0 )
+			return -1;
+		
+		if( _arg_addr( 1, off_in_addr ) < 0 )
+			return -1;
+		
+		if( _arg_int( 2, fd_out ) < 0 )
+			return -1;
+		
+		if( _arg_addr( 3, off_out_addr ) < 0 )
+			return -1;
+
+		if( _arg_int( 4, len ) < 0 )
+			return -1;
+		
+		if( _arg_int( 5, flags ) < 0 )
+			return -1;
+		
+		pm::Pcb *cur_proc = pm::k_pm.get_cur_pcb();
+		mm::PageTable *pt = cur_proc->get_pagetable();
+		[[maybe_unused]] int off_in;
+		[[maybe_unused]] int off_out;
+
+		if( off_in_addr != 0 )
+		{
+			if( mm::k_vmm.copy_in( *pt, &off_in, off_in_addr, sizeof( int ) ) < 0 )
+				return -1; 
+		}
+
+		if( off_out_addr != 0 )
+		{
+			if( mm::k_vmm.copy_in( *pt, &off_out, off_out_addr, sizeof( int ) ) < 0 )
+				return -1; 
+		}
+
+
+		return 0;
 	}
 } // namespace syscall

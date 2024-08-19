@@ -684,12 +684,6 @@ namespace fs
 			}
 		}
 
-		Inode *fs::ext4::Ext4IndexNode::mknode( eastl::string name, FileAttrs attrs,
-												eastl::string dev_name )
-		{
-			return nullptr;
-		}
-
 
 		void Ext4IndexNode::_cal_blocks()
 		{

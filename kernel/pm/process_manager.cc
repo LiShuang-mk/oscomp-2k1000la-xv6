@@ -31,8 +31,6 @@
 #include <EASTL/string.h>
 #include <EASTL/vector.h>
 
-//#include <asm/fcntl.h>
-
 #include <device_manager.hh>
 #include <hsai_global.hh>
 #include <mem/virtual_memory.hh>
@@ -1337,16 +1335,8 @@ namespace pm
 
 		Pcb *p = get_cur_pcb();
 		fs::dentry *dentry;
-		
-		if( path == "" )
-			return dir_fd;
 
-		fs::Path path_;
-		if (dir_fd == AT_FDCWD) {
-			new (&path_) fs::Path(path, p->_cwd);
-		} else {
-			new (&path_) fs::Path(path, static_cast<fs::normal_file *>(p->_ofile[dir_fd])->getDentry());
-		}
+		fs::Path path_( path );
 		dentry = path_.pathSearch();
 
 		if ( dentry == nullptr && flags & O_CREAT ) 
@@ -1368,8 +1358,8 @@ namespace pm
 			}
 
 		}
+		if ( dentry == nullptr ) return -1; // file is not found
 
-		if (dentry == nullptr) return -1;
 		int			  dev	= dentry->getNode()->rDev();
 		fs::FileAttrs attrs = dentry->getNode()->rMode();
 
@@ -1382,6 +1372,14 @@ namespace pm
 		else // normal file
 		{
 			fs::normal_file *f = new fs::normal_file( attrs, dentry );
+			// log_info( "test normal file read" );
+			// {
+			// 	fs::file *ff = ( fs::file * ) f;
+			// 	char buf[ 8 ];
+			// 	ff->read( ( ulong ) buf, 8 );
+			// 	buf[ 8 ] = 0;
+			// 	printf( "%s\n", buf );
+			// }
 			if( flags & O_APPEND )
 				f->setAppend();
 			return alloc_fd( p, f );

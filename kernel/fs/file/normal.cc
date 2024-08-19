@@ -42,7 +42,9 @@ namespace fs
 		if ( off < 0 ) off = _file_ptr;
 		ret = node->nodeWrite( buf, off, len );
 		if ( ret >= 0 && upgrade ) _file_ptr += ret;
-
+		// upgrade filesize
+		this->_stat.size = this->_den->getNode()->rFileSize();
+		
 		return ret;
 	}
 

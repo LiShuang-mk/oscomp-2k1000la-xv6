@@ -18,7 +18,7 @@
 #include "fs/file/file.hh"
 #include "fs/file/normal.hh"
 #include "fs/ext4/ext4_fs.hh"
-#include "fs/ramfs/ramfs.hh"
+//#include "fs/ramfs/ramfs.hh"
 #include "fs/ramfs/ramfsInode.hh"
 #include "fs/jbd2/journal_super_block.hh"
 #include "fs/path.hh"
