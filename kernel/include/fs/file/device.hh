@@ -28,7 +28,7 @@ namespace fs
 
 		virtual bool read_ready() override;
 		virtual bool write_ready() override;
-
+		virtual off_t lseek( off_t offset, int whence ) override { log_error( "streamdevice not support lseek currently!" );return -EINVAL; };
 		int tcgetattr( termios * ts );
 	};
 }

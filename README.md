@@ -39,3 +39,5 @@
 #### 9. [=> 如何适配使用glibc的用户程序](./doc/how_to_adapt_glibc.md)
 
 #### 10. [=> 适配2k1000星云板](./doc/adapt-2k1000la-dp.md)
+
+#### 11. [=> 开发流程](./doc/img/path.png)
