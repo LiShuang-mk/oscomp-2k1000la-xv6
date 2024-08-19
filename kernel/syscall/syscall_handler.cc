@@ -125,6 +125,7 @@ namespace syscall
 		BIND_SYSCALL( utimensat );
 		BIND_SYSCALL( lseek );
 		BIND_SYSCALL( splice );
+		BIND_SYSCALL( sigprocmask );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -1798,10 +1799,49 @@ namespace syscall
 		 
 		int ret = 0;
 
+		if( fs::normal_file * normal_in = static_cast<fs::normal_file *>(cur_proc->_ofile[ fd_in ] ) )
+			if( static_cast<uint64>(off_in) > normal_in->_stat.size )
+				return 0;
+		//[[maybe_unused]]int rdbytes = cur_proc->_ofile[ fd_in ]->read( (uint64) buf, len, off_in, false );
 		cur_proc->_ofile[ fd_in ]->read( (uint64) buf, len, off_in, false );
 
+		// if( rdbytes < len )
+		// 	len = rdbytes;
+			
 		ret = cur_proc->_ofile[ fd_out ]->write( (uint64) buf, len, off_out, false );
 		
 		return ret;
+	}
+
+	uint64 SyscallHandler::_sys_sigprocmask()
+	{
+		int how;
+		signal::sigset_t set;
+		signal::sigset_t old_set;
+		uint64 setaddr;
+		uint64 oldsetaddr;
+		int sigsize;
+
+		if( _arg_int( 0, how ) < 0 )
+			return -1;
+		if( _arg_addr( 1, setaddr ) < 0 )
+			return -1;
+		if( _arg_addr( 2, oldsetaddr ) < 0 )
+			return -1;
+		if( _arg_int( 3, sigsize ) < 0 )
+			return -1;
+		
+ 		pm::Pcb *cur_proc = pm::k_pm.get_cur_pcb();
+		mm::PageTable *pt = cur_proc->get_pagetable();
+
+		if( setaddr != 0 )
+			if( mm::k_vmm.copy_in( *pt, &set, setaddr, sizeof( signal::sigset_t) ) < 0 )
+				return -1;
+		if( oldsetaddr != 0 )
+			if( mm::k_vmm.copy_in( *pt, &old_set, oldsetaddr, sizeof( signal::sigset_t) ) < 0 )
+				return -1;
+		
+		return signal::sigprocmask( how, &set, &old_set, sigsize );
+
 	}
 } // namespace syscall

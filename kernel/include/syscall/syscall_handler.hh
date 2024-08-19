@@ -126,6 +126,7 @@ namespace syscall
 		uint64 _sys_utimensat();
 		uint64 _sys_lseek();
 		uint64 _sys_splice();
+		uint64 _sys_sigprocmask();
 	};
 
 	extern SyscallHandler k_syscall_handler;

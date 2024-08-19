@@ -24,7 +24,7 @@ namespace pm
 
 	namespace ipc
 	{
-		constexpr uint pipe_size = 512;
+		constexpr uint pipe_size = 1024;
 
 		class Pipe
 		{

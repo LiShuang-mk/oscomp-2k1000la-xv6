@@ -52,6 +52,7 @@ namespace syscall
 		_build_sysnum_enum_(syslog, 116),
 		_build_sysnum_enum_(sched_yield, 124),
 		_build_sysnum_enum_(sigaction, 134),
+		_build_sysnum_enum_(sigprocmask, 135),
 		_build_sysnum_enum_(setgid, 144),
 		_build_sysnum_enum_(setuid, 146),
 		_build_sysnum_enum_(times, 153),
