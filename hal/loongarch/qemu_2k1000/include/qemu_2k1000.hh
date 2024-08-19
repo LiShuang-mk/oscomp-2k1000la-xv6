@@ -10,25 +10,12 @@
 
 #include <kernel/types.hh>
 
+#include "loongarch.hh"
+
 namespace loongarch
 {
 	namespace qemu2k1000
 	{
-		enum ls2kPgEnum : uint64
-		{
-			pg_flags_mask = 0xE000'0000'0000'01FFUL,
-		};
-
-		constexpr uint64 dmwin_mask = 0xFUL << 60;
-		enum dmwin : uint64
-		{
-			win_0 = 0x9UL << 60,
-			win_1 = 0x8UL << 60,
-		};
-		constexpr uint64 virt_to_phy_address( uint64 virt )
-		{
-			return virt & ~dmwin_mask;
-		}
 
 		/// @brief Uart address
 		enum UartAddr : uint64
@@ -39,16 +26,15 @@ namespace loongarch
 
 		enum memory : uint64
 		{
-			mem_start = ( 0x9000'0000UL + _1M * 512 ) |
-						dmwin::win_0, // 起始的512MiB留给内核
+			mem_start = ( 0x9000'0000UL + _1M * 512 ) | dmwin::win_0, // 起始的512MiB留给内核
 			// mem_size = CommonSize::_1M << 7, 			// 128M
 			// mem_size = _1M * 256, 			// 256M
-			mem_size = _1M * 512, // 512M
-			mem_end	 = mem_start + mem_size
+			mem_size  = _1M * 512, // 512M
+			mem_end	  = mem_start + mem_size
 		};
 
 		/// @brief 2k1000la configure registers base address
-		constexpr uint64 config_reg_base = 0x1fe0'0000UL | dmwin::win_0;
+		constexpr uint64 config_reg_base = 0x1fe0'0000UL | dmwin::win_1;
 
 		/// @brief interrupt configure
 		enum ItrCfg : uint64
@@ -63,20 +49,20 @@ namespace loongarch
 			itr_bit_sata_m	= 0x1UL << itr_bit_sata_s,
 
 			itr_route_uart0 = 0x0UL + itr_route_base,
-			itr_route_sata	= 0x13UL + itr_route_base,
+			itr_route_sata	= 19 + itr_route_base,
 
-			itr_isr_l = 0x00UL + itr_low_bit,
-			itr_isr_h = 0x00UL + itr_high_bit,
-			itr_esr_l = 0x04UL + itr_low_bit,
-			itr_esr_h = 0x04UL + itr_high_bit,
-			itr_enr_l = 0x08UL + itr_low_bit,
-			itr_enr_h = 0x08UL + itr_high_bit,
-			itr_clr_l = 0x0cUL + itr_low_bit,
-			itr_clr_h = 0x0cUL + itr_high_bit,
-			itr_pol_l = 0x10UL + itr_low_bit,
-			itr_pol_h = 0x10UL + itr_high_bit,
-			itr_edg_l = 0x14UL + itr_low_bit,
-			itr_edg_h = 0x14UL + itr_high_bit,
+			itr_isr_l = 0x00UL + itr_low_bit,  // 低32位中断状态寄存器
+			itr_isr_h = 0x00UL + itr_high_bit, // 高32位中断状态寄存器
+			itr_esr_l = 0x04UL + itr_low_bit,  // 低32位中断使能状态寄存器
+			itr_esr_h = 0x04UL + itr_high_bit, // 高32位中断使能状态寄存器
+			itr_enr_l = 0x08UL + itr_low_bit,  // 低32位设置使能寄存器
+			itr_enr_h = 0x08UL + itr_high_bit, // 高32位设置使能寄存器
+			itr_clr_l = 0x0cUL + itr_low_bit,  // 低32位清除使能寄存器和脉冲触发中断
+			itr_clr_h = 0x0cUL + itr_high_bit, // 高32位清除使能寄存器和脉冲触发中断
+			itr_pol_l = 0x10UL + itr_low_bit, // 低32位中断极性控制(1:低电平触发,0:高电平触发)
+			itr_pol_h = 0x10UL + itr_high_bit, // 高32位中断极性控制(1:低电平触发,0:高电平触发)
+			itr_edg_l = 0x14UL + itr_low_bit, // 低32位触发方式寄存器(1:脉冲触发,0:电平触发)
+			itr_edg_h = 0x14UL + itr_high_bit, // 高32位触发方式寄存器(1:脉冲触发,0:电平触发)
 			itr_bou_l = 0x18UL + itr_low_bit,
 			itr_bou_h = 0x18UL + itr_high_bit,
 			itr_aut_l = 0x1cUL + itr_low_bit,
@@ -94,7 +80,7 @@ namespace loongarch
 
 		constexpr inline void write_itr_cfg( ItrCfg itrReg, uint32 data )
 		{
-			*(volatile uint32 *) itrReg = data;
+			*( (volatile uint32 *) itrReg ) = data;
 		}
 		constexpr inline uint32 read_itr_cfg( ItrCfg itrReg )
 		{
@@ -110,7 +96,7 @@ namespace loongarch
 			return *( (volatile u8 *) itr_reg );
 		}
 
-		constexpr uint64 pci_type0_base = 0xFE'0000'0000 | dmwin::win_0;
+		constexpr uint64 pci_type0_base = 0xFE'0000'0000 | dmwin::win_1;
 		constexpr uint64 pci_type1_base = 0xFE'1000'0000 | dmwin::win_1;
 
 		enum PciCfg : uint64
@@ -201,8 +187,7 @@ namespace loongarch
 
 #define _build_pci_cfg_base_( name )                                       \
 	pci_cfg_##name = pci_type0_base | ( name##_bus << pci_cfg_busnum_s ) | \
-					 ( name##_dev << pci_cfg_devnum_s ) |                  \
-					 ( name##_fun << pci_cfg_funnum_s )
+					 ( name##_dev << pci_cfg_devnum_s ) | ( name##_fun << pci_cfg_funnum_s )
 
 		enum PciCfgDevAddr : uint64
 		{
@@ -287,14 +272,12 @@ namespace loongarch
 	pci_win##num##_mmap = second_pci_win_cfg_base + 0x80UL + num * 8,
 		enum SecondWin : uint64
 		{
-			_build_cpu_win_( 0 ) _build_cpu_win_( 1 ) _build_cpu_win_( 2 )
-				_build_cpu_win_( 3 ) _build_cpu_win_( 4 ) _build_cpu_win_( 5 )
-					_build_cpu_win_( 6 ) _build_cpu_win_( 7 )
+			_build_cpu_win_( 0 ) _build_cpu_win_( 1 ) _build_cpu_win_( 2 ) _build_cpu_win_( 3 )
+				_build_cpu_win_( 4 ) _build_cpu_win_( 5 ) _build_cpu_win_( 6 ) _build_cpu_win_( 7 )
 
-						_build_pci_win_( 0 ) _build_pci_win_( 1 )
-							_build_pci_win_( 2 ) _build_pci_win_( 3 )
-								_build_pci_win_( 4 ) _build_pci_win_( 5 )
-									_build_pci_win_( 6 ) _build_pci_win_( 7 )
+					_build_pci_win_( 0 ) _build_pci_win_( 1 ) _build_pci_win_( 2 )
+						_build_pci_win_( 3 ) _build_pci_win_( 4 ) _build_pci_win_( 5 )
+							_build_pci_win_( 6 ) _build_pci_win_( 7 )
 		};
 #undef _build_cpu_win_
 #undef _build_pci_win_

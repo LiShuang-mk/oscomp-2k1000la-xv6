@@ -1,20 +1,21 @@
 //
-// Created by Li Shuang ( pseudonym ) on 2024-07-22 
+// Created by Li Shuang ( pseudonym ) on 2024-07-22
 // --------------------------------------------------------------
-// | Note: This code file just for study, not for commercial use 
-// | Contact Author: lishuang.mk@whu.edu.cn 
+// | Note: This code file just for study, not for commercial use
+// | Contact Author: lishuang.mk@whu.edu.cn
 // --------------------------------------------------------------
 //
 
 #include "fs/ext4/ext4_fs.hh"
-#include "fs/buffer_manager.hh"
-#include "fs/dentrycache.hh"
-#include "fs/dentry.hh"
-#include "klib/common.hh"
 
-#include <hsai_global.hh>
-#include <device_manager.hh>
 #include <block_device.hh>
+#include <device_manager.hh>
+#include <hsai_global.hh>
+
+#include "fs/buffer_manager.hh"
+#include "fs/dentry.hh"
+#include "fs/dentrycache.hh"
+#include "klib/common.hh"
 
 namespace fs
 {
@@ -28,7 +29,8 @@ namespace fs
 			/// @todo how to release root dentry?
 		}
 
-		void Ext4FS::init( int dev, u64 start_lba, eastl::string fstype, eastl::string rootname, bool is_root )
+		void Ext4FS::init( int dev, u64 start_lba, eastl::string fstype, eastl::string rootname,
+						   bool is_root )
 		{
 			if ( fstype != "ext4" )
 			{
@@ -40,14 +42,14 @@ namespace fs
 
 			// 获得 dev 设备的块大小
 
-			hsai::VirtualDevice * vd = hsai::k_devm.get_device( ( uint ) dev );
+			hsai::VirtualDevice* vd = hsai::k_devm.get_device( (uint) dev );
 			if ( vd->type() != hsai::dev_block )
 			{
 				log_error( "device %d is not a block device.", dev );
 				return;
 			}
-			hsai::BlockDevice * bd = ( hsai::BlockDevice * ) vd;
-			long blk_size = bd->get_block_size();
+			hsai::BlockDevice* bd		= (hsai::BlockDevice*) vd;
+			long			   blk_size = bd->get_block_size();
 
 			// 通常块大小应当为 512 字节
 			assert( blk_size == 512, "bad block size (%d bytes) from device %d", blk_size, dev );
@@ -59,7 +61,7 @@ namespace fs
 
 			Buffer buf;
 			buf = k_bufm.read_sync( dev, 2 );
-			new ( &_sb ) Ext4SB( ( Ext4SuperBlock * ) buf.get_data_ptr(), this );
+			new ( &_sb ) Ext4SB( (Ext4SuperBlock*) buf.get_data_ptr(), this );
 			k_bufm.release_buffer_sync( buf );
 
 			if ( start_lba % ( _sb.rBlockSize() / 512 ) != 0 )
@@ -76,37 +78,52 @@ namespace fs
 			_cache_inodes_per_group = _sb._super_block.inodes_per_group;
 			log_info(
 				"ext4\n"
-				"\tblocks per group: %d"
+				"\tblocks per group: %d\n"
 				"\tinodes per group: %d",
 				_cache_blocks_per_group,
 				_cache_inodes_per_group
 			);
-			_cache_group_count = ( _sb.rBlockNum() + _cache_blocks_per_group - 1 ) / _cache_blocks_per_group;		// round up
+			_cache_group_count = ( _sb.rBlockNum() + _cache_blocks_per_group - 1 ) /
+								 _cache_blocks_per_group; // round up
 			log_info( "ext4 block group count = %d", _cache_group_count );
 
 			// 初始化块组描述符表
 
-			_bgs = new Ext4BlockGroup[ _cache_group_count ];
-			const int desc_per_block = _sb.rBlockSize() / sizeof( Ext4GroupDesc );
-			long blk_gdt_cnt = 0;
-			Ext4Buffer * pblk;
+			_bgs					   = new Ext4BlockGroup[_cache_group_count];
+			const int	desc_per_block = _sb.rBlockSize() / sizeof( Ext4GroupDesc );
+			long		blk_gdt_cnt	   = 0;
+			Ext4Buffer* pblk;
 			for ( int i = 0; i < _cache_group_count; ++i )
 			{
 				int blk_gdt_off = i % desc_per_block;
-				if ( blk_gdt_off == 0 )		// 遍历完一个sector中的desc后读取下一个sector
+				if ( blk_gdt_off == 0 ) // 遍历完一个sector中的desc后读取下一个sector
 				{
-					pblk = _blocks_cacher.request_block( 1 + blk_gdt_cnt );
+					if ( pblk ) pblk->unpin();
+					pblk = _blocks_cacher.request_block( 1 + blk_gdt_cnt, true );
 					blk_gdt_cnt++;
 				}
 
-				Ext4GroupDesc * p_desc = ( Ext4GroupDesc * ) pblk->get_data_ptr();
-				p_desc += blk_gdt_off;
-				new ( &_bgs[ i ] ) Ext4BlockGroup( p_desc, this );
+				Ext4GroupDesc* p_desc  = (Ext4GroupDesc*) pblk->get_data_ptr();
+				p_desc				  += blk_gdt_off;
+				new ( &_bgs[i] ) Ext4BlockGroup( p_desc, this );
+
+				// hsai_printf( BLUE_COLOR_PRINT
+				// 			 "bg%d\t0000 0001 0002 0003 0004 0005 0006 0007 0008 0009 000A 000B "
+				// 			 "000C 000D 000E 000F\n" CLEAR_COLOR_PRINT, i );
+				// u16* buf = (u16*) &( _bgs[i]._gd );
+				// hsai_printf( "\t" );
+				// for ( uint i = 0; i < sizeof( Ext4GroupDesc ) / sizeof( u16 ); ++i )
+				// {
+				// 	hsai_printf( "%04x ", buf[i] );
+				// 	if ( i % 16 == 15 ) hsai_printf( "\n\t" );
+				// }
 			}
+
+			if ( pblk ) pblk->unpin();
 
 			// 初始化 直接/间接索引块 起点
 
-			long idx_per_block = rBlockSize() / 4;
+			long idx_per_block		= rBlockSize() / 4;
 			_s_indirect_block_start = 12;
 			_d_indirect_block_start = _s_indirect_block_start + idx_per_block;
 			_t_indirect_block_start = _d_indirect_block_start + idx_per_block * idx_per_block;
@@ -131,48 +148,49 @@ namespace fs
 				log_panic( "ext4-fs : init root dentry fail" );
 				return;
 			}
-			new ( _root_dir ) fs::dentry( rootname, ( Inode * ) _root_inode, nullptr, true );
+			new ( _root_dir ) fs::dentry( rootname, (Inode*) _root_inode, nullptr, true );
 		}
 
-		void Ext4FS::read_data( long block_no, void * dst, long size )
+		void Ext4FS::read_data( long block_no, void* dst, long size )
 		{
 			_lock.acquire();
 
-			long b_siz = rBlockSize();						// 块大小
+			// log_trace( "ext4 read data from bno %ld with size %ld bytes", block_no, size );
 
-			u8 * d = ( u8* ) dst;							// 目标地址
-			long b_idx = 0;									// 数据块索引
-			u8 * f;											// 数据源地址
-			long b_off;										// 块内偏移
+			long b_siz = rBlockSize(); // 块大小
 
-			Ext4Buffer * blk_buf = nullptr;
+			u8*	 d	   = (u8*) dst; // 目标地址
+			long b_idx = 0;			// 数据块索引
+			u8*	 f;					// 数据源地址
+			long b_off;				// 块内偏移
+
+			Ext4Buffer* blk_buf = nullptr;
 			for ( long i = 0; i < size; i++ )
 			{
 				b_off = i % b_siz;
 				if ( b_off == 0 )
 				{
 					_lock.release();
-					if ( blk_buf != nullptr )
-						blk_buf->unpin();				// unpin the buffer last read
+					if ( blk_buf != nullptr ) blk_buf->unpin();		// unpin the buffer last read
 					blk_buf = read_block( block_no + b_idx, true ); // pin the buffer
-					f = ( u8* ) blk_buf->get_data_ptr();
+					f		= (u8*) blk_buf->get_data_ptr();
 					_lock.acquire();
 					b_idx++;
 				}
-				d[ i ] = f[ b_off ];
+				d[i] = f[b_off];
 			}
 
-			if ( blk_buf != nullptr )
-				blk_buf->unpin();
+			if ( blk_buf != nullptr ) blk_buf->unpin();
 
 			_lock.release();
 		}
 
-		int Ext4FS::read_inode( long inode_no, Ext4Inode &node )
+		int Ext4FS::read_inode( long inode_no, Ext4Inode& node )
 		{
-			long bg = ( inode_no - 1 ) / _cache_inodes_per_group;
+			long bg	 = ( inode_no - 1 ) / _cache_inodes_per_group;
 			long idx = ( inode_no - 1 ) % _cache_inodes_per_group;
-			return _bgs[ bg ].read_inode( idx, node );
+			// log_trace( "ext4 read inode in %ld gp, %ld idx", bg, idx );
+			return _bgs[bg].read_inode( idx, node );
 		}
 
 	} // namespace ext4

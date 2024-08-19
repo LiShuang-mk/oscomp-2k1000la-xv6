@@ -31,8 +31,6 @@
 #include <EASTL/string.h>
 #include <EASTL/vector.h>
 
-//#include <asm/fcntl.h>
-
 #include <device_manager.hh>
 #include <hsai_global.hh>
 #include <mem/virtual_memory.hh>
@@ -69,8 +67,7 @@ namespace pm
 {
 	ProcessManager k_pm;
 
-	void ProcessManager::init( const char *pid_lock_name,
-							   const char *wait_lock_name )
+	void ProcessManager::init( const char *pid_lock_name, const char *wait_lock_name )
 	{
 		_pid_lock.init( pid_lock_name );
 		_wait_lock.init( wait_lock_name );
@@ -117,8 +114,7 @@ namespace pm
 				// p->_shmkeymask = 0;
 				// pm::k_pm.set_vma( p );
 
-				if ( ( p->_trapframe = (TrapFrame *) mm::k_pmm.alloc_page() ) ==
-					 nullptr )
+				if ( ( p->_trapframe = (TrapFrame *) mm::k_pmm.alloc_page() ) == nullptr )
 				{
 					freeproc( p );
 					p->_lock.release();
@@ -139,9 +135,8 @@ namespace pm
 
 				hsai::set_context_entry( p->_context, (void *) _wrp_fork_ret );
 
-				hsai::set_context_sp(
-					p->_context,
-					p->_kstack + hsai::page_size * default_proc_kstack_pages );
+				hsai::set_context_sp( p->_context,
+									  p->_kstack + hsai::page_size * default_proc_kstack_pages );
 
 				p->_lock.release();
 
@@ -177,7 +172,7 @@ namespace pm
 
 	void ProcessManager::freeproc( Pcb *p )
 	{
-		if ( p->_trapframe ) mm::k_pmm.free_pages( (void *) p->_trapframe );
+		mm::k_vmm.vm_unmap( p->_pt, mm::vml::vm_trap_frame, 1, 1 );
 		p->_trapframe = 0;
 		if ( !p->_pt.is_null() )
 		{
@@ -186,23 +181,18 @@ namespace pm
 			{
 				auto &sec = p->_prog_sections[i];
 				sec_start = hsai::page_round_down( (ulong) sec._sec_start );
-				sec_size  = hsai::page_round_up( (ulong) sec._sec_start +
-												 sec._sec_size - sec_start );
-				mm::k_vmm.vm_unmap( p->_pt, sec_start,
-									sec_size / hsai::page_size, 1 );
+				sec_size =
+					hsai::page_round_up( (ulong) sec._sec_start + sec._sec_size - sec_start );
+				mm::k_vmm.vm_unmap( p->_pt, sec_start, sec_size / hsai::page_size, 1 );
 			}
 
 			ulong stack_page_cnt = default_proc_ustack_pages;
-			ulong stackbase =
-				mm::vm_ustack_end - stack_page_cnt * hsai::page_size;
-			mm::k_vmm.vm_unmap( p->_pt, stackbase - hsai::page_size,
-								stack_page_cnt + 1, 1 );
+			ulong stackbase		 = mm::vm_ustack_end - stack_page_cnt * hsai::page_size;
+			mm::k_vmm.vm_unmap( p->_pt, stackbase - hsai::page_size, stack_page_cnt + 1, 1 );
 
 			ulong heapbase = p->_heap_start;
-			ulong heapsize =
-				hsai::page_round_up( p->_heap_ptr - p->_heap_start );
-			mm::k_vmm.vm_unmap( p->_pt, heapbase, heapsize / hsai::page_size,
-								1 );
+			ulong heapsize = hsai::page_round_up( p->_heap_ptr - p->_heap_start );
+			mm::k_vmm.vm_unmap( p->_pt, heapbase, heapsize / hsai::page_size, 1 );
 
 			p->_pt.freewalk();
 		}
@@ -259,24 +249,20 @@ namespace pm
 		// map user init stack
 
 		int	  stack_page_cnt = default_proc_ustack_pages;
-		ulong stackbase =
-			mm::vml::vm_ustack_end - stack_page_cnt * hsai::page_size;
-		ulong sp = mm::vml::vm_ustack_end;
+		ulong stackbase		 = mm::vml::vm_ustack_end - stack_page_cnt * hsai::page_size;
+		ulong sp			 = mm::vml::vm_ustack_end;
 
-		if ( mm::k_vmm.vm_alloc( p->_pt, stackbase - hsai::page_size, sp ) ==
-			 0 )
+		if ( mm::k_vmm.vm_alloc( p->_pt, stackbase - hsai::page_size, sp ) == 0 )
 		{
 			log_panic( "user-init: vmalloc when allocating stack" );
 			return;
 		}
 
-		log_trace( "user-init set stack-base = %p",
-				   p->_pt.walk_addr( stackbase ) );
+		log_trace( "user-init set stack-base = %p", p->_pt.walk_addr( stackbase ) );
 		log_trace( "user-init set page containing sp is %p",
 				   p->_pt.walk_addr( sp - hsai::page_size ) );
 
-		if ( mm::k_vmm.vm_set_super( p->_pt, stackbase - hsai::page_size, 1 ) <
-			 0 )
+		if ( mm::k_vmm.vm_set_super( p->_pt, stackbase - hsai::page_size, 1 ) < 0 )
 			log_panic( "user-init: set stack protector fail" );
 
 		mm::k_vmm.vm_set( p->_pt, (void *) stackbase, 0, stack_page_cnt );
@@ -295,37 +281,33 @@ namespace pm
 			int ps_cnt = p->_prog_section_cnt;
 
 			// map user init code
-			mm::k_vmm.map_code_pages(
-				p->_pt, (uint64) &_u_init_txts - (uint64) &_start_u_init,
-				(uint64) &_u_init_txte - (uint64) &_u_init_txts,
-				(uint64) &_u_init_txts, true );
-			p->_prog_sections[ps_cnt]._sec_start =
-				(void *) hsai::page_round_down(
-					( (uint64) &_u_init_txts - (uint64) &_start_u_init ) );
-			p->_prog_sections[ps_cnt]._sec_size = hsai::page_round_up(
-				(uint64) &_u_init_txte - (uint64) &_u_init_txts );
+			mm::k_vmm.map_code_pages( p->_pt, (uint64) &_u_init_txts - (uint64) &_start_u_init,
+									  (uint64) &_u_init_txte - (uint64) &_u_init_txts,
+									  (uint64) &_u_init_txts, true );
+			p->_prog_sections[ps_cnt]._sec_start = (void *) hsai::page_round_down(
+				( (uint64) &_u_init_txts - (uint64) &_start_u_init ) );
+			p->_prog_sections[ps_cnt]._sec_size =
+				hsai::page_round_up( (uint64) &_u_init_txte - (uint64) &_u_init_txts );
 			p->_prog_sections[ps_cnt]._debug_name = "user-init code";
 			ps_cnt++;
 
 			// map user init data
-			mm::k_vmm.map_data_pages(
-				p->_pt, (uint64) &_u_init_dats - (uint64) &_start_u_init,
-				(uint64) &_u_init_date - (uint64) &_u_init_dats,
-				(uint64) &_u_init_dats, true );
-			p->_prog_sections[ps_cnt]._sec_start =
-				(void *) hsai::page_round_down(
-					( (uint64) &_u_init_dats - (uint64) &_start_u_init ) );
-			p->_prog_sections[ps_cnt]._sec_size = hsai::page_round_up(
-				(uint64) &_u_init_date - (uint64) &_u_init_dats );
+			mm::k_vmm.map_data_pages( p->_pt, (uint64) &_u_init_dats - (uint64) &_start_u_init,
+									  (uint64) &_u_init_date - (uint64) &_u_init_dats,
+									  (uint64) &_u_init_dats, true );
+			p->_prog_sections[ps_cnt]._sec_start = (void *) hsai::page_round_down(
+				( (uint64) &_u_init_dats - (uint64) &_start_u_init ) );
+			p->_prog_sections[ps_cnt]._sec_size =
+				hsai::page_round_up( (uint64) &_u_init_date - (uint64) &_u_init_dats );
 			p->_prog_sections[ps_cnt]._debug_name = "user-init data";
 			ps_cnt++;
 
 			p->_prog_section_cnt = ps_cnt;
 
 			// set heap ptr
-			p->_heap_ptr = p->_heap_start = hsai::page_round_up(
-				(ulong) p->_prog_sections[ps_cnt - 1]._sec_start +
-				p->_prog_sections[ps_cnt - 1]._sec_size );
+			p->_heap_ptr = p->_heap_start =
+				hsai::page_round_up( (ulong) p->_prog_sections[ps_cnt - 1]._sec_start +
+									 p->_prog_sections[ps_cnt - 1]._sec_size );
 		}
 
 		// p->_trapframe->era = ( uint64 ) &init_main - ( uint64 )
@@ -335,27 +317,22 @@ namespace pm
 		hsai::user_proc_init( (void *) p );
 
 		// fs::File *f = fs::k_file_table.alloc_file();
-		fs::Path path( "/dev/stdin" );
-		fs::FileAttrs fAttrsin =
-			fs::FileAttrs( fs::FileTypes::FT_DEVICE, 0444 ); // only read
-		fs::device_file *f_in = new fs::device_file( fAttrsin, DEV_STDIN_NUM, path.pathSearch( ) );
+		fs::Path		 path( "/dev/stdin" );
+		fs::FileAttrs	 fAttrsin = fs::FileAttrs( fs::FileTypes::FT_DEVICE, 0444 ); // only read
+		fs::device_file *f_in = new fs::device_file( fAttrsin, DEV_STDIN_NUM, path.pathSearch() );
 		assert( f_in != nullptr, "pm: alloc stdin file fail while user init." );
 
-		fs::Path pathout( "/dev/stdout" );
-		fs::FileAttrs fAttrsout =
-			fs::FileAttrs( fs::FileTypes::FT_DEVICE, 0222 ); // only write
+		fs::Path		 pathout( "/dev/stdout" );
+		fs::FileAttrs	 fAttrsout = fs::FileAttrs( fs::FileTypes::FT_DEVICE, 0222 ); // only write
 		fs::device_file *f_out =
-			new fs::device_file( fAttrsout, DEV_STDOUT_NUM, pathout.pathSearch( ) );
-		assert( f_out != nullptr,
-				"pm: alloc stdout file fail while user init." );
+			new fs::device_file( fAttrsout, DEV_STDOUT_NUM, pathout.pathSearch() );
+		assert( f_out != nullptr, "pm: alloc stdout file fail while user init." );
 
-		fs::Path patherr( "/dev/stderr" );
-		fs::FileAttrs fAttrserr =
-			fs::FileAttrs( fs::FileTypes::FT_DEVICE, 0222 ); // only write
+		fs::Path		 patherr( "/dev/stderr" );
+		fs::FileAttrs	 fAttrserr = fs::FileAttrs( fs::FileTypes::FT_DEVICE, 0222 ); // only write
 		fs::device_file *f_err =
-			new fs::device_file( fAttrserr, DEV_STDERR_NUM, patherr.pathSearch( ) );
-		assert( f_err != nullptr,
-				"pm: alloc stderr file fail while user init." );
+			new fs::device_file( fAttrserr, DEV_STDERR_NUM, patherr.pathSearch() );
+		assert( f_err != nullptr, "pm: alloc stderr file fail while user init." );
 
 		// new ( &f->ops ) fs::FileOps( 3 );
 		// f->major = DEV_STDOUT_NUM;
@@ -424,11 +401,8 @@ namespace pm
 			{
 				auto &pd  = p->_prog_sections[j];
 				sec_start = hsai::page_round_down( (ulong) pd._sec_start );
-				sec_size  = hsai::page_round_up( (ulong) pd._sec_start +
-												 pd._sec_size ) -
-						   sec_start;
-				if ( mm::k_vmm.vm_copy( *curpt, *newpt, sec_start, sec_size ) <
-					 0 )
+				sec_size  = hsai::page_round_up( (ulong) pd._sec_start + pd._sec_size ) - sec_start;
+				if ( mm::k_vmm.vm_copy( *curpt, *newpt, sec_start, sec_size ) < 0 )
 				{
 					freeproc( np );
 					np->_lock.release();
@@ -444,8 +418,7 @@ namespace pm
 		{
 			ulong heap_start = p->_heap_start;
 			ulong heap_size	 = hsai::page_round_up( p->_heap_ptr - heap_start );
-			if ( mm::k_vmm.vm_copy( *curpt, *newpt, heap_start, heap_size ) <
-				 0 )
+			if ( mm::k_vmm.vm_copy( *curpt, *newpt, heap_start, heap_size ) < 0 )
 			{
 				freeproc( np );
 				np->_lock.release();
@@ -458,11 +431,9 @@ namespace pm
 		{
 			// 多出的一页是保护页面，防止栈溢出
 			ulong stack_start =
-				mm::vml::vm_ustack_end -
-				( 1 + default_proc_ustack_pages ) * hsai::page_size;
-			if ( mm::k_vmm.vm_copy(
-					 *curpt, *newpt, stack_start,
-					 ( 1 + default_proc_ustack_pages ) * hsai::page_size ) < 0 )
+				mm::vml::vm_ustack_end - ( 1 + default_proc_ustack_pages ) * hsai::page_size;
+			if ( mm::k_vmm.vm_copy( *curpt, *newpt, stack_start,
+									( 1 + default_proc_ustack_pages ) * hsai::page_size ) < 0 )
 			{
 				freeproc( np );
 				np->_lock.release();
@@ -492,8 +463,7 @@ namespace pm
 		// Cause fork to return 0 in the child.
 		hsai::set_trap_frame_return_value( np->get_trapframe(), 0 );
 
-		if ( usp != 0 )
-			hsai::set_trap_frame_user_sp( np->get_trapframe(), usp );
+		if ( usp != 0 ) hsai::set_trap_frame_user_sp( np->get_trapframe(), usp );
 
 		/// TODO: >> Message Queue Copy
 		// addmqcount( p->mqmask );
@@ -568,8 +538,7 @@ namespace pm
 		pt.freewalk_mapped();
 	}
 
-	static int _free_pt_with_sec( mm::PageTable		   &pt,
-								  program_section_desc *dsc_v, int dsc_c )
+	static int _free_pt_with_sec( mm::PageTable &pt, program_section_desc *dsc_v, int dsc_c )
 	{
 		using psd = program_section_desc;
 		if ( dsc_c > 0 )
@@ -578,8 +547,7 @@ namespace pm
 			{
 				psd	 &dsc = dsc_v[i];
 				ulong va  = hsai::page_round_down( (ulong) dsc._sec_start );
-				ulong npg = hsai::page_round_up( (ulong) dsc._sec_start +
-												 dsc._sec_size );
+				ulong npg = hsai::page_round_up( (ulong) dsc._sec_start + dsc._sec_size );
 				npg		  = ( npg - va ) / hsai::page_size;
 				mm::k_vmm.vm_unmap( pt, va, npg, 1 );
 			}
@@ -588,8 +556,7 @@ namespace pm
 		return 0;
 	}
 
-	int ProcessManager::execve( eastl::string				 path,
-								eastl::vector<eastl::string> argv,
+	int ProcessManager::execve( eastl::string path, eastl::vector<eastl::string> argv,
 								eastl::vector<eastl::string> envs )
 	{
 		Pcb			 *proc = get_cur_pcb();
@@ -625,8 +592,7 @@ namespace pm
 		}
 
 		/// @todo check ELF header
-		de->getNode()->nodeRead( reinterpret_cast<uint64>( &elf ), 0,
-								 sizeof( elf ) );
+		de->getNode()->nodeRead( reinterpret_cast<uint64>( &elf ), 0, sizeof( elf ) );
 
 		if ( elf.magic != elf::elfEnum::ELF_MAGIC ) // check magicnum
 		{
@@ -655,11 +621,9 @@ namespace pm
 		{
 			bool load_bad = false;
 
-			for ( i = 0, off  = elf.phoff; i < elf.phnum;
-				  i++, off	 += sizeof( ph ) )
+			for ( i = 0, off = elf.phoff; i < elf.phnum; i++, off += sizeof( ph ) )
 			{
-				de->getNode()->nodeRead( reinterpret_cast<uint64>( &ph ), off,
-										 sizeof( ph ) );
+				de->getNode()->nodeRead( reinterpret_cast<uint64>( &ph ), off, sizeof( ph ) );
 
 				if ( ph.type != elf::elfEnum::ELF_PROG_LOAD ) continue;
 				if ( ph.memsz < ph.filesz )
@@ -677,8 +641,7 @@ namespace pm
 				uint64 sz1;
 				bool   executable = ( ph.flags & 0x1 ); // 段是否可执行？
 				ulong  pva		  = hsai::page_round_down( ph.vaddr );
-				if ( ( sz1 = mm::k_vmm.vm_alloc(
-						   new_pt, pva, ph.vaddr + ph.memsz, executable ) ) ==
+				if ( ( sz1 = mm::k_vmm.vm_alloc( new_pt, pva, ph.vaddr + ph.memsz, executable ) ) ==
 					 0 )
 				{
 					log_error( "execve: uvmalloc" );
@@ -731,8 +694,7 @@ namespace pm
 			}
 
 			load_end = hsai::page_round_up( load_end );
-			if ( ( sz1 = mm::k_vmm.vm_alloc( new_pt, load_end,
-											 load_end + phsz ) ) == 0 )
+			if ( ( sz1 = mm::k_vmm.vm_alloc( new_pt, load_end, load_end + phsz ) ) == 0 )
 			{
 				log_error( "execve: vaalloc" );
 				_free_pt_with_sec( new_pt, new_sec_desc, new_sec_cnt );
@@ -747,8 +709,7 @@ namespace pm
 				return -1;
 			}
 
-			if ( de->getNode()->nodeRead( (ulong) tmp, elf.phoff, phsz ) !=
-				 phsz )
+			if ( de->getNode()->nodeRead( (ulong) tmp, elf.phoff, phsz ) != phsz )
 			{
 				log_error( "execve: node read" );
 				delete[] tmp;
@@ -785,24 +746,21 @@ namespace pm
 		// 开始 分配栈空间大小为 32 个页面，开头的 1 个页面用作保护页面
 
 		int stack_page_cnt = default_proc_ustack_pages;
-		stackbase = mm::vml::vm_ustack_end - stack_page_cnt * hsai::page_size;
-		sp		  = mm::vml::vm_ustack_end;
+		stackbase		   = mm::vml::vm_ustack_end - stack_page_cnt * hsai::page_size;
+		sp				   = mm::vml::vm_ustack_end;
 
-		if ( mm::k_vmm.vm_alloc( new_pt, stackbase - hsai::page_size, sp ) ==
-			 0 )
+		if ( mm::k_vmm.vm_alloc( new_pt, stackbase - hsai::page_size, sp ) == 0 )
 		{
 			log_error( "execve: vmalloc when allocating stack" );
 			_free_pt_with_sec( new_pt, new_sec_desc, new_sec_cnt );
 			return -1;
 		}
 
-		log_trace( "execve set stack-base = %p",
-				   new_pt.walk_addr( stackbase ) );
+		log_trace( "execve set stack-base = %p", new_pt.walk_addr( stackbase ) );
 		log_trace( "execve set page containing sp is %p",
 				   new_pt.walk_addr( sp - hsai::page_size ) );
 
-		if ( mm::k_vmm.vm_set_super( new_pt, stackbase - hsai::page_size, 1 ) <
-			 0 )
+		if ( mm::k_vmm.vm_set_super( new_pt, stackbase - hsai::page_size, 1 ) < 0 )
 		{
 			log_error( "execve: set stack protector fail" );
 			_free_pt_with_sec( new_pt, new_sec_desc, new_sec_cnt );
@@ -816,8 +774,7 @@ namespace pm
 		// >>>> 此后的代码用于支持 glibc，包括将 auxv, envp, argv, argc
 		// 压到用户栈中由glibc解析
 
-		mm::UserstackStream ustack( (void *) stackbase,
-									stack_page_cnt * hsai::page_size, &new_pt );
+		mm::UserstackStream ustack( (void *) stackbase, stack_page_cnt * hsai::page_size, &new_pt );
 		ustack.open();
 
 		// 1. 使用0标记栈底，压入一个用于glibc的伪随机数，并以16字节对齐
@@ -829,9 +786,11 @@ namespace pm
 			ustack << data;
 			data = -0x11'4514'FF11'4514UL;
 			ustack << data;
-			data = 0x0050'4D4F'4353'4F43UL;
+			// data = 0x0050'4D4F'4353'4F43UL;
+			data = 0x2UL << 60;
 			ustack << data;
-			data = 0x4249'4C47'4B43'5546UL; // "FUCKGLIBCOSCOMP\0"
+			// data = 0x4249'4C47'4B43'5546UL; // "FUCKGLIBCOSCOMP\0"
+			data = 0x3UL << 60;
 			ustack << data;
 
 			rd_pos = ustack.sp(); // 伪随机数的位置
@@ -925,6 +884,16 @@ namespace pm
 
 			if ( phdr != 0 )
 			{
+				// auxy[4] = AT_PAGESZ
+				aux.a_type	   = elf::AT_PAGESZ;
+				aux.a_un.a_val = hsai::page_size;
+				ustack << aux;
+				if( ustack.errno() != ustack.rc_ok)
+				{
+					_free_pt_with_sec( new_pt, new_sec_desc, new_sec_cnt );
+					log_error( "execve: push into stack" );
+					return -1;
+				}
 				// auxv[3] = AT_PHNUM
 				aux.a_type	   = elf::AT_PHNUM;
 				aux.a_un.a_val = elf.phnum;
@@ -1012,8 +981,7 @@ namespace pm
 		// 配置资源限制
 
 		proc->_rlim_vec[ResourceLimitId::RLIMIT_STACK].rlim_cur =
-			proc->_rlim_vec[ResourceLimitId::RLIMIT_STACK].rlim_max =
-				ustack.sp() - stackbase;
+			proc->_rlim_vec[ResourceLimitId::RLIMIT_STACK].rlim_max = ustack.sp() - stackbase;
 
 		// 处理 F_DUPFD_CLOEXEC 标志位
 		for ( auto &f : proc->_ofile )
@@ -1043,17 +1011,14 @@ namespace pm
 			auto &osc = proc->_prog_sections[i];
 			ulong sec_start, sec_end;
 			sec_start = hsai::page_round_down( (ulong) osc._sec_start );
-			sec_end =
-				hsai::page_round_up( (ulong) osc._sec_start + osc._sec_size );
-			mm::k_vmm.vm_unmap( proc->_pt, sec_start,
-								( sec_end - sec_start ) / hsai::page_size, 1 );
+			sec_end	  = hsai::page_round_up( (ulong) osc._sec_start + osc._sec_size );
+			mm::k_vmm.vm_unmap( proc->_pt, sec_start, ( sec_end - sec_start ) / hsai::page_size,
+								1 );
 		}
 		{ // unmap heap
 			ulong start = hsai::page_round_down( proc->_heap_start );
-			ulong end =
-				hsai::page_round_up( proc->_heap_ptr );
-			mm::k_vmm.vm_unmap( proc->_pt, start,
-								( end - start ) / hsai::page_size, 1 );
+			ulong end	= hsai::page_round_up( proc->_heap_ptr );
+			mm::k_vmm.vm_unmap( proc->_pt, start, ( end - start ) / hsai::page_size, 1 );
 		}
 		{ // unmap stack
 			ulong pgs	= default_proc_ustack_pages + 1;
@@ -1065,10 +1030,11 @@ namespace pm
 		{
 			auto &sec				= new_sec_desc[i];
 			proc->_prog_sections[i] = sec;
-			ulong sec_end =
-				hsai::page_round_up( (ulong) sec._sec_start + sec._sec_size );
+			ulong sec_end			= hsai::page_round_up( (ulong) sec._sec_start + sec._sec_size );
 			if ( sec_end > proc->_heap_start ) proc->_heap_start = sec_end;
 		}
+		proc->_prog_section_cnt = new_sec_cnt;
+		mm::k_vmm.vm_unmap( proc->_pt, mm::vml::vm_trap_frame, 1, 0 );
 		proc->_pt.freewalk();
 		proc->_pt = new_pt;
 		_proc_create_vm( proc, new_pt );
@@ -1083,15 +1049,14 @@ namespace pm
 		return 0x0; // rtld_fini
 	}
 
-	int ProcessManager::load_seg( mm::PageTable &pt, uint64 va, fs::dentry *de,
-								  uint offset, uint size )
+	int ProcessManager::load_seg( mm::PageTable &pt, uint64 va, fs::dentry *de, uint offset,
+								  uint size )
 	{ // 好像没有机会返回 -1, pa失败的话会panic，de的read也没有返回值
 		uint   i, n;
 		uint64 pa;
 
 		i = 0;
-		if ( !hsai::is_page_align(
-				 va ) ) // 如果va不是页对齐的，先读出开头不对齐的部分
+		if ( !hsai::is_page_align( va ) ) // 如果va不是页对齐的，先读出开头不对齐的部分
 		{
 			pa = pt.walk_addr( va );
 			pa = hsai::k_mem->to_vir( pa );
@@ -1102,8 +1067,7 @@ namespace pm
 
 		for ( ; i < size; i += hsai::page_size ) // 此时 va + i 地址是页对齐的
 		{
-			pa = (uint64) pt.walk( va + i, 0 )
-					 .to_pa(); // pte.to_pa() 得到的地址是页对齐的
+			pa = (uint64) pt.walk( va + i, 0 ).to_pa(); // pte.to_pa() 得到的地址是页对齐的
 			if ( pa == 0 ) log_panic( "load_seg: walk" );
 			if ( size - i < hsai::page_size ) // 如果是最后一页中的数据
 				n = size - i;
@@ -1152,8 +1116,7 @@ namespace pm
 					{
 						pid = np->_pid;
 						if ( addr != 0 &&
-							 mm::k_vmm.copyout( p->_pt, addr,
-												(const char *) &np->_xstate,
+							 mm::k_vmm.copyout( p->_pt, addr, (const char *) &np->_xstate,
 												sizeof( np->_xstate ) ) < 0 )
 						{
 							np->_lock.release();
@@ -1213,9 +1176,8 @@ namespace pm
 
 	void ProcessManager::exit_group( int status )
 	{
-		void *stk[num_process +
-				  10]; // 这里不使用stl库是因为 exit
-					   // 后不会返回，无法调用析构函数，可能造成内存泄露
+		void *stk[num_process + 10]; // 这里不使用stl库是因为 exit
+									 // 后不会返回，无法调用析构函数，可能造成内存泄露
 		int	  stk_ptr = 0;
 
 		u8 visit[num_process];
@@ -1337,16 +1299,8 @@ namespace pm
 
 		Pcb *p = get_cur_pcb();
 		fs::dentry *dentry;
-		
-		if( path == "" )
-			return dir_fd;
 
-		fs::Path path_;
-		if (dir_fd == AT_FDCWD) {
-			new (&path_) fs::Path(path, p->_cwd);
-		} else {
-			new (&path_) fs::Path(path, static_cast<fs::normal_file *>(p->_ofile[dir_fd])->getDentry());
-		}
+		fs::Path path_( path );
 		dentry = path_.pathSearch();
 
 		if ( dentry == nullptr && flags & O_CREAT ) 
@@ -1368,8 +1322,8 @@ namespace pm
 			}
 
 		}
+		if ( dentry == nullptr ) return -1; // file is not found
 
-		if (dentry == nullptr) return -1;
 		int			  dev	= dentry->getNode()->rDev();
 		fs::FileAttrs attrs = dentry->getNode()->rMode();
 
@@ -1382,6 +1336,14 @@ namespace pm
 		else // normal file
 		{
 			fs::normal_file *f = new fs::normal_file( attrs, dentry );
+			// log_info( "test normal file read" );
+			// {
+			// 	fs::file *ff = ( fs::file * ) f;
+			// 	char buf[ 8 ];
+			// 	ff->read( ( ulong ) buf, 8 );
+			// 	buf[ 8 ] = 0;
+			// 	printf( "%s\n", buf );
+			// }
 			if( flags & O_APPEND )
 				f->setAppend();
 			return alloc_fd( p, f );
@@ -1507,8 +1469,7 @@ namespace pm
 		ipc::Pipe *pipe_ = new ipc::Pipe();
 		if ( pipe_->alloc( rf, wf ) < 0 ) return -1;
 		fd0 = -1;
-		if ( ( ( fd0 = alloc_fd( p, rf ) ) < 0 ) ||
-			 ( fd1 = alloc_fd( p, wf ) ) < 0 )
+		if ( ( ( fd0 = alloc_fd( p, rf ) ) < 0 ) || ( fd1 = alloc_fd( p, wf ) ) < 0 )
 		{
 			if ( fd0 >= 0 ) p->_ofile[fd0] = 0;
 			// fs::k_file_table.free_file( rf );
@@ -1541,8 +1502,7 @@ namespace pm
 		return 0;
 	}
 
-	int ProcessManager::prlimit64( int pid, int resource, rlimit64 *new_limit,
-								   rlimit64 *old_limit )
+	int ProcessManager::prlimit64( int pid, int resource, rlimit64 *new_limit, rlimit64 *old_limit )
 	{
 		Pcb *proc = nullptr;
 		if ( pid == 0 )
@@ -1615,8 +1575,7 @@ namespace pm
 	{
 		if ( pt.get_base() == 0 ) return;
 
-		if ( !mm::k_vmm.map_data_pages( pt, mm::vml::vm_trap_frame,
-										hsai::page_size,
+		if ( !mm::k_vmm.map_data_pages( pt, mm::vml::vm_trap_frame, hsai::page_size,
 										(uint64) ( p->_trapframe ), true ) )
 		{
 			mm::k_vmm.vm_unmap( pt, mm::vm_trap_frame, 1, 0 );
@@ -1670,19 +1629,13 @@ namespace pm
 		// 测试 insert
 		v.insert( v.begin() + 2, 5 );
 		log_trace( "vector after insert: " );
-		for ( auto i = v.begin(); i != v.end(); i++ )
-		{
-			log_trace( "%d ", *i );
-		}
+		for ( auto i = v.begin(); i != v.end(); i++ ) { log_trace( "%d ", *i ); }
 		log_trace( "\n" );
 
 		// 测试 erase
 		v.erase( v.begin() + 2 );
 		log_trace( "vector after erase: " );
-		for ( auto i = v.begin(); i != v.end(); i++ )
-		{
-			log_trace( "%d ", *i );
-		}
+		for ( auto i = v.begin(); i != v.end(); i++ ) { log_trace( "%d ", *i ); }
 		log_trace( "\n" );
 
 		// 测试 swap
@@ -1691,19 +1644,13 @@ namespace pm
 		v2.push_back( 7 );
 		v.swap( v2 );
 		log_trace( "vector after swap: " );
-		for ( auto i = v.begin(); i != v.end(); i++ )
-		{
-			log_trace( "%d ", *i );
-		}
+		for ( auto i = v.begin(); i != v.end(); i++ ) { log_trace( "%d ", *i ); }
 		log_trace( "\n" );
 
 		// 测试 resize
 		v.resize( 5, 8 );
 		log_trace( "vector after resize: " );
-		for ( auto i = v.begin(); i != v.end(); i++ )
-		{
-			log_trace( "%d ", *i );
-		}
+		for ( auto i = v.begin(); i != v.end(); i++ ) { log_trace( "%d ", *i ); }
 		log_trace( "\n" );
 
 		// 测试 reserve

@@ -35,12 +35,13 @@ namespace hsai
 		DeviceTableEntry &te = _device_table[ tei ];
 		te.device_ptr = dev;
 		te.device_name = name;
+		hsai_info( "\e[5m" "register device %s to No.%d", name, tei );
 		return tei;
 	}
 
 	int DeviceManager::register_block_device( BlockDevice *bd, const char *name )
 	{
-		return register_device( ( VirtualDevice * ) bd, name );
+		return register_device( (VirtualDevice *) bd, name );
 	}
 
 	int DeviceManager::register_char_device( CharDevice *cd, const char *name )

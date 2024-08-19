@@ -129,7 +129,9 @@ namespace pm
 
 		// for prlimit 进程资源相关
 		rlimit64					_rlim_vec[ResourceLimitId::RLIM_NLIMITS];
+		
 		pm::ipc::signal::sigaction *_sigactions[SIGRTMAX];
+		uint64 sigmask;
 
 	public:
 

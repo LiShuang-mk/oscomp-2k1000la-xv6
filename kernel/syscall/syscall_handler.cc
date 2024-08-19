@@ -124,6 +124,8 @@ namespace syscall
 		BIND_SYSCALL( getrusage );
 		BIND_SYSCALL( utimensat );
 		BIND_SYSCALL( lseek );
+		BIND_SYSCALL( splice );
+		BIND_SYSCALL( sigprocmask );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -310,32 +312,42 @@ namespace syscall
 			 _arg_addr( 1, uargv ) < 0 || _arg_addr( 2, uenvp ) < 0 )
 			return -1;
 
+		log_trace( "execve fetch argv=%p", uargv );
+
 		eastl::vector<eastl::string> argv;
 		ulong						 uarg;
-		for ( ulong i = 0, puarg = uargv;; i++, puarg += sizeof( char * ) )
+		if ( uargv != 0 )
 		{
-			if ( i >= max_arg_num ) return -1;
+			for ( ulong i = 0, puarg = uargv;; i++, puarg += sizeof( char * ) )
+			{
+				if ( i >= max_arg_num ) return -1;
 
-			if ( _fetch_addr( puarg, uarg ) < 0 ) return -1;
+				if ( _fetch_addr( puarg, uarg ) < 0 ) return -1;
 
-			if ( uarg == 0 ) break;
+				if ( uarg == 0 ) break;
 
-			argv.emplace_back( eastl::string() );
-			if ( _fetch_str( uarg, argv[i], hsai::page_size ) < 0 ) return -1;
+				log_trace( "execve get arga[%d] = %p", i, uarg );
+
+				argv.emplace_back( eastl::string() );
+				if ( _fetch_str( uarg, argv[i], hsai::page_size ) < 0 ) return -1;
+			}
 		}
 
 		eastl::vector<eastl::string> envp;
 		ulong						 uenv;
-		for ( ulong i = 0, puenv = uenvp;; i++, puenv += sizeof( char * ) )
+		if ( uenvp != 0 )
 		{
-			if ( i >= max_arg_num ) return -2;
+			for ( ulong i = 0, puenv = uenvp;; i++, puenv += sizeof( char * ) )
+			{
+				if ( i >= max_arg_num ) return -2;
 
-			if ( _fetch_addr( puenv, uenv ) < 0 ) return -2;
+				if ( _fetch_addr( puenv, uenv ) < 0 ) return -2;
 
-			if ( uenv == 0 ) break;
+				if ( uenv == 0 ) break;
 
-			envp.emplace_back( eastl::string() );
-			if ( _fetch_str( uenv, envp[i], hsai::page_size ) < 0 ) return -2;
+				envp.emplace_back( eastl::string() );
+				if ( _fetch_str( uenv, envp[i], hsai::page_size ) < 0 ) return -2;
+			}
 		}
 
 		return pm::k_pm.execve( path, argv, envp );
@@ -1740,5 +1752,106 @@ namespace syscall
 			return -1;
 
 		return f->lseek( offset, whence );
+	}
+
+	uint64 SyscallHandler::_sys_splice()
+	{
+		int fd_in;
+		uint64 off_in_addr;
+		int fd_out;
+		uint64 off_out_addr;
+		[[maybe_unused]] int len;
+		[[maybe_unused]] int flags;
+
+		if( _arg_int( 0, fd_in ) < 0 )
+			return -1;
+		
+		if( _arg_addr( 1, off_in_addr ) < 0 )
+			return -1;
+		
+		if( _arg_int( 2, fd_out ) < 0 )
+			return -1;
+		
+		if( _arg_addr( 3, off_out_addr ) < 0 )
+			return -1;
+
+		if( _arg_int( 4, len ) < 0 )
+			return -1;
+		
+		if( _arg_int( 5, flags ) < 0 )
+			return -1;
+		
+		pm::Pcb *cur_proc = pm::k_pm.get_cur_pcb();
+		mm::PageTable *pt = cur_proc->get_pagetable();
+		[[maybe_unused]] int off_in = 0;
+		[[maybe_unused]] int off_out = 0;
+
+		if( off_in_addr != 0 )
+		{
+			if( mm::k_vmm.copy_in( *pt, &off_in, off_in_addr, sizeof( int ) ) < 0 )
+				return -1; 
+		}
+		
+		if( off_out_addr != 0 )
+		{
+			if( mm::k_vmm.copy_in( *pt, &off_out, off_out_addr, sizeof( int ) ) < 0 )
+				return -1; 
+		}
+
+		if( off_in < 0 || off_out < 0 )
+			return -1;
+		
+		/// @todo 处理 offin > fd_in.size	
+		if( len == 0 ) // don't need to copy
+			return len;
+		
+		char *buf = new char[ len ];
+		 
+		int ret = 0;
+
+		if( fs::normal_file * normal_in = static_cast<fs::normal_file *>(cur_proc->_ofile[ fd_in ] ) )
+			if( static_cast<uint64>(off_in) > normal_in->_stat.size )
+				return 0;
+		//[[maybe_unused]]int rdbytes = cur_proc->_ofile[ fd_in ]->read( (uint64) buf, len, off_in, false );
+		cur_proc->_ofile[ fd_in ]->read( (uint64) buf, len, off_in, false );
+
+		// if( rdbytes < len )
+		// 	len = rdbytes;
+			
+		ret = cur_proc->_ofile[ fd_out ]->write( (uint64) buf, len, off_out, false );
+		
+		return ret;
+	}
+
+	uint64 SyscallHandler::_sys_sigprocmask()
+	{
+		int how;
+		signal::sigset_t set;
+		signal::sigset_t old_set;
+		uint64 setaddr;
+		uint64 oldsetaddr;
+		int sigsize;
+
+		if( _arg_int( 0, how ) < 0 )
+			return -1;
+		if( _arg_addr( 1, setaddr ) < 0 )
+			return -1;
+		if( _arg_addr( 2, oldsetaddr ) < 0 )
+			return -1;
+		if( _arg_int( 3, sigsize ) < 0 )
+			return -1;
+		
+ 		pm::Pcb *cur_proc = pm::k_pm.get_cur_pcb();
+		mm::PageTable *pt = cur_proc->get_pagetable();
+
+		if( setaddr != 0 )
+			if( mm::k_vmm.copy_in( *pt, &set, setaddr, sizeof( signal::sigset_t) ) < 0 )
+				return -1;
+		if( oldsetaddr != 0 )
+			if( mm::k_vmm.copy_in( *pt, &old_set, oldsetaddr, sizeof( signal::sigset_t) ) < 0 )
+				return -1;
+		
+		return signal::sigprocmask( how, &set, &old_set, sigsize );
+
 	}
 } // namespace syscall

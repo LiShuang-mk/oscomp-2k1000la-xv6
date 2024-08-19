@@ -46,7 +46,7 @@ namespace hsai
 		}
 		u8 * ptr = ( u8 * ) src;
 		for ( long i = 0; i < nbytes; i++, ptr++ )
-			if ( _stream->put_char( *ptr ) < 0 )
+			if ( _stream->put_char_sync( *ptr ) < 0 )
 				return i;
 		return nbytes;
 	}

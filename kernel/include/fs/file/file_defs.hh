@@ -101,7 +101,8 @@ namespace fs
 				mode = 0;
 			return mode |= ( _value & 0x1ff );
 		}
-	};
-	
+	}__attribute__ ((aligned (8)));
+
+	// int fa = sizeof( FileAttrs );
 	
 }

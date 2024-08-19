@@ -45,9 +45,15 @@ namespace fs
 		{
 			Ext4Buffer * pbuf = _search_buffer( block_no );
 
+
 			_lock.acquire();
+
+			// log_info( "ext4 buffer get bno %d", block_no );
+
 			if ( pbuf == nullptr )		// 没有缓存，需要重新分配并读取
 			{
+				// log_trace( "ext4 buffer no cache block %ld", block_no );
+
 				// 分配一个新buffer
 
 				pbuf = _alloc_buffer();
@@ -76,6 +82,7 @@ namespace fs
 				pbuf->_flag.valid = 1;
 				pbuf->_block_no = block_no;
 			}
+			// else { log_trace( "ext4 buffer hit block %ld", block_no ); }
 
 			// LRU 算法
 

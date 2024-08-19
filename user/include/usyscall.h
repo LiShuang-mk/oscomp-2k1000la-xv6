@@ -17,7 +17,7 @@ extern int fork( void );
 extern int getpid( void );
 extern int getppid( void );
 extern int brk( int n );
-extern int execv( const char *path, const char * argv[] );
+extern int execve( const char *path, const char * argv[], const char * envp[] );
 extern int wait( int pid, int *state );
 extern int poweroff();
 extern int dup( int fd );

@@ -39,14 +39,8 @@ namespace fs
 								   
 
 			virtual size_t nodeRead( u64 dst, size_t off, size_t len ) override;
-			virtual size_t nodeWrite( u64 src, size_t off, size_t len ) override
-			{
-				return 0;
-			};
-			virtual int readlinkat( char *buf, size_t len ) override
-			{
-				return 0;
-			};
+			virtual size_t nodeWrite( u64 src, size_t off, size_t len ) override { return 0; };
+			virtual int	   readlinkat( char *buf, size_t len ) override { return 0; };
 
 			virtual size_t readSubDir( ubuf &dst, size_t off ) override;
 
@@ -57,10 +51,7 @@ namespace fs
 			virtual u64			rFileSize() const override { return -1; };
 			virtual u64			rIno() const override { return 0; };
 			virtual SuperBlock *getSb() const override;
-			virtual FileSystem *getFS() const override
-			{
-				return (FileSystem *) _belong_fs;
-			};
+			virtual FileSystem *getFS() const override { return (FileSystem *) _belong_fs; };
 
 		public:
 
@@ -76,22 +67,14 @@ namespace fs
 			void _cal_size();
 			void _cal_blocks();
 
-			Ext4Buffer *_search_direct_block( long	target_block_no,
-											  long	start_block_no,
-											  void *index_block,
-											  bool	pin = false );
-			Ext4Buffer *_search_sindirect_block( long  target_block_no,
-												 long  start_block_no,
-												 void *index_block,
-												 bool  pin = false );
-			Ext4Buffer *_search_dindirect_block( long  target_block_no,
-												 long  start_block_no,
-												 void *index_block,
-												 bool  pin = false );
-			Ext4Buffer *_search_tindirect_block( long  target_block_no,
-												 long  start_block_no,
-												 void *index_block,
-												 bool  pin = false );
+			Ext4Buffer *_search_direct_block( long target_block_no, long start_block_no,
+											  void *index_block, bool pin = false );
+			Ext4Buffer *_search_sindirect_block( long target_block_no, long start_block_no,
+												 void *index_block, bool pin = false );
+			Ext4Buffer *_search_dindirect_block( long target_block_no, long start_block_no,
+												 void *index_block, bool pin = false );
+			Ext4Buffer *_search_tindirect_block( long target_block_no, long start_block_no,
+												 void *index_block, bool pin = false );
 			long		_cal_tind_index( long target_block, long start_block );
 			long		_cal_dind_index( long target_block, long start_block );
 			long		_cal_sind_index( long target_block, long start_block );

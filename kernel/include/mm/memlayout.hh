@@ -23,7 +23,7 @@ namespace mm
 		vm_trap_frame = vm_user_end - hsai::page_size,								// 用户空间最后一个页面是 trap frame
 		vm_ustack_end = vm_trap_frame - hsai::page_size,							// 用户栈结束于与trap frame相隔一个页面的地址
 
-		vm_kernel_start = 0x1FFUL << 36,											// kernel address is 0x1FF*_****_****
+		vm_kernel_start = 0x3UL << 36,												// kernel address is 0x3*_****_****
 		vm_kernel_end = vm_kernel_start + ( hsai::page_size << vm_page_cnt_shift ),	// 64 GiB
 
 		// vm_kernel_heap_start = vm_kernel_start >> 1,

@@ -96,8 +96,8 @@ namespace hsai
 		dword is;
 		dword ie;
 		dword cmd;
-		dword tfd;
 		dword resv0;
+		dword tfd;
 		dword sig;
 		dword ssts;
 		dword sctl;
@@ -291,7 +291,7 @@ namespace hsai
 		AhciPortReg ports[ ahci_max_port_num ];
 
 	}__attribute__( ( __packed__ ) );
-	// static_assert( ( uint64 )( ( ( HbaMemReg* ) 0x0UL )->ports ) == 0x100 );
+	// static_assert( ( uint64 )( ( &(( AhciMemReg* )(void *) 0x1000UL )->ports) ) == 0x1100 );
 
 
 
@@ -314,7 +314,7 @@ namespace hsai
 		byte b : 1;			// BIST 
 		byte c : 1;			// Clear Busy upon R_OK 
 		byte rsv : 1; 		// [x] reserve 
-		byte pmp : 3;		// Port Multiplier Port 
+		byte pmp : 4;		// Port Multiplier Port 
 		word prdtl;			// Physical Region Descriptor Table Length 
 
 		// DW1 

@@ -13,6 +13,7 @@
 #include <hsai_log.hh>
 #include <stream_device.hh>
 
+#include "klib/back_trace.hh"
 #include "klib/klib.hh"
 
 namespace klib
@@ -92,12 +93,11 @@ namespace klib
 		_console->put_char_sync( '0' );
 		_console->put_char_sync( 'x' );
 		for ( i = 0; i < ( sizeof( uint64 ) * 2 ); i++, x <<= 4 )
-			_console->put_char_sync(
-				_lower_digits[x >> ( sizeof( uint64 ) * 8 - 4 )] );
+			_console->put_char_sync( _lower_digits[x >> ( sizeof( uint64 ) * 8 - 4 )] );
 	}
 
-	void Printer::print_number( PrinterBuffer &buf, ulong num, int base,
-								print_flag flag, char qualifier, int width )
+	void Printer::print_number( PrinterBuffer &buf, ulong num, int base, print_flag flag,
+								char qualifier, int width )
 	{
 		char  tmp[64] = { 0 };
 		int	  tmpi	  = 0;
@@ -296,8 +296,7 @@ namespace klib
 			if ( _is_number( *fmt ) )
 			{
 				int i = 0;
-				for ( ; _is_number( *fmt ); fmt++ )
-					i = i * 10 + _to_number( *fmt );
+				for ( ; _is_number( *fmt ); fmt++ ) i = i * 10 + _to_number( *fmt );
 				width = i;
 			}
 			else if ( *fmt == '*' ) // the width is in the args
@@ -341,23 +340,20 @@ namespace klib
 			switch ( *fmt )
 			{
 				case 'c':
-					if ( fl.left == 0 ) // padding space
-						for ( ; width > 1;
-							  width-- ) // leave one room to contain the char
+					if ( fl.left == 0 )				 // padding space
+						for ( ; width > 1; width-- ) // leave one room to contain the char
 							buf.put( ' ' );
 					ch = (char) va_arg( args, int );
 					buf.put( ch );
 					width--;
-					for ( ; width > 0; width-- )
-						buf.put( ' ' ); // padding space
+					for ( ; width > 0; width-- ) buf.put( ' ' ); // padding space
 					continue;
 
 				case 's':
 					str = va_arg( args, const char * );
 					if ( str == nullptr ) str = "(NULL)";
 					str_len = (int) strlen( str );
-					if ( width > 0 )
-						str_len = str_len > width ? width : str_len;
+					if ( width > 0 ) str_len = str_len > width ? width : str_len;
 
 					if ( fl.left == 1 )
 						for ( ; str_len < width; width-- ) // padding space
@@ -376,16 +372,14 @@ namespace klib
 					fl.seperate = 1;
 					if ( width < 0 ) width = sizeof( void * ) << 1;
 					width += 2; // prefix
-					print_number( buf, (ulong) va_arg( args, void * ), 16, fl,
-								  qualifier, width );
+					print_number( buf, (ulong) va_arg( args, void * ), 16, fl, qualifier, width );
 					continue;
 
 				case '%': buf.put( '%' ); continue;
 
 				case 'B':
 					qualifier = 'B';
-					print_number( buf, (u8) va_arg( args, uint ), 16, Bfl,
-								  qualifier, 2 );
+					print_number( buf, (u8) va_arg( args, uint ), 16, Bfl, qualifier, 2 );
 					continue;
 
 				case 'b': base = 2; break;
@@ -446,11 +440,18 @@ namespace klib
 		if ( locking ) _lock.release();
 
 		if ( _console != nullptr )
-			_console->write( (void *) _buffer.get_content(),
-							 _buffer.content_length() );
+			_console->write( (void *) _buffer.get_content(), _buffer.content_length() );
 	}
 
 	void Printer::panic( const char *f, uint l, const char *info, ... )
+	{
+		va_list ap;
+		va_start( ap, info );
+		k_printer.panic_va( f, l, info, ap );
+		va_end( ap );
+	}
+
+	void Printer::panic_va( const char *f, uint l, const char *info, va_list ap )
 	{
 		k_printer._locking = 0;
 #if LINUX_BUILD && OPEN_COLOR_PRINT
@@ -463,10 +464,24 @@ namespace klib
 		k_printer.printf( "%d", l );
 		k_printer.printf( " :\n\t     " );
 		_trace_flag = 1;
-		va_list ap;
-		va_start( ap, info );
 		k_printer.vprintf( info, ap );
-		va_end( ap );
+
+		void *bt_buf_fp[256];
+		void *bt_buf_ra[256];
+
+		int	  bt_cnt_fp = 0;
+
+		[[maybe_unused]] int bt_cnt_ra = 0;
+
+		bt_cnt_fp = back_trace_fp( bt_buf_fp, 256 );
+		bt_cnt_ra = back_trace_ra( bt_buf_ra, 256 );
+
+		k_printer.printf( "\n\e[7mback-trace    fp    ra\n" );
+		for ( int i = 0; i < bt_cnt_fp; ++i )
+		{
+			k_printer.printf( "[%d] :  %p  %p\n", i, bt_buf_fp[i], bt_buf_ra[i] );
+		}
+
 		_trace_flag = 0;
 #if LINUX_BUILD && OPEN_COLOR_PRINT
 		k_printer.printf( CLEAR_COLOR_PRINT "\n" );
@@ -479,6 +494,14 @@ namespace klib
 
 	void Printer::error( const char *f, uint l, const char *info, ... )
 	{
+		va_list ap;
+		va_start( ap, info );
+		k_printer.error_va( f, l, info, ap );
+		va_end( ap );
+	}
+
+	void Printer::error_va( const char *f, uint l, const char *info, va_list ap )
+	{
 		k_printer._locking = 0;
 #if LINUX_BUILD && OPEN_COLOR_PRINT
 		k_printer.printf( MAGANTA_COLOR_PRINT "[ error ] => " );
@@ -490,10 +513,7 @@ namespace klib
 		k_printer.printf( "%d", l );
 		k_printer.printf( " :\n\t     " );
 		_trace_flag = 1;
-		va_list ap;
-		va_start( ap, info );
 		k_printer.vprintf( info, ap );
-		va_end( ap );
 		_trace_flag = 0;
 #if LINUX_BUILD && OPEN_COLOR_PRINT
 		k_printer.printf( CLEAR_COLOR_PRINT "\n" );
@@ -504,6 +524,14 @@ namespace klib
 	}
 
 	void Printer::warn( const char *f, uint l, const char *info, ... )
+	{
+		va_list ap;
+		va_start( ap, info );
+		k_printer.warn_va( f, l, info, ap );
+		va_end( ap );
+	}
+
+	void Printer::warn_va( const char *f, uint l, const char *info, va_list ap )
 	{
 		k_printer._locking = 0;
 #if LINUX_BUILD && OPEN_COLOR_PRINT
@@ -516,10 +544,7 @@ namespace klib
 		k_printer.printf( "%d", l );
 		k_printer.printf( " :\n\t     " );
 		_trace_flag = 1;
-		va_list ap;
-		va_start( ap, info );
 		k_printer.vprintf( info, ap );
-		va_end( ap );
 		_trace_flag = 0;
 #if LINUX_BUILD && OPEN_COLOR_PRINT
 		k_printer.printf( CLEAR_COLOR_PRINT "\n" );
@@ -530,6 +555,14 @@ namespace klib
 	}
 
 	void Printer::info( const char *f, uint l, const char *info, ... )
+	{
+		va_list ap;
+		va_start( ap, info );
+		k_printer.info_va( f, l, info, ap );
+		va_end( ap );
+	}
+
+	void Printer::info_va( const char *f, uint l, const char *info, va_list ap )
 	{
 		k_printer._locking = 0;
 #if LINUX_BUILD && OPEN_COLOR_PRINT
@@ -542,10 +575,7 @@ namespace klib
 		k_printer.printf( "%d", l );
 		k_printer.printf( " :\n\t     " );
 		_trace_flag = 1;
-		va_list ap;
-		va_start( ap, info );
 		k_printer.vprintf( info, ap );
-		va_end( ap );
 		_trace_flag = 0;
 #if LINUX_BUILD && OPEN_COLOR_PRINT
 		k_printer.printf( CLEAR_COLOR_PRINT "\n" );
@@ -557,6 +587,15 @@ namespace klib
 
 	void Printer::trace( const char *f, uint l, const char *info, ... )
 	{
+		va_list ap;
+		va_start( ap, info );
+		k_printer.trace_va( f, l, info, ap );
+		va_end( ap );
+	}
+
+	void Printer::trace_va( const char *f, uint l, const char *info, va_list ap )
+	{
+
 		k_printer._locking = 0;
 #if LINUX_BUILD && OPEN_COLOR_PRINT
 		k_printer.printf( GREEN_COLOR_PRINT "[ trace ] => " );
@@ -568,10 +607,7 @@ namespace klib
 		k_printer.printf( "%d", l );
 		k_printer.printf( " :\n\t     " );
 		_trace_flag = 1;
-		va_list ap;
-		va_start( ap, info );
 		k_printer.vprintf( info, ap );
-		va_end( ap );
 		_trace_flag = 0;
 #if LINUX_BUILD && OPEN_COLOR_PRINT
 		k_printer.printf( CLEAR_COLOR_PRINT "\n" );
@@ -581,8 +617,7 @@ namespace klib
 		k_printer._locking = 1;
 	}
 
-	void Printer::assrt( const char *f, uint l, const char *expr,
-						 const char *detail, ... )
+	void Printer::assrt( const char *f, uint l, const char *expr, const char *detail, ... )
 	{
 		va_list ap;
 		va_start( ap, detail );
@@ -590,8 +625,8 @@ namespace klib
 		va_end( ap );
 	}
 
-	void Printer::assrt_va( const char *f, uint l, const char *expr,
-							const char *detail, va_list ap )
+	void Printer::assrt_va( const char *f, uint l, const char *expr, const char *detail,
+							va_list ap )
 	{
 		k_printer._locking = 0;
 #if LINUX_BUILD && OPEN_COLOR_PRINT
@@ -620,8 +655,7 @@ namespace klib
 	}
 
 
-	void Printer::log_output_info( const char *f, uint l, const char *info,
-								   va_list ap )
+	void Printer::log_output_info( const char *f, uint l, const char *info, va_list ap )
 	{
 		k_printer.printf( f );
 		k_printer.printf( " : " );
@@ -632,69 +666,42 @@ namespace klib
 		_trace_flag = 0;
 	}
 
-	void Printer::log_out_va( OutputLevel level, const char *f, uint l,
-							  const char *info, va_list ap )
+	void Printer::log_out_va( OutputLevel level, const char *f, uint l, const char *info,
+							  va_list ap )
 	{
 
 		switch ( level )
 		{
 			case OutputLevel::out_trace:
 			{
-#if LINUX_BUILD && OPEN_COLOR_PRINT
-				k_printer.printf( GREEN_COLOR_PRINT "[ trace ] => " );
-#else
-				k_printer.printf( "[ trace ] => " );
-#endif
+				trace_va( f, l, info, ap );
 			}
 			break;
 			case OutputLevel::out_info:
 			{
-#if LINUX_BUILD && OPEN_COLOR_PRINT
-				k_printer.printf( CYAN_COLOR_PINRT "[ info ]  => " );
-#else
-				k_printer.printf( "[ info ]  => " );
-#endif
+				info_va( f, l, info, ap );
 			}
 			break;
 			case OutputLevel::out_warn:
 			{
-#if LINUX_BUILD && OPEN_COLOR_PRINT
-				k_printer.printf( YELLOW_COLOR_PRINT "[ warn ]  => " );
-#else
-				k_printer.printf( "[ warn ]  => " );
-#endif
+				warn_va( f, l, info, ap );
 			}
 			break;
 			case OutputLevel::out_error:
 			{
-#if LINUX_BUILD && OPEN_COLOR_PRINT
-				k_printer.printf( MAGANTA_COLOR_PRINT "[ error ] => " );
-#else
-				k_printer.printf( "[ error ] => " );
-#endif
+				error_va( f, l, info, ap );
 			}
 			break;
 			case OutputLevel::out_panic:
 			{
-#if LINUX_BUILD && OPEN_COLOR_PRINT
-				k_printer.printf( RED_COLOR_PINRT "[ panic ] => " );
-#else
-				k_printer.printf( "[ panic ] => " );
-#endif
+				panic_va( f, l, info, ap );
 			}
 			break;
 			default: break;
 		}
-		log_output_info( f, l, info, ap );
-#if LINUX_BUILD && OPEN_COLOR_PRINT
-		k_printer.printf( CLEAR_COLOR_PRINT "\n" );
-#else
-		k_printer.printf( "\n" );
-#endif
 	}
 
-	void Printer::log_out( OutputLevel level, const char *f, uint l,
-						   const char *info, ... )
+	void Printer::log_out( OutputLevel level, const char *f, uint l, const char *info, ... )
 	{
 		va_list ap;
 		va_start( ap, info );
@@ -702,35 +709,23 @@ namespace klib
 		va_end( ap );
 	}
 
-	void level_log_out( hsai::HsaiLogLevel level, const char *fn, uint ln,
-						const char *info, ... )
+	void level_log_out( hsai::HsaiLogLevel level, const char *fn, uint ln, const char *info, ... )
 	{
 		va_list ap;
 		va_start( ap, info );
 		switch ( level )
 		{
-			case hsai::log_trace:
-				k_printer.log_out_va( out_trace, fn, ln, info, ap );
-				break;
-			case hsai::log_info:
-				k_printer.log_out_va( out_info, fn, ln, info, ap );
-				break;
-			case hsai::log_warn:
-				k_printer.log_out_va( out_warn, fn, ln, info, ap );
-				break;
-			case hsai::log_error:
-				k_printer.log_out_va( out_error, fn, ln, info, ap );
-				break;
-			case hsai::log_panic:
-				k_printer.log_out_va( out_panic, fn, ln, info, ap );
-				break;
-			default: break;
+			case hsai::log_trace: k_printer.log_out_va( out_trace, fn, ln, info, ap ); break;
+			case hsai::log_info : k_printer.log_out_va( out_info, fn, ln, info, ap ); break;
+			case hsai::log_warn : k_printer.log_out_va( out_warn, fn, ln, info, ap ); break;
+			case hsai::log_error: k_printer.log_out_va( out_error, fn, ln, info, ap ); break;
+			case hsai::log_panic: k_printer.log_out_va( out_panic, fn, ln, info, ap ); break;
+			default				: break;
 		}
 		va_end( ap );
 	}
 
-	void assert_log_out( const char *f, uint l, const char *expr,
-						 const char *detail, ... )
+	void assert_log_out( const char *f, uint l, const char *expr, const char *detail, ... )
 	{
 		va_list ap;
 		va_start( ap, detail );

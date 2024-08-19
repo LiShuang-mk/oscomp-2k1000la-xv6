@@ -18,8 +18,8 @@ HSAI_DEF_UART = \
 	uart_ns16550.cc
 
 HSAI_DEF_ATA = \
-	ahci_driver.cc \
-	ahci_port_driver.cc
+	# ahci_driver.cc \
+	# ahci_port_driver.cc
 
 # >>>>
 # **************************************************************
