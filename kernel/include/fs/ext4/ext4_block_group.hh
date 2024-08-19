@@ -18,7 +18,10 @@ namespace fs
 
 		class Ext4BlockGroup
 		{
+			friend Ext4FS;
+
 		private:
+
 			Ext4GroupDesc _gd;						// group descriptor
 			Ext4FS * _belong_fs = nullptr;
 			u8 *_block_bitmap = nullptr;			// bitmap 大小等于一个块的大小，ext4中通常为4KiB

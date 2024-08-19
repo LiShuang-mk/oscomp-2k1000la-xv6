@@ -370,9 +370,11 @@ namespace fs
 
 		Inode *Ext4IndexNode::lookup( eastl::string dirname )
 		{
+			// log_trace( "current inode mode=%#x", _inode.mode );
 			if ( !( _inode.mode & ext4_imode_fdir ) ) // 当前inode不是目录
 			{
-				log_warn( "try to lookup an inode that's not dir" );
+				log_panic( "try to lookup an inode that's not dir (dirname='%s')",
+						   dirname.c_str() );
 				return nullptr;
 			}
 
@@ -887,6 +889,7 @@ namespace fs
 					{ // 匹配到目录项
 
 						Ext4Inode dirent_inode;
+						// log_trace( "lookup match %s to ino %d", dir_name.c_str(), dirent->inode );
 						if ( _belong_fs->read_inode( dirent->inode, dirent_inode ) < 0 )
 						{ // 读取子目录项inode失败
 							log_error(
@@ -894,6 +897,7 @@ namespace fs
 								dirent->inode );
 							return nullptr;
 						}
+						
 
 						// 读取inode成功，返回inode
 

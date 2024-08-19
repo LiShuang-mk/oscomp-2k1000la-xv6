@@ -48,7 +48,8 @@ namespace mm
 		if ( debug_trace_walk ) printf( "0x%x->", pte.get_data() );
 		if ( !_walk_to_next_level( pte, alloc, pt ) )
 		{
-			log_panic( "walk pgd to pud fail, va=%p, pgd-base=%p, pgd-base=%p", va, _base_addr, pt._base_addr );
+			log_panic( "walk pgd to pud fail, va=%p, pgd-base=%p, pgd-base=%p", va, _base_addr,
+					   pt._base_addr );
 			return hsai::Pte();
 		}
 		// search in level-2
@@ -57,7 +58,8 @@ namespace mm
 		if ( debug_trace_walk ) printf( "0x%x->", pte.get_data() );
 		if ( !_walk_to_next_level( pte, alloc, pt ) )
 		{
-			log_panic( "walk pud to pmd fail, va=%p, pgd-base=%p, pud-base=%p", va, _base_addr, pt._base_addr );
+			log_panic( "walk pud to pmd fail, va=%p, pgd-base=%p, pud-base=%p", va, _base_addr,
+					   pt._base_addr );
 			return hsai::Pte();
 		}
 		// search in level-1
@@ -66,7 +68,8 @@ namespace mm
 		if ( debug_trace_walk ) printf( "0x%x->", pte.get_data() );
 		if ( !_walk_to_next_level( pte, alloc, pt ) )
 		{
-			log_panic( "walk pmd to pt fail, va=%p, pgd-base=%p, pmd-base=%p", va, _base_addr, pt._base_addr );
+			log_panic( "walk pmd to pt fail, va=%p, pgd-base=%p, pmd-base=%p", va, _base_addr,
+					   pt._base_addr );
 			return hsai::Pte();
 		}
 
@@ -103,19 +106,32 @@ namespace mm
 		for ( uint i = 0; i < pte_cnt; i++ )
 		{
 			hsai::Pte next_level = get_pte( i );
-			hsai::Pte _pte( (pte_t *) next_level.to_pa() );
-			bool	  pte_valid = _pte.is_valid();
-			bool	  pte_leaf	= !_pte.is_dir_page();
+			bool	  pte_valid = next_level.is_valid();
+			bool	  pte_leaf	= !next_level.is_dir_page();
 			// if ( _pte.is_valid() && !_pte.is_leaf() )      // PGT -> PTE -> _pte
 			if ( pte_valid && !pte_leaf )
 			{ //  get_pte_addr
 				// this PTE is points to a lower-level page table
 				PageTable child;
-				child.set_base( hsai::k_mem->to_vir( _pte.to_pa() ) );
+				child.set_base( hsai::k_mem->to_vir( next_level.to_pa() ) );
 				child.freewalk();
 				reset_pte_data( i );
 			}
-			else if ( pte_valid ) { log_panic( "freewalk: leaf" ); }
+			else if ( pte_valid )
+			{
+				log_trace( "freewalk trace pt data:" );
+				hsai_printf( BLUE_COLOR_PRINT
+							 "pt\t----++++----+++0 ----++++----+++1 ----++++----+++2 "
+							 "----++++----+++3\n" CLEAR_COLOR_PRINT );
+				u64 *buf = (u64 *) _base_addr;
+				for ( uint i = 0; i < hsai::page_size / sizeof( u64 ); ++i )
+				{
+					if ( i % 4 == 0 ) hsai_printf( "\t", i >> 8, i );
+					hsai_printf( "%016lx ", buf[i] );
+					if ( i % 4 == 3 ) hsai_printf( "\n" );
+				}
+				log_panic( "freewalk: leaf. pte no. = %d", i );
+			}
 		}
 		k_pmm.free_pages( (void *) _base_addr );
 	}

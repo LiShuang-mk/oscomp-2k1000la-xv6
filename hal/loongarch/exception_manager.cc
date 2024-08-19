@@ -33,6 +33,7 @@
 #include <mem/page.hh>
 #include <mem/virtual_memory.hh>
 #include <mem/virtual_page_table.hh>
+#include <memory_interface.hh>
 #include <process_interface.hh>
 #include <syscall_interface.hh>
 #include <timer_interface.hh>
@@ -62,8 +63,7 @@ namespace loongarch
 			f = []( uint32 ) -> void { hsai_panic( "not implement" ); };
 		}
 
-		uint32 ecfg_data = ( 0x0U << csr::ecfg_vs_s ) |
-						   ( csr::itr_hwi_m << csr::ecfg_lie_s ) |
+		uint32 ecfg_data = ( 0x0U << csr::ecfg_vs_s ) | ( csr::itr_hwi_m << csr::ecfg_lie_s ) |
 						   ( csr::itr_ti_m << csr::ecfg_lie_s );
 		// uint32 ecfg_data =
 		// 	( 0x0U << csr::ecfg_vs_s ) |
@@ -114,8 +114,7 @@ namespace loongarch
 
 		if ( ( ( prmd & csr::prmd_pplv_m ) >> csr::prmd_pplv_s ) != 0 )
 			hsai_panic( "kerneltrap: not from privilege0" );
-		if ( cpu->is_interruptible() )
-			hsai_panic( "kerneltrap: interrupts enabled" );
+		if ( cpu->is_interruptible() ) hsai_panic( "kerneltrap: interrupts enabled" );
 
 		void *proc = nullptr;
 		proc	   = hsai::get_cur_proc();
@@ -123,8 +122,7 @@ namespace loongarch
 		if ( estat & ecfg & ( csr::itr_hwi_m | csr::itr_ti_m ) )
 		{
 			int which_dev = dev_intr();
-			if ( ( ( which_dev & ( 1 << 1 ) ) != 0 ) && proc &&
-				 hsai::proc_is_running( proc ) )
+			if ( ( ( which_dev & ( 1 << 1 ) ) != 0 ) && proc && hsai::proc_is_running( proc ) )
 			{
 				hsai::sched_proc( proc );
 			}
@@ -132,10 +130,8 @@ namespace loongarch
 
 		if ( estat & csr::Estat::estat_ecode_m )
 		{
-			uint ecode = ( estat & csr::Estat::estat_ecode_m ) >>
-						 csr::Estat::estat_ecode_s;
-			hsai_assert( ecode < _LA_ECODE_MAX_NUM_, "unknown ecode : %d",
-						 ecode );
+			uint ecode = ( estat & csr::Estat::estat_ecode_m ) >> csr::Estat::estat_ecode_s;
+			hsai_assert( ecode < _LA_ECODE_MAX_NUM_, "unknown ecode : %d", ecode );
 			hsai_info( _la_ecode_spec_[ecode] );
 			_user_or_kernel = 'k';
 			// printf( "%d", ecode );
@@ -163,8 +159,7 @@ namespace loongarch
 
 		int	   which_dev = 0;
 		uint64 dbg_prmd	 = cpu->read_csr( csr::CsrAddr::prmd );
-		if ( ( dbg_prmd & 0x03 ) == 0 )
-			hsai_panic( "Usertrap: not from user mode" );
+		if ( ( dbg_prmd & 0x03 ) == 0 ) hsai_panic( "Usertrap: not from user mode" );
 
 		//
 		cpu->write_csr( csr::CsrAddr::eentry, (uint64) kernelvec );
@@ -174,10 +169,9 @@ namespace loongarch
 		// 	( hsai::get_ticks() - proc->get_last_user_tick() )
 		// );
 
-		void	  *proc = hsai::get_cur_proc();
-		TrapFrame *trapframe =
-			(TrapFrame *) hsai::get_trap_frame_from_proc( proc );
-		trapframe->era = cpu->read_csr( csr::CsrAddr::era );
+		void	  *proc		 = hsai::get_cur_proc();
+		TrapFrame *trapframe = (TrapFrame *) hsai::get_trap_frame_from_proc( proc );
+		trapframe->era		 = cpu->read_csr( csr::CsrAddr::era );
 
 		// printf( "\nestat=0x%x a7=%d era=0x%x\n", estat, trapframe->a7,
 		// cpu->read_csr( csr::era ) );
@@ -192,14 +186,12 @@ namespace loongarch
 		if ( estat & csr::Estat::estat_ecode_m )
 		{
 
-			uint ecode = ( estat & csr::Estat::estat_ecode_m ) >>
-						 csr::Estat::estat_ecode_s;
-			if ( ecode != 0xb )
+			uint ecode = ( estat & csr::Estat::estat_ecode_m ) >> csr::Estat::estat_ecode_s;
+			if ( ecode != 0xb && ecode != 0x9 )
 			{
-				hsai_error(
-					"unexcepted usertrapcause estat=%x pid=%d\n, era=%p",
-					cpu->read_csr( csr::CsrAddr::estat ), hsai::get_pid( proc ),
-					cpu->read_csr( csr::CsrAddr::era ) );
+				hsai_error( "unexcepted usertrapcause estat=%x pid=%d\n, era=%p",
+							cpu->read_csr( csr::CsrAddr::estat ), hsai::get_pid( proc ),
+							cpu->read_csr( csr::CsrAddr::era ) );
 				hsai_assert( ecode < _LA_ECODE_MAX_NUM_, "" );
 				hsai_info( _la_ecode_spec_[ecode] );
 			}
@@ -212,8 +204,7 @@ namespace loongarch
 
 		if ( hsai::proc_is_killed( proc ) ) hsai::exit_proc( proc, -1 );
 
-		if ( ( ( which_dev & ( 1 << 1 ) ) != 0 ) && proc &&
-			 hsai::proc_is_running( proc ) )
+		if ( ( ( which_dev & ( 1 << 1 ) ) != 0 ) && proc && hsai::proc_is_running( proc ) )
 		{
 			hsai::sched_proc( proc );
 		}
@@ -232,18 +223,17 @@ namespace loongarch
 
 		cur_cpu->write_csr( csr::CsrAddr::eentry, (uint64) uservec );
 
-		void	  *cur_proc = hsai::get_cur_proc();
-		TrapFrame *trapframe =
-			(TrapFrame *) hsai::get_trap_frame_from_proc( cur_proc );
+		void	  *cur_proc	   = hsai::get_cur_proc();
+		TrapFrame *trapframe   = (TrapFrame *) hsai::get_trap_frame_from_proc( cur_proc );
 		trapframe->kernel_pgdl = cur_cpu->read_csr( csr::CsrAddr::pgdl );
-		trapframe->kernel_sp   = hsai::get_kstack_from_proc( cur_proc ) +
-							   hsai::get_kstack_size( cur_proc );
+		trapframe->kernel_sp =
+			hsai::get_kstack_from_proc( cur_proc ) + hsai::get_kstack_size( cur_proc );
 		trapframe->kernel_trap	 = (uint64) &_wrp_user_trap;
 		trapframe->kernel_hartid = cur_cpu->get_cpu_id();
 
-		uint32 x = (uint32) cur_cpu->read_csr( csr::CsrAddr::prmd );
-		x |= ( 0x3U << csr::Prmd::prmd_pplv_s ); // set priv to 3, user mode
-		x |= csr::Prmd::prmd_pie_m; // enable interrupts in user mode
+		uint32 x  = (uint32) cur_cpu->read_csr( csr::CsrAddr::prmd );
+		x		 |= ( 0x3U << csr::Prmd::prmd_pplv_s ); // set priv to 3, user mode
+		x		 |= csr::Prmd::prmd_pie_m;				// enable interrupts in user mode
 		cur_cpu->write_csr( csr::CsrAddr::prmd, x );
 
 		cur_cpu->write_csr( csr::era, trapframe->era );
@@ -342,8 +332,7 @@ namespace loongarch
 
 	void ExceptionManager::_init_exception_handler()
 	{
-		_exception_handlers[csr::ecode_int] =
-			std::bind( &ExceptionManager::dev_intr, this );
+		_exception_handlers[csr::ecode_int] = std::bind( &ExceptionManager::dev_intr, this );
 
 		_exception_handlers[csr::ecode_brk] = []( uint32 ) -> void
 		{
@@ -373,15 +362,13 @@ namespace loongarch
 			[[maybe_unused]] uint64 badv = cpu->read_csr( csr::badv );
 			[[maybe_unused]] uint64 era	 = cpu->read_csr( csr::era );
 
-			void	  *proc = hsai::get_cur_proc();
+			void				   *proc = hsai::get_cur_proc();
 			// [[maybe_unused]] hsai::Pte pte = hsai::get_pt_from_proc( proc
 			// )->walk( badv, false );
-			TrapFrame *tf =
-				(TrapFrame *) hsai::get_trap_frame_from_proc( proc );
-			[[maybe_unused]] uint64 usp = tf->sp;
+			TrapFrame			   *tf	 = (TrapFrame *) hsai::get_trap_frame_from_proc( proc );
+			[[maybe_unused]] uint64 usp	 = tf->sp;
 
-			hsai_printf( YELLOW_COLOR_PRINT
-						 "load bad virtual address : %p\n" CLEAR_COLOR_PRINT,
+			hsai_printf( YELLOW_COLOR_PRINT "load bad virtual address : %p\n" CLEAR_COLOR_PRINT,
 						 badv );
 
 			// hsai_printf( YELLOW_COLOR_PRINT "print the page at address
@@ -428,12 +415,11 @@ namespace loongarch
 			[[maybe_unused]] uint64 badv = cpu->read_csr( csr::badv );
 			[[maybe_unused]] uint64 era	 = cpu->read_csr( csr::era );
 
-			void	  *proc = hsai::get_cur_proc();
+			void				   *proc = hsai::get_cur_proc();
 			// [[maybe_unused]] hsai::Pte pte = hsai::get_pt_from_proc( proc
 			// )->walk( badv, false );
-			TrapFrame *tf =
-				(TrapFrame *) hsai::get_trap_frame_from_proc( proc );
-			[[maybe_unused]] uint64 usp = tf->sp;
+			TrapFrame			   *tf	 = (TrapFrame *) hsai::get_trap_frame_from_proc( proc );
+			[[maybe_unused]] uint64 usp	 = tf->sp;
 
 			// hsai_printf( YELLOW_COLOR_PRINT "print the page at address
 			// a0(%p)\n" CLEAR_COLOR_PRINT, tf->a0 ); this->_print_va_page(
@@ -448,14 +434,11 @@ namespace loongarch
 			this->_print_trap_frame( proc );
 
 			ulong iofbadv = this->_get_user_data( proc, badv );
-			hsai_printf(
-				BLUE_COLOR_PRINT
-				"read data(u64) from badv %p = %#lx\n" CLEAR_COLOR_PRINT,
-				badv, iofbadv );
+			hsai_printf( BLUE_COLOR_PRINT "read data(u64) from badv %p = %#lx\n" CLEAR_COLOR_PRINT,
+						 badv, iofbadv );
 
 			hsai::Pte pte = hsai::get_pt_from_proc( proc )->walk( badv, false );
-			hsai_printf( YELLOW_COLOR_PRINT
-						 "pte corresponding to badv is %p\n" CLEAR_COLOR_PRINT,
+			hsai_printf( YELLOW_COLOR_PRINT "pte corresponding to badv is %p\n" CLEAR_COLOR_PRINT,
 						 pte.get_data() );
 
 			hsai_panic(
@@ -498,8 +481,7 @@ namespace loongarch
 			Cpu						  *cpu	= Cpu::get_la_cpu();
 			uint64					   badv = cpu->read_csr( csr::badv );
 			void					  *proc = hsai::get_cur_proc();
-			[[maybe_unused]] hsai::Pte pte =
-				hsai::get_pt_from_proc( proc )->walk( badv, 0 );
+			[[maybe_unused]] hsai::Pte pte	= hsai::get_pt_from_proc( proc )->walk( badv, 0 );
 			hsai_panic(
 				"handle exception PME :\n"
 				"    badv : %x\n"
@@ -528,8 +510,7 @@ namespace loongarch
 			Cpu						  *cpu	= Cpu::get_la_cpu();
 			uint64					   badv = cpu->read_csr( csr::badv );
 			void					  *proc = hsai::get_cur_proc();
-			[[maybe_unused]] hsai::Pte pte =
-				hsai::get_pt_from_proc( proc )->walk( badv, 0 );
+			[[maybe_unused]] hsai::Pte pte	= hsai::get_pt_from_proc( proc )->walk( badv, 0 );
 			hsai_panic(
 				"handle exception PPI :\n"
 				"    badv : %x\n"
@@ -545,8 +526,7 @@ namespace loongarch
 		{
 			Cpu					 *cpu = Cpu::get_la_cpu();
 			[[maybe_unused]] uint e_sub_code =
-				( estat & ( csr::Estat::estat_esubcode_m ) ) >>
-				csr::Estat::estat_esubcode_s;
+				( estat & ( csr::Estat::estat_esubcode_m ) ) >> csr::Estat::estat_esubcode_s;
 
 			u64	  era  = cpu->read_csr( csr::era );
 			void *proc = hsai::get_cur_proc();
@@ -556,9 +536,7 @@ namespace loongarch
 				bad_instr = (u32) this->_get_user_data( proc, era );
 			else
 				bad_instr = *(u32 *) era;
-			hsai_printf( BLUE_COLOR_PRINT
-						 "出错指令: %#010x\n" CLEAR_COLOR_PRINT,
-						 bad_instr );
+			hsai_printf( BLUE_COLOR_PRINT "出错指令: %#010x\n" CLEAR_COLOR_PRINT, bad_instr );
 			hsai_panic(
 				"handle exception ADE :\n"
 				"    type : %s\n"
@@ -583,48 +561,169 @@ namespace loongarch
 			[[maybe_unused]] uint64 era	 = cpu->read_csr( csr::era );
 
 			void				   *proc = hsai::get_cur_proc();
-			TrapFrame			   *tf	 = nullptr;
-			[[maybe_unused]] uint64 usp	 = 0;
+			hsai::VirtualPageTable *pt	 = hsai::get_pt_from_proc( proc );
 
-			if ( proc != nullptr )
+			u32 bad_instr;
+
+			if ( ( era >> 60 ) == 0 ) // 用户指令
+				( u32 ) hsai::copy_from_user( pt, (void *) &bad_instr, era, sizeof( u32 ) );
+			else // 内核指令
 			{
-				tf	= (TrapFrame *) hsai::get_trap_frame_from_proc( proc );
-				usp = tf->sp;
-			}
-
-			hsai_printf( YELLOW_COLOR_PRINT
-						 "access bad virtual address : %p\n" CLEAR_COLOR_PRINT,
-						 badv );
-
-			if ( ( era >> 60 ) == 0 )
-				this->_print_va_page( proc, era );
-			else
-				this->_print_pa_page( era );
-
-			if ( usp != 0 ) this->_print_va_page( proc, usp );
-
-			if ( proc != nullptr ) this->_print_trap_frame( proc );
-
-			hsai_panic(
-				"handle exception ALE :\n"
+				bad_instr = *(u32 *) era;
+				hsai_panic( 
+					"内核发生ALE异常, 暂未实现处理函数\n"
 				"    badv : %p\n"
 				"    badi : %#010x\n"
 				"    crmd : %#010x\n"
 				"    era  : %p\n"
-				"    tick : %d\n"
-				"    sp   : %p\n",
+				"    tick : %d\n",
 				badv,
-				cpu->read_csr( csr::badi ),
+				bad_instr,
 				cpu->read_csr( csr::crmd ),
-				cpu->read_csr( csr::era ),
-				hsai::get_ticks(),
-				usp
-			);
+				era,
+				hsai::get_ticks() 
+				);
+			}
+
+			u32 main_opcode = ( bad_instr >> 26 ) & 0x3F;
+			u32 sub_opcode	= 0;
+
+			[[maybe_unused]] u64 rk, rj, rd, rkd, rjd, rdd;
+			[[maybe_unused]] u64 addr;
+
+			rk = rj = rd = 100;
+			rkd = rjd = rdd = 0;
+
+			bool is_store	 = 0; // 0 indicates load
+			bool is_unsigned = 0;
+			int	 byte_cnt	 = 0; // 访存长度（字节）
+
+			TrapFrame *tf = nullptr;
+
+			if ( proc != nullptr ) { tf = (TrapFrame *) hsai::get_trap_frame_from_proc( proc ); }
+			else { hsai_panic( "no proc run while ALE exception" ); }
+
+			rd = ( bad_instr >> 0 ) & 0x1F;	 // 只是寄存器号
+			rj = ( bad_instr >> 5 ) & 0x1F;	 // 只是寄存器号
+			rk = ( bad_instr >> 10 ) & 0x1F; // 只是寄存器号
+
+			if ( rd >= 0 && rd < 32 ) { rdd = get_reg_from_trap_frame( tf, (int) rd ); }
+			if ( rj >= 0 && rj < 32 ) { rjd = get_reg_from_trap_frame( tf, (int) rj ); }
+			if ( rk >= 0 && rk < 32 ) { rkd = get_reg_from_trap_frame( tf, (int) rk ); }
+
+			switch ( main_opcode )
+			{
+				case 0b00'1000:
+				{
+					hsai_panic( "ALE : [LLSC]编码空间\nbadi=%#010x", bad_instr );
+				}
+				break;
+				case 0b00'1001:
+				{
+					sub_opcode = ( bad_instr >> 24 ) & 0x3;
+
+					if ( sub_opcode & 0b01 )
+						is_store = true;
+					else
+						is_store = false;
+
+					if ( sub_opcode & 0b10 )
+						byte_cnt = 8;
+					else
+						byte_cnt = 4;
+
+					if ( is_store ) { hsai::copy_to_user( pt, badv, &rdd, byte_cnt ); }
+					else
+					{
+						hsai::copy_from_user( pt, (void *) &rdd, badv, byte_cnt );
+						set_reg_from_trap_frame( tf, rd, rdd );
+					}
+				}
+				break;
+				case 0b00'1010:
+				{
+					// hsai_panic( "ALE : [基本]编码空间\nbadi=%#010x", bad_instr );
+					sub_opcode = ( bad_instr >> 22 ) & 0xF;
+
+					switch ( ( sub_opcode >> 0 ) & 0x3 )
+					{
+						case 0b00: byte_cnt = 1; break;
+						case 0b01: byte_cnt = 2; break;
+						case 0b10: byte_cnt = 4; break;
+						case 0b11: byte_cnt = 8; break;
+						default	 : byte_cnt = 0; break;
+					}
+
+					if ( sub_opcode & ( 1 << 2 ) )
+						is_store = true;
+					else
+						is_store = false;
+
+					if ( sub_opcode & ( 1 << 3 ) )
+						is_unsigned = true;
+					else
+						is_unsigned = false;
+
+
+					if ( is_store ) { hsai::copy_to_user( pt, badv, &rdd, byte_cnt ); }
+					else
+					{
+						rdd = 0;
+						hsai::copy_from_user( pt, &rdd, badv, byte_cnt );
+						if ( !is_unsigned )
+						{
+							switch ( byte_cnt )
+							{
+								case 1:
+								{
+									if ( rdd & ( 1 << 7 ) ) rdd |= 0xFFFF'FFFF'FFFF'FF00UL;
+								}
+								break;
+								case 2:
+								{
+									if ( rdd & ( 1 << 15 ) ) rdd |= 0xFFFF'FFFF'FFFF'0000UL;
+								}
+								break;
+								case 4:
+								{
+									if ( rdd & ( 1 << 31 ) ) rdd |= 0xFFFF'FFFF'0000'0000UL;
+								}
+								break;
+								case 8:
+								{
+								}
+								break;
+								default: break;
+							}
+						}
+						set_reg_from_trap_frame( tf, rd, rdd );
+					}
+				}
+				break;
+				case 0b00'1011:
+				{
+					hsai_panic( "ALE : [扩展甲]编码空间\nbadi=%#010x", bad_instr );
+				}
+				break;
+				case 0b00'1100:
+				{
+					hsai_panic( "ALE : [扩展乙]编码空间\nbadi=%#010x", bad_instr );
+				}
+				break;
+				case 0b00'1110:
+				{
+					hsai_panic( "ALE : [复杂]编码空间\nbadi=%#010x", bad_instr );
+				}
+				break;
+
+				default: hsai_panic( "ALE : 未知编码空间\nbadi=%#010x", bad_instr ); break;
+			}
+
+			tf->era += 4;
 		};
 
 
-		_exception_handlers[csr::ecode_sys] =
-			std::bind( &ExceptionManager::_syscall, this );
+		_exception_handlers[csr::ecode_sys] = std::bind( &ExceptionManager::_syscall, this );
 
 		_exception_handlers[csr::ecode_ine] = []( uint32 ) -> void
 		{
@@ -672,8 +771,7 @@ namespace loongarch
 		}
 		else
 		{
-			hsai_printf( "%d : unknown sys call %d\n", hsai::get_pid( p ),
-						 num );
+			hsai_printf( "%d : unknown sys call %d\n", hsai::get_pid( p ), num );
 			tf->a0 = -1;
 		}
 
@@ -698,12 +796,9 @@ namespace loongarch
 		u8 *p		 = (u8 *) pa;
 		u64 va_start = hsai::page_round_down( virt_addr );
 
-		hsai_printf(
-			BLUE_COLOR_PRINT
-			"print the page data containing va(%p)\n" CLEAR_COLOR_PRINT,
-			virt_addr );
-		hsai_printf(
-			"%p(ph)  00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n", pa );
+		hsai_printf( BLUE_COLOR_PRINT "print the page data containing va(%p)\n" CLEAR_COLOR_PRINT,
+					 virt_addr );
+		hsai_printf( "%p(ph)  00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n", pa );
 		for ( uint i = 0; i < hsai::page_size; ++i )
 		{
 			if ( i % 0x10 == 0 ) hsai_printf( "%p      ", va_start + i );
@@ -719,12 +814,9 @@ namespace loongarch
 
 		u8 *p = (u8 *) pa;
 
-		hsai_printf(
-			BLUE_COLOR_PRINT
-			"print the page data containing pa(%p)\n" CLEAR_COLOR_PRINT,
-			phys_addr );
-		hsai_printf(
-			"%p(ph)  00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n", pa );
+		hsai_printf( BLUE_COLOR_PRINT "print the page data containing pa(%p)\n" CLEAR_COLOR_PRINT,
+					 phys_addr );
+		hsai_printf( "%p(ph)  00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n", pa );
 		for ( uint i = 0; i < hsai::page_size; ++i )
 		{
 			if ( i % 0x10 == 0 ) hsai_printf( "%p      ", pa + i );

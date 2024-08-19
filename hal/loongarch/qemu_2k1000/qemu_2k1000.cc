@@ -90,7 +90,7 @@ namespace hsai
 	{
 		// 1. 使用 UART0 作为 debug 输出
 		new ( &qemu2k1000::debug_uart ) UartNs16550(
-			(void*) ( (uint64) qemu2k1000::UartAddr::uart0 | (uint64) qemu2k1000::dmwin::win_1 ) );
+			(void*) ( (uint64) qemu2k1000::UartAddr::uart0 | (uint64) dmwin::win_1 ) );
 		qemu2k1000::debug_uart.init();
 		register_debug_uart( &qemu2k1000::debug_uart );
 
@@ -201,7 +201,7 @@ namespace hsai
 		ulong pci_sata_base = loongarch::qemu2k1000::pci_type0_config_address(
 			loongarch::qemu2k1000::sata_bus, loongarch::qemu2k1000::sata_dev,
 			loongarch::qemu2k1000::sata_fun );
-		pci_sata_base	|= loongarch::qemu2k1000::win_1;
+		pci_sata_base	|= loongarch::win_1;
 		ulong sata_base	 = loongarch::qemu2k1000::pci_type0_bar( pci_sata_base, 0 ) & ~0xFUL;
 
 		u8* buf;
@@ -234,7 +234,7 @@ namespace hsai
 			if ( i % 0x10 == 0xF ) hsai_printf( "\n" );
 		}
 
-		sata_base |= loongarch::qemu2k1000::win_1;
+		sata_base |= loongarch::win_1;
 		hsai_trace( "SATA mem base = %p", sata_base );
 		new ( &ahci_driver ) AhciDriverLs( "AHCI", (void*) sata_base );
 

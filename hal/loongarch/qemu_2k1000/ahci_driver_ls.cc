@@ -16,6 +16,7 @@
 
 #include "qemu_2k1000.hh"
 
+using namespace loongarch;
 using namespace loongarch::qemu2k1000;
 
 // 按一个页面 4KiB 计算，每个 command list 大小是 1024-bytes
@@ -164,30 +165,30 @@ void AhciDriverLs::identify_device()
 		while ( _port_drivers[i]._task_busy() ||
 				_port_drivers[i]._cmd_slot_busy( _port_drivers[i]._default_cmd_slot ) );
 		while ( !cmd_finish );
-		hsai_trace( "print port %d identify data", i );
-		hsai_printf( BLUE_COLOR_PRINT
-					 "buf0\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" CLEAR_COLOR_PRINT );
-		for ( uint i = 0; i < 512; ++i )
-		{
-			if ( i % 0x10 == 0 ) hsai_printf( "%B%B\t", i >> 8, i );
-			hsai_printf( "%B ", ( (u8 *) id_data )[i] );
-			if ( i % 0x10 == 0xF ) hsai_printf( "\n" );
-		}
+		// hsai_trace( "print port %d identify data", i );
+		// hsai_printf( BLUE_COLOR_PRINT
+		// 			 "buf0\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" CLEAR_COLOR_PRINT );
+		// for ( uint i = 0; i < 512; ++i )
+		// {
+		// 	if ( i % 0x10 == 0 ) hsai_printf( "%B%B\t", i >> 8, i );
+		// 	hsai_printf( "%B ", ( (u8 *) id_data )[i] );
+		// 	if ( i % 0x10 == 0xF ) hsai_printf( "\n" );
+		// }
 		_analyze_identify_data( i, (u16 *) id_data );
 
 		// _port_drivers[i]._block_size = 512;
 
 		_port_drivers[i].read_blocks_sync( 0, 1, &bdp, bcnt );
 
-		hsai_trace( "print port %d mbr data", i );
-		hsai_printf( BLUE_COLOR_PRINT
-					 "buf0\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" CLEAR_COLOR_PRINT );
-		for ( uint i = 0; i < 512; ++i )
-		{
-			if ( i % 0x10 == 0 ) hsai_printf( "%B%B\t", i >> 8, i );
-			hsai_printf( "%B ", mbr_data[i] );
-			if ( i % 0x10 == 0xF ) hsai_printf( "\n" );
-		}
+		// hsai_trace( "print port %d mbr data", i );
+		// hsai_printf( BLUE_COLOR_PRINT
+		// 			 "buf0\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n" CLEAR_COLOR_PRINT );
+		// for ( uint i = 0; i < 512; ++i )
+		// {
+		// 	if ( i % 0x10 == 0 ) hsai_printf( "%B%B\t", i >> 8, i );
+		// 	hsai_printf( "%B ", mbr_data[i] );
+		// 	if ( i % 0x10 == 0xF ) hsai_printf( "\n" );
+		// }
 		if ( int rc = _check_mbr_partition( mbr_data, i ) < 0 )
 		{
 			if ( rc == mbr_gpt )

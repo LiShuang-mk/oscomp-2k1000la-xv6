@@ -10,22 +10,12 @@
 
 #include <kernel/types.hh>
 
+#include "loongarch.hh"
+
 namespace loongarch
 {
 	namespace qemu2k1000
 	{
-		enum ls2kPgEnum : uint64
-		{
-			pg_flags_mask = 0xE000'0000'0000'01FFUL,
-		};
-
-		constexpr uint64 dmwin_mask = 0xFUL << 60;
-		enum dmwin : uint64
-		{
-			win_0 = 0x9UL << 60,
-			win_1 = 0x8UL << 60,
-		};
-		constexpr uint64 virt_to_phy_address( uint64 virt ) { return virt & ~dmwin_mask; }
 
 		/// @brief Uart address
 		enum UartAddr : uint64

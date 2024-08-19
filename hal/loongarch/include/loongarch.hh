@@ -21,6 +21,19 @@ namespace loongarch
 
 	void loongarch_init();
 
+	enum PgEnum : uint64
+	{
+		pg_flags_mask = 0xE000'0000'0000'01FFUL,
+	};
+
+	constexpr uint64 dmwin_mask = 0xFUL << 60;
+	enum dmwin : uint64
+	{
+		win_0 = 0x9UL << 60,
+		win_1 = 0x8UL << 60,
+	};
+	constexpr uint64 virt_to_phy_address( uint64 virt ) { return virt & ~dmwin_mask; }
+
 #define _build_pte_bit_(name,mask,shift) \
 	pte_##name##_s = shift, \
 	pte_##name##_m = mask << pte_##name##_s,

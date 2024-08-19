@@ -292,34 +292,42 @@ namespace syscall
 			 _arg_addr( 2, uenvp ) < 0 )
 			return -1;
 
+		log_trace( "execve fetch argv=%p", uargv );
+
 		eastl::vector<eastl::string> argv;
 		ulong						 uarg;
-		for ( ulong i = 0, puarg = uargv;; i++, puarg += sizeof( char * ) )
-		{	
-			if ( i >= max_arg_num ) return -1;
+		if ( uargv != 0 )
+		{
+			for ( ulong i = 0, puarg = uargv;; i++, puarg += sizeof( char * ) )
+			{
+				if ( i >= max_arg_num ) return -1;
 
-			if ( _fetch_addr( puarg, uarg ) < 0 ) return -1;
+				if ( _fetch_addr( puarg, uarg ) < 0 ) return -1;
 
-			if ( uarg == 0 ) break;
+				if ( uarg == 0 ) break;
 
-			log_trace( "execve get arga[%d] = %p", i, uarg );
+				log_trace( "execve get arga[%d] = %p", i, uarg );
 
-			argv.emplace_back( eastl::string() );
-			if ( _fetch_str( uarg, argv[i], hsai::page_size ) < 0 ) return -1;
+				argv.emplace_back( eastl::string() );
+				if ( _fetch_str( uarg, argv[i], hsai::page_size ) < 0 ) return -1;
+			}
 		}
 
 		eastl::vector<eastl::string> envp;
 		ulong						 uenv;
-		for ( ulong i = 0, puenv = uenvp;; i++, puenv += sizeof( char * ) )
+		if ( uenvp != 0 )
 		{
-			if ( i >= max_arg_num ) return -2;
+			for ( ulong i = 0, puenv = uenvp;; i++, puenv += sizeof( char * ) )
+			{
+				if ( i >= max_arg_num ) return -2;
 
-			if ( _fetch_addr( puenv, uenv ) < 0 ) return -2;
+				if ( _fetch_addr( puenv, uenv ) < 0 ) return -2;
 
-			if ( uenv == 0 ) break;
+				if ( uenv == 0 ) break;
 
-			envp.emplace_back( eastl::string() );
-			if ( _fetch_str( uenv, envp[i], hsai::page_size ) < 0 ) return -2;
+				envp.emplace_back( eastl::string() );
+				if ( _fetch_str( uenv, envp[i], hsai::page_size ) < 0 ) return -2;
+			}
 		}
 
 		return pm::k_pm.execve( path, argv, envp );

@@ -1,12 +1,12 @@
 //
-// Created by Li shuang ( pseudonym ) on 2024-03-29 
+// Created by Li shuang ( pseudonym ) on 2024-03-29
 // --------------------------------------------------------------
-// | Note: This code file just for study, not for commercial use 
-// | Contact Author: lishuang.mk@whu.edu.cn 
+// | Note: This code file just for study, not for commercial use
+// | Contact Author: lishuang.mk@whu.edu.cn
 // --------------------------------------------------------------
 //
 
-#pragma once 
+#pragma once
 
 #include <kernel/types.hh>
 
@@ -45,12 +45,16 @@ namespace loongarch
 		/* 224 */ uint64 s6;
 		/* 232 */ uint64 s7;
 		/* 240 */ uint64 s8;
-		/* 248 */ uint64 kernel_sp;     // top of process's kernel stack
-		/* 256 */ uint64 kernel_trap;   // usertrap()
-		/* 264 */ uint64 era;           // saved user program counter
+		/* 248 */ uint64 kernel_sp;		// top of process's kernel stack
+		/* 256 */ uint64 kernel_trap;	// usertrap()
+		/* 264 */ uint64 era;			// saved user program counter
 		/* 272 */ uint64 kernel_hartid; // saved kernel tp
-		/* 280 */ uint64 kernel_pgdl;   // saved kernel pagetable
+		/* 280 */ uint64 kernel_pgdl;	// saved kernel pagetable
 	};
+
+	u64 get_reg_from_trap_frame( TrapFrame *tf, int reg_num );
+
+	void set_reg_from_trap_frame( TrapFrame *tf, int reg_num, u64 data );
 
 } // namespace loongarch
 

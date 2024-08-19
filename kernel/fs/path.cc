@@ -170,8 +170,8 @@ namespace fs
 		
 		entry = base;
 		int dirsize = dirname.size();
-
-		for(int i=0; i < dirsize; i++)
+		log_trace( "path search %d level", dirsize );
+		for ( int i = 0; i < dirsize; i++ )
 		{
 			log_trace( "pathSearch: dirname[%d]: %s", i, dirname[i] );
 			while(entry->isMntPoint()) 
@@ -183,7 +183,9 @@ namespace fs
 			if( dirname[i] == "." ) next = entry;
 			else if( dirname[i] == ".." ) next = entry->getParent();
 			else {
-				if( auto it = entry->EntrySearch( dirname[i] ); it != nullptr ) next = it;
+				log_trace( "dentry %s search sub-dir", entry->rName().c_str() );
+				if ( auto it = entry->EntrySearch( dirname[i] ); it != nullptr )
+					next = it;
 				else return nullptr;
 			}
 			entry = next;
