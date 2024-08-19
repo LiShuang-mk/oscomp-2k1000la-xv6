@@ -13,6 +13,7 @@ namespace pm
 
         int sigAction( int flag, sigaction * newact, sigaction * oldact );
 
+        int sigprocmask( int how, sigset_t* newset, sigset_t* oldset, size_t sigsize);
         }
     }
 }

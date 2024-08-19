@@ -36,6 +36,7 @@ namespace fs
 			virtual Inode *lookup( eastl::string dirname ) override;
 			virtual Inode *mknode( eastl::string name, FileAttrs attrs,
 								   eastl::string dev_name ) override;
+								   
 
 			virtual size_t nodeRead( u64 dst, size_t off, size_t len ) override;
 			virtual size_t nodeWrite( u64 src, size_t off, size_t len ) override { return 0; };

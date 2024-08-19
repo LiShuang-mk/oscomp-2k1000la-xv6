@@ -11,7 +11,8 @@
 #include "fs/ext4/ext4_fs.hh"
 #include "klib/klib.hh"
 #include "klib/template_algorithmn.hh"
-
+#include "fs/ramfs/ramfsInode.hh"
+#include "fs/ramfs/ramfs.hh"
 
 // <<<<<<<< hash tree 相关
 namespace fs
@@ -122,7 +123,6 @@ namespace fs
 			a += EXT4_HASH_FUNCTION( H )( b, c, d ) + x + (u32) 0x6ED9'EBA1;
 			a  = EXT4_HASH_FUNCTION( rotate_left )( a, s );
 		}
-
 		/*
 		 * MD4 basic transformation.  It transforms state based on block.
 		 *
@@ -416,6 +416,23 @@ namespace fs
 			return nullptr;
 		}
 
+		Inode * Ext4IndexNode::mknode(eastl::string name, FileAttrs attrs,
+								   eastl::string dev_name)
+		{
+			dentry *mnt_ = _belong_fs->getRoot();
+			dentry *parent_ = mnt_->getParent();
+			dentry *root_;  // root filesystem's root
+			if( parent_ != nullptr )
+			{
+				root_ = parent_;
+				parent_ = parent_->getParent(); 
+			}
+			
+			fs::ramfs::RamFS *fs = static_cast< fs::ramfs::RamFS *>( root_->getNode()->getFS() );
+			fs::ramfs::Normal *new_node = new fs::ramfs::Normal( fs, fs->alloc_ino(), attrs );  // INode
+			
+			return new_node;
+		}
 		size_t Ext4IndexNode::nodeRead( u64 dst, size_t off, size_t len )
 		{
 			// if ( !( _inode.mode & ext4_imode_freg ) )
@@ -667,12 +684,6 @@ namespace fs
 				log_error( "ext4-inode : 无法寻址的逻辑块号 %d", block );
 				return nullptr;
 			}
-		}
-
-		Inode *fs::ext4::Ext4IndexNode::mknode( eastl::string name, FileAttrs attrs,
-												eastl::string dev_name )
-		{
-			return nullptr;
 		}
 
 

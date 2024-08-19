@@ -1298,43 +1298,32 @@ namespace pm
 		// };
 
 		Pcb *p = get_cur_pcb();
-
-		// // 处理一下path
-		// if ( path[ 0 ] == '.' && path[ 1 ] == '/' )
-		// {
-		// 	path = path.substr( 2 );
-		// }
-
-		// fs::File * f = fs::k_file_table.alloc_file();
-		// if ( f == nullptr )
-		// 	return -2;
-
-		// if ( fs::k_file_table.has_unlinked( path ) )
-		// 	return -5;  //
-
 		fs::dentry *dentry;
-		// if ( dir_fd <= 2 )
-		// {
-		// 	if ( path == "." )
-		// 		dentry = p->_cwd;
-		// 	else
-		// 	{
-		// 		dentry = p->_cwd->EntrySearch( path );
-		// 		if ( dentry == nullptr )
-		// 			return -3;
-		// 	}
-		// }
-		// else
-		// {
-		// 	dentry = p->_ofile[ dir_fd ]->data.get_Entry()->EntrySearch( path );
-		// 	if ( dentry == nullptr )
-		// 		return -4;
-		//}
 
 		fs::Path path_( path );
 		dentry = path_.pathSearch();
 
+		if ( dentry == nullptr && flags & O_CREAT ) 
+		{
+			// @todo: create file
+			fs::dentry *par_ = path_.pathSearch( true );
+			if( par_ == nullptr )
+			    return -1;
+			fs::FileAttrs attrs;
+			if ((flags & __S_IFMT) == S_IFDIR)
+				attrs.filetype = fs::FileTypes::FT_DIRECT;
+			else	
+				attrs.filetype = fs::FileTypes::FT_NORMAL;
+			attrs._value = 0777;
+			if( ( dentry = par_->EntryCreate( path_.rFileName(), attrs ) ) == nullptr )
+			{
+				printf("Error creating new dentry %s failed\n", path_.rFileName() );
+				return -1;
+			}
+
+		}
 		if ( dentry == nullptr ) return -1; // file is not found
+
 		int			  dev	= dentry->getNode()->rDev();
 		fs::FileAttrs attrs = dentry->getNode()->rMode();
 
@@ -1355,6 +1344,8 @@ namespace pm
 			// 	buf[ 8 ] = 0;
 			// 	printf( "%s\n", buf );
 			// }
+			if( flags & O_APPEND )
+				f->setAppend();
 			return alloc_fd( p, f );
 		} // because of open.c's fileattr defination is not clearly, so here we
 		  // set flags = 7, which means O_RDWR | O_WRONLY | O_RDONLY

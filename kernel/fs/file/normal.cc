@@ -1,7 +1,6 @@
 #include "fs/file/normal.hh"
 
 #include "mm/userspace_stream.hh"
-
 namespace fs
 {
 	long normal_file::read( uint64 buf, size_t len, long off, bool upgrade )
@@ -43,7 +42,9 @@ namespace fs
 		if ( off < 0 ) off = _file_ptr;
 		ret = node->nodeWrite( buf, off, len );
 		if ( ret >= 0 && upgrade ) _file_ptr += ret;
-
+		// upgrade filesize
+		this->_stat.size = this->_den->getNode()->rFileSize();
+		
 		return ret;
 	}
 
@@ -69,5 +70,37 @@ namespace fs
 		size_t rlen	 = ind->readSubDir( dst, _file_ptr );
 		_file_ptr	+= rlen;
 		return rlen;
+	}
+
+	off_t normal_file::lseek( off_t offset, int whence )
+	{
+		off_t size = static_cast<off_t>( this->_stat.size );
+		[[maybe_unused]]off_t new_off;
+		switch ( whence )
+		{
+		case SEEK_SET:
+			if( offset < 0 || offset > size ) return -EINVAL;
+			_file_ptr = offset;
+			break;
+		case SEEK_CUR:
+			new_off = _file_ptr + offset;
+			if( new_off < 0 || new_off > size ) return -EINVAL;
+			_file_ptr = new_off;
+			break;
+		case SEEK_END:
+			new_off = this->_stat.size + offset;	
+			if( new_off < 0 || new_off > size ) return -EINVAL;
+			_file_ptr = new_off;
+			break;
+		default:
+			log_error( "normal_file::lseek: invalid whence %d", whence );
+			return -EINVAL;
+		}
+		return _file_ptr;
+	}
+
+	void normal_file::setAppend()
+	{
+		_file_ptr = this->_stat.size;
 	}
 } // namespace fs

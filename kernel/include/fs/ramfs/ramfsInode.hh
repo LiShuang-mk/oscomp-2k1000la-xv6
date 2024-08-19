@@ -40,7 +40,7 @@ namespace fs{
                     ~RamInode() = default;
                     
                     Inode *lookup( eastl::string dirname ) override { return nullptr ; } ;
-                    Inode *mknode( eastl::string dirname, FileAttrs attrs, eastl::string dev_name = "" ) override  ;
+                    Inode *mknode( eastl::string dirname, FileAttrs attrs, eastl::string dev_name = "" ) override;
                     size_t nodeRead( uint64 dst_, size_t off_, size_t len_ ) override;
                     size_t nodeWrite( uint64 src_, size_t off_, size_t len_ ) override { return  0; } ;
 
@@ -133,5 +133,15 @@ namespace fs{
                 size_t nodeWrite( uint64 src_, size_t off_, size_t len_ ) override { return len_; };
         };
 
+        class Normal : public RamInode
+        {
+            eastl::string data;
+            public:
+                Normal( RamFS *fs, uint ino, FileAttrs attrs, eastl::string data_ ) : ramfs::RamInode( fs, ino, attrs ), data( data_ ) {};
+                Normal( RamFS *fs, uint ino, FileAttrs attrs ) : ramfs::RamInode( fs, ino, attrs ) { data.clear(); };
+                size_t nodeRead( uint64 dst_, size_t off_, size_t len_ ) override;
+                size_t nodeWrite( uint64 src_, size_t off_, size_t len_ ) override;
+                size_t rFileSize() const override { return data.length(); };
+        };
     }
 }

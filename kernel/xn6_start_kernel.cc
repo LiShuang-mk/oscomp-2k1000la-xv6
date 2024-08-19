@@ -17,6 +17,9 @@
 #include "fs/file/device.hh"
 #include "fs/file/file.hh"
 #include "fs/file/normal.hh"
+#include "fs/ext4/ext4_fs.hh"
+//#include "fs/ramfs/ramfs.hh"
+#include "fs/ramfs/ramfsInode.hh"
 #include "fs/jbd2/journal_super_block.hh"
 #include "fs/path.hh"
 #include "fs/ramfs/ramfs.hh"
@@ -139,7 +142,7 @@ int xn6_start_kernel()
 		// 	printf( "[%d] :  %p  %p\n", i, bt_buf_fp[i], bt_buf_ra[i] );
 		// }
 
-		// while ( 1 );
+		// //while ( 1 );
 
 		// sharemem init
 		// pm::k_shmManager.init( "shm lock" );

@@ -1,6 +1,7 @@
 #include "fs/ramfs/ramfsInode.hh"
 #include "fs/ramfs/ramfs.hh"
 #include "fs/path.hh"
+#include "types.hh"
 
 #include "pm/process_manager.hh"
 #include "tm/timer_manager.hh"
@@ -13,7 +14,6 @@
 #include <mntent.h>
 
 #include <EASTL/chrono.h>
-
 namespace fs
 {
 
@@ -235,10 +235,50 @@ namespace fs
 			return ret;
 		}
 
-		size_t Zero::nodeRead( uint64_t src_, size_t off, size_t len )
+		size_t Zero::nodeRead( uint64 src_, size_t off, size_t len )
 		{
 			memset( (void *)src_, 0, len );
             return len;
+		}
+
+		size_t Normal::nodeRead( uint64 src_, size_t off, size_t len )
+		{
+			size_t read_len;
+			[[maybe_unused]] size_t len_ = data.length(); 
+			if (off + len > len_ ) 
+				read_len = len_ - off; 
+			else
+				read_len = len;
+			if( read_len == 0 ) return 0;
+			
+			char* readcontent = new char[ read_len ];
+			memset( readcontent, 0, read_len );
+			for (size_t i = 0; i < read_len; ++i) {
+				readcontent[i] = data[off + i];
+			}
+			
+			memcpy( (void *)src_, readcontent, read_len );
+			return read_len;
+		}
+
+		size_t Normal::nodeWrite( uint64 src_, size_t off, size_t len )
+		{
+			size_t write_len = len;
+
+			char *writecontent = new char[ len ];
+			memset( writecontent, 0, len );
+			memcpy( writecontent, (void *)src_, len );
+			//printf("test.txt write: %s\n", writecontent);
+			for (size_t i = 0; i < write_len; ++i) {
+				if (off + i < data.size()) {
+					data[off + i] = writecontent[i];
+				} else {
+					data.push_back(writecontent[i]);
+				}
+			}
+			printf("data is %s\n", data.c_str());
+			printf("data size is %d\n", data.length());
+			return write_len;
 		}
 	}
 }

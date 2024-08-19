@@ -16,7 +16,8 @@
 #include <asm-generic/poll.h>
 #include <linux/sysinfo.h>
 #include <sys/ioctl.h>
-// #include <sys/resource.h>
+#include <asm-generic/errno-base.h>
+//#include <sys/resource.h>
 
 #include <hsai_global.hh>
 #include <mem/virtual_memory.hh>
@@ -47,9 +48,10 @@ namespace syscall
 {
 	SyscallHandler k_syscall_handler;
 
-#define BIND_SYSCALL( sys_name )                                                          \
-	_syscall_funcs[SYS_##sys_name] = std::bind( &SyscallHandler::_sys_##sys_name, this ); \
-	_syscall_name[SYS_##sys_name]  = #sys_name
+#define BIND_SYSCALL( sys_name )                             \
+	_syscall_funcs[SYS_##sys_name] =                         \
+		std::bind( &SyscallHandler::_sys_##sys_name, this ); \
+	_syscall_name[SYS_##sys_name] = #sys_name
 
 	void SyscallHandler::init()
 	{
@@ -120,6 +122,10 @@ namespace syscall
 		BIND_SYSCALL( sysinfo );
 		BIND_SYSCALL( nanosleep );
 		BIND_SYSCALL( getrusage );
+		BIND_SYSCALL( utimensat );
+		BIND_SYSCALL( lseek );
+		BIND_SYSCALL( splice );
+		BIND_SYSCALL( sigprocmask );
 	}
 
 	uint64 SyscallHandler::invoke_syscaller( uint64 sys_num )
@@ -128,11 +134,14 @@ namespace syscall
 		if ( sys_num != SYS_write )
 		{
 			if ( _syscall_name[sys_num] != nullptr )
-				printf( YELLOW_COLOR_PRINT "syscall %16s", _syscall_name[sys_num] );
+				printf( YELLOW_COLOR_PRINT "syscall %16s",
+						_syscall_name[sys_num] );
 			else
-				printf( BRIGHT_YELLOW_COLOR_PRINT "unknown sycall %d\t", sys_num );
+				printf( BRIGHT_YELLOW_COLOR_PRINT "unknown sycall %d\t",
+						sys_num );
 			auto [usg, rst] = mm::k_pmm.mem_desc();
-			printf( "mem-usage: %_-10ld mem-rest: %_-10ld\n" CLEAR_COLOR_PRINT, usg, rst );
+			printf( "mem-usage: %_-10ld mem-rest: %_-10ld\n" CLEAR_COLOR_PRINT,
+					usg, rst );
 		}
 #endif
 		return _syscall_funcs[sys_num]();
@@ -147,7 +156,8 @@ namespace syscall
 		// if ( addr >= p->get_size() || addr + sizeof( uint64 ) > p->get_size()
 		// ) 	return -1;
 		mm::PageTable *pt = p->get_pagetable();
-		if ( mm::k_vmm.copy_in( *pt, &out_data, addr, sizeof( out_data ) ) < 0 ) return -1;
+		if ( mm::k_vmm.copy_in( *pt, &out_data, addr, sizeof( out_data ) ) < 0 )
+			return -1;
 		return 0;
 	}
 
@@ -160,7 +170,8 @@ namespace syscall
 		return strlen( (const char *) buf );
 	}
 
-	int SyscallHandler::_fetch_str( uint64 addr, eastl::string &str, uint64 max )
+	int SyscallHandler::_fetch_str( uint64 addr, eastl::string &str,
+									uint64 max )
 	{
 		pm::Pcb		  *p   = (pm::Pcb *) hsai::get_cur_proc();
 		mm::PageTable *pt  = p->get_pagetable();
@@ -172,7 +183,8 @@ namespace syscall
 	uint64 SyscallHandler::_arg_raw( int arg_n )
 	{
 		return hsai::get_arg_from_trap_frame(
-			hsai::get_trap_frame_from_proc( hsai::get_cur_proc() ), (uint) arg_n );
+			hsai::get_trap_frame_from_proc( hsai::get_cur_proc() ),
+			(uint) arg_n );
 	}
 
 	int SyscallHandler::_arg_fd( int arg_n, int *out_fd, fs::file **out_f )
@@ -199,12 +211,14 @@ namespace syscall
 		uint64				 p;
 		[[maybe_unused]] int fd = 0;
 
-		if ( _arg_fd( 0, &fd, &f ) < 0 || _arg_addr( 1, p ) < 0 || _arg_int( 2, n ) < 0 )
+		if ( _arg_fd( 0, &fd, &f ) < 0 || _arg_addr( 1, p ) < 0 ||
+			 _arg_int( 2, n ) < 0 )
 		{
 			return -1;
 		}
 
-		if ( fd > 2 ) printf( BLUE_COLOR_PRINT "invoke sys_write\n" CLEAR_COLOR_PRINT );
+		if ( fd > 2 )
+			printf( BLUE_COLOR_PRINT "invoke sys_write\n" CLEAR_COLOR_PRINT );
 
 		pm::Pcb		  *proc = pm::k_pm.get_cur_pcb();
 		mm::PageTable *pt	= proc->get_pagetable();
@@ -272,9 +286,15 @@ namespace syscall
 		return pm::k_pm.fork( u_sp );
 	}
 
-	uint64 SyscallHandler::_sys_getpid() { return pm::k_pm.get_cur_pcb()->get_pid(); }
+	uint64 SyscallHandler::_sys_getpid()
+	{
+		return pm::k_pm.get_cur_pcb()->get_pid();
+	}
 
-	uint64 SyscallHandler::_sys_getppid() { return pm::k_pm.get_cur_pcb()->get_ppid(); }
+	uint64 SyscallHandler::_sys_getppid()
+	{
+		return pm::k_pm.get_cur_pcb()->get_ppid();
+	}
 
 	uint64 SyscallHandler::_sys_brk()
 	{
@@ -288,8 +308,8 @@ namespace syscall
 		uint64 uargv, uenvp;
 
 		eastl::string path;
-		if ( _arg_str( 0, path, hsai::page_size ) < 0 || _arg_addr( 1, uargv ) < 0 ||
-			 _arg_addr( 2, uenvp ) < 0 )
+		if ( _arg_str( 0, path, hsai::page_size ) < 0 ||
+			 _arg_addr( 1, uargv ) < 0 || _arg_addr( 2, uenvp ) < 0 )
 			return -1;
 
 		log_trace( "execve fetch argv=%p", uargv );
@@ -390,7 +410,8 @@ namespace syscall
 		pm::Pcb		  *p   = pm::k_pm.get_cur_pcb();
 		mm::PageTable *pt  = p->get_pagetable();
 		uint		   len = pm::k_pm.getcwd( cwd );
-		if ( mm::k_vmm.copyout( *pt, buf, (const void *) cwd, len ) < 0 ) return -1;
+		if ( mm::k_vmm.copyout( *pt, buf, (const void *) cwd, len ) < 0 )
+			return -1;
 
 		return buf;
 	}
@@ -406,7 +427,9 @@ namespace syscall
 
 		pm::Pcb		  *p  = pm::k_pm.get_cur_pcb();
 		mm::PageTable *pt = p->get_pagetable();
-		if ( mm::k_vmm.copyout( *pt, tv_addr, (const void *) &tv, sizeof( tv ) ) < 0 ) return -1;
+		if ( mm::k_vmm.copyout( *pt, tv_addr, (const void *) &tv,
+								sizeof( tv ) ) < 0 )
+			return -1;
 
 		return 0;
 	}
@@ -426,7 +449,8 @@ namespace syscall
 
 		pm::Pcb		  *p  = pm::k_pm.get_cur_pcb();
 		mm::PageTable *pt = p->get_pagetable();
-		if ( mm::k_vmm.copy_in( *pt, &tv, tv_addr, sizeof( tv ) ) < 0 ) return -1;
+		if ( mm::k_vmm.copy_in( *pt, &tv, tv_addr, sizeof( tv ) ) < 0 )
+			return -1;
 
 		return tmm::k_tm.sleep_from_tv( tv );
 	}
@@ -442,7 +466,9 @@ namespace syscall
 
 		pm::Pcb		  *p  = pm::k_pm.get_cur_pcb();
 		mm::PageTable *pt = p->get_pagetable();
-		if ( mm::k_vmm.copyout( *pt, tms_addr, &tms_val, sizeof( tms_val ) ) < 0 ) return -1;
+		if ( mm::k_vmm.copyout( *pt, tms_addr, &tms_val, sizeof( tms_val ) ) <
+			 0 )
+			return -1;
 
 		return tmm::k_tm.get_ticks();
 	}
@@ -480,18 +506,23 @@ namespace syscall
 		pm::Pcb		  *p  = pm::k_pm.get_cur_pcb();
 		mm::PageTable *pt = p->get_pagetable();
 
-		if ( mm::k_vmm.copyout( *pt, sysa, _SYSINFO_sysname, sizeof( _SYSINFO_sysname ) ) < 0 )
+		if ( mm::k_vmm.copyout( *pt, sysa, _SYSINFO_sysname,
+								sizeof( _SYSINFO_sysname ) ) < 0 )
 			return -1;
-		if ( mm::k_vmm.copyout( *pt, noda, _SYSINFO_nodename, sizeof( _SYSINFO_nodename ) ) < 0 )
+		if ( mm::k_vmm.copyout( *pt, noda, _SYSINFO_nodename,
+								sizeof( _SYSINFO_nodename ) ) < 0 )
 			return -1;
-		if ( mm::k_vmm.copyout( *pt, rlsa, _SYSINFO_release, sizeof( _SYSINFO_release ) ) < 0 )
+		if ( mm::k_vmm.copyout( *pt, rlsa, _SYSINFO_release,
+								sizeof( _SYSINFO_release ) ) < 0 )
 			return -1;
-		if ( mm::k_vmm.copyout( *pt, vsna, _SYSINFO_version, sizeof( _SYSINFO_version ) ) < 0 )
+		if ( mm::k_vmm.copyout( *pt, vsna, _SYSINFO_version,
+								sizeof( _SYSINFO_version ) ) < 0 )
 			return -1;
-		if ( mm::k_vmm.copyout( *pt, mcha, _SYSINFO_machine, sizeof( _SYSINFO_machine ) ) < 0 )
+		if ( mm::k_vmm.copyout( *pt, mcha, _SYSINFO_machine,
+								sizeof( _SYSINFO_machine ) ) < 0 )
 			return -1;
-		if ( mm::k_vmm.copyout( *pt, dmna, _SYSINFO_domainname, sizeof( _SYSINFO_domainname ) ) <
-			 0 )
+		if ( mm::k_vmm.copyout( *pt, dmna, _SYSINFO_domainname,
+								sizeof( _SYSINFO_domainname ) ) < 0 )
 			return -1;
 
 		return 0;
@@ -537,7 +568,8 @@ namespace syscall
 
 		pm::k_pm.fstat( fd, &kst );
 		mm::PageTable *pt = pm::k_pm.get_cur_pcb()->get_pagetable();
-		if ( mm::k_vmm.copyout( *pt, kst_addr, &kst, sizeof( kst ) ) < 0 ) return -1;
+		if ( mm::k_vmm.copyout( *pt, kst_addr, &kst, sizeof( kst ) ) < 0 )
+			return -1;
 
 		return 0;
 	}
@@ -553,12 +585,12 @@ namespace syscall
 		if ( _arg_addr( 2, buf_len ) < 0 ) return -1;
 
 		if ( f->_attrs.filetype != fs::FileTypes::FT_NORMAL &&
-			 f->_attrs.filetype != fs::FileTypes::FT_DIRECT )
+				 f->_attrs.filetype != fs::FileTypes::FT_DIRECT )
 			return -1;
 		// eastl::string name = f->data.get_Entry()->rName();
 		fs::normal_file *normal_f = static_cast<fs::normal_file *>( f );
 
-		mm::PageTable *pt = pm::k_pm.get_cur_pcb()->get_pagetable();
+		mm::PageTable *pt  = pm::k_pm.get_cur_pcb()->get_pagetable();
 
 		mm::UserspaceStream us( (void *) buf_addr, buf_len, pt );
 
@@ -601,7 +633,8 @@ namespace syscall
 
 		if ( mm::k_vmm.copy_str_in( *pt, dev, dev_addr, 100 ) < 0 ) return -1;
 		if ( mm::k_vmm.copy_str_in( *pt, mnt, mnt_addr, 100 ) < 0 ) return -1;
-		if ( mm::k_vmm.copy_str_in( *pt, fstype, fstype_addr, 100 ) < 0 ) return -1;
+		if ( mm::k_vmm.copy_str_in( *pt, fstype, fstype_addr, 100 ) < 0 )
+			return -1;
 
 		if ( _arg_int( 3, flags ) < 0 ) return -1;
 		if ( _arg_addr( 4, data ) < 0 ) return -1;
@@ -625,7 +658,8 @@ namespace syscall
 		if ( _arg_addr( 0, specialaddr ) < 0 ) return -1;
 		if ( _arg_int( 1, flags ) < 0 ) return -1;
 
-		if ( mm::k_vmm.copy_str_in( *pt, special, specialaddr, 100 ) < 0 ) return -1;
+		if ( mm::k_vmm.copy_str_in( *pt, special, specialaddr, 100 ) < 0 )
+			return -1;
 
 		fs::Path specialpath( special );
 		return specialpath.umount( flags );
@@ -727,7 +761,8 @@ namespace syscall
 			stx.stx_mode	  = kst.mode;
 			stx.stx_size	  = kst.size;
 			mm::PageTable *pt = pm::k_pm.get_cur_pcb()->get_pagetable();
-			if ( mm::k_vmm.copyout( *pt, kst_addr, &stx, sizeof( stx ) ) < 0 ) return -1;
+			if ( mm::k_vmm.copyout( *pt, kst_addr, &stx, sizeof( stx ) ) < 0 )
+				return -1;
 			return 0;
 		}
 		else
@@ -740,7 +775,8 @@ namespace syscall
 			stx.stx_size	  = kst.size;
 			stx.stx_mode	  = kst.mode;
 			mm::PageTable *pt = pm::k_pm.get_cur_pcb()->get_pagetable();
-			if ( mm::k_vmm.copyout( *pt, kst_addr, &stx, sizeof( stx ) ) < 0 ) return -1;
+			if ( mm::k_vmm.copyout( *pt, kst_addr, &stx, sizeof( stx ) ) < 0 )
+				return -1;
 			return 0;
 		}
 	}
@@ -771,11 +807,13 @@ namespace syscall
 
 		pm::Pcb		  *p  = pm::k_pm.get_cur_pcb();
 		mm::PageTable *pt = p->get_pagetable();
-		if ( mm::k_vmm.copy_in( *pt, &fd, addr, 2 * sizeof( fd[0] ) ) < 0 ) return -1;
+		if ( mm::k_vmm.copy_in( *pt, &fd, addr, 2 * sizeof( fd[0] ) ) < 0 )
+			return -1;
 
 		if ( pm::k_pm.pipe( fd, 0 ) < 0 ) return -1;
 
-		if ( mm::k_vmm.copyout( *pt, addr, &fd, 2 * sizeof( fd[0] ) ) < 0 ) return -1;
+		if ( mm::k_vmm.copyout( *pt, addr, &fd, 2 * sizeof( fd[0] ) ) < 0 )
+			return -1;
 
 		return 0;
 	}
@@ -789,7 +827,7 @@ namespace syscall
 
 		pm::Pcb		  *p  = pm::k_pm.get_cur_pcb();
 		mm::PageTable *pt = p->get_pagetable();
-		tidptr			  = (int *) hsai::k_mem->to_vir( pt->walk_addr( addr ) );
+		tidptr = (int *) hsai::k_mem->to_vir( pt->walk_addr( addr ) );
 		if ( tidptr == nullptr ) return -10;
 
 		return pm::k_pm.set_tid_address( tidptr );
@@ -805,7 +843,8 @@ namespace syscall
 
 		pm::Pcb		  *p  = pm::k_pm.get_cur_pcb();
 		mm::PageTable *pt = p->get_pagetable();
-		head			  = (pm::robust_list_head *) hsai::k_mem->to_vir( pt->walk_addr( addr ) );
+		head			  = (pm::robust_list_head *) hsai::k_mem->to_vir(
+			 pt->walk_addr( addr ) );
 
 		if ( head == nullptr ) return -10;
 
@@ -831,9 +870,11 @@ namespace syscall
 		pm::Pcb		  *p  = pm::k_pm.get_cur_pcb();
 		mm::PageTable *pt = p->get_pagetable();
 		if ( new_limit != 0 )
-			nlim = (pm::rlimit64 *) hsai::k_mem->to_vir( pt->walk_addr( new_limit ) );
+			nlim = (pm::rlimit64 *) hsai::k_mem->to_vir(
+				pt->walk_addr( new_limit ) );
 		if ( old_limit != 0 )
-			olim = (pm::rlimit64 *) hsai::k_mem->to_vir( pt->walk_addr( old_limit ) );
+			olim = (pm::rlimit64 *) hsai::k_mem->to_vir(
+				pt->walk_addr( old_limit ) );
 
 		return pm::k_pm.prlimit64( pid, rsrc, nlim, olim );
 	}
@@ -849,7 +890,8 @@ namespace syscall
 		tmm::timespec *tp = nullptr;
 		pm::Pcb		  *p  = pm::k_pm.get_cur_pcb();
 		mm::PageTable *pt = p->get_pagetable();
-		if ( addr != 0 ) tp = (tmm::timespec *) hsai::k_mem->to_vir( pt->walk_addr( addr ) );
+		if ( addr != 0 )
+			tp = (tmm::timespec *) hsai::k_mem->to_vir( pt->walk_addr( addr ) );
 
 		tmm::SystemClockId cid = (tmm::SystemClockId) clock_id;
 
@@ -921,10 +963,13 @@ namespace syscall
 
 		ulong  random	   = 0x4249'4C47'4B43'5546UL;
 		size_t random_size = sizeof( random );
-		for ( size_t i = 0; i < static_cast<size_t>( buflen ); i += random_size )
+		for ( size_t i	= 0; i < static_cast<size_t>( buflen );
+			  i		   += random_size )
 		{
 			size_t copy_size =
-				( i + random_size ) <= static_cast<size_t>( buflen ) ? random_size : buflen - i;
+				( i + random_size ) <= static_cast<size_t>( buflen )
+					? random_size
+					: buflen - i;
 			memcpy( k_buf + i, &random, copy_size );
 		}
 		if ( mm::k_vmm.copyout( *pt, bufaddr, k_buf, buflen ) < 0 ) return -1;
@@ -935,8 +980,8 @@ namespace syscall
 
 	uint64 SyscallHandler::_sys_sigaction()
 	{
-		pm::Pcb									   *proc = pm::k_pm.get_cur_pcb();
-		[[maybe_unused]] mm::PageTable			   *pt	 = proc->get_pagetable();
+		pm::Pcb						   *proc = pm::k_pm.get_cur_pcb();
+		[[maybe_unused]] mm::PageTable *pt	 = proc->get_pagetable();
 		[[maybe_unused]] pm::ipc::signal::sigaction a_newact, a_oldact;
 		// a_newact = nullptr;
 		// a_oldact = nullptr;
@@ -998,15 +1043,16 @@ namespace syscall
 		{
 			fs::device_file *df = (fs::device_file *) f;
 			mm::PageTable	*pt = pm::k_pm.get_cur_pcb()->get_pagetable();
-			termios			*ts = (termios *) hsai::k_mem->to_vir( pt->walk_addr( arg ) );
+			termios			*ts =
+				(termios *) hsai::k_mem->to_vir( pt->walk_addr( arg ) );
 			return df->tcgetattr( ts );
 		}
 
 		if ( ( cmd & 0XFFFF ) == TIOCGPGRP )
 		{
-			mm::PageTable *pt	  = pm::k_pm.get_cur_pcb()->get_pagetable();
-			int			  *p_pgrp = (int *) hsai::k_mem->to_vir( pt->walk_addr( arg ) );
-			*p_pgrp				  = 1;
+			mm::PageTable *pt = pm::k_pm.get_cur_pcb()->get_pagetable();
+			int *p_pgrp = (int *) hsai::k_mem->to_vir( pt->walk_addr( arg ) );
+			*p_pgrp		= 1;
 			return 0;
 		}
 
@@ -1105,7 +1151,8 @@ namespace syscall
 		if ( fds == nullptr ) return -2;
 		for ( int i = 0; i < nfds; i++ )
 		{
-			if ( mm::k_vmm.copy_in( *pt, &fds[i], fds_addr + i * sizeof( pollfd ),
+			if ( mm::k_vmm.copy_in( *pt, &fds[i],
+									fds_addr + i * sizeof( pollfd ),
 									sizeof( pollfd ) ) < 0 )
 			{
 				delete[] fds;
@@ -1115,7 +1162,8 @@ namespace syscall
 
 		if ( timeout_addr != 0 )
 		{
-			if ( ( mm::k_vmm.copy_in( *pt, &tm, timeout_addr, sizeof( tm ) ) ) < 0 )
+			if ( ( mm::k_vmm.copy_in( *pt, &tm, timeout_addr, sizeof( tm ) ) ) <
+				 0 )
 			{
 				delete[] fds;
 				return -1;
@@ -1126,7 +1174,8 @@ namespace syscall
 			timeout = -1;
 
 		if ( sigmask_addr != 0 )
-			if ( mm::k_vmm.copy_in( *pt, &sigmask, sigmask_addr, sizeof( sigset_t ) ) < 0 )
+			if ( mm::k_vmm.copy_in( *pt, &sigmask, sigmask_addr,
+									sizeof( sigset_t ) ) < 0 )
 			{
 				delete[] fds;
 				return -1;
@@ -1176,7 +1225,8 @@ namespace syscall
 			// }
 		}
 
-		if ( mm::k_vmm.copyout( *pt, fds_addr, fds, nfds * sizeof( pollfd ) ) < 0 )
+		if ( mm::k_vmm.copyout( *pt, fds_addr, fds, nfds * sizeof( pollfd ) ) <
+			 0 )
 		{
 			delete[] fds;
 			return -1;
@@ -1205,7 +1255,8 @@ namespace syscall
 		if ( _arg_addr( 2, addr ) < 0 ) return -3;
 
 		mm::PageTable *pt = pm::k_pm.get_cur_pcb()->get_pagetable();
-		if ( addr != 0 ) p_off = (ulong *) hsai::k_mem->to_vir( pt->walk_addr( addr ) );
+		if ( addr != 0 )
+			p_off = (ulong *) hsai::k_mem->to_vir( pt->walk_addr( addr ) );
 
 		size_t count;
 		if ( _arg_addr( 3, count ) < 0 ) return -4;
@@ -1221,9 +1272,11 @@ namespace syscall
 		int readcnt	 = in_f->read( (ulong) buf, count, start_off, true );
 		int writecnt = 0;
 		if ( out_f->_attrs.filetype == fs::FileTypes::FT_PIPE )
-			writecnt = ( (fs::pipe_file *) out_f )->write_in_kernel( (ulong) buf, readcnt );
+			writecnt = ( (fs::pipe_file *) out_f )
+						   ->write_in_kernel( (ulong) buf, readcnt );
 		else
-			writecnt = out_f->write( (ulong) buf, readcnt, out_f->get_file_offset(), true );
+			writecnt = out_f->write( (ulong) buf, readcnt,
+									 out_f->get_file_offset(), true );
 
 		delete[] buf;
 
@@ -1251,9 +1304,12 @@ namespace syscall
 		if ( _arg_addr( 1, statfsaddr ) < 0 ) return -2;
 
 		fs::Path   fspath( path );
-		fs::statfs statfs_ = fs::statfs( *fspath.pathSearch()->getNode()->getFS() );
+		fs::statfs statfs_ =
+			fs::statfs( *fspath.pathSearch()->getNode()->getFS() );
 
-		if ( mm::k_vmm.copyout( *pt, statfsaddr, &statfs_, sizeof( statfs_ ) ) < 0 ) return -1;
+		if ( mm::k_vmm.copyout( *pt, statfsaddr, &statfs_, sizeof( statfs_ ) ) <
+			 0 )
+			return -1;
 		return 0;
 	}
 
@@ -1319,7 +1375,8 @@ namespace syscall
 		pm::Pcb		  *cur_proc = pm::k_pm.get_cur_pcb();
 		mm::PageTable *pt		= cur_proc->get_pagetable();
 
-		if ( mm::k_vmm.copy_str_in( *pt, _pathname, _pathaddr, 100 ) < 0 ) return -1;
+		if ( mm::k_vmm.copy_str_in( *pt, _pathname, _pathaddr, 100 ) < 0 )
+			return -1;
 		if ( _pathname.empty() ) return -1;
 
 		[[maybe_unused]] int flags = 0;
@@ -1340,9 +1397,10 @@ namespace syscall
 		else
 			new ( &path ) fs::Path( _pathname, cur_proc->_ofile[_dirfd] );
 
-		int fd = path.open( fs::FileAttrs( flags ) );
+		int fd = path.open( fs::FileAttrs( flags ), flags );
 
-		if ( fd < 0 ) return -1;
+		if ( fd < 0 )
+			return -1;
 
 
 		return 0;
@@ -1394,7 +1452,9 @@ namespace syscall
 		sysinfo_.freehigh  = 0;
 		sysinfo_.mem_unit  = 1; // 内存单位为 1 字节
 
-		if ( mm::k_vmm.copyout( *pt, sysinfoaddr, &sysinfo_, sizeof( sysinfo_ ) ) < 0 ) return -1;
+		if ( mm::k_vmm.copyout( *pt, sysinfoaddr, &sysinfo_,
+								sizeof( sysinfo_ ) ) < 0 )
+			return -1;
 
 		return 0;
 	}
@@ -1420,10 +1480,12 @@ namespace syscall
 		mm::PageTable *pt		= cur_proc->get_pagetable();
 
 		if ( dur_addr != 0 )
-			if ( mm::k_vmm.copy_in( *pt, &dur, dur_addr, sizeof( dur ) ) < 0 ) return -1;
+			if ( mm::k_vmm.copy_in( *pt, &dur, dur_addr, sizeof( dur ) ) < 0 )
+				return -1;
 
 		if ( rem_addr != 0 )
-			if ( mm::k_vmm.copy_in( *pt, &rem, rem_addr, sizeof( rem ) ) < 0 ) return -1;
+			if ( mm::k_vmm.copy_in( *pt, &rem, rem_addr, sizeof( rem ) ) < 0 )
+				return -1;
 
 		tmm::timeval tm_;
 		tm_.tv_sec	= dur.tv_sec;
@@ -1445,92 +1507,92 @@ namespace syscall
 			/* Maximum resident set size (in kilobytes).  */
 			__extension__ union
 			{
-				long int		  ru_maxrss;
-				__syscall_slong_t __ru_maxrss_word;
+			long int ru_maxrss;
+			__syscall_slong_t __ru_maxrss_word;
 			};
 			/* Amount of sharing of text segment memory
 			with other processes (kilobyte-seconds).  */
 			__extension__ union
 			{
-				long int		  ru_ixrss;
-				__syscall_slong_t __ru_ixrss_word;
+			long int ru_ixrss;
+			__syscall_slong_t __ru_ixrss_word;
 			};
 			/* Amount of data segment memory used (kilobyte-seconds).  */
 			__extension__ union
 			{
-				long int		  ru_idrss;
-				__syscall_slong_t __ru_idrss_word;
+			long int ru_idrss;
+			__syscall_slong_t __ru_idrss_word;
 			};
 			/* Amount of stack memory used (kilobyte-seconds).  */
 			__extension__ union
 			{
-				long int		  ru_isrss;
-				__syscall_slong_t __ru_isrss_word;
+			long int ru_isrss;
+			__syscall_slong_t __ru_isrss_word;
 			};
 			/* Number of soft page faults (i.e. those serviced by reclaiming
 			a page from the list of pages awaiting reallocation.  */
 			__extension__ union
 			{
-				long int		  ru_minflt;
-				__syscall_slong_t __ru_minflt_word;
+			long int ru_minflt;
+			__syscall_slong_t __ru_minflt_word;
 			};
 			/* Number of hard page faults (i.e. those that required I/O).  */
 			__extension__ union
 			{
-				long int		  ru_majflt;
-				__syscall_slong_t __ru_majflt_word;
+			long int ru_majflt;
+			__syscall_slong_t __ru_majflt_word;
 			};
 			/* Number of times a process was swapped out of physical memory.  */
 			__extension__ union
 			{
-				long int		  ru_nswap;
-				__syscall_slong_t __ru_nswap_word;
+			long int ru_nswap;
+			__syscall_slong_t __ru_nswap_word;
 			};
 			/* Number of input operations via the file system.  Note: This
 			and `ru_oublock' do not include operations with the cache.  */
 			__extension__ union
 			{
-				long int		  ru_inblock;
-				__syscall_slong_t __ru_inblock_word;
+			long int ru_inblock;
+			__syscall_slong_t __ru_inblock_word;
 			};
 			/* Number of output operations via the file system.  */
 			__extension__ union
 			{
-				long int		  ru_oublock;
-				__syscall_slong_t __ru_oublock_word;
+			long int ru_oublock;
+			__syscall_slong_t __ru_oublock_word;
 			};
 			/* Number of IPC messages sent.  */
 			__extension__ union
 			{
-				long int		  ru_msgsnd;
-				__syscall_slong_t __ru_msgsnd_word;
+			long int ru_msgsnd;
+			__syscall_slong_t __ru_msgsnd_word;
 			};
 			/* Number of IPC messages received.  */
 			__extension__ union
 			{
-				long int		  ru_msgrcv;
-				__syscall_slong_t __ru_msgrcv_word;
+			long int ru_msgrcv;
+			__syscall_slong_t __ru_msgrcv_word;
 			};
 			/* Number of signals delivered.  */
 			__extension__ union
 			{
-				long int		  ru_nsignals;
-				__syscall_slong_t __ru_nsignals_word;
+			long int ru_nsignals;
+			__syscall_slong_t __ru_nsignals_word;
 			};
 			/* Number of voluntary context switches, i.e. because the process
 			gave up the process before it had to (usually to wait for some
 			resource to be available).  */
 			__extension__ union
 			{
-				long int		  ru_nvcsw;
-				__syscall_slong_t __ru_nvcsw_word;
+			long int ru_nvcsw;
+			__syscall_slong_t __ru_nvcsw_word;
 			};
 			/* Number of involuntary context switches, i.e. a higher priority process
 			became runnable or the current process used up its time slice.  */
 			__extension__ union
 			{
-				long int		  ru_nivcsw;
-				__syscall_slong_t __ru_nivcsw_word;
+			long int ru_nivcsw;
+			__syscall_slong_t __ru_nivcsw_word;
 			};
 		};
 
@@ -1538,67 +1600,258 @@ namespace syscall
 		{
 			/* The calling process.  */
 			RUSAGE_SELF = 0,
-#define RUSAGE_SELF RUSAGE_SELF
+			#define RUSAGE_SELF RUSAGE_SELF
 
 			/* All of its terminated child processes.  */
 			RUSAGE_CHILDREN = -1
-#define RUSAGE_CHILDREN RUSAGE_CHILDREN
+			#define RUSAGE_CHILDREN RUSAGE_CHILDREN
 
-#ifdef __USE_GNU
+			#ifdef __USE_GNU
 			,
 			/* The calling thread.  */
 			RUSAGE_THREAD = 1
-#	define RUSAGE_THREAD RUSAGE_THREAD
-/* Name for the same functionality on Solaris.  */
-#	define RUSAGE_LWP	  RUSAGE_THREAD
-#endif
+			# define RUSAGE_THREAD RUSAGE_THREAD
+			/* Name for the same functionality on Solaris.  */
+			# define RUSAGE_LWP RUSAGE_THREAD
+			#endif
 		};
 
-		int	   who;
+		int who;
 		uint64 rusage_addr;
 
-		if ( _arg_int( 0, who ) < 0 ) return -1;
-
-		if ( _arg_addr( 1, rusage_addr ) < 0 ) return -1;
-
-
-		rusage		   rusage_;
-		pm::Pcb		  *cur_proc = pm::k_pm.get_cur_pcb();
-		mm::PageTable *pt		= cur_proc->get_pagetable();
-		tmm::tms	   tms;
+		if( _arg_int( 0, who ) < 0 ) 
+			return -1;
+		
+		if( _arg_addr( 1, rusage_addr ) < 0 ) 
+			return -1;
+		
+		
+		rusage rusage_;
+		pm::Pcb *cur_proc = pm::k_pm.get_cur_pcb();
+		mm::PageTable *pt = cur_proc->get_pagetable();
+		tmm::tms tms;
 		pm::k_pm.get_cur_proc_tms( &tms );
 
-		switch ( who )
-		{
+		 switch (who) {
 			case RUSAGE_SELF:
-				rusage_.ru_utime.tv_sec	 = tms.tms_utime;
+				rusage_.ru_utime.tv_sec = tms.tms_utime;
 				rusage_.ru_utime.tv_usec = tms.tms_cutime;
-				rusage_.ru_maxrss		 = cur_proc->get_max_rss();
+				rusage_.ru_maxrss = cur_proc->get_max_rss();
 				break;
 			case RUSAGE_CHILDREN:
 				// 添加对 RUSAGE_CHILDREN 的处理逻辑
 				// 假设有一个函数 get_children_rusage() 来获取子进程的资源使用情况
-				// rusage_ = cur_proc->get_children_rusage();
+				//rusage_ = cur_proc->get_children_rusage();
 				break;
-			default: log_error( "get_rusage: invalid who\n" ); return -1;
+			default:
+				log_error("get_rusage: invalid who\n");
+				return -1;
+			
 		}
-		rusage_.ru_ixrss	= 0;
-		rusage_.ru_idrss	= 0;
-		rusage_.ru_isrss	= 0;
-		rusage_.ru_minflt	= 0; /// @todo: 缺页中断的次数
-		rusage_.ru_majflt	= 0; /// @todo: 页错误次数
-		rusage_.ru_nswap	= 0;
-		rusage_.ru_inblock	= 0;
-		rusage_.ru_oublock	= 0;
-		rusage_.ru_msgsnd	= 0;
-		rusage_.ru_msgrcv	= 0;
+		rusage_.ru_ixrss = 0;
+		rusage_.ru_idrss = 0;
+		rusage_.ru_isrss = 0;
+		rusage_.ru_minflt = 0;   /// @todo: 缺页中断的次数
+		rusage_.ru_majflt = 0;   /// @todo: 页错误次数
+		rusage_.ru_nswap = 0;
+		rusage_.ru_inblock = 0;
+		rusage_.ru_oublock = 0;
+		rusage_.ru_msgsnd = 0;
+		rusage_.ru_msgrcv = 0;
 		rusage_.ru_nsignals = 0;
-		rusage_.ru_nvcsw	= 0;
-		rusage_.ru_nivcsw	= 0;
+		rusage_.ru_nvcsw = 0;
+		rusage_.ru_nivcsw = 0;
 
-		if ( mm::k_vmm.copyout( *pt, rusage_addr, &rusage_, sizeof( rusage_ ) ) < 0 ) return -1;
-
+        if( mm::k_vmm.copyout( *pt, rusage_addr, &rusage_, sizeof( rusage_ ) ) < 0 )
+			return -1;
+		
 		return 0;
 	}
 
+	uint64 SyscallHandler::_sys_utimensat()
+	{
+		int dirfd;
+		uint64 pathaddr;
+		eastl::string pathname;
+		uint64 timespecaddr;
+		timespec atime;
+		timespec mtime;
+		int flags;
+
+		if( _arg_int( 0, dirfd ) < 0 )
+			return -1;
+		
+		if( _arg_addr( 1, pathaddr ) < 0 )
+			return -1;
+		
+		if( _arg_addr( 2, timespecaddr ) < 0 )
+		    return -1;
+
+		if( _arg_int( 3, flags ) < 0 )
+			return -1;
+		
+		pm::Pcb * cur_proc = pm::k_pm.get_cur_pcb();	
+		mm::PageTable *pt = cur_proc->get_pagetable();
+		fs::dentry *base;
+		
+		if( dirfd == AT_FDCWD )
+			base = cur_proc->_cwd;
+		else
+			base = static_cast<fs::normal_file *>( cur_proc->_ofile[dirfd] )->getDentry();
+
+		if( mm::k_vmm.copy_str_in( *pt, pathname, pathaddr, 128 ) < 0 )
+			return -1;
+
+		if( timespecaddr == 0 )
+		{
+			// @todo: 设置为当前时间
+			//atime = NOW;	
+			//mtime = NOw;
+		}	
+		else
+		{
+			if( mm::k_vmm.copy_in( *pt, &atime, timespecaddr, sizeof( atime ) ) < 0 )
+                return -1;
+            
+            if( mm::k_vmm.copy_in( *pt, &mtime, timespecaddr + sizeof( atime ), sizeof( mtime ) ) < 0 )
+                return -1;
+		}
+		
+		if( _arg_int( 3, flags ) < 0 )
+			return -1;
+		
+		fs::Path path( pathname, base );	
+		fs::dentry *den = path.pathSearch();	
+		if( den == nullptr )
+			return -ENOENT;
+		
+		//int fd = path.open();
+		
+		return 0;
+	}
+
+	uint64 SyscallHandler::_sys_lseek()
+	{
+		int fd;
+		int offset;
+		int whence;
+
+		if( _arg_int( 0, fd ) < 0 )
+			return -1;
+		
+		if( _arg_int( 1, offset ) < 0 )
+			return -1;
+		
+		if( _arg_int( 2, whence ) < 0 )
+			return -1;
+		
+		pm::Pcb *cur_proc = pm::k_pm.get_cur_pcb();
+		fs::file *f = cur_proc->_ofile[ fd ];
+
+		if( f == nullptr )
+			return -1;
+
+		return f->lseek( offset, whence );
+	}
+
+	uint64 SyscallHandler::_sys_splice()
+	{
+		int fd_in;
+		uint64 off_in_addr;
+		int fd_out;
+		uint64 off_out_addr;
+		[[maybe_unused]] int len;
+		[[maybe_unused]] int flags;
+
+		if( _arg_int( 0, fd_in ) < 0 )
+			return -1;
+		
+		if( _arg_addr( 1, off_in_addr ) < 0 )
+			return -1;
+		
+		if( _arg_int( 2, fd_out ) < 0 )
+			return -1;
+		
+		if( _arg_addr( 3, off_out_addr ) < 0 )
+			return -1;
+
+		if( _arg_int( 4, len ) < 0 )
+			return -1;
+		
+		if( _arg_int( 5, flags ) < 0 )
+			return -1;
+		
+		pm::Pcb *cur_proc = pm::k_pm.get_cur_pcb();
+		mm::PageTable *pt = cur_proc->get_pagetable();
+		[[maybe_unused]] int off_in = 0;
+		[[maybe_unused]] int off_out = 0;
+
+		if( off_in_addr != 0 )
+		{
+			if( mm::k_vmm.copy_in( *pt, &off_in, off_in_addr, sizeof( int ) ) < 0 )
+				return -1; 
+		}
+		
+		if( off_out_addr != 0 )
+		{
+			if( mm::k_vmm.copy_in( *pt, &off_out, off_out_addr, sizeof( int ) ) < 0 )
+				return -1; 
+		}
+
+		if( off_in < 0 || off_out < 0 )
+			return -1;
+		
+		/// @todo 处理 offin > fd_in.size	
+		if( len == 0 ) // don't need to copy
+			return len;
+		
+		char *buf = new char[ len ];
+		 
+		int ret = 0;
+
+		if( fs::normal_file * normal_in = static_cast<fs::normal_file *>(cur_proc->_ofile[ fd_in ] ) )
+			if( static_cast<uint64>(off_in) > normal_in->_stat.size )
+				return 0;
+		//[[maybe_unused]]int rdbytes = cur_proc->_ofile[ fd_in ]->read( (uint64) buf, len, off_in, false );
+		cur_proc->_ofile[ fd_in ]->read( (uint64) buf, len, off_in, false );
+
+		// if( rdbytes < len )
+		// 	len = rdbytes;
+			
+		ret = cur_proc->_ofile[ fd_out ]->write( (uint64) buf, len, off_out, false );
+		
+		return ret;
+	}
+
+	uint64 SyscallHandler::_sys_sigprocmask()
+	{
+		int how;
+		signal::sigset_t set;
+		signal::sigset_t old_set;
+		uint64 setaddr;
+		uint64 oldsetaddr;
+		int sigsize;
+
+		if( _arg_int( 0, how ) < 0 )
+			return -1;
+		if( _arg_addr( 1, setaddr ) < 0 )
+			return -1;
+		if( _arg_addr( 2, oldsetaddr ) < 0 )
+			return -1;
+		if( _arg_int( 3, sigsize ) < 0 )
+			return -1;
+		
+ 		pm::Pcb *cur_proc = pm::k_pm.get_cur_pcb();
+		mm::PageTable *pt = cur_proc->get_pagetable();
+
+		if( setaddr != 0 )
+			if( mm::k_vmm.copy_in( *pt, &set, setaddr, sizeof( signal::sigset_t) ) < 0 )
+				return -1;
+		if( oldsetaddr != 0 )
+			if( mm::k_vmm.copy_in( *pt, &old_set, oldsetaddr, sizeof( signal::sigset_t) ) < 0 )
+				return -1;
+		
+		return signal::sigprocmask( how, &set, &old_set, sigsize );
+
+	}
 } // namespace syscall

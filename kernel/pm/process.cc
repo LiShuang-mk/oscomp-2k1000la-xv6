@@ -45,6 +45,7 @@ namespace pm
 		for (int i = 0; i < SIGRTMAX; ++i) {
             _sigactions[i] = nullptr;
         } // init sigactions
+		sigmask = 0;
 
 	}
 

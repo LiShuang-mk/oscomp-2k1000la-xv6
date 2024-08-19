@@ -25,10 +25,11 @@ namespace fs
 		virtual long write( uint64 buf, size_t len, long off = -1, bool upgrade = true ) override;
 		virtual bool read_ready() override;
 		virtual bool write_ready() override;
+		virtual off_t lseek( off_t offset, int whence ) override;
 
 		using ubuf = mm::UserspaceStream;
 		size_t read_sub_dir( ubuf &dst );
-
+		void setAppend();
 		dentry *getDentry() { return _den; }
 	};
 }
